@@ -1,4 +1,5 @@
 using LifeSimulation.Simulation.Behavior;
+using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
@@ -73,6 +74,22 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(observation.IsValid, Is.True);
             Assert.That(observation.ResourceId, Is.EqualTo(expectedFood));
             Assert.That(observation.Distance, Is.EqualTo(1f).Within(0.0001f));
+        }
+
+        [Test]
+        public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = phenotype.EnergyCapacity * 0.25f;
+            needs.Hydration = phenotype.HydrationCapacity * 0.05f;
+            var food = new ResourceObservation(new ResourceId(1), 0, 1f);
+            var water = new ResourceObservation(new ResourceId(2), 1, 1f);
+
+            CreatureDecision decision = DecisionSystem.Decide(needs, phenotype, food, water);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekWater));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
         }
     }
 }
