@@ -519,6 +519,34 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void UtilityPolicyHealthyAdultsSeekAndMeetBeforePairwiseReproduction()
+        {
+            SimulationConfig legacy = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var config = new SimulationConfig(
+                legacy.WorldSeed,
+                0,
+                legacy.Schedule,
+                legacy.MaximumPopulation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+            world.SetCreaturePosition(second, new SimVector2(1.5f, 0f));
+            world.Creatures.GetNeedsRefAt(0).Age = 21f;
+            world.Creatures.GetNeedsRefAt(1).Age = 21f;
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(3));
+            Assert.That(world.Events.Count, Is.EqualTo(1));
+            Assert.That(world.Events.GetAt(0).Kind, Is.EqualTo(SimulationEventKind.Birth));
+        }
+
+        [Test]
         public void SeparateReadyPairsEachProduceOneChildOnTheSameReproductionTick()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
