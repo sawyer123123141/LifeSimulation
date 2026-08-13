@@ -25,6 +25,9 @@ namespace LifeSimulation.Simulation.Biology
 
     public static class NeedsSystem
     {
+        private const float FoodEnergyPerUnit = 20f;
+        private const float WaterHydrationPerUnit = 20f;
+
         public static void Tick(ref CreatureNeeds needs, Phenotype phenotype, float deltaTime, float movementDistance)
         {
             if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
@@ -58,6 +61,26 @@ namespace LifeSimulation.Simulation.Biology
             if (needs.Hydration <= 0f)
             {
                 needs.Health = Math.Max(0f, needs.Health - (5f * deltaTime));
+            }
+        }
+
+        public static void ConsumeFood(ref CreatureNeeds needs, Phenotype phenotype, float amount)
+        {
+            ValidateResourceAmount(amount);
+            needs.Energy = Math.Min(phenotype.EnergyCapacity, needs.Energy + (amount * FoodEnergyPerUnit * phenotype.FoodYield));
+        }
+
+        public static void DrinkWater(ref CreatureNeeds needs, Phenotype phenotype, float amount)
+        {
+            ValidateResourceAmount(amount);
+            needs.Hydration = Math.Min(phenotype.HydrationCapacity, needs.Hydration + (amount * WaterHydrationPerUnit));
+        }
+
+        private static void ValidateResourceAmount(float amount)
+        {
+            if (amount < 0f || float.IsNaN(amount) || float.IsInfinity(amount))
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount));
             }
         }
     }

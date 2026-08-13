@@ -89,5 +89,20 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(firstChild.WaterEfficiency, Is.InRange(0f, 1f));
             Assert.That(firstChild.FoodEfficiency, Is.InRange(0f, 1f));
         }
+
+        [Test]
+        public void FoodAndWaterRestoreOnlyTheirMatchingNeedWithoutExceedingCapacity()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+
+            NeedsSystem.ConsumeFood(ref needs, phenotype, 1000f);
+            NeedsSystem.DrinkWater(ref needs, phenotype, 1000f);
+
+            Assert.That(needs.Energy, Is.EqualTo(phenotype.EnergyCapacity));
+            Assert.That(needs.Hydration, Is.EqualTo(phenotype.HydrationCapacity));
+        }
     }
 }
