@@ -32,15 +32,20 @@ namespace LifeSimulation.Simulation.Experiments
         public float RegenerationPerSecond { get; }
         public bool IsActive { get; }
 
-        public void AddTo(ResourceStore resources)
+        public void AddTo(ResourceStore resources, float populationScale)
         {
+            if (populationScale <= 0f || float.IsNaN(populationScale) || float.IsInfinity(populationScale))
+            {
+                throw new ArgumentOutOfRangeException(nameof(populationScale));
+            }
+
             ResourceId id = resources.Add(
                 Kind,
                 Position,
                 InteractionRadius,
-                InitialAmount,
-                Capacity,
-                RegenerationPerSecond);
+                InitialAmount * populationScale,
+                Capacity * populationScale,
+                RegenerationPerSecond * populationScale);
             if (!IsActive)
             {
                 resources.SetActive(id, false);
@@ -78,9 +83,10 @@ namespace LifeSimulation.Simulation.Experiments
                 throw new InvalidOperationException("A scenario can only be applied to a world with no existing resources.");
             }
 
+            float populationScale = Math.Max(1f, world.Config.InitialPopulation / 4f);
             for (int index = 0; index < _resources.Length; index++)
             {
-                _resources[index].AddTo(world.Resources);
+                _resources[index].AddTo(world.Resources, populationScale);
             }
         }
     }

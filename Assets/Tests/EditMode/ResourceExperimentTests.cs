@@ -93,6 +93,71 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(result.AverageStepMilliseconds, Is.GreaterThanOrEqualTo(0d));
         }
 
+        [Test]
+        public void ScenarioResourceBudgetScalesWithTheFounderPopulation()
+        {
+            var smallWorld = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(42, 4));
+            var largeWorld = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(42, 20));
+
+            Prototype1Scenarios.Baseline.ApplyTo(smallWorld);
+            Prototype1Scenarios.Baseline.ApplyTo(largeWorld);
+
+            Assert.That(TotalAvailable(largeWorld, ResourceKind.Water),
+                Is.EqualTo(TotalAvailable(smallWorld, ResourceKind.Water) * 5f));
+        }
+
+        [Test]
+        public void PairedAnalysisReportsTreatmentShiftAndDirectionConsistency()
+        {
+            ExperimentResult[] baseline =
+            {
+                CreateResult("baseline", 42, waterEfficiency: 0.40f),
+                CreateResult("baseline", 43, waterEfficiency: 0.60f),
+            };
+            ExperimentResult[] drought =
+            {
+                CreateResult("drought", 42, waterEfficiency: 0.70f),
+                CreateResult("drought", 43, waterEfficiency: 0.70f),
+            };
+
+            PairedExperimentSummary summary = PairedExperimentAnalysis.Summarize(
+                baseline,
+                drought,
+                ExperimentMetric.WaterEfficiency);
+
+            Assert.That(summary.PairCount, Is.EqualTo(2));
+            Assert.That(summary.MeanTreatmentMinusControl, Is.EqualTo(0.20f).Within(0.0001f));
+            Assert.That(summary.PositiveDifferenceCount, Is.EqualTo(2));
+            Assert.That(summary.DirectionConsistency, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void BootstrapAnalysisKeepsAUniformPositivePairedEffectAboveZero()
+        {
+            ExperimentResult[] baseline =
+            {
+                CreateResult("baseline", 42, waterEfficiency: 0.40f),
+                CreateResult("baseline", 43, waterEfficiency: 0.40f),
+                CreateResult("baseline", 44, waterEfficiency: 0.40f),
+            };
+            ExperimentResult[] drought =
+            {
+                CreateResult("drought", 42, waterEfficiency: 0.70f),
+                CreateResult("drought", 43, waterEfficiency: 0.70f),
+                CreateResult("drought", 44, waterEfficiency: 0.70f),
+            };
+
+            PairedBootstrapInterval interval = PairedBootstrapAnalysis.EstimateMeanDifferenceInterval(
+                baseline,
+                drought,
+                ExperimentMetric.WaterEfficiency,
+                resampleCount: 128,
+                randomSeed: 42);
+
+            Assert.That(interval.LowerBound, Is.GreaterThan(0f));
+            Assert.That(interval.UpperBound, Is.EqualTo(0.30f).Within(0.0001f));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;
@@ -106,6 +171,27 @@ namespace LifeSimulation.Tests.EditMode
             }
 
             return total;
+        }
+
+        private static ExperimentResult CreateResult(string scenarioId, int seed, float waterEfficiency)
+        {
+            var statistics = new SimulationStatistics(
+                tick: 100,
+                population: 10,
+                highestGeneration: 1,
+                meanBodySizeGene: 0.5f,
+                meanMovementSpeedGene: 0.5f,
+                meanMetabolicPaceGene: 0.5f,
+                meanVisionRangeGene: 0.5f,
+                meanWaterEfficiencyGene: waterEfficiency,
+                meanFoodEfficiencyGene: 0.5f,
+                meanEnergyFraction: 0.5f,
+                meanHydrationFraction: 0.5f,
+                availableFood: 20f,
+                availableWater: 20f,
+                birthCount: 5,
+                deathCount: 2);
+            return new ExperimentResult(scenarioId, seed, 100, statistics, finalStateHash: 0UL);
         }
     }
 }
