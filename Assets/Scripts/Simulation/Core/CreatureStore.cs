@@ -16,6 +16,7 @@ namespace LifeSimulation.Simulation.Core
         private DecisionDiagnostics[] _decisionDiagnostics;
         private CreatureLineage[] _lineages;
         private ReproductionState[] _reproduction;
+        private CombatState[] _combat;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
@@ -35,6 +36,7 @@ namespace LifeSimulation.Simulation.Core
             _decisionDiagnostics = new DecisionDiagnostics[_identities.Length];
             _lineages = new CreatureLineage[_identities.Length];
             _reproduction = new ReproductionState[_identities.Length];
+            _combat = new CombatState[_identities.Length];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -80,6 +82,12 @@ namespace LifeSimulation.Simulation.Core
             return ref _reproduction[index];
         }
 
+        public ref CombatState GetCombatRefAt(int index)
+        {
+            ValidateIndex(index);
+            return ref _combat[index];
+        }
+
         private CreatureId AddInternal(
             Genome genome,
             SimVector2 position,
@@ -99,6 +107,7 @@ namespace LifeSimulation.Simulation.Core
             _decisionDiagnostics[Count] = default;
             _lineages[Count] = new CreatureLineage(id, firstParent, secondParent, generation);
             _reproduction[Count] = default;
+            _combat[Count] = default;
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -201,6 +210,7 @@ namespace LifeSimulation.Simulation.Core
                 _decisionDiagnostics[removedIndex] = _decisionDiagnostics[lastIndex];
                 _lineages[removedIndex] = _lineages[lastIndex];
                 _reproduction[removedIndex] = _reproduction[lastIndex];
+                _combat[removedIndex] = _combat[lastIndex];
                 _indexById[movedId] = removedIndex;
             }
 
@@ -225,6 +235,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _decisionDiagnostics, nextCapacity);
             Array.Resize(ref _lineages, nextCapacity);
             Array.Resize(ref _reproduction, nextCapacity);
+            Array.Resize(ref _combat, nextCapacity);
         }
 
         private void ValidateIndex(int index)

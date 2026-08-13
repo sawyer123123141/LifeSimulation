@@ -128,6 +128,22 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void SwapBackRemovalKeepsTheP1CombatSidecarAligned()
+        {
+            var store = new CreatureStore(initialCapacity: 2);
+            CreatureId first = store.Add();
+            CreatureId moved = store.Add();
+            ref CombatState combat = ref store.GetCombatRefAt(1);
+            combat.WoundSeverity = 0.35f;
+            combat.AttackRecoveryRemaining = 2f;
+
+            Assert.That(store.Remove(first), Is.True);
+            Assert.That(store.TryGetIndex(moved, out int movedIndex), Is.True);
+            Assert.That(store.GetCombatRefAt(movedIndex).WoundSeverity, Is.EqualTo(0.35f));
+            Assert.That(store.GetCombatRefAt(movedIndex).AttackRecoveryRemaining, Is.EqualTo(2f));
+        }
+
+        [Test]
         public void WorldAppliesRequestedDeathsAtTheEndOfItsFixedStep()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);

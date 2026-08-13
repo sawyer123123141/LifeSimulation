@@ -261,6 +261,10 @@ namespace LifeSimulation.Simulation.Core
 
                 ReproductionState reproduction = Creatures.GetReproductionRefAt(index);
                 hash = HashFloat(hash, reproduction.CooldownRemaining);
+
+                CombatState combat = Creatures.GetCombatRefAt(index);
+                hash = HashFloat(hash, combat.WoundSeverity);
+                hash = HashFloat(hash, combat.AttackRecoveryRemaining);
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));

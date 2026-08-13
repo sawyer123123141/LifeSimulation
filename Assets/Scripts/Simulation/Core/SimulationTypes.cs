@@ -127,6 +127,12 @@ namespace LifeSimulation.Simulation.Core
         public float CooldownRemaining;
     }
 
+    public struct CombatState
+    {
+        public float WoundSeverity;
+        public float AttackRecoveryRemaining;
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,
