@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
+using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Resources;
 using UnityEngine;
 
@@ -81,7 +82,7 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 216f, 400f, 22f), $"Predation: {stats.AttackHitCount} hits  {stats.PredationDeathCount} kills  {stats.CumulativeCarcassConsumed:0.0} meat");
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F scenario reset");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");
         }
 
@@ -101,6 +102,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.F)) ResetSimulation(Prototype1Scenarios.FoodScarcity);
             if (Input.GetKeyDown(KeyCode.P)) ResetPredationSimulation();
             if (Input.GetKeyDown(KeyCode.C)) ResetCognitionSimulation();
+            if (Input.GetKeyDown(KeyCode.T)) ResetPhysiologySimulation();
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -172,6 +174,13 @@ namespace LifeSimulation.Presentation
             ResetSimulation(
                 Prototype1Scenarios.Baseline,
                 SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length));
+        }
+
+        private void ResetPhysiologySimulation()
+        {
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                SimulationConfig.CreatePrototype3Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length));
         }
 
         private void CreateResourceView(ResourceState resource)
@@ -350,6 +359,10 @@ namespace LifeSimulation.Presentation
             if (_world.Config.CognitionEnabled)
             {
                 GUI.Label(new Rect(24f, 390f, 420f, 22f), $"Learned: food {memory.FoodOutcomeValue:0.00} ({memory.FoodExperienceCount}) | water {memory.WaterOutcomeValue:0.00} ({memory.WaterExperienceCount})");
+            }
+            if (_world.Config.PhysiologyEnabled)
+            {
+                GUI.Label(new Rect(24f, 412f, 420f, 22f), $"Temperature tolerance: {genome.TemperatureTolerance:0.00} | local field {TemperatureField.Sample(_world.GetCreatureMovementAt(index).Position, _world.CurrentTick):0.0} C");
             }
         }
     }
