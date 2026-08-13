@@ -9,6 +9,12 @@ namespace LifeSimulation.Simulation.Core
         PhysiologyVariation = 2,
     }
 
+    public enum DecisionPolicyVersion : byte
+    {
+        Legacy = 0,
+        IntentUtilityV1 = 1,
+    }
+
     public readonly struct SimulationSchedule
     {
         public SimulationSchedule(
@@ -50,7 +56,8 @@ namespace LifeSimulation.Simulation.Core
             int maximumPopulation = 1000,
             FounderProfile founderProfile = FounderProfile.Prototype1,
             bool cognitionEnabled = false,
-            bool physiologyEnabled = false)
+            bool physiologyEnabled = false,
+            DecisionPolicyVersion decisionPolicyVersion = DecisionPolicyVersion.Legacy)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -59,6 +66,7 @@ namespace LifeSimulation.Simulation.Core
             FounderProfile = founderProfile;
             CognitionEnabled = cognitionEnabled;
             PhysiologyEnabled = physiologyEnabled;
+            DecisionPolicyVersion = decisionPolicyVersion;
         }
 
         public int WorldSeed { get; }
@@ -67,6 +75,7 @@ namespace LifeSimulation.Simulation.Core
         public FounderProfile FounderProfile { get; }
         public bool CognitionEnabled { get; }
         public bool PhysiologyEnabled { get; }
+        public DecisionPolicyVersion DecisionPolicyVersion { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -112,6 +121,11 @@ namespace LifeSimulation.Simulation.Core
             if (!Enum.IsDefined(typeof(FounderProfile), FounderProfile))
             {
                 throw new ArgumentOutOfRangeException(nameof(FounderProfile));
+            }
+
+            if (!Enum.IsDefined(typeof(DecisionPolicyVersion), DecisionPolicyVersion))
+            {
+                throw new ArgumentOutOfRangeException(nameof(DecisionPolicyVersion));
             }
 
             if (Schedule.BaseFrequencyHz <= 0)

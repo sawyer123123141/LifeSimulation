@@ -18,6 +18,10 @@ namespace LifeSimulation.Simulation.Experiments
         TemperatureTolerance = 9,
         FertilityInvestment = 10,
         LifespanTendency = 11,
+        UrgencyExponent = 12,
+        TravelSensitivity = 13,
+        RiskAversion = 14,
+        Commitment = 15,
     }
 
     public readonly struct PairedExperimentSummary
@@ -171,6 +175,14 @@ namespace LifeSimulation.Simulation.Experiments
                     return result.FinalStatistics.MeanFertilityInvestmentGene;
                 case ExperimentMetric.LifespanTendency:
                     return result.FinalStatistics.MeanLifespanTendencyGene;
+                case ExperimentMetric.UrgencyExponent:
+                    return result.FinalStatistics.MeanUrgencyExponentGene;
+                case ExperimentMetric.TravelSensitivity:
+                    return result.FinalStatistics.MeanTravelSensitivityGene;
+                case ExperimentMetric.RiskAversion:
+                    return result.FinalStatistics.MeanRiskAversionGene;
+                case ExperimentMetric.Commitment:
+                    return result.FinalStatistics.MeanCommitmentGene;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(metric));
             }

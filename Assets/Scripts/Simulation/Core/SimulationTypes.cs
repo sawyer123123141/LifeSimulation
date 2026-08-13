@@ -88,7 +88,11 @@ namespace LifeSimulation.Simulation.Core
             float cumulativeCarcassConsumed = 0f,
             float meanTemperatureToleranceGene = 0f,
             float meanFertilityInvestmentGene = 0f,
-            float meanLifespanTendencyGene = 0f)
+            float meanLifespanTendencyGene = 0f,
+            float meanUrgencyExponentGene = 0f,
+            float meanTravelSensitivityGene = 0f,
+            float meanRiskAversionGene = 0f,
+            float meanCommitmentGene = 0f)
         {
             Tick = tick;
             Population = population;
@@ -113,6 +117,10 @@ namespace LifeSimulation.Simulation.Core
             MeanTemperatureToleranceGene = meanTemperatureToleranceGene;
             MeanFertilityInvestmentGene = meanFertilityInvestmentGene;
             MeanLifespanTendencyGene = meanLifespanTendencyGene;
+            MeanUrgencyExponentGene = meanUrgencyExponentGene;
+            MeanTravelSensitivityGene = meanTravelSensitivityGene;
+            MeanRiskAversionGene = meanRiskAversionGene;
+            MeanCommitmentGene = meanCommitmentGene;
         }
 
         public long Tick { get; }
@@ -138,6 +146,10 @@ namespace LifeSimulation.Simulation.Core
         public float MeanTemperatureToleranceGene { get; }
         public float MeanFertilityInvestmentGene { get; }
         public float MeanLifespanTendencyGene { get; }
+        public float MeanUrgencyExponentGene { get; }
+        public float MeanTravelSensitivityGene { get; }
+        public float MeanRiskAversionGene { get; }
+        public float MeanCommitmentGene { get; }
     }
 
     public struct ReproductionState

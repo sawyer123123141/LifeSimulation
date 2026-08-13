@@ -1,6 +1,8 @@
+using System;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
 using NUnit.Framework;
@@ -74,6 +76,28 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(observation.IsValid, Is.True);
             Assert.That(observation.ResourceId, Is.EqualTo(expectedFood));
             Assert.That(observation.Distance, Is.EqualTo(1f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ResourcePerceptionKeepsFourNearestCandidatesInStableDistanceOrder()
+        {
+            var resources = new ResourceStore(initialCapacity: 5);
+            resources.Add(ResourceKind.Food, new SimVector2(4f, 0f), 0.5f, 1f, 1f, 0f);
+            ResourceId expectedFirst = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 0.5f, 1f, 1f, 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(3f, 0f), 0.5f, 1f, 1f, 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(2f, 0f), 0.5f, 1f, 1f, 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(5f, 0f), 0.5f, 1f, 1f, 0f);
+            var positions = new[] { resources.GetAt(0).Position, resources.GetAt(1).Position, resources.GetAt(2).Position, resources.GetAt(3).Position, resources.GetAt(4).Position };
+            var grid = new UniformGrid(new ArenaBounds(-6f, 6f, -6f, 6f), 2f, initialOccupantCapacity: 5);
+            grid.Rebuild(positions, positions.Length);
+            var candidates = new ResourceCandidateBuffer();
+
+            PerceptionSystem.FindAvailableResources(resources, grid, new SimVector2(0f, 0f), 6f, ResourceKind.Food, ref candidates);
+
+            Assert.That(candidates.Count, Is.EqualTo(4));
+            Assert.That(candidates.GetAt(0).ResourceId, Is.EqualTo(expectedFirst));
+            Assert.That(candidates.GetAt(0).Distance, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(candidates.GetAt(3).Distance, Is.EqualTo(4f).Within(0.0001f));
         }
 
         [Test]
@@ -283,6 +307,79 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void DecisionCandidateBufferSelectsHighestScoreAndUsesStableTieBreak()
+        {
+            var candidates = new DecisionCandidateBuffer();
+            Assert.That(candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekWater, targetResourceIndex: 7, targetCreatureId: default, score: 0.8f)), Is.True);
+            Assert.That(candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekFood, targetResourceIndex: 5, targetCreatureId: default, score: 0.9f)), Is.True);
+            Assert.That(candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekFood, targetResourceIndex: 2, targetCreatureId: default, score: 0.9f)), Is.True);
+
+            Assert.That(candidates.TryGetBest(out DecisionCandidate best), Is.True);
+            Assert.That(best.Intent, Is.EqualTo(CreatureIntent.SeekFood));
+            Assert.That(best.TargetResourceIndex, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void IntentUtilityPrefersARicherFoodPatchWhenItsNeedGainBeatsTravelBurden()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 2);
+            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, initialAmount: 0.05f, capacity: 0.05f, regenerationPerSecond: 0f, nutritionMultiplier: 0.5f);
+            resources.Add(ResourceKind.Food, new SimVector2(2f, 0f), 1f, initialAmount: 10f, capacity: 10f, regenerationPerSecond: 0f, nutritionMultiplier: 1.5f);
+            var food = new ResourceCandidateBuffer();
+            food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
+            food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, Genome.Neutral, phenotype, resources, food, default, default, threatIntensity: 0f, out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void IntentUtilityLetsThreatExposureFavorANearerAdequateFoodPatch()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 2);
+            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, initialAmount: 5f, capacity: 5f, regenerationPerSecond: 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(2f, 0f), 1f, initialAmount: 10f, capacity: 10f, regenerationPerSecond: 0f, nutritionMultiplier: 1.5f);
+            var food = new ResourceCandidateBuffer();
+            food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
+            food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f, riskAversion: 1f), phenotype, resources, food, default, new CreatureObservation(new CreatureId(99), 0, 1f), threatIntensity: 0.8f, out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TravelSensitivityGeneMakesOtherwiseIdenticalCreaturesChooseDifferentFoodTargets()
+        {
+            Genome lowSensitivity = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, travelSensitivity: 0f);
+            Genome highSensitivity = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, travelSensitivity: 1f);
+            Phenotype phenotype = Phenotype.FromGenome(lowSensitivity);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 2);
+            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, initialAmount: 5f, capacity: 5f, regenerationPerSecond: 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(10f, 0f), 1f, initialAmount: 10f, capacity: 10f, regenerationPerSecond: 0f, nutritionMultiplier: 1.5f);
+            var food = new ResourceCandidateBuffer();
+            food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
+            food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 10f));
+
+            CreatureDecision lowDecision = DecisionSystem.DecideIntentUtilityV1(needs, lowSensitivity, phenotype, resources, food, default, default, 0f, out _);
+            CreatureDecision highDecision = DecisionSystem.DecideIntentUtilityV1(needs, highSensitivity, phenotype, resources, food, default, default, 0f, out _);
+
+            Assert.That(lowDecision.TargetResourceIndex, Is.EqualTo(1));
+            Assert.That(highDecision.TargetResourceIndex, Is.EqualTo(0));
         }
 
         [Test]

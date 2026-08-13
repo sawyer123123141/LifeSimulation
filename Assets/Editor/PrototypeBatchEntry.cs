@@ -205,5 +205,54 @@ namespace LifeSimulation.EditorTools
 
             Debug.Log($"Prototype 3 physiology experiment results saved to {outputPath}");
         }
+
+        [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]
+        public static void RunDecisionPolicyTravelExperiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "decision-policy-travel-paired.csv");
+            string summaryPath = Path.Combine(outputDirectory, "decision-policy-travel-summary.csv");
+            SimulationScenario[] scenarios = { DecisionPolicyScenarios.NearAdequateFood, DecisionPolicyScenarios.FarRichFood };
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+            var results = new ExperimentResult[scenarios.Length][];
+            for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++) results[scenarioIndex] = new ExperimentResult[options.SeedCount];
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,travel_sensitivity,urgency_exponent,risk_aversion,commitment,cumulative_food,cumulative_water,state_hash");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(seed, options.FounderPopulation);
+                    var config = new SimulationConfig(seed, options.FounderPopulation, defaults.Schedule, options.MaximumPopulation, decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1);
+                    for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
+                    {
+                        ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], options.Ticks);
+                        results[scenarioIndex][offset] = result;
+                        SimulationStatistics stats = result.FinalStatistics;
+                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.MeanTravelSensitivityGene, stats.MeanUrgencyExponentGene, stats.MeanRiskAversionGene, stats.MeanCommitmentGene, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
+                    }
+                }
+            }
+
+            using (var writer = new StreamWriter(summaryPath, append: false))
+            {
+                writer.WriteLine("control,treatment,metric,pairs,mean_treatment_minus_control,standardized_effect,direction_consistency,interval_lower,interval_upper,meets_statistical_criterion");
+                ExperimentMetric[] metrics = { ExperimentMetric.TravelSensitivity, ExperimentMetric.Population, ExperimentMetric.BirthCount, ExperimentMetric.DeathCount };
+                for (int index = 0; index < metrics.Length; index++)
+                {
+                    ExperimentMetric metric = metrics[index];
+                    PairedExperimentSummary summary = PairedExperimentAnalysis.Summarize(results[0], results[1], metric);
+                    PairedBootstrapInterval interval = PairedBootstrapAnalysis.EstimateMeanDifferenceInterval(results[0], results[1], metric, 1024, options.FirstSeed);
+                    float effect = PairedExperimentAnalysis.CalculateStandardizedEffect(results[0], results[1], metric);
+                    PairedEvolutionAssessment assessment = PairedEvolutionCriterion.Assess(summary, interval, effect);
+                    writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4:F6},{5:F6},{6:F4},{7:F6},{8:F6},{9}", results[0][0].ScenarioId, results[1][0].ScenarioId, metric, summary.PairCount, summary.MeanTreatmentMinusControl, effect, summary.DirectionConsistency, interval.LowerBound, interval.UpperBound, assessment.MeetsStatisticalCriterion));
+                }
+            }
+
+            Debug.Log($"Decision-policy travel results saved to {outputPath} and {summaryPath}");
+        }
     }
 }

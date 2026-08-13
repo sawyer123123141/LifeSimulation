@@ -18,7 +18,7 @@ The long-term goal is a small living world where creatures are not told what spe
 The first prototype intentionally stays small. No procedural planet, giant biome system, elaborate lore engine, or custom zoology department yet.
 
 ### World
-- Small 3D test enclosure
+- Ground-plane simulation movement in a 3D Unity test enclosure
 - Renewable food / plants
 - Water sources
 - Simple terrain and obstacles

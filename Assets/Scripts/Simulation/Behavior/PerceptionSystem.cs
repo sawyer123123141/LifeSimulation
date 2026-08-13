@@ -37,8 +37,116 @@ namespace LifeSimulation.Simulation.Behavior
         public bool IsValid { get; }
     }
 
+    public struct ResourceCandidateBuffer
+    {
+        public const int Capacity = 4;
+
+        private ResourceObservation _candidate0;
+        private ResourceObservation _candidate1;
+        private ResourceObservation _candidate2;
+        private ResourceObservation _candidate3;
+        private int _count;
+
+        public int Count => _count;
+
+        public ResourceObservation GetAt(int index)
+        {
+            switch (index)
+            {
+                case 0: return _candidate0;
+                case 1: return _candidate1;
+                case 2: return _candidate2;
+                default: return _candidate3;
+            }
+        }
+
+        public void Consider(ResourceObservation candidate)
+        {
+            int insertionIndex = _count;
+            for (int index = 0; index < _count; index++)
+            {
+                if (IsBefore(candidate, GetAt(index)))
+                {
+                    insertionIndex = index;
+                    break;
+                }
+            }
+
+            if (insertionIndex >= Capacity)
+            {
+                return;
+            }
+
+            int lastIndex = _count < Capacity ? _count : Capacity - 1;
+            for (int index = lastIndex; index > insertionIndex; index--)
+            {
+                SetAt(index, GetAt(index - 1));
+            }
+
+            SetAt(insertionIndex, candidate);
+            if (_count < Capacity)
+            {
+                _count++;
+            }
+        }
+
+        private static bool IsBefore(ResourceObservation left, ResourceObservation right)
+        {
+            return left.Distance < right.Distance
+                || (Math.Abs(left.Distance - right.Distance) <= 0.00001f && left.ResourceId.Value < right.ResourceId.Value);
+        }
+
+        private void SetAt(int index, ResourceObservation candidate)
+        {
+            switch (index)
+            {
+                case 0: _candidate0 = candidate; break;
+                case 1: _candidate1 = candidate; break;
+                case 2: _candidate2 = candidate; break;
+                default: _candidate3 = candidate; break;
+            }
+        }
+    }
+
     public static class PerceptionSystem
     {
+        public static void FindAvailableResources(
+            ResourceStore resources,
+            UniformGrid resourceGrid,
+            SimVector2 origin,
+            float visionRange,
+            ResourceKind kind,
+            ref ResourceCandidateBuffer candidates)
+        {
+            int minimumColumn = resourceGrid.GetColumn(origin.X - visionRange);
+            int maximumColumn = resourceGrid.GetColumn(origin.X + visionRange);
+            int minimumRow = resourceGrid.GetRow(origin.Y - visionRange);
+            int maximumRow = resourceGrid.GetRow(origin.Y + visionRange);
+
+            for (int row = minimumRow; row <= maximumRow; row++)
+            {
+                for (int column = minimumColumn; column <= maximumColumn; column++)
+                {
+                    int cellIndex = resourceGrid.GetCellIndex(column, row);
+                    for (int occupant = resourceGrid.GetCellStart(cellIndex); occupant < resourceGrid.GetCellEnd(cellIndex); occupant++)
+                    {
+                        int resourceIndex = resourceGrid.GetOccupantIndexAt(occupant);
+                        ResourceState candidate = resources.GetAt(resourceIndex);
+                        if (!candidate.IsActive || candidate.Amount <= 0f || candidate.Kind != kind)
+                        {
+                            continue;
+                        }
+
+                        float distance = SimVector2.Distance(origin, candidate.Position);
+                        if (distance <= visionRange)
+                        {
+                            candidates.Consider(new ResourceObservation(candidate.Id, resourceIndex, distance));
+                        }
+                    }
+                }
+            }
+        }
+
         public static CreatureObservation FindNearestOtherCreature(
             CreatureStore creatures,
             UniformGrid creatureGrid,
@@ -124,45 +232,9 @@ namespace LifeSimulation.Simulation.Behavior
                 throw new ArgumentOutOfRangeException(nameof(visionRange));
             }
 
-            int minimumColumn = resourceGrid.GetColumn(origin.X - visionRange);
-            int maximumColumn = resourceGrid.GetColumn(origin.X + visionRange);
-            int minimumRow = resourceGrid.GetRow(origin.Y - visionRange);
-            int maximumRow = resourceGrid.GetRow(origin.Y + visionRange);
-            float bestDistance = float.MaxValue;
-            ResourceObservation best = default;
-
-            for (int row = minimumRow; row <= maximumRow; row++)
-            {
-                for (int column = minimumColumn; column <= maximumColumn; column++)
-                {
-                    int cellIndex = resourceGrid.GetCellIndex(column, row);
-                    for (int occupant = resourceGrid.GetCellStart(cellIndex); occupant < resourceGrid.GetCellEnd(cellIndex); occupant++)
-                    {
-                        int resourceIndex = resourceGrid.GetOccupantIndexAt(occupant);
-                        ResourceState candidate = resources.GetAt(resourceIndex);
-                        if (!candidate.IsActive || candidate.Amount <= 0f || candidate.Kind != kind)
-                        {
-                            continue;
-                        }
-
-                        float distance = SimVector2.Distance(origin, candidate.Position);
-                        if (distance > visionRange)
-                        {
-                            continue;
-                        }
-
-                        if (!best.IsValid
-                            || distance < bestDistance
-                            || (Math.Abs(distance - bestDistance) <= 0.00001f && candidate.Id.Value < best.ResourceId.Value))
-                        {
-                            best = new ResourceObservation(candidate.Id, resourceIndex, distance);
-                            bestDistance = distance;
-                        }
-                    }
-                }
-            }
-
-            return best;
+            var candidates = new ResourceCandidateBuffer();
+            FindAvailableResources(resources, resourceGrid, origin, visionRange, kind, ref candidates);
+            return candidates.Count > 0 ? candidates.GetAt(0) : default;
         }
     }
 }

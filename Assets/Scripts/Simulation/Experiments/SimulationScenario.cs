@@ -141,4 +141,21 @@ namespace LifeSimulation.Simulation.Experiments
             });
         }
     }
+
+    public static class DecisionPolicyScenarios
+    {
+        public static SimulationScenario NearAdequateFood { get; } = CreateTravelScenario("policy-near-adequate", nearFoodAmount: 10f, farFoodAmount: 3f);
+        public static SimulationScenario FarRichFood { get; } = CreateTravelScenario("policy-far-rich", nearFoodAmount: 3f, farFoodAmount: 10f);
+
+        private static SimulationScenario CreateTravelScenario(string id, float nearFoodAmount, float farFoodAmount)
+        {
+            return new SimulationScenario(id, new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-4f, 0f), 1.5f, nearFoodAmount, nearFoodAmount, 0.35f, nutritionMultiplier: 1f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 0f), 1.5f, farFoodAmount, farFoodAmount, 0.75f, nutritionMultiplier: 1.5f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-4f, -5f), 1.5f, 12f, 12f, 0.75f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(18f, -5f), 1.5f, 12f, 12f, 0.75f),
+            });
+        }
+    }
 }

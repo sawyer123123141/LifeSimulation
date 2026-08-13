@@ -38,7 +38,11 @@ namespace LifeSimulation.Simulation.Biology
                 InheritTrait(firstParent.Exploration, secondParent.Exploration, worldSeed, birthOrdinal, 15, mutationStandardDeviation),
                 InheritTrait(firstParent.TemperatureTolerance, secondParent.TemperatureTolerance, worldSeed, birthOrdinal, 16, mutationStandardDeviation),
                 InheritTrait(firstParent.FertilityInvestment, secondParent.FertilityInvestment, worldSeed, birthOrdinal, 17, mutationStandardDeviation),
-                InheritTrait(firstParent.LifespanTendency, secondParent.LifespanTendency, worldSeed, birthOrdinal, 18, mutationStandardDeviation));
+                InheritTrait(firstParent.LifespanTendency, secondParent.LifespanTendency, worldSeed, birthOrdinal, 18, mutationStandardDeviation),
+                InheritTrait(firstParent.UrgencyExponent, secondParent.UrgencyExponent, worldSeed, birthOrdinal, 19, mutationStandardDeviation),
+                InheritTrait(firstParent.TravelSensitivity, secondParent.TravelSensitivity, worldSeed, birthOrdinal, 20, mutationStandardDeviation),
+                InheritTrait(firstParent.RiskAversion, secondParent.RiskAversion, worldSeed, birthOrdinal, 21, mutationStandardDeviation),
+                InheritTrait(firstParent.Commitment, secondParent.Commitment, worldSeed, birthOrdinal, 22, mutationStandardDeviation));
         }
 
         private static float InheritTrait(

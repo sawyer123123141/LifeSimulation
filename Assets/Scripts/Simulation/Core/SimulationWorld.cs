@@ -4,6 +4,7 @@ using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
 using LifeSimulation.Simulation.Environment;
+using LifeSimulation.Simulation.Experiments;
 
 namespace LifeSimulation.Simulation.Core
 {
@@ -11,6 +12,7 @@ namespace LifeSimulation.Simulation.Core
     {
         private CreatureId[] _pendingDeaths;
         private DeathCause[] _pendingDeathCauses;
+        private SimVector2[] _pendingDeathPositions;
         private int _pendingDeathCount;
         private long _spawnOrdinal;
         private SimVector2[] _resourcePositions;
@@ -40,6 +42,7 @@ namespace LifeSimulation.Simulation.Core
             CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];
             _pendingDeathCauses = new DeathCause[_pendingDeaths.Length];
+            _pendingDeathPositions = new SimVector2[_pendingDeaths.Length];
             _resourcePositions = new SimVector2[8];
             _creaturePositions = new SimVector2[Math.Max(Config.InitialPopulation, 1)];
             _combatDamage = new float[Math.Max(Config.InitialPopulation, 1)];
@@ -65,6 +68,12 @@ namespace LifeSimulation.Simulation.Core
         public int CreatureCount => Creatures.Count;
         public long CurrentTick { get; private set; }
         public SimulationStatistics Statistics { get; private set; }
+        public DecisionTraceRecorder DecisionTrace { get; private set; }
+
+        public void EnableDecisionTrace(CreatureId sampledCreatureId, int capacity)
+        {
+            DecisionTrace = new DecisionTraceRecorder(sampledCreatureId, capacity);
+        }
 
         public CreatureId GetCreatureIdAt(int index)
         {
@@ -103,7 +112,11 @@ namespace LifeSimulation.Simulation.Core
                 FounderGene(founderOrdinal, 4, standardDeviation),
                 FounderGene(founderOrdinal, 6, standardDeviation),
                 FounderGene(founderOrdinal, 8, standardDeviation),
-                FounderGene(founderOrdinal, 10, standardDeviation));
+                FounderGene(founderOrdinal, 10, standardDeviation),
+                urgencyExponent: FounderGene(founderOrdinal, 20, standardDeviation),
+                travelSensitivity: FounderGene(founderOrdinal, 22, standardDeviation),
+                riskAversion: FounderGene(founderOrdinal, 24, standardDeviation),
+                commitment: FounderGene(founderOrdinal, 26, standardDeviation));
         }
 
         private float FounderGene(long founderOrdinal, int purpose, float standardDeviation)
@@ -160,7 +173,7 @@ namespace LifeSimulation.Simulation.Core
 
         public void RequestDeath(CreatureId id, DeathCause cause)
         {
-            if (!Creatures.TryGetIndex(id, out _))
+            if (!Creatures.TryGetIndex(id, out int creatureIndex))
             {
                 return;
             }
@@ -174,8 +187,10 @@ namespace LifeSimulation.Simulation.Core
             }
 
             EnsurePendingDeathCapacity(_pendingDeathCount + 1);
-            _pendingDeaths[_pendingDeathCount++] = id;
-            _pendingDeathCauses[_pendingDeathCount - 1] = cause;
+            _pendingDeaths[_pendingDeathCount] = id;
+            _pendingDeathCauses[_pendingDeathCount] = cause;
+            _pendingDeathPositions[_pendingDeathCount] = Creatures.GetMovementAt(creatureIndex).Position;
+            _pendingDeathCount++;
         }
 
         public void Step(float fixedDeltaTime)
@@ -230,7 +245,7 @@ namespace LifeSimulation.Simulation.Core
                     Phenotype phenotype = Creatures.GetPhenotypeAt(deceasedIndex);
                     Resources.Add(
                         ResourceKind.Carcass,
-                        Creatures.GetMovementAt(deceasedIndex).Position,
+                        _pendingDeathPositions[index],
                         interactionRadius: 1.1f,
                         initialAmount: 10f * phenotype.BodyMass,
                         capacity: 10f * phenotype.BodyMass,
@@ -289,6 +304,10 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.TemperatureTolerance);
                 hash = HashFloat(hash, genome.FertilityInvestment);
                 hash = HashFloat(hash, genome.LifespanTendency);
+                hash = HashFloat(hash, genome.UrgencyExponent);
+                hash = HashFloat(hash, genome.TravelSensitivity);
+                hash = HashFloat(hash, genome.RiskAversion);
+                hash = HashFloat(hash, genome.Commitment);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 hash = HashFloat(hash, needs.Energy);
@@ -368,6 +387,7 @@ namespace LifeSimulation.Simulation.Core
 
             Array.Resize(ref _pendingDeaths, Math.Max(required, _pendingDeaths.Length * 2));
             Array.Resize(ref _pendingDeathCauses, _pendingDeaths.Length);
+            Array.Resize(ref _pendingDeathPositions, _pendingDeaths.Length);
         }
 
         private bool IsDue(long tick, int frequencyHz)
@@ -497,6 +517,7 @@ namespace LifeSimulation.Simulation.Core
             {
                 MovementState movement = Creatures.GetMovementAt(index);
                 Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+                CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
                 ResourceObservation food = PerceptionSystem.FindNearestAvailableResource(
                     Resources,
                     ResourceGrid,
@@ -515,10 +536,26 @@ namespace LifeSimulation.Simulation.Core
                     movement.Position,
                     phenotype.VisionRange,
                     ResourceKind.Carcass);
-                if (Config.CognitionEnabled)
+                var foodCandidates = new ResourceCandidateBuffer();
+                var waterCandidates = new ResourceCandidateBuffer();
+                CreatureObservation other = default;
+                float threatIntensity = 0f;
+                if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
+                {
+                    PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Food, ref foodCandidates);
+                    PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Water, ref waterCandidates);
+                    if (Config.FounderProfile == FounderProfile.PredationVariation)
+                    {
+                        other = PerceptionSystem.FindNearestOtherCreature(Creatures, CombatGrid, movement.Position, phenotype.VisionRange, Creatures.GetIdAt(index));
+                        if (other.IsValid)
+                        {
+                            threatIntensity = PredationSystem.Threat(Creatures.GetPhenotypeAt(other.CreatureIndex), phenotype);
+                        }
+                    }
+                }
+                if (Config.CognitionEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
-                    CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
                     if (memory.HasActiveRememberedTarget
                         && SimVector2.Distance(movement.Position, memory.ActiveRememberedTarget) <= 1f
                         && ((previousDecision.Action == CreatureAction.SeekFood && !food.IsValid)
@@ -532,10 +569,21 @@ namespace LifeSimulation.Simulation.Core
                     if (food.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Food, Resources.GetAt(food.ResourceIndex).Position);
                     if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
                 }
-                CreatureDecision decision = Config.CognitionEnabled
-                    ? DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, out DecisionDiagnostics diagnostics)
-                    : DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out diagnostics);
-                if (Config.CognitionEnabled)
+                DecisionDiagnostics diagnostics;
+                CreatureDecision decision;
+                if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
+                {
+                    decision = DecisionSystem.DecideIntentUtilityV1(Creatures.GetNeedsAt(index), Creatures.GetGenomeAt(index), phenotype, Resources, foodCandidates, waterCandidates, other, threatIntensity, out diagnostics);
+                }
+                else if (Config.CognitionEnabled)
+                {
+                    decision = DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, out diagnostics);
+                }
+                else
+                {
+                    decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out diagnostics);
+                }
+                if (Config.CognitionEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
                     memory.HasActiveRememberedTarget = false;
@@ -554,12 +602,15 @@ namespace LifeSimulation.Simulation.Core
                 }
                 if (Config.FounderProfile == FounderProfile.PredationVariation)
                 {
-                    CreatureObservation other = PerceptionSystem.FindNearestOtherCreature(
-                        Creatures,
-                        CombatGrid,
-                        movement.Position,
-                        phenotype.VisionRange,
-                        Creatures.GetIdAt(index));
+                    if (!other.IsValid)
+                    {
+                        other = PerceptionSystem.FindNearestOtherCreature(
+                            Creatures,
+                            CombatGrid,
+                            movement.Position,
+                            phenotype.VisionRange,
+                            Creatures.GetIdAt(index));
+                    }
                     if (other.IsValid)
                     {
                         decision = PredationSystem.Decide(
@@ -584,6 +635,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision);
                 }
+                CreatureDecision selectedIntent = decision;
                 if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
                     && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
                 {
@@ -626,7 +678,38 @@ namespace LifeSimulation.Simulation.Core
                     tick,
                     decision.TargetCreatureId));
                 Creatures.SetDecisionDiagnosticsAt(index, diagnostics);
+                if (DecisionTrace != null)
+                {
+                    DecisionInvalidationReason invalidationReason = DetermineDecisionInvalidation(previousDecision, selectedIntent, decision);
+                    DecisionTrace.Record(new DecisionTraceEntry(tick, Creatures.GetIdAt(index), previousDecision, decision, diagnostics, invalidationReason));
+                }
             }
+        }
+
+        private DecisionInvalidationReason DetermineDecisionInvalidation(CreatureDecision previousDecision, CreatureDecision selectedIntent, CreatureDecision executionDecision)
+        {
+            if (previousDecision.TargetResourceIndex >= 0
+                && (uint)previousDecision.TargetResourceIndex < (uint)Resources.Count)
+            {
+                ResourceState previousResource = Resources.GetAt(previousDecision.TargetResourceIndex);
+                if (!previousResource.IsActive || previousResource.Amount <= 0f)
+                {
+                    return DecisionInvalidationReason.PreviousResourceUnavailable;
+                }
+            }
+
+            if (selectedIntent.Action != executionDecision.Action
+                || selectedIntent.TargetResourceIndex != executionDecision.TargetResourceIndex
+                || !selectedIntent.TargetCreatureId.Equals(executionDecision.TargetCreatureId))
+            {
+                return DecisionInvalidationReason.ExecutionTransition;
+            }
+
+            return previousDecision.Action != selectedIntent.Action
+                || previousDecision.TargetResourceIndex != selectedIntent.TargetResourceIndex
+                || !previousDecision.TargetCreatureId.Equals(selectedIntent.TargetCreatureId)
+                ? DecisionInvalidationReason.HigherScoredIntent
+                : DecisionInvalidationReason.None;
         }
 
         private void RebuildResourceGrid()
@@ -863,6 +946,10 @@ namespace LifeSimulation.Simulation.Core
             float temperatureToleranceTotal = 0f;
             float fertilityInvestmentTotal = 0f;
             float lifespanTendencyTotal = 0f;
+            float urgencyExponentTotal = 0f;
+            float travelSensitivityTotal = 0f;
+            float riskAversionTotal = 0f;
+            float commitmentTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -880,6 +967,10 @@ namespace LifeSimulation.Simulation.Core
                 temperatureToleranceTotal += genome.TemperatureTolerance;
                 fertilityInvestmentTotal += genome.FertilityInvestment;
                 lifespanTendencyTotal += genome.LifespanTendency;
+                urgencyExponentTotal += genome.UrgencyExponent;
+                travelSensitivityTotal += genome.TravelSensitivity;
+                riskAversionTotal += genome.RiskAversion;
+                commitmentTotal += genome.Commitment;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -918,7 +1009,11 @@ namespace LifeSimulation.Simulation.Core
                 _cumulativeCarcassConsumed,
                 temperatureToleranceTotal * reciprocalPopulation,
                 fertilityInvestmentTotal * reciprocalPopulation,
-                lifespanTendencyTotal * reciprocalPopulation);
+                lifespanTendencyTotal * reciprocalPopulation,
+                urgencyExponentTotal * reciprocalPopulation,
+                travelSensitivityTotal * reciprocalPopulation,
+                riskAversionTotal * reciprocalPopulation,
+                commitmentTotal * reciprocalPopulation);
         }
 
         private static float Lerp(float minimum, float maximum, float t)

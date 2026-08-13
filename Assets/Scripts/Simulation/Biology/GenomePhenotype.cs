@@ -23,7 +23,11 @@ namespace LifeSimulation.Simulation.Biology
             float exploration = 0f,
             float temperatureTolerance = 0f,
             float fertilityInvestment = 0f,
-            float lifespanTendency = 0f)
+            float lifespanTendency = 0f,
+            float urgencyExponent = 0.5f,
+            float travelSensitivity = 0.5f,
+            float riskAversion = 0.5f,
+            float commitment = 0.5f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);
@@ -44,6 +48,10 @@ namespace LifeSimulation.Simulation.Biology
             TemperatureTolerance = Clamp01(temperatureTolerance);
             FertilityInvestment = Clamp01(fertilityInvestment);
             LifespanTendency = Clamp01(lifespanTendency);
+            UrgencyExponent = Clamp01(urgencyExponent);
+            TravelSensitivity = Clamp01(travelSensitivity);
+            RiskAversion = Clamp01(riskAversion);
+            Commitment = Clamp01(commitment);
         }
 
         public static Genome Neutral => new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
@@ -67,6 +75,10 @@ namespace LifeSimulation.Simulation.Biology
         public float TemperatureTolerance { get; }
         public float FertilityInvestment { get; }
         public float LifespanTendency { get; }
+        public float UrgencyExponent { get; }
+        public float TravelSensitivity { get; }
+        public float RiskAversion { get; }
+        public float Commitment { get; }
 
         public Genome WithBodySize(float value)
         {
@@ -89,7 +101,11 @@ namespace LifeSimulation.Simulation.Biology
                 Exploration,
                 TemperatureTolerance,
                 FertilityInvestment,
-                LifespanTendency);
+                LifespanTendency,
+                UrgencyExponent,
+                TravelSensitivity,
+                RiskAversion,
+                Commitment);
         }
 
         private static float Clamp01(float value)

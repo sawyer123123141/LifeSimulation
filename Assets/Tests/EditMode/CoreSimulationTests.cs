@@ -2,6 +2,7 @@ using System;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
@@ -16,6 +17,7 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(() => config.Validate(), Throws.Nothing);
             Assert.That(config.Schedule.BaseFrequencyHz, Is.EqualTo(20));
+            Assert.That(config.DecisionPolicyVersion, Is.EqualTo(DecisionPolicyVersion.Legacy));
         }
 
         [Test]
@@ -81,6 +83,37 @@ namespace LifeSimulation.Tests.EditMode
             float repeated = DeterministicRandom.Float01(42, RandomDomain.Mutation, 10, 7, 9, 2);
 
             Assert.That(repeated, Is.EqualTo(first));
+        }
+
+        [Test]
+        public void DecisionTraceRecordsLegacyWinnerScoresAndSwitchesForItsSampledCreature()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId creature = world.Spawn();
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 10f, 0f);
+            world.Resources.Add(ResourceKind.Water, new SimVector2(2f, 0f), 1f, 10f, 10f, 0f);
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            world.EnableDecisionTrace(creature, capacity: 4);
+
+            for (int tick = 0; tick < 40; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.DecisionTrace.Count, Is.EqualTo(4));
+            DecisionTraceEntry entry = world.DecisionTrace.GetAt(0);
+            Assert.That(entry.Winner.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(entry.FoodScore, Is.GreaterThan(entry.WaterScore));
+            Assert.That(entry.Switched, Is.True);
+            Assert.That(world.DecisionTrace.GetAt(1).InvalidationReason, Is.EqualTo(DecisionInvalidationReason.ExecutionTransition));
+            for (int index = 0; index < world.DecisionTrace.Count; index++)
+            {
+                DecisionTraceEntry trace = world.DecisionTrace.GetAt(index);
+                TestContext.WriteLine($"tick={trace.Tick}; previous={trace.Previous.Action}/{trace.Previous.TargetResourceIndex}; winner={trace.Winner.Action}/{trace.Winner.TargetResourceIndex}; food={trace.FoodScore:F3}; water={trace.WaterScore:F3}; switched={trace.Switched}; reason={trace.InvalidationReason}");
+            }
         }
 
         [Test]
@@ -386,7 +419,7 @@ namespace LifeSimulation.Tests.EditMode
             for (int index = 0; index < 10; index++) world.Step(world.Config.FixedDeltaTime);
 
             MemoryState observed = world.GetCreatureMemoryAt(0);
-            Assert.That(observed.FoodConfidence, Is.EqualTo(1f));
+            Assert.That(observed.FoodConfidence, Is.EqualTo(0.94f).Within(0.0001f));
             Assert.That(observed.FoodPosition.X, Is.EqualTo(0f));
             world.Resources.SetActive(food, false);
 

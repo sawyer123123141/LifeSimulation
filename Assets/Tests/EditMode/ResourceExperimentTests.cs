@@ -41,6 +41,10 @@ namespace LifeSimulation.Tests.EditMode
 
             Prototype1Scenarios.Baseline.ApplyTo(baselineWorld);
             Prototype1Scenarios.Drought.ApplyTo(droughtWorld);
+            ConsumeAllOfKind(baselineWorld, ResourceKind.Water, 1f);
+            ConsumeAllOfKind(droughtWorld, ResourceKind.Water, 1f);
+            baselineWorld.Resources.Regenerate(1f);
+            droughtWorld.Resources.Regenerate(1f);
 
             Assert.That(droughtWorld.Creatures.GetGenomeAt(0).WaterEfficiency,
                 Is.EqualTo(baselineWorld.Creatures.GetGenomeAt(0).WaterEfficiency));
@@ -59,6 +63,10 @@ namespace LifeSimulation.Tests.EditMode
 
             Prototype1Scenarios.Baseline.ApplyTo(baselineWorld);
             Prototype1Scenarios.FoodScarcity.ApplyTo(scarcityWorld);
+            ConsumeAllOfKind(baselineWorld, ResourceKind.Food, 1f);
+            ConsumeAllOfKind(scarcityWorld, ResourceKind.Food, 1f);
+            baselineWorld.Resources.Regenerate(1f);
+            scarcityWorld.Resources.Regenerate(1f);
 
             Assert.That(scarcityWorld.Creatures.GetGenomeAt(2).FoodEfficiency,
                 Is.EqualTo(baselineWorld.Creatures.GetGenomeAt(2).FoodEfficiency));
@@ -295,6 +303,17 @@ namespace LifeSimulation.Tests.EditMode
             }
 
             return total;
+        }
+
+        private static void ConsumeAllOfKind(SimulationWorld world, ResourceKind kind, float amountPerResource)
+        {
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                if (world.Resources.GetAt(index).Kind == kind)
+                {
+                    world.Resources.ConsumeAt(index, amountPerResource);
+                }
+            }
         }
 
         private static ExperimentResult CreateResult(string scenarioId, int seed, float waterEfficiency, float temperatureTolerance = 0f)
