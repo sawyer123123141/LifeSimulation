@@ -176,11 +176,25 @@ namespace LifeSimulation.Simulation.Biology
         {
             CreatureNeeds needs = _creatures.GetNeedsAt(index);
             Phenotype phenotype = _creatures.GetPhenotypeAt(index);
+            return CanReproduce(needs, phenotype, _creatures.GetReproductionRefAt(index));
+        }
+
+        public static bool CanReproduce(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction)
+        {
             return needs.Energy >= phenotype.EnergyCapacity * 0.7f
                 && needs.Hydration >= phenotype.HydrationCapacity * 0.7f
                 && needs.Health >= phenotype.HealthCapacity * 0.7f
                 && needs.Age >= AdultAgeSeconds
-                && _creatures.GetReproductionRefAt(index).CooldownRemaining <= 0f;
+                && reproduction.CooldownRemaining <= 0f;
+        }
+
+        public static bool CanSeekMate(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction)
+        {
+            return needs.Energy >= phenotype.EnergyCapacity * 0.8f
+                && needs.Hydration >= phenotype.HydrationCapacity * 0.8f
+                && needs.Health >= phenotype.HealthCapacity * 0.8f
+                && needs.Age >= AdultAgeSeconds
+                && reproduction.CooldownRemaining <= 0f;
         }
 
         private void ChargeCost(int index)

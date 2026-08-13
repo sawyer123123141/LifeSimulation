@@ -15,11 +15,16 @@ namespace LifeSimulation.Simulation.Behavior
             long tick,
             CreatureDecision currentDecision)
         {
-            float discomfort = Math.Max(0f, Math.Abs(TemperatureField.Sample(position, tick) - ComfortableTemperature) - phenotype.TemperatureTolerance);
-            float score = discomfort / 8f;
+            float score = ScoreThermalComfort(phenotype, position, tick);
             return score > currentDecision.Score && score >= 0.15f
                 ? new CreatureDecision(CreatureAction.SeekThermalComfort, -1, score)
                 : currentDecision;
+        }
+
+        public static float ScoreThermalComfort(Phenotype phenotype, SimVector2 position, long tick)
+        {
+            float discomfort = Math.Max(0f, Math.Abs(TemperatureField.Sample(position, tick) - ComfortableTemperature) - phenotype.TemperatureTolerance);
+            return discomfort / 8f;
         }
 
         public static SimVector2 FindNearbyComfortTarget(SimVector2 position, long tick, ArenaBounds arena)

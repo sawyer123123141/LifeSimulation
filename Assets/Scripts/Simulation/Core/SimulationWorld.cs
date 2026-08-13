@@ -472,7 +472,7 @@ namespace LifeSimulation.Simulation.Core
                 }
             }
 
-            if (decision.Action == CreatureAction.SeekPrey || decision.Action == CreatureAction.Attack)
+            if (decision.Action == CreatureAction.SeekPrey || decision.Action == CreatureAction.Attack || decision.Action == CreatureAction.SeekMate)
             {
                 if (Creatures.TryGetIndex(decision.TargetCreatureId, out int targetIndex))
                 {
@@ -544,7 +544,8 @@ namespace LifeSimulation.Simulation.Core
                 {
                     PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Food, ref foodCandidates);
                     PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Water, ref waterCandidates);
-                    if (Config.FounderProfile == FounderProfile.PredationVariation)
+                    if (Config.FounderProfile == FounderProfile.PredationVariation
+                        || Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
                     {
                         other = PerceptionSystem.FindNearestOtherCreature(Creatures, CombatGrid, movement.Position, phenotype.VisionRange, Creatures.GetIdAt(index));
                         if (other.IsValid)
@@ -573,7 +574,30 @@ namespace LifeSimulation.Simulation.Core
                 CreatureDecision decision;
                 if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
                 {
-                    decision = DecisionSystem.DecideIntentUtilityV1(Creatures.GetNeedsAt(index), Creatures.GetGenomeAt(index), phenotype, Resources, movement.Position, foodCandidates, waterCandidates, Creatures.GetMemoryRefAt(index), Config.CognitionEnabled, other, threatIntensity, out diagnostics);
+                    decision = DecisionSystem.DecideIntentUtilityV1(
+                        Creatures.GetNeedsAt(index),
+                        Creatures.GetGenomeAt(index),
+                        phenotype,
+                        Resources,
+                        movement.Position,
+                        foodCandidates,
+                        waterCandidates,
+                        carcass,
+                        Creatures.GetMemoryRefAt(index),
+                        Config.CognitionEnabled,
+                        other,
+                        threatIntensity,
+                        other.IsValid ? Creatures.GetPhenotypeAt(other.CreatureIndex) : default,
+                        Config.FounderProfile == FounderProfile.PredationVariation,
+                        Config.PhysiologyEnabled,
+                        Creatures.GetReproductionRefAt(index),
+                        other,
+                        other.IsValid ? Creatures.GetNeedsAt(other.CreatureIndex) : default,
+                        other.IsValid ? Creatures.GetPhenotypeAt(other.CreatureIndex) : default,
+                        other.IsValid ? Creatures.GetReproductionRefAt(other.CreatureIndex) : default,
+                        true,
+                        tick,
+                        out diagnostics);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
@@ -587,6 +611,10 @@ namespace LifeSimulation.Simulation.Core
                         {
                             memory.ActiveRememberedTarget = memory.WaterPosition;
                             memory.HasActiveRememberedTarget = true;
+                        }
+                        if (decision.Action == CreatureAction.Flee && other.IsValid)
+                        {
+                            MemorySystem.RememberThreat(ref memory, Creatures.GetMovementAt(other.CreatureIndex).Position);
                         }
                     }
                 }
@@ -615,7 +643,7 @@ namespace LifeSimulation.Simulation.Core
                         memory.HasActiveRememberedTarget = true;
                     }
                 }
-                if (Config.FounderProfile == FounderProfile.PredationVariation)
+                if (Config.FounderProfile == FounderProfile.PredationVariation && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
                     if (!other.IsValid)
                     {
@@ -646,7 +674,7 @@ namespace LifeSimulation.Simulation.Core
                         carcass,
                         decision);
                 }
-                if (Config.PhysiologyEnabled)
+                if (Config.PhysiologyEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
                     decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision);
                 }

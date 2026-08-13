@@ -32,6 +32,7 @@ namespace LifeSimulation.Simulation.Behavior
         Flee = 4,
         SeekCarcass = 5,
         SeekThermalComfort = 6,
+        SeekMate = 7,
     }
 
     public readonly struct DecisionCandidate
@@ -52,7 +53,7 @@ namespace LifeSimulation.Simulation.Behavior
 
     public struct DecisionCandidateBuffer
     {
-        public const int Capacity = 8;
+        public const int Capacity = 16;
 
         private DecisionCandidate _candidate0;
         private DecisionCandidate _candidate1;
@@ -62,6 +63,14 @@ namespace LifeSimulation.Simulation.Behavior
         private DecisionCandidate _candidate5;
         private DecisionCandidate _candidate6;
         private DecisionCandidate _candidate7;
+        private DecisionCandidate _candidate8;
+        private DecisionCandidate _candidate9;
+        private DecisionCandidate _candidate10;
+        private DecisionCandidate _candidate11;
+        private DecisionCandidate _candidate12;
+        private DecisionCandidate _candidate13;
+        private DecisionCandidate _candidate14;
+        private DecisionCandidate _candidate15;
         private int _count;
 
         public int Count => _count;
@@ -129,7 +138,15 @@ namespace LifeSimulation.Simulation.Behavior
                 case 4: return _candidate4;
                 case 5: return _candidate5;
                 case 6: return _candidate6;
-                default: return _candidate7;
+                case 7: return _candidate7;
+                case 8: return _candidate8;
+                case 9: return _candidate9;
+                case 10: return _candidate10;
+                case 11: return _candidate11;
+                case 12: return _candidate12;
+                case 13: return _candidate13;
+                case 14: return _candidate14;
+                default: return _candidate15;
             }
         }
 
@@ -144,7 +161,15 @@ namespace LifeSimulation.Simulation.Behavior
                 case 4: _candidate4 = candidate; break;
                 case 5: _candidate5 = candidate; break;
                 case 6: _candidate6 = candidate; break;
-                default: _candidate7 = candidate; break;
+                case 7: _candidate7 = candidate; break;
+                case 8: _candidate8 = candidate; break;
+                case 9: _candidate9 = candidate; break;
+                case 10: _candidate10 = candidate; break;
+                case 11: _candidate11 = candidate; break;
+                case 12: _candidate12 = candidate; break;
+                case 13: _candidate13 = candidate; break;
+                case 14: _candidate14 = candidate; break;
+                default: _candidate15 = candidate; break;
             }
         }
     }
@@ -200,10 +225,46 @@ namespace LifeSimulation.Simulation.Behavior
             SimVector2 origin,
             ResourceCandidateBuffer foodCandidates,
             ResourceCandidateBuffer waterCandidates,
+            ResourceObservation carcass,
             MemoryState memory,
             bool cognitionEnabled,
             CreatureObservation threat,
             float threatIntensity,
+            Phenotype otherPhenotype,
+            bool predationEnabled,
+            bool physiologyEnabled,
+            long tick,
+            out DecisionDiagnostics diagnostics)
+        {
+            return DecideIntentUtilityV1(
+                needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
+                cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
+                default, default, default, default, default, false, tick, out diagnostics);
+        }
+
+        public static CreatureDecision DecideIntentUtilityV1(
+            CreatureNeeds needs,
+            Genome genome,
+            Phenotype phenotype,
+            ResourceStore resources,
+            SimVector2 origin,
+            ResourceCandidateBuffer foodCandidates,
+            ResourceCandidateBuffer waterCandidates,
+            ResourceObservation carcass,
+            MemoryState memory,
+            bool cognitionEnabled,
+            CreatureObservation threat,
+            float threatIntensity,
+            Phenotype otherPhenotype,
+            bool predationEnabled,
+            bool physiologyEnabled,
+            ReproductionState reproduction,
+            CreatureObservation mate,
+            CreatureNeeds mateNeeds,
+            Phenotype matePhenotype,
+            ReproductionState mateReproduction,
+            bool reproductionEnabled,
+            long tick,
             out DecisionDiagnostics diagnostics)
         {
             var candidates = new DecisionCandidateBuffer();
@@ -217,16 +278,117 @@ namespace LifeSimulation.Simulation.Behavior
                 ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, ref candidates, ref bestFoodScore);
                 ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, ref candidates, ref bestWaterScore);
             }
+            if (predationEnabled)
+            {
+                ScoreCarcass(needs, phenotype, resources, carcass, ref candidates);
+                ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates);
+            }
+            if (physiologyEnabled)
+            {
+                float thermalScore = ThermoregulationSystem.ScoreThermalComfort(phenotype, origin, tick);
+                if (thermalScore >= 0.15f)
+                {
+                    candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekThermalComfort, -1, default, thermalScore));
+                }
+            }
+            if (reproductionEnabled)
+            {
+                ScoreMate(needs, phenotype, reproduction, mate, mateNeeds, matePhenotype, mateReproduction, ref candidates);
+            }
             diagnostics = new DecisionDiagnostics(bestFoodScore, bestWaterScore, foodCandidates.Count > 0, waterCandidates.Count > 0);
             if (!candidates.TryGetBest(out DecisionCandidate best) || best.Score < MinimumUrgencyToSeekResource)
             {
                 return new CreatureDecision(CreatureAction.Wander, -1, 0f);
             }
 
-            return new CreatureDecision(
-                best.Intent == CreatureIntent.SeekWater ? CreatureAction.SeekWater : CreatureAction.SeekFood,
-                best.TargetResourceIndex,
-                best.Score);
+            return ToDecision(best);
+        }
+
+        private static CreatureDecision ToDecision(DecisionCandidate candidate)
+        {
+            CreatureAction action;
+            switch (candidate.Intent)
+            {
+                case CreatureIntent.SeekWater: action = CreatureAction.SeekWater; break;
+                case CreatureIntent.SeekPrey: action = CreatureAction.SeekPrey; break;
+                case CreatureIntent.Flee: action = CreatureAction.Flee; break;
+                case CreatureIntent.SeekCarcass: action = CreatureAction.SeekCarcass; break;
+                case CreatureIntent.SeekThermalComfort: action = CreatureAction.SeekThermalComfort; break;
+                case CreatureIntent.SeekMate: action = CreatureAction.SeekMate; break;
+                case CreatureIntent.Wander: action = CreatureAction.Wander; break;
+                default: action = CreatureAction.SeekFood; break;
+            }
+
+            return new CreatureDecision(action, candidate.TargetResourceIndex, candidate.Score, targetCreatureId: candidate.TargetCreatureId);
+        }
+
+        private static void ScoreMate(
+            CreatureNeeds needs,
+            Phenotype phenotype,
+            ReproductionState reproduction,
+            CreatureObservation mate,
+            CreatureNeeds mateNeeds,
+            Phenotype matePhenotype,
+            ReproductionState mateReproduction,
+            ref DecisionCandidateBuffer candidates)
+        {
+            if (!mate.IsValid
+                || !ReproductionSystem.CanSeekMate(needs, phenotype, reproduction)
+                || !ReproductionSystem.CanSeekMate(mateNeeds, matePhenotype, mateReproduction))
+            {
+                return;
+            }
+
+            float safety = Math.Min(
+                Math.Min(needs.Energy / Math.Max(0.01f, phenotype.EnergyCapacity), needs.Hydration / Math.Max(0.01f, phenotype.HydrationCapacity)),
+                needs.Health / Math.Max(0.01f, phenotype.HealthCapacity));
+            float score = 0.25f * safety / (1f + mate.Distance);
+            candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekMate, -1, mate.CreatureId, score));
+        }
+
+        private static void ScoreCarcass(CreatureNeeds needs, Phenotype phenotype, ResourceStore resources, ResourceObservation carcass, ref DecisionCandidateBuffer candidates)
+        {
+            if (!carcass.IsValid)
+            {
+                return;
+            }
+
+            ResourceState resource = resources.GetAt(carcass.ResourceIndex);
+            float hunger = Urgency(needs.Energy, phenotype.EnergyCapacity);
+            float score = hunger * phenotype.MeatYieldMultiplier * Math.Min(1f, resource.Amount / Math.Max(0.01f, phenotype.IngestionRate)) / (1f + carcass.Distance);
+            if (score >= 0.10f)
+            {
+                candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekCarcass, carcass.ResourceIndex, default, score));
+            }
+        }
+
+        private static void ScorePredation(
+            CreatureNeeds needs,
+            Genome genome,
+            Phenotype self,
+            Phenotype other,
+            CreatureObservation observation,
+            float threatIntensity,
+            ref DecisionCandidateBuffer candidates)
+        {
+            if (!observation.IsValid)
+            {
+                return;
+            }
+
+            float distanceAvailability = 1f / (1f + observation.Distance);
+            float hunger = Urgency(needs.Energy, self.EnergyCapacity);
+            float fleeScore = Math.Max(0f, threatIntensity * genome.RiskAversion * distanceAvailability);
+            float huntScore = PredationSystem.HuntCapability(self, other) * hunger * distanceAvailability;
+            if (fleeScore >= 0.10f)
+            {
+                candidates.TryAdd(new DecisionCandidate(CreatureIntent.Flee, -1, observation.CreatureId, fleeScore));
+            }
+
+            if (huntScore >= 0.10f)
+            {
+                candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekPrey, -1, observation.CreatureId, huntScore));
+            }
         }
 
         private static void ScoreResourceCandidates(

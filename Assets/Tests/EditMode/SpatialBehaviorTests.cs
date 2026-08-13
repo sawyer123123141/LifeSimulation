@@ -323,6 +323,20 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void DecisionCandidateBufferRetainsVisibleAndRememberedCandidates()
+        {
+            var candidates = new DecisionCandidateBuffer();
+            for (int index = 0; index < 12; index++)
+            {
+                Assert.That(candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekFood, index, default, index)), Is.True);
+            }
+
+            Assert.That(candidates.Count, Is.EqualTo(12));
+            Assert.That(candidates.TryGetBest(out DecisionCandidate best), Is.True);
+            Assert.That(best.TargetResourceIndex, Is.EqualTo(11));
+        }
+
+        [Test]
         public void IntentUtilityPrefersARicherFoodPatchWhenItsNeedGainBeatsTravelBurden()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
@@ -335,7 +349,7 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
 
-            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, threatIntensity: 0f, out _);
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), food, default, carcass: default, memory: default, cognitionEnabled: false, threat: default, threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false, tick: 0, diagnostics: out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
@@ -354,7 +368,7 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
 
-            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f, riskAversion: 1f), phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, new CreatureObservation(new CreatureId(99), 0, 1f), threatIntensity: 0.8f, out _);
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f, riskAversion: 1f), phenotype, resources, new SimVector2(0f, 0f), food, default, carcass: default, memory: default, cognitionEnabled: false, threat: new CreatureObservation(new CreatureId(99), 0, 1f), threatIntensity: 0.8f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false, tick: 0, diagnostics: out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(0));
@@ -375,8 +389,8 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 10f));
 
-            CreatureDecision lowDecision = DecisionSystem.DecideIntentUtilityV1(needs, lowSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, 0f, out _);
-            CreatureDecision highDecision = DecisionSystem.DecideIntentUtilityV1(needs, highSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, 0f, out _);
+            CreatureDecision lowDecision = DecisionSystem.DecideIntentUtilityV1(needs, lowSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, carcass: default, memory: default, cognitionEnabled: false, threat: default, threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false, tick: 0, diagnostics: out _);
+            CreatureDecision highDecision = DecisionSystem.DecideIntentUtilityV1(needs, highSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, carcass: default, memory: default, cognitionEnabled: false, threat: default, threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false, tick: 0, diagnostics: out _);
 
             Assert.That(lowDecision.TargetResourceIndex, Is.EqualTo(1));
             Assert.That(highDecision.TargetResourceIndex, Is.EqualTo(0));
@@ -401,10 +415,44 @@ namespace LifeSimulation.Tests.EditMode
                 FoodExperienceCount = 1,
             };
 
-            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, genome, phenotype, resources, new SimVector2(0f, 0f), default, water, memory, cognitionEnabled: true, default, 0f, out _);
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, genome, phenotype, resources, new SimVector2(0f, 0f), default, water, carcass: default, memory: memory, cognitionEnabled: true, threat: default, threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false, tick: 0, diagnostics: out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void IntentUtilityLetsASevereThreatBeatAnOtherwiseIdleCreature()
+        {
+            Genome selfGenome = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, riskAversion: 1f);
+            Phenotype self = Phenotype.FromGenome(selfGenome);
+            Phenotype threat = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, aggression: 1f, dietSpecialization: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(self);
+            var resources = new ResourceStore(initialCapacity: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, selfGenome, self, resources, new SimVector2(0f, 0f), default, default, carcass: default, memory: default, cognitionEnabled: false, threat: new CreatureObservation(new CreatureId(2), 1, 1f), threatIntensity: PredationSystem.Threat(threat, self), otherPhenotype: threat, predationEnabled: true, physiologyEnabled: false, tick: 0, diagnostics: out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Flee));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(new CreatureId(2)));
+        }
+
+        [Test]
+        public void IntentUtilitySeeksAHealthyMatureNearbyMateWhenSurvivalNeedsAreSafe()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Age = 21f;
+            var resources = new ResourceStore(initialCapacity: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: default, threatIntensity: 0f,
+                otherPhenotype: default, predationEnabled: false, physiologyEnabled: false,
+                reproduction: default, mate: new CreatureObservation(new CreatureId(2), 1, 1f), mateNeeds: needs, matePhenotype: phenotype,
+                mateReproduction: default, reproductionEnabled: true, tick: 0, diagnostics: out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekMate));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(new CreatureId(2)));
         }
 
         [Test]

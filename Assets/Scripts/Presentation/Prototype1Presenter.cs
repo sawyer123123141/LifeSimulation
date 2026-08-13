@@ -87,7 +87,7 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
             GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature");
-            GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");
+            GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
         private void HandleInput()
@@ -146,7 +146,7 @@ namespace LifeSimulation.Presentation
             }
 
             _resourceViews.Clear();
-            _world = new SimulationWorld(config ?? SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
+            _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
             _scenarioId = scenario.Id;
             _accumulator = 0f;
@@ -170,21 +170,35 @@ namespace LifeSimulation.Presentation
                     defaults.InitialPopulation,
                     defaults.Schedule,
                     maximumPopulation: 150,
-                    founderProfile: FounderProfile.PredationVariation));
+                    founderProfile: FounderProfile.PredationVariation,
+                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1));
         }
 
         private void ResetCognitionSimulation()
         {
             ResetSimulation(
                 Prototype1Scenarios.Baseline,
-                SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length));
+                CreatePlayableConfig(SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length)));
         }
 
         private void ResetPhysiologySimulation()
         {
             ResetSimulation(
                 Prototype1Scenarios.Baseline,
-                SimulationConfig.CreatePrototype3Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length));
+                CreatePlayableConfig(SimulationConfig.CreatePrototype3Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length)));
+        }
+
+        private static SimulationConfig CreatePlayableConfig(SimulationConfig defaults)
+        {
+            return new SimulationConfig(
+                defaults.WorldSeed,
+                defaults.InitialPopulation,
+                defaults.Schedule,
+                defaults.MaximumPopulation,
+                defaults.FounderProfile,
+                defaults.CognitionEnabled,
+                defaults.PhysiologyEnabled,
+                DecisionPolicyVersion.IntentUtilityV1);
         }
 
         private void CreateResourceView(ResourceState resource)
@@ -298,6 +312,7 @@ namespace LifeSimulation.Presentation
                 case CreatureAction.Drink:
                     return new Color(0.15f, 0.68f, 1f);
                 case CreatureAction.Reproduce:
+                case CreatureAction.SeekMate:
                     return new Color(0.9f, 0.25f, 0.9f);
                 case CreatureAction.SeekPrey:
                 case CreatureAction.Attack:
