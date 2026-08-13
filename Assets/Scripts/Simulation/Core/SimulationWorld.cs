@@ -39,7 +39,7 @@ namespace LifeSimulation.Simulation.Core
 
             for (int index = 0; index < Config.InitialPopulation; index++)
             {
-                Spawn();
+                Spawn(CreateFounderGenome(index));
             }
         }
 
@@ -70,6 +70,29 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.Add(genome, new SimVector2(
                 Lerp(Arena.MinimumX, Arena.MaximumX, DeterministicRandom.Float01(Config.WorldSeed, RandomDomain.BirthPlacement, spawnOrdinal, 0, 0, 0)),
                 Lerp(Arena.MinimumY, Arena.MaximumY, DeterministicRandom.Float01(Config.WorldSeed, RandomDomain.BirthPlacement, spawnOrdinal, 0, 0, 1))));
+        }
+
+        private Genome CreateFounderGenome(long founderOrdinal)
+        {
+            const float standardDeviation = 0.12f;
+            return new Genome(
+                FounderGene(founderOrdinal, 0, standardDeviation),
+                FounderGene(founderOrdinal, 2, standardDeviation),
+                FounderGene(founderOrdinal, 4, standardDeviation),
+                FounderGene(founderOrdinal, 6, standardDeviation),
+                FounderGene(founderOrdinal, 8, standardDeviation),
+                FounderGene(founderOrdinal, 10, standardDeviation));
+        }
+
+        private float FounderGene(long founderOrdinal, int purpose, float standardDeviation)
+        {
+            return 0.5f + (DeterministicRandom.Gaussian(
+                Config.WorldSeed,
+                RandomDomain.FounderGenome,
+                founderOrdinal,
+                0,
+                0,
+                purpose) * standardDeviation);
         }
 
         public bool TryGetCreatureIndex(CreatureId id, out int index)

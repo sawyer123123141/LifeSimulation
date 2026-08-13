@@ -113,7 +113,8 @@ namespace LifeSimulation.Simulation.Core
         Mutation = 3,
         BirthPlacement = 4,
         ExperimentSampling = 5,
-        Exploration = 6
+        Exploration = 6,
+        FounderGenome = 7
     }
 
     public enum DeathCause : byte

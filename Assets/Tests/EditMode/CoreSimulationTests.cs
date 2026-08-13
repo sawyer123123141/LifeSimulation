@@ -430,7 +430,8 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.Statistics.Tick, Is.EqualTo(20));
             Assert.That(world.Statistics.Population, Is.GreaterThanOrEqualTo(2));
-            Assert.That(world.Statistics.MeanBodySizeGene, Is.EqualTo(0.5f).Within(0.001f));
+            float founderMean = (world.Creatures.GetGenomeAt(0).BodySize + world.Creatures.GetGenomeAt(1).BodySize) * 0.5f;
+            Assert.That(world.Statistics.MeanBodySizeGene, Is.EqualTo(founderMean).Within(0.001f));
         }
 
         [Test]
@@ -540,6 +541,18 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.CreatureCount, Is.EqualTo(2));
             Assert.That(world.Statistics.BirthCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void SameSeedCreatesMatchingButVariedFounderGenomes()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 4);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+
+            Assert.That(second.Creatures.GetGenomeAt(0).BodySize, Is.EqualTo(first.Creatures.GetGenomeAt(0).BodySize));
+            Assert.That(second.Creatures.GetGenomeAt(3).WaterEfficiency, Is.EqualTo(first.Creatures.GetGenomeAt(3).WaterEfficiency));
+            Assert.That(first.Creatures.GetGenomeAt(0).BodySize, Is.Not.EqualTo(first.Creatures.GetGenomeAt(1).BodySize));
         }
     }
 }
