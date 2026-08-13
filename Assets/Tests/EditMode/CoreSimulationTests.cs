@@ -1,5 +1,6 @@
 using System;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
@@ -95,14 +96,16 @@ namespace LifeSimulation.Tests.EditMode
         public void SwapBackRemovalKeepsBiologyAlignedWithTheMovedCreature()
         {
             var store = new CreatureStore(initialCapacity: 2);
-            CreatureId first = store.Add(new Genome(0f, 0f, 0f, 0f, 0f, 0f));
-            CreatureId moved = store.Add(new Genome(1f, 1f, 1f, 1f, 1f, 1f));
+            CreatureId first = store.Add(new Genome(0f, 0f, 0f, 0f, 0f, 0f), new SimVector2(-1f, 0f));
+            CreatureId moved = store.Add(new Genome(1f, 1f, 1f, 1f, 1f, 1f), new SimVector2(3f, 4f));
 
             Assert.That(store.Remove(first), Is.True);
             Assert.That(store.TryGetIndex(moved, out int movedIndex), Is.True);
             Assert.That(store.GetGenomeAt(movedIndex).BodySize, Is.EqualTo(1f));
             Assert.That(store.GetPhenotypeAt(movedIndex).EnergyCapacity, Is.GreaterThan(100f));
             Assert.That(store.GetNeedsAt(movedIndex).Energy, Is.EqualTo(store.GetPhenotypeAt(movedIndex).EnergyCapacity));
+            Assert.That(store.GetMovementAt(movedIndex).Position.X, Is.EqualTo(3f));
+            Assert.That(store.GetMovementAt(movedIndex).Position.Y, Is.EqualTo(4f));
         }
 
         [Test]
