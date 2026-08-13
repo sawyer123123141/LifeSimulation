@@ -79,7 +79,7 @@ Predator/prey roles should emerge from biology rather than hardcoded labels such
 ## P6 - World scale
 
 - multiple biomes
-- generated terrain
+- deterministic procedural terrain, biome, and climate-field generation
 - world partitioning
 - simulation LOD
 - far-away statistical populations
