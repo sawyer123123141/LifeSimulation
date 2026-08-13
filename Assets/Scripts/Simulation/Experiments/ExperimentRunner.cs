@@ -10,13 +10,15 @@ namespace LifeSimulation.Simulation.Experiments
             int worldSeed,
             long completedTicks,
             SimulationStatistics finalStatistics,
-            ulong finalStateHash)
+            ulong finalStateHash,
+            bool eventOverflowed)
         {
             ScenarioId = scenarioId;
             WorldSeed = worldSeed;
             CompletedTicks = completedTicks;
             FinalStatistics = finalStatistics;
             FinalStateHash = finalStateHash;
+            EventOverflowed = eventOverflowed;
         }
 
         public string ScenarioId { get; }
@@ -24,6 +26,7 @@ namespace LifeSimulation.Simulation.Experiments
         public long CompletedTicks { get; }
         public SimulationStatistics FinalStatistics { get; }
         public ulong FinalStateHash { get; }
+        public bool EventOverflowed { get; }
     }
 
     public static class ExperimentRunner
@@ -47,9 +50,12 @@ namespace LifeSimulation.Simulation.Experiments
 
             var world = new SimulationWorld(config);
             scenario.ApplyTo(world);
+            bool eventOverflowed = false;
             for (int index = 0; index < ticks; index++)
             {
                 world.Step(config.FixedDeltaTime);
+                eventOverflowed |= world.Events.Overflowed;
+                world.Events.Clear();
             }
 
             return new ExperimentResult(
@@ -57,7 +63,8 @@ namespace LifeSimulation.Simulation.Experiments
                 config.WorldSeed,
                 world.CurrentTick,
                 world.Statistics,
-                world.ComputeStateHash());
+                world.ComputeStateHash(),
+                eventOverflowed);
         }
     }
 }

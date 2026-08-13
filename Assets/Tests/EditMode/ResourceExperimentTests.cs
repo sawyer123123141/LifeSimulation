@@ -58,6 +58,16 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void HeadlessExperimentDrainsLifecycleEventsWithoutInvalidatingTheRun()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
+
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 2000);
+
+            Assert.That(result.EventOverflowed, Is.False);
+        }
+
+        [Test]
         public void BaselineScenarioSustainsFoundersLongEnoughForTheFirstMatureCycle()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
@@ -252,7 +262,7 @@ namespace LifeSimulation.Tests.EditMode
                 availableWater: 20f,
                 birthCount: 5,
                 deathCount: 2);
-            return new ExperimentResult(scenarioId, seed, 100, statistics, finalStateHash: 0UL);
+            return new ExperimentResult(scenarioId, seed, 100, statistics, finalStateHash: 0UL, eventOverflowed: false);
         }
     }
 }
