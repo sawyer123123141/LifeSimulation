@@ -336,6 +336,35 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void SeparateReadyPairsEachProduceOneChildOnTheSameReproductionTick()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            CreatureId third = world.Spawn();
+            CreatureId fourth = world.Spawn();
+            CreatureId[] founders = { first, second, third, fourth };
+
+            for (int index = 0; index < founders.Length; index++)
+            {
+                world.Creatures.GetNeedsRefAt(index).Age = 20f;
+            }
+
+            for (int tick = 0; tick < 20; tick++)
+            {
+                for (int index = 0; index < founders.Length; index++)
+                {
+                    world.SetCreaturePosition(founders[index], new SimVector2(index * 0.4f, 0f));
+                }
+
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(6));
+        }
+
+        [Test]
         public void NewbornParentsCannotReproduceBeforeMaturity()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
