@@ -13,7 +13,8 @@ namespace LifeSimulation.Simulation.Experiments
             float initialAmount,
             float capacity,
             float regenerationPerSecond,
-            bool isActive = true)
+            bool isActive = true,
+            float nutritionMultiplier = 1f)
         {
             Kind = kind;
             Position = position;
@@ -22,6 +23,7 @@ namespace LifeSimulation.Simulation.Experiments
             Capacity = capacity;
             RegenerationPerSecond = regenerationPerSecond;
             IsActive = isActive;
+            NutritionMultiplier = nutritionMultiplier;
         }
 
         public ResourceKind Kind { get; }
@@ -31,6 +33,7 @@ namespace LifeSimulation.Simulation.Experiments
         public float Capacity { get; }
         public float RegenerationPerSecond { get; }
         public bool IsActive { get; }
+        public float NutritionMultiplier { get; }
 
         public void AddTo(ResourceStore resources, float populationScale)
         {
@@ -45,7 +48,8 @@ namespace LifeSimulation.Simulation.Experiments
                 InteractionRadius,
                 InitialAmount * populationScale,
                 Capacity * populationScale,
-                RegenerationPerSecond * populationScale);
+                RegenerationPerSecond * populationScale,
+                NutritionMultiplier);
             if (!IsActive)
             {
                 resources.SetActive(id, false);
@@ -118,6 +122,23 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, foodAmount, foodAmount, foodRegeneration),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, waterAmount, waterAmount, waterRegeneration),
             };
+        }
+    }
+
+    public static class Prototype3Scenarios
+    {
+        public static SimulationScenario PlantNutritionPoor { get; } = CreateNutritionScenario("p3-plant-nutrition-poor", 0.5f);
+        public static SimulationScenario PlantNutritionRich { get; } = CreateNutritionScenario("p3-plant-nutrition-rich", 1.5f);
+
+        private static SimulationScenario CreateNutritionScenario(string id, float plantNutrition)
+        {
+            return new SimulationScenario(id, new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: plantNutrition),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, 0.75f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: plantNutrition),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, 0.75f),
+            });
         }
     }
 }

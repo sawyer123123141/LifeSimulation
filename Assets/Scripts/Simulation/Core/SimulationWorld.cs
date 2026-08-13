@@ -348,6 +348,7 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, resource.Capacity);
                 hash = HashFloat(hash, resource.RegenerationPerSecond);
                 hash = Hash(hash, resource.IsActive ? 1UL : 0UL);
+                hash = HashFloat(hash, resource.NutritionMultiplier);
             }
 
             return hash;
@@ -721,7 +722,7 @@ namespace LifeSimulation.Simulation.Core
                     Phenotype phenotype = Creatures.GetPhenotypeAt(request.CreatureIndex);
                     float nutrition = resource.Kind == ResourceKind.Carcass
                         ? allocatedAmount * phenotype.MeatYieldMultiplier
-                        : allocatedAmount * phenotype.PlantFoodYieldMultiplier;
+                        : allocatedAmount * phenotype.PlantFoodYieldMultiplier * resource.NutritionMultiplier;
                     NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
                     _cumulativeFoodConsumed += nutrition;
                     if (resource.Kind == ResourceKind.Carcass)

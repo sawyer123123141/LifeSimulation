@@ -14,6 +14,7 @@ namespace LifeSimulation.Simulation.Resources
         private float[] _capacities;
         private float[] _regenerationPerSecond;
         private bool[] _isActive;
+        private float[] _nutritionMultipliers;
         private readonly Dictionary<ResourceId, int> _indexById;
         private long _nextId;
 
@@ -33,6 +34,7 @@ namespace LifeSimulation.Simulation.Resources
             _capacities = new float[capacity];
             _regenerationPerSecond = new float[capacity];
             _isActive = new bool[capacity];
+            _nutritionMultipliers = new float[capacity];
             _indexById = new Dictionary<ResourceId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -45,9 +47,10 @@ namespace LifeSimulation.Simulation.Resources
             float interactionRadius,
             float initialAmount,
             float capacity,
-            float regenerationPerSecond)
+            float regenerationPerSecond,
+            float nutritionMultiplier = 1f)
         {
-            ValidateDefinition(interactionRadius, initialAmount, capacity, regenerationPerSecond);
+            ValidateDefinition(interactionRadius, initialAmount, capacity, regenerationPerSecond, nutritionMultiplier);
             EnsureCapacity(Count + 1);
 
             ResourceId id = new ResourceId(_nextId++);
@@ -59,6 +62,7 @@ namespace LifeSimulation.Simulation.Resources
             _capacities[Count] = capacity;
             _regenerationPerSecond[Count] = regenerationPerSecond;
             _isActive[Count] = true;
+            _nutritionMultipliers[Count] = nutritionMultiplier;
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -75,7 +79,8 @@ namespace LifeSimulation.Simulation.Resources
                 _amounts[index],
                 _capacities[index],
                 _regenerationPerSecond[index],
-                _isActive[index]);
+                _isActive[index],
+                _nutritionMultipliers[index]);
         }
 
         public bool TryGetIndex(ResourceId id, out int index)
@@ -145,13 +150,15 @@ namespace LifeSimulation.Simulation.Resources
             Array.Resize(ref _capacities, nextCapacity);
             Array.Resize(ref _regenerationPerSecond, nextCapacity);
             Array.Resize(ref _isActive, nextCapacity);
+            Array.Resize(ref _nutritionMultipliers, nextCapacity);
         }
 
         private static void ValidateDefinition(
             float interactionRadius,
             float initialAmount,
             float capacity,
-            float regenerationPerSecond)
+            float regenerationPerSecond,
+            float nutritionMultiplier)
         {
             if (interactionRadius <= 0f || float.IsNaN(interactionRadius) || float.IsInfinity(interactionRadius))
             {
@@ -171,6 +178,11 @@ namespace LifeSimulation.Simulation.Resources
             if (regenerationPerSecond < 0f || float.IsNaN(regenerationPerSecond) || float.IsInfinity(regenerationPerSecond))
             {
                 throw new ArgumentOutOfRangeException(nameof(regenerationPerSecond));
+            }
+
+            if (nutritionMultiplier < 0f || float.IsNaN(nutritionMultiplier) || float.IsInfinity(nutritionMultiplier))
+            {
+                throw new ArgumentOutOfRangeException(nameof(nutritionMultiplier));
             }
         }
 

@@ -8,6 +8,31 @@ namespace LifeSimulation.Tests.EditMode
     public sealed class ResourceExperimentTests
     {
         [Test]
+        public void ResourceNutritionMultiplierChangesEnergyRecoveredWithoutChangingBiomassConsumed()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype3Defaults(42, 0);
+            var poorWorld = new SimulationWorld(config);
+            var richWorld = new SimulationWorld(config);
+            poorWorld.Spawn();
+            richWorld.Spawn();
+            poorWorld.SetCreaturePosition(poorWorld.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            richWorld.SetCreaturePosition(richWorld.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            poorWorld.Creatures.GetNeedsRefAt(0).Energy = 0f;
+            richWorld.Creatures.GetNeedsRefAt(0).Energy = 0f;
+            poorWorld.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f, nutritionMultiplier: 0.5f);
+            richWorld.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f, nutritionMultiplier: 1.5f);
+
+            for (int index = 0; index < 10; index++)
+            {
+                poorWorld.Step(config.FixedDeltaTime);
+                richWorld.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(richWorld.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(poorWorld.GetCreatureNeedsAt(0).Energy));
+            Assert.That(richWorld.Resources.GetAt(0).Amount, Is.EqualTo(poorWorld.Resources.GetAt(0).Amount).Within(0.0001f));
+        }
+
+        [Test]
         public void DroughtChangesOnlyWaterAvailabilityForPairedFounders()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 4);
