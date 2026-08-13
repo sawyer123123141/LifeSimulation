@@ -30,6 +30,11 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.GetIdAt(index);
         }
 
+        public CreatureId Spawn()
+        {
+            return Creatures.Add();
+        }
+
         public bool TryGetCreatureIndex(CreatureId id, out int index)
         {
             return Creatures.TryGetIndex(id, out index);
@@ -70,6 +75,21 @@ namespace LifeSimulation.Simulation.Core
             CurrentTick++;
         }
 
+        public ulong ComputeStateHash()
+        {
+            ulong hash = 14695981039346656037UL;
+            hash = Hash(hash, unchecked((ulong)Config.WorldSeed));
+            hash = Hash(hash, unchecked((ulong)CurrentTick));
+            hash = Hash(hash, unchecked((ulong)CreatureCount));
+
+            for (int index = 0; index < CreatureCount; index++)
+            {
+                hash = Hash(hash, unchecked((ulong)GetCreatureIdAt(index).Value));
+            }
+
+            return hash;
+        }
+
         private void EnsurePendingDeathCapacity(int required)
         {
             if (required <= _pendingDeaths.Length)
@@ -78,6 +98,11 @@ namespace LifeSimulation.Simulation.Core
             }
 
             Array.Resize(ref _pendingDeaths, Math.Max(required, _pendingDeaths.Length * 2));
+        }
+
+        private static ulong Hash(ulong hash, ulong value)
+        {
+            return (hash ^ value) * 1099511628211UL;
         }
     }
 }

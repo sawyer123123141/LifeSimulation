@@ -113,5 +113,31 @@ namespace LifeSimulation.Tests.EditMode
                 () => world.Step(config.FixedDeltaTime * 0.5f),
                 Throws.ArgumentException);
         }
+
+        [Test]
+        public void WorldSpawnsCreatureWithStableLookup()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+
+            CreatureId creature = world.Spawn();
+
+            Assert.That(world.CreatureCount, Is.EqualTo(1));
+            Assert.That(world.TryGetCreatureIndex(creature, out int index), Is.True);
+            Assert.That(index, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+
+            first.Step(config.FixedDeltaTime);
+            second.Step(config.FixedDeltaTime);
+
+            Assert.That(second.ComputeStateHash(), Is.EqualTo(first.ComputeStateHash()));
+        }
     }
 }
