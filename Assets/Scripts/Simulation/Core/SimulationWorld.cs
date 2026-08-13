@@ -43,6 +43,7 @@ namespace LifeSimulation.Simulation.Core
         public UniformGrid ResourceGrid { get; }
         public int CreatureCount => Creatures.Count;
         public long CurrentTick { get; private set; }
+        public SimulationStatistics Statistics { get; private set; }
 
         public CreatureId GetCreatureIdAt(int index)
         {
@@ -146,6 +147,11 @@ namespace LifeSimulation.Simulation.Core
             if (IsDue(nextTick, Config.Schedule.ReproductionHz))
             {
                 TickReproduction();
+            }
+
+            if (IsDue(nextTick, Config.Schedule.StatisticsHz))
+            {
+                Statistics = BuildStatistics(nextTick);
             }
 
             for (int index = 0; index < _pendingDeathCount; index++)
@@ -461,6 +467,44 @@ namespace LifeSimulation.Simulation.Core
             Phenotype phenotype = Creatures.GetPhenotypeAt(index);
             needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * 0.2f));
             needs.Hydration = Math.Max(0f, needs.Hydration - (phenotype.HydrationCapacity * 0.1f));
+        }
+
+        private SimulationStatistics BuildStatistics(long tick)
+        {
+            float bodySizeTotal = 0f;
+            float energyFractionTotal = 0f;
+            float hydrationFractionTotal = 0f;
+            int highestGeneration = 0;
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                Genome genome = Creatures.GetGenomeAt(index);
+                Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+                CreatureNeeds needs = Creatures.GetNeedsAt(index);
+                bodySizeTotal += genome.BodySize;
+                energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
+                hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
+                highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
+            }
+
+            float food = 0f;
+            float water = 0f;
+            for (int index = 0; index < Resources.Count; index++)
+            {
+                ResourceState resource = Resources.GetAt(index);
+                if (resource.Kind == ResourceKind.Food) food += resource.Amount;
+                else water += resource.Amount;
+            }
+
+            float reciprocalPopulation = Creatures.Count == 0 ? 0f : 1f / Creatures.Count;
+            return new SimulationStatistics(
+                tick,
+                Creatures.Count,
+                highestGeneration,
+                bodySizeTotal * reciprocalPopulation,
+                energyFractionTotal * reciprocalPopulation,
+                hydrationFractionTotal * reciprocalPopulation,
+                food,
+                water);
         }
 
         private static float Lerp(float minimum, float maximum, float t)

@@ -48,10 +48,13 @@ namespace LifeSimulation.Presentation
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(12f, 12f, 330f, 104f), "LifeSimulation — Prototype 1");
+            GUI.Box(new Rect(12f, 12f, 350f, 148f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
-            GUI.Label(new Rect(24f, 84f, 300f, 22f), "Space pause · 1/2/4/8 set speed");
+            var stats = _world.Statistics;
+            GUI.Label(new Rect(24f, 84f, 330f, 22f), $"Generation: {stats.HighestGeneration}    Mean body gene: {stats.MeanBodySizeGene:0.00}");
+            GUI.Label(new Rect(24f, 106f, 330f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
+            GUI.Label(new Rect(24f, 128f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
         }
 
         private void HandleInput()
