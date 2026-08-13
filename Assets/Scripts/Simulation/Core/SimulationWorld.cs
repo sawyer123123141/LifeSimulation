@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Resources;
@@ -9,18 +8,13 @@ namespace LifeSimulation.Simulation.Core
 {
     public sealed class SimulationWorld
     {
-        private const float AdultAgeSeconds = 20f;
-        private const float ReproductionCooldownSeconds = 15f;
         private CreatureId[] _pendingDeaths;
         private int _pendingDeathCount;
         private long _spawnOrdinal;
         private SimVector2[] _resourcePositions;
-        private SimVector2[] _creaturePositions;
         private ResourceRequest[] _resourceRequests;
         private float[] _resourceAllocations;
-        private int[] _reproductionCandidates;
-        private bool[] _reproductionMatched;
-        private readonly CreatureIndexComparer _creatureIndexComparer;
+        private readonly ReproductionSystem _reproduction;
         private int _resourceRequestCount;
         private long _birthOrdinal;
 
@@ -32,15 +26,11 @@ namespace LifeSimulation.Simulation.Core
             Resources = new ResourceStore(initialCapacity: 8);
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
-            CreatureGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];
             _resourcePositions = new SimVector2[8];
-            _creaturePositions = new SimVector2[Math.Max(Config.InitialPopulation, 1)];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
-            _reproductionCandidates = new int[Math.Max(Config.InitialPopulation, 1)];
-            _reproductionMatched = new bool[_reproductionCandidates.Length];
-            _creatureIndexComparer = new CreatureIndexComparer(Creatures);
+            _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation);
 
             for (int index = 0; index < Config.InitialPopulation; index++)
             {
@@ -53,7 +43,7 @@ namespace LifeSimulation.Simulation.Core
         public ResourceStore Resources { get; }
         public ArenaBounds Arena { get; }
         public UniformGrid ResourceGrid { get; }
-        public UniformGrid CreatureGrid { get; }
+        public UniformGrid CreatureGrid => _reproduction.Grid;
         public int CreatureCount => Creatures.Count;
         public long CurrentTick { get; private set; }
         public SimulationStatistics Statistics { get; private set; }
@@ -446,152 +436,11 @@ namespace LifeSimulation.Simulation.Core
 
         private void TickReproduction()
         {
-            int candidateCount = Creatures.Count;
-            RebuildCreatureGrid(candidateCount);
-            EnsureReproductionCapacity(candidateCount);
-            Array.Clear(_reproductionMatched, 0, candidateCount);
-            float deltaTime = 1f / Config.Schedule.ReproductionHz;
-            for (int index = 0; index < candidateCount; index++)
-            {
-                ref ReproductionState reproduction = ref Creatures.GetReproductionRefAt(index);
-                reproduction.CooldownRemaining = Math.Max(0f, reproduction.CooldownRemaining - deltaTime);
-                _reproductionCandidates[index] = index;
-            }
-
-            Array.Sort(_reproductionCandidates, 0, candidateCount, _creatureIndexComparer);
-            for (int candidateIndex = 0; candidateIndex < candidateCount; candidateIndex++)
-            {
-                int firstIndex = _reproductionCandidates[candidateIndex];
-                if (_reproductionMatched[firstIndex] || !IsReadyToReproduce(firstIndex))
-                {
-                    continue;
-                }
-
-                int secondIndex = FindNearestReadyMate(firstIndex, candidateCount);
-                if (secondIndex < 0)
-                {
-                    continue;
-                }
-
-                CreateChild(firstIndex, secondIndex);
-                _reproductionMatched[firstIndex] = true;
-                _reproductionMatched[secondIndex] = true;
-            }
-        }
-
-        private void RebuildCreatureGrid(int count)
-        {
-            EnsureCreaturePositionCapacity(count);
-            for (int index = 0; index < count; index++)
-            {
-                _creaturePositions[index] = Creatures.GetMovementAt(index).Position;
-            }
-
-            CreatureGrid.Rebuild(_creaturePositions, count);
-        }
-
-        private int FindNearestReadyMate(int firstIndex, int candidateCount)
-        {
-            const float mateDistance = 2f;
-            SimVector2 firstPosition = Creatures.GetMovementAt(firstIndex).Position;
-            int minimumColumn = CreatureGrid.GetColumn(firstPosition.X - mateDistance);
-            int maximumColumn = CreatureGrid.GetColumn(firstPosition.X + mateDistance);
-            int minimumRow = CreatureGrid.GetRow(firstPosition.Y - mateDistance);
-            int maximumRow = CreatureGrid.GetRow(firstPosition.Y + mateDistance);
-            int bestIndex = -1;
-            float bestDistance = mateDistance;
-
-            for (int row = minimumRow; row <= maximumRow; row++)
-            {
-                for (int column = minimumColumn; column <= maximumColumn; column++)
-                {
-                    int cell = CreatureGrid.GetCellIndex(column, row);
-                    for (int occupant = CreatureGrid.GetCellStart(cell); occupant < CreatureGrid.GetCellEnd(cell); occupant++)
-                    {
-                        int candidate = CreatureGrid.GetOccupantIndexAt(occupant);
-                        if (candidate == firstIndex || candidate >= candidateCount || _reproductionMatched[candidate] || !IsReadyToReproduce(candidate))
-                        {
-                            continue;
-                        }
-
-                        float distance = SimVector2.Distance(firstPosition, Creatures.GetMovementAt(candidate).Position);
-                        if (distance > mateDistance || (bestIndex >= 0 && distance > bestDistance))
-                        {
-                            continue;
-                        }
-
-                        if (bestIndex < 0 || distance < bestDistance || Creatures.GetIdAt(candidate).Value < Creatures.GetIdAt(bestIndex).Value)
-                        {
-                            bestIndex = candidate;
-                            bestDistance = distance;
-                        }
-                    }
-                }
-            }
-
-            return bestIndex;
-        }
-
-        private void CreateChild(int firstIndex, int secondIndex)
-        {
-            CreatureId firstParent = Creatures.GetIdAt(firstIndex);
-            CreatureId secondParent = Creatures.GetIdAt(secondIndex);
-            Genome childGenome = GenomeInheritance.CreateChild(
-                Creatures.GetGenomeAt(firstIndex),
-                Creatures.GetGenomeAt(secondIndex),
+            _reproduction.Step(
                 Config.WorldSeed,
-                _birthOrdinal++,
-                mutationStandardDeviation: 0.03f);
-            SimVector2 firstPosition = Creatures.GetMovementAt(firstIndex).Position;
-            SimVector2 secondPosition = Creatures.GetMovementAt(secondIndex).Position;
-            Creatures.AddChild(
-                childGenome,
-                new SimVector2((firstPosition.X + secondPosition.X) * 0.5f, (firstPosition.Y + secondPosition.Y) * 0.5f),
-                firstParent,
-                secondParent);
-            ChargeReproductionCost(firstIndex);
-            ChargeReproductionCost(secondIndex);
-            Creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = ReproductionCooldownSeconds;
-            Creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = ReproductionCooldownSeconds;
-            Creatures.SetDecisionAt(firstIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, CurrentTick + 1));
-            Creatures.SetDecisionAt(secondIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, CurrentTick + 1));
-        }
-
-        private void EnsureCreaturePositionCapacity(int required)
-        {
-            if (required > _creaturePositions.Length)
-            {
-                Array.Resize(ref _creaturePositions, Math.Max(required, _creaturePositions.Length * 2));
-            }
-        }
-
-        private void EnsureReproductionCapacity(int required)
-        {
-            if (required > _reproductionCandidates.Length)
-            {
-                int capacity = Math.Max(required, _reproductionCandidates.Length * 2);
-                Array.Resize(ref _reproductionCandidates, capacity);
-                Array.Resize(ref _reproductionMatched, capacity);
-            }
-        }
-
-        private bool IsReadyToReproduce(int index)
-        {
-            CreatureNeeds needs = Creatures.GetNeedsAt(index);
-            Phenotype phenotype = Creatures.GetPhenotypeAt(index);
-            return needs.Energy >= phenotype.EnergyCapacity * 0.7f
-                && needs.Hydration >= phenotype.HydrationCapacity * 0.7f
-                && needs.Health >= phenotype.HealthCapacity * 0.7f
-                && needs.Age >= AdultAgeSeconds
-                && Creatures.GetReproductionRefAt(index).CooldownRemaining <= 0f;
-        }
-
-        private void ChargeReproductionCost(int index)
-        {
-            ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(index);
-            Phenotype phenotype = Creatures.GetPhenotypeAt(index);
-            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * 0.2f));
-            needs.Hydration = Math.Max(0f, needs.Hydration - (phenotype.HydrationCapacity * 0.1f));
+                1f / Config.Schedule.ReproductionHz,
+                ref _birthOrdinal,
+                CurrentTick + 1);
         }
 
         private SimulationStatistics BuildStatistics(long tick)
@@ -630,21 +479,6 @@ namespace LifeSimulation.Simulation.Core
                 hydrationFractionTotal * reciprocalPopulation,
                 food,
                 water);
-        }
-
-        private sealed class CreatureIndexComparer : IComparer<int>
-        {
-            private readonly CreatureStore _creatures;
-
-            public CreatureIndexComparer(CreatureStore creatures)
-            {
-                _creatures = creatures;
-            }
-
-            public int Compare(int left, int right)
-            {
-                return _creatures.GetIdAt(left).Value.CompareTo(_creatures.GetIdAt(right).Value);
-            }
         }
 
         private static float Lerp(float minimum, float maximum, float t)
