@@ -86,6 +86,11 @@ InitTestScene*.unity*
 # Local isolated agent worktrees
 /.worktrees/
 
+# Generated local verification and experiment output
+/TestResults/
+/ExperimentResults/
+/BenchmarkResults/
+
 # Addressables default ignores, before user customizations
 /ServerData
 /[Aa]ssets/StreamingAssets/aa*
