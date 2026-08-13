@@ -91,5 +91,19 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekWater));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
         }
+
+        [Test]
+        public void DecisionWandersWhenNoSurvivalNeedIsUrgent()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            var food = new ResourceObservation(new ResourceId(1), 0, 1f);
+            var water = new ResourceObservation(new ResourceId(2), 1, 1f);
+
+            CreatureDecision decision = DecisionSystem.Decide(needs, phenotype, food, water);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
+        }
     }
 }

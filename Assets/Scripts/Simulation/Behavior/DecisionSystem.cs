@@ -31,6 +31,8 @@ namespace LifeSimulation.Simulation.Behavior
 
     public static class DecisionSystem
     {
+        private const float MinimumUrgencyToSeekResource = 0.05f;
+
         public static CreatureDecision Decide(
             CreatureNeeds needs,
             Phenotype phenotype,
@@ -44,12 +46,17 @@ namespace LifeSimulation.Simulation.Behavior
                 ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance)
                 : -1f;
 
-            if (waterScore > foodScore && waterScore >= 0f)
+            if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
+            {
+                return new CreatureDecision(CreatureAction.Wander, -1, 0f);
+            }
+
+            if (waterScore > foodScore && waterScore >= MinimumUrgencyToSeekResource)
             {
                 return new CreatureDecision(CreatureAction.SeekWater, water.ResourceIndex, waterScore);
             }
 
-            if (foodScore >= 0f)
+            if (foodScore >= MinimumUrgencyToSeekResource)
             {
                 return new CreatureDecision(CreatureAction.SeekFood, food.ResourceIndex, foodScore);
             }
