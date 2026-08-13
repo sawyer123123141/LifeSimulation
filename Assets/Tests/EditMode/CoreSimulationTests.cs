@@ -61,5 +61,32 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(float.IsNaN(first) || float.IsInfinity(first), Is.False);
             Assert.That(repeated, Is.EqualTo(first));
         }
+
+        [Test]
+        public void SwapBackRemovalPreservesMovedCreatureLookup()
+        {
+            var store = new CreatureStore(initialCapacity: 3);
+            CreatureId first = store.Add();
+            _ = store.Add();
+            CreatureId last = store.Add();
+
+            Assert.That(store.Remove(first), Is.True);
+
+            Assert.That(store.TryGetIndex(last, out int movedIndex), Is.True);
+            Assert.That(movedIndex, Is.EqualTo(0));
+            Assert.That(store.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void CreatureIdsAreNotReusedAfterRemoval()
+        {
+            var store = new CreatureStore(initialCapacity: 1);
+            CreatureId removed = store.Add();
+            Assert.That(store.Remove(removed), Is.True);
+
+            CreatureId replacement = store.Add();
+
+            Assert.That(replacement.Value, Is.GreaterThan(removed.Value));
+        }
     }
 }
