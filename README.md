@@ -74,6 +74,8 @@ Open the project in Unity 6 and enter Play mode. The runtime bootstrap starts fo
 - `D`: drought treatment
 - `F`: food-scarcity treatment
 - `P`: experimental predator/prey mode (12 varied founders)
+- `C`: cognition mode (bounded memory and learned resource outcomes)
+- `T`: physiology mode (temperature, fertility, and lifespan tradeoffs)
 
 Click a creature to inspect its identity, needs, inherited traits, lineage, current action, and food/water decision scores.
 
@@ -82,6 +84,10 @@ Click a creature to inspect its identity, needs, inherited traits, lineage, curr
 P1 is in active development. The current deterministic slice has inherited attack, defense, maneuverability, fear, aggression, and diet traits; local creature perception; chase/flee choices; deterministic attacks and wounds; predation deaths; and contested edible carcasses. There are no predator or prey labels—roles emerge from traits and outcomes.
 
 This is not yet the final P1 evidence gate: population-cycle experiments, predator-removal controls, trophic statistics, and Unity validation remain to be completed.
+
+## Active P2 and P3 slices
+
+P2 adds fixed-size creature memory, confidence decay, failed-search penalties, and lifetime learned food/water outcome values. A creature inherits learning capacity, retention, and exploration tendencies—not learned facts. P3 currently adds deterministic temperature stress and inherited tolerance, fertility investment, and lifespan tradeoffs. These features are enabled only in their matching prototype modes so earlier evidence remains reproducible.
 
 For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, `-lifeSimMaximumPopulation`, and `-lifeSimTicks`. The drought evidence configuration is `-lifeSimSeedCount 20 -lifeSimFounders 100 -lifeSimMaximumPopulation 1500 -lifeSimTicks 100000`. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
 
