@@ -54,5 +54,20 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(genome.WaterEfficiency, Is.EqualTo(0f));
             Assert.That(genome.FoodEfficiency, Is.EqualTo(1f));
         }
+
+        [Test]
+        public void HigherMetabolicPaceConsumesMoreEnergyAndHydration()
+        {
+            Phenotype slow = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0f, 0.5f, 0.5f, 0.5f));
+            Phenotype fast = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 1f, 0.5f, 0.5f, 0.5f));
+            CreatureNeeds slowNeeds = CreatureNeeds.Full(slow);
+            CreatureNeeds fastNeeds = CreatureNeeds.Full(fast);
+
+            NeedsSystem.Tick(ref slowNeeds, slow, 1f, 0f);
+            NeedsSystem.Tick(ref fastNeeds, fast, 1f, 0f);
+
+            Assert.That(fastNeeds.Energy, Is.LessThan(slowNeeds.Energy));
+            Assert.That(fastNeeds.Hydration, Is.LessThan(slowNeeds.Hydration));
+        }
     }
 }

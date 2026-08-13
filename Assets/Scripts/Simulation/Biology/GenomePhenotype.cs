@@ -46,6 +46,7 @@ namespace LifeSimulation.Simulation.Biology
             float bodyMass,
             float energyCapacity,
             float hydrationCapacity,
+            float healthCapacity,
             float maximumSpeed,
             float visionRange,
             float foodYield,
@@ -57,6 +58,7 @@ namespace LifeSimulation.Simulation.Biology
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
             HydrationCapacity = hydrationCapacity;
+            HealthCapacity = healthCapacity;
             MaximumSpeed = maximumSpeed;
             VisionRange = visionRange;
             FoodYield = foodYield;
@@ -69,6 +71,7 @@ namespace LifeSimulation.Simulation.Biology
         public float BodyMass { get; }
         public float EnergyCapacity { get; }
         public float HydrationCapacity { get; }
+        public float HealthCapacity { get; }
         public float MaximumSpeed { get; }
         public float VisionRange { get; }
         public float FoodYield { get; }
@@ -90,6 +93,7 @@ namespace LifeSimulation.Simulation.Biology
                 bodyMass,
                 bodyMass * 100f,
                 (float)Math.Pow(bodyMass, 0.8d) * 50f,
+                (float)Math.Pow(bodyMass, 0.67d) * 100f,
                 1f + (3f * genome.MovementSpeed),
                 4f + (12f * genome.VisionRange),
                 0.75f + (0.5f * genome.FoodEfficiency),
