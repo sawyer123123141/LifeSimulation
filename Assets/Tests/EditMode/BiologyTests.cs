@@ -139,5 +139,26 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(child.Aggression, Is.InRange(0f, 1f));
             Assert.That(child.DietSpecialization, Is.InRange(0f, 1f));
         }
+
+        [Test]
+        public void PredationGenesCacheTheirBenefitsAlongsideMaintenanceCosts()
+        {
+            Genome lowGenome = Genome.Neutral;
+            Genome highGenome = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                attack: 1f, defense: 1f, maneuverability: 1f,
+                fear: 1f, aggression: 1f, dietSpecialization: 1f);
+            Phenotype low = Phenotype.FromGenome(lowGenome);
+            Phenotype high = Phenotype.FromGenome(highGenome);
+
+            Assert.That(high.AttackPower, Is.GreaterThan(low.AttackPower));
+            Assert.That(high.Defense, Is.GreaterThan(low.Defense));
+            Assert.That(high.Maneuverability, Is.GreaterThan(low.Maneuverability));
+            Assert.That(high.FearResponse, Is.GreaterThan(low.FearResponse));
+            Assert.That(high.Aggression, Is.GreaterThan(low.Aggression));
+            Assert.That(high.MeatYieldMultiplier, Is.GreaterThan(low.MeatYieldMultiplier));
+            Assert.That(high.PlantFoodYieldMultiplier, Is.LessThan(low.PlantFoodYieldMultiplier));
+            Assert.That(high.BasalEnergyCostMultiplier, Is.GreaterThan(low.BasalEnergyCostMultiplier));
+        }
     }
 }

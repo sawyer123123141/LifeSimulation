@@ -83,7 +83,14 @@ namespace LifeSimulation.Simulation.Biology
             float ingestionRate,
             float digestionRate,
             float waterLossMultiplier,
-            float basalEnergyCostMultiplier)
+            float basalEnergyCostMultiplier,
+            float attackPower,
+            float defense,
+            float maneuverability,
+            float fearResponse,
+            float aggression,
+            float plantFoodYieldMultiplier,
+            float meatYieldMultiplier)
         {
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
@@ -96,6 +103,13 @@ namespace LifeSimulation.Simulation.Biology
             DigestionRate = digestionRate;
             WaterLossMultiplier = waterLossMultiplier;
             BasalEnergyCostMultiplier = basalEnergyCostMultiplier;
+            AttackPower = attackPower;
+            Defense = defense;
+            Maneuverability = maneuverability;
+            FearResponse = fearResponse;
+            Aggression = aggression;
+            PlantFoodYieldMultiplier = plantFoodYieldMultiplier;
+            MeatYieldMultiplier = meatYieldMultiplier;
         }
 
         public float BodyMass { get; }
@@ -109,6 +123,13 @@ namespace LifeSimulation.Simulation.Biology
         public float DigestionRate { get; }
         public float WaterLossMultiplier { get; }
         public float BasalEnergyCostMultiplier { get; }
+        public float AttackPower { get; }
+        public float Defense { get; }
+        public float Maneuverability { get; }
+        public float FearResponse { get; }
+        public float Aggression { get; }
+        public float PlantFoodYieldMultiplier { get; }
+        public float MeatYieldMultiplier { get; }
 
         public static Phenotype FromGenome(Genome genome)
         {
@@ -117,7 +138,13 @@ namespace LifeSimulation.Simulation.Biology
                 + (0.08f * genome.MovementSpeed)
                 + (0.05f * genome.VisionRange)
                 + (0.07f * genome.WaterEfficiency)
-                + (0.04f * genome.FoodEfficiency);
+                + (0.04f * genome.FoodEfficiency)
+                + (0.10f * genome.Attack)
+                + (0.10f * genome.Defense)
+                + (0.08f * genome.Maneuverability)
+                + (0.03f * genome.Fear)
+                + (0.04f * genome.Aggression)
+                + (0.04f * genome.DietSpecialization);
 
             return new Phenotype(
                 bodyMass,
@@ -130,7 +157,14 @@ namespace LifeSimulation.Simulation.Biology
                 1.25f - (0.3f * genome.FoodEfficiency),
                 0.7f + (0.8f * genome.MetabolicPace),
                 1f - (0.55f * genome.WaterEfficiency),
-                (float)Math.Pow(bodyMass, 0.75d) * (0.7f + (0.8f * genome.MetabolicPace)) * maintenance);
+                (float)Math.Pow(bodyMass, 0.75d) * (0.7f + (0.8f * genome.MetabolicPace)) * maintenance,
+                genome.Attack * (0.75f + (0.5f * bodyMass)),
+                genome.Defense * (0.75f + (0.5f * bodyMass)),
+                1f + (2f * genome.Maneuverability),
+                genome.Fear,
+                genome.Aggression,
+                1f - (0.3f * genome.DietSpecialization),
+                0.5f + genome.DietSpecialization);
         }
     }
 }
