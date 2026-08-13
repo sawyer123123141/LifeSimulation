@@ -1,5 +1,6 @@
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
 using NUnit.Framework;
 
@@ -44,6 +45,34 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(grid.GetCellEnd(lowerLeftCell) - grid.GetCellStart(lowerLeftCell), Is.EqualTo(2));
             Assert.That(grid.GetCellEnd(upperRightCell) - grid.GetCellStart(upperRightCell), Is.EqualTo(1));
             Assert.That(grid.GetOccupantIndexAt(grid.GetCellStart(upperRightCell)), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void PerceptionSelectsNearestAvailableResourceAndBreaksDistanceTiesByStableId()
+        {
+            var resources = new ResourceStore(initialCapacity: 3);
+            ResourceId expectedFood = resources.Add(ResourceKind.Food, new SimVector2(-1f, 0f), 0.5f, 1f, 1f, 0f);
+            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 0.5f, 1f, 1f, 0f);
+            resources.Add(ResourceKind.Water, new SimVector2(0f, 1f), 0.5f, 1f, 1f, 0f);
+            var positions = new[]
+            {
+                resources.GetAt(0).Position,
+                resources.GetAt(1).Position,
+                resources.GetAt(2).Position,
+            };
+            var grid = new UniformGrid(new ArenaBounds(-4f, 4f, -4f, 4f), 2f, initialOccupantCapacity: 3);
+            grid.Rebuild(positions, positions.Length);
+
+            ResourceObservation observation = PerceptionSystem.FindNearestAvailableResource(
+                resources,
+                grid,
+                new SimVector2(0f, 0f),
+                visionRange: 2f,
+                ResourceKind.Food);
+
+            Assert.That(observation.IsValid, Is.True);
+            Assert.That(observation.ResourceId, Is.EqualTo(expectedFood));
+            Assert.That(observation.Distance, Is.EqualTo(1f).Within(0.0001f));
         }
     }
 }

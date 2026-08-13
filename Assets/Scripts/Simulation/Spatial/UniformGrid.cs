@@ -77,8 +77,28 @@ namespace LifeSimulation.Simulation.Spatial
 
         public int GetCellIndex(SimVector2 position)
         {
-            int column = ClampCellCoordinate((int)Math.Floor((position.X - _arena.MinimumX) / _cellSize), _columns);
-            int row = ClampCellCoordinate((int)Math.Floor((position.Y - _arena.MinimumY) / _cellSize), _rows);
+            int column = GetColumn(position.X);
+            int row = GetRow(position.Y);
+            return (row * _columns) + column;
+        }
+
+        public int GetColumn(float x)
+        {
+            return ClampCellCoordinate((int)Math.Floor((x - _arena.MinimumX) / _cellSize), _columns);
+        }
+
+        public int GetRow(float y)
+        {
+            return ClampCellCoordinate((int)Math.Floor((y - _arena.MinimumY) / _cellSize), _rows);
+        }
+
+        public int GetCellIndex(int column, int row)
+        {
+            if ((uint)column >= (uint)_columns || (uint)row >= (uint)_rows)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
             return (row * _columns) + column;
         }
 
