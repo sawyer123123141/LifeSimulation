@@ -13,6 +13,7 @@ namespace LifeSimulation.Simulation.Core
         private CreatureNeeds[] _needs;
         private MovementState[] _movement;
         private CreatureDecision[] _decisions;
+        private CreatureLineage[] _lineages;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
@@ -29,6 +30,7 @@ namespace LifeSimulation.Simulation.Core
             _needs = new CreatureNeeds[_identities.Length];
             _movement = new MovementState[_identities.Length];
             _decisions = new CreatureDecision[_identities.Length];
+            _lineages = new CreatureLineage[_identities.Length];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -47,6 +49,34 @@ namespace LifeSimulation.Simulation.Core
 
         public CreatureId Add(Genome genome, SimVector2 position)
         {
+            return AddInternal(genome, position, default, default, generation: 0);
+        }
+
+        public CreatureId AddChild(Genome genome, SimVector2 position, CreatureId firstParent, CreatureId secondParent)
+        {
+            if (!_indexById.TryGetValue(firstParent, out int firstParentIndex)
+                || !_indexById.TryGetValue(secondParent, out int secondParentIndex))
+            {
+                throw new ArgumentOutOfRangeException("Both parents must be alive.");
+            }
+
+            int generation = Math.Max(_lineages[firstParentIndex].Generation, _lineages[secondParentIndex].Generation) + 1;
+            return AddInternal(genome, position, firstParent, secondParent, generation);
+        }
+
+        public CreatureLineage GetLineageAt(int index)
+        {
+            ValidateIndex(index);
+            return _lineages[index];
+        }
+
+        private CreatureId AddInternal(
+            Genome genome,
+            SimVector2 position,
+            CreatureId firstParent,
+            CreatureId secondParent,
+            int generation)
+        {
             EnsureCapacity(Count + 1);
 
             var id = new CreatureId(_nextId++);
@@ -56,6 +86,7 @@ namespace LifeSimulation.Simulation.Core
             _needs[Count] = CreatureNeeds.Full(_phenotypes[Count]);
             _movement[Count] = new MovementState(position);
             _decisions[Count] = new CreatureDecision(CreatureAction.Wander, -1, 0f);
+            _lineages[Count] = new CreatureLineage(id, firstParent, secondParent, generation);
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -143,6 +174,7 @@ namespace LifeSimulation.Simulation.Core
                 _needs[removedIndex] = _needs[lastIndex];
                 _movement[removedIndex] = _movement[lastIndex];
                 _decisions[removedIndex] = _decisions[lastIndex];
+                _lineages[removedIndex] = _lineages[lastIndex];
                 _indexById[movedId] = removedIndex;
             }
 
@@ -164,6 +196,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _needs, nextCapacity);
             Array.Resize(ref _movement, nextCapacity);
             Array.Resize(ref _decisions, nextCapacity);
+            Array.Resize(ref _lineages, nextCapacity);
         }
 
         private void ValidateIndex(int index)

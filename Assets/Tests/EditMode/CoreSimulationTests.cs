@@ -93,6 +93,22 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ChildLineageRecordsBothParentsAndTheNextGeneration()
+        {
+            var store = new CreatureStore(initialCapacity: 3);
+            CreatureId firstParent = store.Add();
+            CreatureId secondParent = store.Add();
+            CreatureId child = store.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+
+            Assert.That(store.TryGetIndex(child, out int childIndex), Is.True);
+            CreatureLineage lineage = store.GetLineageAt(childIndex);
+            Assert.That(lineage.FirstParent, Is.EqualTo(firstParent));
+            Assert.That(lineage.SecondParent, Is.EqualTo(secondParent));
+            Assert.That(lineage.Generation, Is.EqualTo(1));
+            Assert.That(lineage.LineageId, Is.EqualTo(child));
+        }
+
+        [Test]
         public void SwapBackRemovalKeepsBiologyAlignedWithTheMovedCreature()
         {
             var store = new CreatureStore(initialCapacity: 2);
