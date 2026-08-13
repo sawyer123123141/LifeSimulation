@@ -163,7 +163,7 @@ namespace LifeSimulation.Tests.EditMode
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
             CreatureNeeds needs = CreatureNeeds.Full(phenotype);
             needs.Energy = 0f;
-            var memory = new MemoryState { FoodPosition = new SimVector2(4f, -2f), FoodConfidence = 0.8f };
+            var memory = new MemoryState { FoodPosition = new SimVector2(4f, -2f), FoodConfidence = 0.8f, FoodOutcomeValue = 1f, FoodExperienceCount = 1 };
 
             CreatureDecision decision = DecisionSystem.PreferRememberedResource(
                 needs,
@@ -176,6 +176,24 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
             Assert.That(target.X, Is.EqualTo(4f));
             Assert.That(target.Y, Is.EqualTo(-2f));
+        }
+
+        [Test]
+        public void MemoryDoesNotGuideAHungryCreatureTowardAKnownWorthlessFoodSource()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var memory = new MemoryState { FoodPosition = new SimVector2(4f, -2f), FoodConfidence = 1f, FoodOutcomeValue = 0f, FoodExperienceCount = 1 };
+
+            CreatureDecision decision = DecisionSystem.PreferRememberedResource(
+                needs,
+                phenotype,
+                memory,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f),
+                out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
         }
 
         [Test]

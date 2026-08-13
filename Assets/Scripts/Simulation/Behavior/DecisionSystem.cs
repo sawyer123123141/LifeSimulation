@@ -86,8 +86,10 @@ namespace LifeSimulation.Simulation.Behavior
                 return currentDecision;
             }
 
-            float foodScore = Urgency(needs.Energy, phenotype.EnergyCapacity) * memory.FoodConfidence;
-            float waterScore = Urgency(needs.Hydration, phenotype.HydrationCapacity) * memory.WaterConfidence;
+            float foodValue = memory.FoodExperienceCount > 0 ? memory.FoodOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float waterValue = memory.WaterExperienceCount > 0 ? memory.WaterOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float foodScore = Urgency(needs.Energy, phenotype.EnergyCapacity) * memory.FoodConfidence * foodValue;
+            float waterScore = Urgency(needs.Hydration, phenotype.HydrationCapacity) * memory.WaterConfidence * waterValue;
             if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
             {
                 return currentDecision;
