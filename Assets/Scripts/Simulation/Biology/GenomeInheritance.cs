@@ -35,7 +35,8 @@ namespace LifeSimulation.Simulation.Biology
                 InheritTrait(firstParent.MemoryCapacity, secondParent.MemoryCapacity, worldSeed, birthOrdinal, 12, mutationStandardDeviation),
                 InheritTrait(firstParent.MemoryRetention, secondParent.MemoryRetention, worldSeed, birthOrdinal, 13, mutationStandardDeviation),
                 InheritTrait(firstParent.LearningRate, secondParent.LearningRate, worldSeed, birthOrdinal, 14, mutationStandardDeviation),
-                InheritTrait(firstParent.Exploration, secondParent.Exploration, worldSeed, birthOrdinal, 15, mutationStandardDeviation));
+                InheritTrait(firstParent.Exploration, secondParent.Exploration, worldSeed, birthOrdinal, 15, mutationStandardDeviation),
+                InheritTrait(firstParent.TemperatureTolerance, secondParent.TemperatureTolerance, worldSeed, birthOrdinal, 16, mutationStandardDeviation));
         }
 
         private static float InheritTrait(

@@ -1,11 +1,39 @@
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Environment;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
 {
     public sealed class BiologyTests
     {
+        [Test]
+        public void TemperatureToleranceReducesExtremeTemperatureDamageAtAMaintenanceCost()
+        {
+            Phenotype lowTolerance = Phenotype.FromGenome(Genome.Neutral);
+            Phenotype highTolerance = Phenotype.FromGenome(new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, temperatureTolerance: 1f));
+            CreatureNeeds lowNeeds = CreatureNeeds.Full(lowTolerance);
+            CreatureNeeds highNeeds = CreatureNeeds.Full(highTolerance);
+
+            NeedsSystem.ApplyTemperatureStress(ref lowNeeds, lowTolerance, temperature: 30f, deltaTime: 1f);
+            NeedsSystem.ApplyTemperatureStress(ref highNeeds, highTolerance, temperature: 30f, deltaTime: 1f);
+
+            Assert.That(highNeeds.Health, Is.GreaterThan(lowNeeds.Health));
+            Assert.That(highTolerance.BasalEnergyCostMultiplier, Is.GreaterThan(lowTolerance.BasalEnergyCostMultiplier));
+        }
+
+        [Test]
+        public void TemperatureFieldIsRepeatableAndVariesAcrossTheArena()
+        {
+            float first = TemperatureField.Sample(new SimVector2(-10f, 0f), 100);
+            float repeated = TemperatureField.Sample(new SimVector2(-10f, 0f), 100);
+            float distant = TemperatureField.Sample(new SimVector2(10f, 0f), 100);
+
+            Assert.That(repeated, Is.EqualTo(first));
+            Assert.That(distant, Is.Not.EqualTo(first));
+        }
+
         [Test]
         public void CognitionGenesTradeLowerMemoryDecayForHigherMaintenanceAndRestCost()
         {

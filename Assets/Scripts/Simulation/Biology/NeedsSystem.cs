@@ -64,6 +64,12 @@ namespace LifeSimulation.Simulation.Biology
             }
         }
 
+        public static void ApplyTemperatureStress(ref CreatureNeeds needs, Phenotype phenotype, float temperature, float deltaTime)
+        {
+            float deviation = Math.Max(0f, Math.Abs(temperature - 20f) - phenotype.TemperatureTolerance);
+            needs.Health = Math.Max(0f, needs.Health - (deviation * 0.35f * deltaTime));
+        }
+
         public static void ConsumeFood(ref CreatureNeeds needs, Phenotype phenotype, float amount)
         {
             ValidateResourceAmount(amount);

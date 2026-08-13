@@ -3,6 +3,7 @@ using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
+using LifeSimulation.Simulation.Environment;
 
 namespace LifeSimulation.Simulation.Core
 {
@@ -370,6 +371,10 @@ namespace LifeSimulation.Simulation.Core
                 ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(index);
                 ref MovementState movement = ref Creatures.GetMovementRefAt(index);
                 NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, movement.DistanceSinceLastNeeds);
+                if (Config.PhysiologyEnabled)
+                {
+                    NeedsSystem.ApplyTemperatureStress(ref needs, Creatures.GetPhenotypeAt(index), TemperatureField.Sample(movement.Position, CurrentTick + 1), deltaTime);
+                }
                 movement.DistanceSinceLastNeeds = 0f;
                 if (needs.Health <= 0f)
                 {
