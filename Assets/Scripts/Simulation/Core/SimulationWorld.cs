@@ -76,6 +76,11 @@ namespace LifeSimulation.Simulation.Core
 
         private Genome CreateFounderGenome(long founderOrdinal)
         {
+            if (Config.FounderProfile == FounderProfile.PredationVariation)
+            {
+                return PredationFounderFactory.Create(Config.WorldSeed, founderOrdinal);
+            }
+
             const float standardDeviation = 0.12f;
             return new Genome(
                 FounderGene(founderOrdinal, 0, standardDeviation),

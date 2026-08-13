@@ -2,6 +2,12 @@ using System;
 
 namespace LifeSimulation.Simulation.Core
 {
+    public enum FounderProfile : byte
+    {
+        Prototype1 = 0,
+        PredationVariation = 1,
+    }
+
     public readonly struct SimulationSchedule
     {
         public SimulationSchedule(
@@ -36,17 +42,24 @@ namespace LifeSimulation.Simulation.Core
 
     public sealed class SimulationConfig
     {
-        public SimulationConfig(int worldSeed, int initialPopulation, SimulationSchedule schedule, int maximumPopulation = 1000)
+        public SimulationConfig(
+            int worldSeed,
+            int initialPopulation,
+            SimulationSchedule schedule,
+            int maximumPopulation = 1000,
+            FounderProfile founderProfile = FounderProfile.Prototype1)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
             Schedule = schedule;
             MaximumPopulation = maximumPopulation;
+            FounderProfile = founderProfile;
         }
 
         public int WorldSeed { get; }
         public int InitialPopulation { get; }
         public int MaximumPopulation { get; }
+        public FounderProfile FounderProfile { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -69,6 +82,11 @@ namespace LifeSimulation.Simulation.Core
             if (MaximumPopulation < InitialPopulation)
             {
                 throw new ArgumentOutOfRangeException(nameof(MaximumPopulation), "Population limit cannot be lower than the founder population.");
+            }
+
+            if (!Enum.IsDefined(typeof(FounderProfile), FounderProfile))
+            {
+                throw new ArgumentOutOfRangeException(nameof(FounderProfile));
             }
 
             if (Schedule.BaseFrequencyHz <= 0)

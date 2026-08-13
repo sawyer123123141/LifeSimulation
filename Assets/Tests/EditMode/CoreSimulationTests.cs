@@ -19,6 +19,23 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PredationFounderProfileSeedsUnlabeledPredationVariation()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 2);
+            var config = new SimulationConfig(
+                42,
+                2,
+                defaults.Schedule,
+                maximumPopulation: 1000,
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).DietSpecialization, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.Not.EqualTo(0f));
+        }
+
+        [Test]
         public void ScheduleRejectsFrequenciesThatDoNotDivideBaseFrequency()
         {
             var schedule = new SimulationSchedule(20, 20, 3, 2, 2, 1, 1, 1);
