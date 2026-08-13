@@ -52,7 +52,7 @@ Initial actions:
 - Rest
 - Reproduce
 
-Predator avoidance, fear, aggression, and memory are later prototype work. The system stores enough information to explain **why** an action won.
+Memory is later prototype work. The system stores enough information to explain **why** an action won.
 
 ### Evolution
 - Reproduction
@@ -73,8 +73,15 @@ Open the project in Unity 6 and enter Play mode. The runtime bootstrap starts fo
 - `B`: baseline resources
 - `D`: drought treatment
 - `F`: food-scarcity treatment
+- `P`: experimental predator/prey mode (12 varied founders)
 
 Click a creature to inspect its identity, needs, inherited traits, lineage, current action, and food/water decision scores.
+
+## P1 predator/prey status
+
+P1 is in active development. The current deterministic slice has inherited attack, defense, maneuverability, fear, aggression, and diet traits; local creature perception; chase/flee choices; deterministic attacks and wounds; predation deaths; and contested edible carcasses. There are no predator or prey labels—roles emerge from traits and outcomes.
+
+This is not yet the final P1 evidence gate: population-cycle experiments, predator-removal controls, trophic statistics, and Unity validation remain to be completed.
 
 For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, `-lifeSimMaximumPopulation`, and `-lifeSimTicks`. The drought evidence configuration is `-lifeSimSeedCount 20 -lifeSimFounders 100 -lifeSimMaximumPopulation 1500 -lifeSimTicks 100000`. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
 
