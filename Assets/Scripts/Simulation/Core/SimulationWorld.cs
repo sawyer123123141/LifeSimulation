@@ -232,6 +232,12 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.VisionRange);
                 hash = HashFloat(hash, genome.WaterEfficiency);
                 hash = HashFloat(hash, genome.FoodEfficiency);
+                hash = HashFloat(hash, genome.Attack);
+                hash = HashFloat(hash, genome.Defense);
+                hash = HashFloat(hash, genome.Maneuverability);
+                hash = HashFloat(hash, genome.Fear);
+                hash = HashFloat(hash, genome.Aggression);
+                hash = HashFloat(hash, genome.DietSpecialization);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 hash = HashFloat(hash, needs.Energy);

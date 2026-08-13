@@ -25,7 +25,13 @@ namespace LifeSimulation.Simulation.Biology
                 InheritTrait(firstParent.MetabolicPace, secondParent.MetabolicPace, worldSeed, birthOrdinal, 2, mutationStandardDeviation),
                 InheritTrait(firstParent.VisionRange, secondParent.VisionRange, worldSeed, birthOrdinal, 3, mutationStandardDeviation),
                 InheritTrait(firstParent.WaterEfficiency, secondParent.WaterEfficiency, worldSeed, birthOrdinal, 4, mutationStandardDeviation),
-                InheritTrait(firstParent.FoodEfficiency, secondParent.FoodEfficiency, worldSeed, birthOrdinal, 5, mutationStandardDeviation));
+                InheritTrait(firstParent.FoodEfficiency, secondParent.FoodEfficiency, worldSeed, birthOrdinal, 5, mutationStandardDeviation),
+                InheritTrait(firstParent.Attack, secondParent.Attack, worldSeed, birthOrdinal, 6, mutationStandardDeviation),
+                InheritTrait(firstParent.Defense, secondParent.Defense, worldSeed, birthOrdinal, 7, mutationStandardDeviation),
+                InheritTrait(firstParent.Maneuverability, secondParent.Maneuverability, worldSeed, birthOrdinal, 8, mutationStandardDeviation),
+                InheritTrait(firstParent.Fear, secondParent.Fear, worldSeed, birthOrdinal, 9, mutationStandardDeviation),
+                InheritTrait(firstParent.Aggression, secondParent.Aggression, worldSeed, birthOrdinal, 10, mutationStandardDeviation),
+                InheritTrait(firstParent.DietSpecialization, secondParent.DietSpecialization, worldSeed, birthOrdinal, 11, mutationStandardDeviation));
         }
 
         private static float InheritTrait(

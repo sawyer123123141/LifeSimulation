@@ -121,5 +121,23 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(highNeeds.Energy, Is.GreaterThan(lowNeeds.Energy));
             Assert.That(highFood.BasalEnergyCostMultiplier, Is.GreaterThan(lowFood.BasalEnergyCostMultiplier));
         }
+
+        [Test]
+        public void PredationTraitsRemainDormantInP0AndAreHeritableForP1()
+        {
+            Genome neutral = Genome.Neutral;
+            var firstParent = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 0f, defense: 0f, maneuverability: 0f, fear: 0f, aggression: 0f, dietSpecialization: 0f);
+            var secondParent = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, defense: 1f, maneuverability: 1f, fear: 1f, aggression: 1f, dietSpecialization: 1f);
+            Genome child = GenomeInheritance.CreateChild(firstParent, secondParent, 42, 7, mutationStandardDeviation: 0f);
+
+            Assert.That(neutral.Attack, Is.EqualTo(0f));
+            Assert.That(neutral.DietSpecialization, Is.EqualTo(0f));
+            Assert.That(child.Attack, Is.InRange(0f, 1f));
+            Assert.That(child.Defense, Is.InRange(0f, 1f));
+            Assert.That(child.Maneuverability, Is.InRange(0f, 1f));
+            Assert.That(child.Fear, Is.InRange(0f, 1f));
+            Assert.That(child.Aggression, Is.InRange(0f, 1f));
+            Assert.That(child.DietSpecialization, Is.InRange(0f, 1f));
+        }
     }
 }

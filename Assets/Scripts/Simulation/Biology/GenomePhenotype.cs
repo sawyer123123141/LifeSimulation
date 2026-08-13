@@ -10,7 +10,13 @@ namespace LifeSimulation.Simulation.Biology
             float metabolicPace,
             float visionRange,
             float waterEfficiency,
-            float foodEfficiency)
+            float foodEfficiency,
+            float attack = 0f,
+            float defense = 0f,
+            float maneuverability = 0f,
+            float fear = 0f,
+            float aggression = 0f,
+            float dietSpecialization = 0f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);
@@ -18,6 +24,12 @@ namespace LifeSimulation.Simulation.Biology
             VisionRange = Clamp01(visionRange);
             WaterEfficiency = Clamp01(waterEfficiency);
             FoodEfficiency = Clamp01(foodEfficiency);
+            Attack = Clamp01(attack);
+            Defense = Clamp01(defense);
+            Maneuverability = Clamp01(maneuverability);
+            Fear = Clamp01(fear);
+            Aggression = Clamp01(aggression);
+            DietSpecialization = Clamp01(dietSpecialization);
         }
 
         public static Genome Neutral => new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
@@ -28,10 +40,28 @@ namespace LifeSimulation.Simulation.Biology
         public float VisionRange { get; }
         public float WaterEfficiency { get; }
         public float FoodEfficiency { get; }
+        public float Attack { get; }
+        public float Defense { get; }
+        public float Maneuverability { get; }
+        public float Fear { get; }
+        public float Aggression { get; }
+        public float DietSpecialization { get; }
 
         public Genome WithBodySize(float value)
         {
-            return new Genome(value, MovementSpeed, MetabolicPace, VisionRange, WaterEfficiency, FoodEfficiency);
+            return new Genome(
+                value,
+                MovementSpeed,
+                MetabolicPace,
+                VisionRange,
+                WaterEfficiency,
+                FoodEfficiency,
+                Attack,
+                Defense,
+                Maneuverability,
+                Fear,
+                Aggression,
+                DietSpecialization);
         }
 
         private static float Clamp01(float value)
