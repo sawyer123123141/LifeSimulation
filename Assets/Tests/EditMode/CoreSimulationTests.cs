@@ -293,6 +293,28 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void TwoReadyNearbyParentsCreateOneDeterministicChildOnReproductionTick()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+            world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(3));
+            CreatureLineage lineage = world.Creatures.GetLineageAt(2);
+            Assert.That(lineage.FirstParent, Is.EqualTo(first));
+            Assert.That(lineage.SecondParent, Is.EqualTo(second));
+            Assert.That(lineage.Generation, Is.EqualTo(1));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);

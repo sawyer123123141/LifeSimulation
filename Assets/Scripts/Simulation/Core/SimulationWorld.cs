@@ -15,6 +15,7 @@ namespace LifeSimulation.Simulation.Core
         private ResourceRequest[] _resourceRequests;
         private float[] _resourceAllocations;
         private int _resourceRequestCount;
+        private long _birthOrdinal;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -81,6 +82,17 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.GetDecisionAt(index);
         }
 
+        public void SetCreaturePosition(CreatureId id, SimVector2 position)
+        {
+            if (!Creatures.TryGetIndex(id, out int index))
+            {
+                throw new ArgumentOutOfRangeException(nameof(id));
+            }
+
+            ref MovementState movement = ref Creatures.GetMovementRefAt(index);
+            movement = new MovementState(Arena.Clamp(position));
+        }
+
         public void RequestDeath(CreatureId id, DeathCause cause)
         {
             if (!Creatures.TryGetIndex(id, out _))
@@ -130,6 +142,11 @@ namespace LifeSimulation.Simulation.Core
             }
 
             ResolveResourceInteractions();
+
+            if (IsDue(nextTick, Config.Schedule.ReproductionHz))
+            {
+                TickReproduction();
+            }
 
             for (int index = 0; index < _pendingDeathCount; index++)
             {
@@ -387,6 +404,63 @@ namespace LifeSimulation.Simulation.Core
             int nextCapacity = Math.Max(required, _resourceRequests.Length * 2);
             Array.Resize(ref _resourceRequests, nextCapacity);
             Array.Resize(ref _resourceAllocations, nextCapacity);
+        }
+
+        private void TickReproduction()
+        {
+            int candidateCount = Creatures.Count;
+            for (int firstIndex = 0; firstIndex < candidateCount; firstIndex++)
+            {
+                if (!IsReadyToReproduce(firstIndex))
+                {
+                    continue;
+                }
+
+                for (int secondIndex = firstIndex + 1; secondIndex < candidateCount; secondIndex++)
+                {
+                    if (!IsReadyToReproduce(secondIndex)
+                        || SimVector2.Distance(Creatures.GetMovementAt(firstIndex).Position, Creatures.GetMovementAt(secondIndex).Position) > 2f)
+                    {
+                        continue;
+                    }
+
+                    CreatureId firstParent = Creatures.GetIdAt(firstIndex);
+                    CreatureId secondParent = Creatures.GetIdAt(secondIndex);
+                    Genome childGenome = GenomeInheritance.CreateChild(
+                        Creatures.GetGenomeAt(firstIndex),
+                        Creatures.GetGenomeAt(secondIndex),
+                        Config.WorldSeed,
+                        _birthOrdinal++,
+                        mutationStandardDeviation: 0.03f);
+                    SimVector2 firstPosition = Creatures.GetMovementAt(firstIndex).Position;
+                    SimVector2 secondPosition = Creatures.GetMovementAt(secondIndex).Position;
+                    CreatureId child = Creatures.AddChild(
+                        childGenome,
+                        new SimVector2((firstPosition.X + secondPosition.X) * 0.5f, (firstPosition.Y + secondPosition.Y) * 0.5f),
+                        firstParent,
+                        secondParent);
+                    ChargeReproductionCost(firstIndex);
+                    ChargeReproductionCost(secondIndex);
+                    return;
+                }
+            }
+        }
+
+        private bool IsReadyToReproduce(int index)
+        {
+            CreatureNeeds needs = Creatures.GetNeedsAt(index);
+            Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+            return needs.Energy >= phenotype.EnergyCapacity * 0.7f
+                && needs.Hydration >= phenotype.HydrationCapacity * 0.7f
+                && needs.Health >= phenotype.HealthCapacity * 0.7f;
+        }
+
+        private void ChargeReproductionCost(int index)
+        {
+            ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(index);
+            Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * 0.2f));
+            needs.Hydration = Math.Max(0f, needs.Hydration - (phenotype.HydrationCapacity * 0.1f));
         }
 
         private static float Lerp(float minimum, float maximum, float t)
