@@ -77,6 +77,22 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(result.FinalStatistics.BirthCount, Is.GreaterThan(0));
         }
 
+        [Test]
+        public void BenchmarkReportsTheExactMeasuredTickCount()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
+
+            SimulationBenchmarkResult result = SimulationBenchmark.Run(
+                config,
+                Prototype1Scenarios.Baseline,
+                warmupTicks: 10,
+                measuredTicks: 100);
+
+            Assert.That(result.MeasuredTicks, Is.EqualTo(100));
+            Assert.That(result.FinalPopulation, Is.GreaterThan(0));
+            Assert.That(result.AverageStepMilliseconds, Is.GreaterThanOrEqualTo(0d));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;
