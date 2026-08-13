@@ -160,5 +160,23 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(high.PlantFoodYieldMultiplier, Is.LessThan(low.PlantFoodYieldMultiplier));
             Assert.That(high.BasalEnergyCostMultiplier, Is.GreaterThan(low.BasalEnergyCostMultiplier));
         }
+
+        [Test]
+        public void PredationFounderFactorySeedsRepeatableUnlabeledVariation()
+        {
+            Genome first = PredationFounderFactory.Create(worldSeed: 42, founderOrdinal: 0);
+            Genome repeated = PredationFounderFactory.Create(worldSeed: 42, founderOrdinal: 0);
+            Genome second = PredationFounderFactory.Create(worldSeed: 42, founderOrdinal: 1);
+
+            Assert.That(repeated.Attack, Is.EqualTo(first.Attack));
+            Assert.That(repeated.DietSpecialization, Is.EqualTo(first.DietSpecialization));
+            Assert.That(second.Attack, Is.Not.EqualTo(first.Attack));
+            Assert.That(first.Attack, Is.InRange(0f, 1f));
+            Assert.That(first.Defense, Is.InRange(0f, 1f));
+            Assert.That(first.Maneuverability, Is.InRange(0f, 1f));
+            Assert.That(first.Fear, Is.InRange(0f, 1f));
+            Assert.That(first.Aggression, Is.InRange(0f, 1f));
+            Assert.That(first.DietSpecialization, Is.InRange(0f, 1f));
+        }
     }
 }
