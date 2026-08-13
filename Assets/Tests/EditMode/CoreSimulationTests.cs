@@ -175,6 +175,52 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PredationDeathLeavesEdibleCarcassBiomassAtTheVictimPosition()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(new SimulationConfig(
+                42,
+                0,
+                defaults.Schedule,
+                founderProfile: FounderProfile.PredationVariation));
+            CreatureId victim = world.Spawn(Genome.Neutral);
+            world.SetCreaturePosition(victim, new SimVector2(3f, -2f));
+
+            world.RequestDeath(victim, DeathCause.Predation);
+            world.Step(world.Config.FixedDeltaTime);
+
+            Assert.That(world.CreatureCount, Is.EqualTo(0));
+            Assert.That(world.Resources.Count, Is.EqualTo(1));
+            ResourceState carcass = world.Resources.GetAt(0);
+            Assert.That(carcass.Kind, Is.EqualTo(ResourceKind.Carcass));
+            Assert.That(carcass.Position.X, Is.EqualTo(3f));
+            Assert.That(carcass.Position.Y, Is.EqualTo(-2f));
+            Assert.That(carcass.Amount, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void HungryMeatAdaptedCreatureCanSelectAndConsumeAVisibleCarcass()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(new SimulationConfig(
+                42,
+                0,
+                defaults.Schedule,
+                founderProfile: FounderProfile.PredationVariation));
+            CreatureId creature = world.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, dietSpecialization: 1f));
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+            world.Creatures.GetNeedsRefAt(0).Energy = 0f;
+            world.Resources.Add(ResourceKind.Carcass, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f);
+
+            for (int index = 0; index < 10; index++) world.Step(world.Config.FixedDeltaTime);
+
+            Assert.That(world.GetCreatureDecisionAt(0).Action, Is.EqualTo(CreatureAction.FeedCarcass));
+            Assert.That(world.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(0f));
+            for (int index = 0; index < 10; index++) world.Step(world.Config.FixedDeltaTime);
+            Assert.That(world.Statistics.CumulativeCarcassConsumed, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void WorldRejectsVariableStepDeltas()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
