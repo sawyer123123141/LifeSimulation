@@ -91,6 +91,7 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(result.MeasuredTicks, Is.EqualTo(100));
             Assert.That(result.FinalPopulation, Is.GreaterThan(0));
             Assert.That(result.AverageStepMilliseconds, Is.GreaterThanOrEqualTo(0d));
+            Assert.That(result.P95StepMilliseconds, Is.GreaterThanOrEqualTo(0d));
         }
 
         [Test]

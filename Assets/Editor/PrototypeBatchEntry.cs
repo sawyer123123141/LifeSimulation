@@ -19,7 +19,7 @@ namespace LifeSimulation.EditorTools
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
-                writer.WriteLine("scenario,population,warmup_ticks,measured_ticks,total_ms,average_step_ms,final_population");
+                writer.WriteLine("scenario,population,warmup_ticks,measured_ticks,total_ms,average_step_ms,p95_step_ms,final_population");
                 for (int index = 0; index < populations.Length; index++)
                 {
                     int population = populations[index];
@@ -31,10 +31,11 @@ namespace LifeSimulation.EditorTools
                         measuredTicks: 2000);
                     writer.WriteLine(string.Format(
                         CultureInfo.InvariantCulture,
-                        "baseline,{0},200,2000,{1:F4},{2:F6},{3}",
+                        "baseline,{0},200,2000,{1:F4},{2:F6},{3:F6},{4}",
                         population,
                         result.TotalMilliseconds,
                         result.AverageStepMilliseconds,
+                        result.P95StepMilliseconds,
                         result.FinalPopulation));
                 }
             }
