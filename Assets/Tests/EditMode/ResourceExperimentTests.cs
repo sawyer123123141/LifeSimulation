@@ -43,6 +43,20 @@ namespace LifeSimulation.Tests.EditMode
                 Is.LessThan(TotalAvailable(baselineWorld, ResourceKind.Food)));
         }
 
+        [Test]
+        public void SameExperimentInputsProduceTheSameRecordedResult()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 4);
+            ExperimentResult first = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 120);
+            ExperimentResult second = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 120);
+
+            Assert.That(first.ScenarioId, Is.EqualTo("baseline"));
+            Assert.That(first.WorldSeed, Is.EqualTo(42));
+            Assert.That(first.CompletedTicks, Is.EqualTo(120));
+            Assert.That(second.FinalStateHash, Is.EqualTo(first.FinalStateHash));
+            Assert.That(second.FinalStatistics.Population, Is.EqualTo(first.FinalStatistics.Population));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;
