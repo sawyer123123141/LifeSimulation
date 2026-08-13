@@ -91,6 +91,8 @@ P2 adds fixed-size creature memory, confidence decay, failed-search penalties, a
 
 For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, `-lifeSimMaximumPopulation`, and `-lifeSimTicks`. The drought evidence configuration is `-lifeSimSeedCount 20 -lifeSimFounders 100 -lifeSimMaximumPopulation 1500 -lifeSimTicks 100000`. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
 
+For the current P1 control, use Unity's `Life Simulation > Run Predator-Prey Control Experiments`. It writes paired prey-only and mixed-predation runs to `ExperimentResults/predator-prey-control.csv`; traits stay unlabeled, so the comparison measures emergent hunting pressure rather than a hardcoded predator class.
+
 ## Architecture rule
 
 > The simulation must not depend heavily on Unity GameObjects or MonoBehaviour update loops.

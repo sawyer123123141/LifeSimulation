@@ -254,5 +254,65 @@ namespace LifeSimulation.EditorTools
 
             Debug.Log($"Decision-policy travel results saved to {outputPath} and {summaryPath}");
         }
+
+        [MenuItem("Life Simulation/Run Predator-Prey Control Experiments")]
+        public static void RunPredatorPreyControlExperiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "predator-prey-control.csv");
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("condition,seed,ticks,population,births,deaths,predation_deaths,attack_hits,plant_food,carcass_food,body_size,attack,defense,aggression,diet_specialization,state_hash");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    WritePredationControlResult(writer, "prey-only", CreatePredationExperimentConfig(seed, options, FounderProfile.Prototype1), options.Ticks);
+                    WritePredationControlResult(writer, "mixed-predation", CreatePredationExperimentConfig(seed, options, FounderProfile.PredationVariation), options.Ticks);
+                }
+            }
+
+            Debug.Log($"Predator-prey control results saved to {outputPath}");
+        }
+
+        private static SimulationConfig CreatePredationExperimentConfig(int seed, ExperimentBatchOptions options, FounderProfile founderProfile)
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(seed, options.FounderPopulation);
+            return new SimulationConfig(
+                seed,
+                options.FounderPopulation,
+                defaults.Schedule,
+                options.MaximumPopulation,
+                founderProfile,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1);
+        }
+
+        private static void WritePredationControlResult(StreamWriter writer, string condition, SimulationConfig config, int ticks)
+        {
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks);
+            SimulationStatistics stats = result.FinalStatistics;
+            writer.WriteLine(string.Format(
+                CultureInfo.InvariantCulture,
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14:F4},{15}",
+                condition,
+                result.WorldSeed,
+                result.CompletedTicks,
+                stats.Population,
+                stats.BirthCount,
+                stats.DeathCount,
+                stats.PredationDeathCount,
+                stats.AttackHitCount,
+                stats.CumulativeFoodConsumed,
+                stats.CumulativeCarcassConsumed,
+                stats.MeanBodySizeGene,
+                stats.MeanAttackGene,
+                stats.MeanDefenseGene,
+                stats.MeanAggressionGene,
+                stats.MeanDietSpecializationGene,
+                result.FinalStateHash));
+        }
     }
 }

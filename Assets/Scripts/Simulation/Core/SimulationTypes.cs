@@ -96,7 +96,11 @@ namespace LifeSimulation.Simulation.Core
             int starvationDeathCount = 0,
             int dehydrationDeathCount = 0,
             int ageDeathCount = 0,
-            int healthDeathCount = 0)
+            int healthDeathCount = 0,
+            float meanAttackGene = 0f,
+            float meanDefenseGene = 0f,
+            float meanAggressionGene = 0f,
+            float meanDietSpecializationGene = 0f)
         {
             Tick = tick;
             Population = population;
@@ -129,6 +133,10 @@ namespace LifeSimulation.Simulation.Core
             DehydrationDeathCount = dehydrationDeathCount;
             AgeDeathCount = ageDeathCount;
             HealthDeathCount = healthDeathCount;
+            MeanAttackGene = meanAttackGene;
+            MeanDefenseGene = meanDefenseGene;
+            MeanAggressionGene = meanAggressionGene;
+            MeanDietSpecializationGene = meanDietSpecializationGene;
         }
 
         public long Tick { get; }
@@ -162,6 +170,10 @@ namespace LifeSimulation.Simulation.Core
         public int DehydrationDeathCount { get; }
         public int AgeDeathCount { get; }
         public int HealthDeathCount { get; }
+        public float MeanAttackGene { get; }
+        public float MeanDefenseGene { get; }
+        public float MeanAggressionGene { get; }
+        public float MeanDietSpecializationGene { get; }
     }
 
     public struct ReproductionState

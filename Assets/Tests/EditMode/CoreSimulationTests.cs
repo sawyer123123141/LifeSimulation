@@ -39,6 +39,28 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PredationStatisticsExposeThePopulationTraitMeansUsedByControlExperiments()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 4);
+            var world = new SimulationWorld(new SimulationConfig(
+                42,
+                4,
+                defaults.Schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1));
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(world.Config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Statistics.MeanAttackGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanDefenseGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanAggressionGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanDietSpecializationGene, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void PhysiologyFounderProfileSeedsVariationWithoutPredatorTraits()
         {
             var world = new SimulationWorld(SimulationConfig.CreatePrototype3Defaults(42, 2));

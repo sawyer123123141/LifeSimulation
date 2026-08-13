@@ -997,6 +997,10 @@ namespace LifeSimulation.Simulation.Core
             float travelSensitivityTotal = 0f;
             float riskAversionTotal = 0f;
             float commitmentTotal = 0f;
+            float attackTotal = 0f;
+            float defenseTotal = 0f;
+            float aggressionTotal = 0f;
+            float dietSpecializationTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -1018,6 +1022,10 @@ namespace LifeSimulation.Simulation.Core
                 travelSensitivityTotal += genome.TravelSensitivity;
                 riskAversionTotal += genome.RiskAversion;
                 commitmentTotal += genome.Commitment;
+                attackTotal += genome.Attack;
+                defenseTotal += genome.Defense;
+                aggressionTotal += genome.Aggression;
+                dietSpecializationTotal += genome.DietSpecialization;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -1064,7 +1072,11 @@ namespace LifeSimulation.Simulation.Core
                 _starvationDeathCount,
                 _dehydrationDeathCount,
                 _ageDeathCount,
-                _healthDeathCount);
+                _healthDeathCount,
+                attackTotal * reciprocalPopulation,
+                defenseTotal * reciprocalPopulation,
+                aggressionTotal * reciprocalPopulation,
+                dietSpecializationTotal * reciprocalPopulation);
         }
 
         private void CountDeathCause(DeathCause cause)
