@@ -255,6 +255,28 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CreatureWithNoHealthDiesAtTheEndOfTheScheduledNeedsStep()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+            needs.Health = 1f;
+
+            for (int index = 0; index < 9; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(1));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.CreatureCount, Is.EqualTo(0));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);

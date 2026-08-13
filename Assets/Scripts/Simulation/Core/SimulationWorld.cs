@@ -223,6 +223,10 @@ namespace LifeSimulation.Simulation.Core
                 ref MovementState movement = ref Creatures.GetMovementRefAt(index);
                 NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, movement.DistanceSinceLastNeeds);
                 movement.DistanceSinceLastNeeds = 0f;
+                if (needs.Health <= 0f)
+                {
+                    RequestDeath(Creatures.GetIdAt(index), DeathCause.Health);
+                }
             }
         }
 
