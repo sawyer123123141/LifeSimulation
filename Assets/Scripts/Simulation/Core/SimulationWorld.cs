@@ -486,23 +486,6 @@ namespace LifeSimulation.Simulation.Core
             {
                 MovementState movement = Creatures.GetMovementAt(index);
                 Phenotype phenotype = Creatures.GetPhenotypeAt(index);
-                if (Config.CognitionEnabled)
-                {
-                    ref MemoryState previousMemory = ref Creatures.GetMemoryRefAt(index);
-                    CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
-                    if (previousMemory.HasActiveRememberedTarget
-                        && SimVector2.Distance(movement.Position, previousMemory.ActiveRememberedTarget) <= 1f)
-                    {
-                        if (previousDecision.Action == CreatureAction.SeekFood)
-                        {
-                            MemorySystem.RecordFailedSearch(ref previousMemory, ResourceKind.Food);
-                        }
-                        else if (previousDecision.Action == CreatureAction.SeekWater)
-                        {
-                            MemorySystem.RecordFailedSearch(ref previousMemory, ResourceKind.Water);
-                        }
-                    }
-                }
                 ResourceObservation food = PerceptionSystem.FindNearestAvailableResource(
                     Resources,
                     ResourceGrid,
@@ -524,6 +507,17 @@ namespace LifeSimulation.Simulation.Core
                 if (Config.CognitionEnabled)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
+                    CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
+                    if (memory.HasActiveRememberedTarget
+                        && SimVector2.Distance(movement.Position, memory.ActiveRememberedTarget) <= 1f
+                        && ((previousDecision.Action == CreatureAction.SeekFood && !food.IsValid)
+                            || (previousDecision.Action == CreatureAction.SeekWater && !water.IsValid)))
+                    {
+                        MemorySystem.RecordFailedSearch(
+                            ref memory,
+                            previousDecision.Action == CreatureAction.SeekFood ? ResourceKind.Food : ResourceKind.Water);
+                    }
+
                     if (food.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Food, Resources.GetAt(food.ResourceIndex).Position);
                     if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
                 }
