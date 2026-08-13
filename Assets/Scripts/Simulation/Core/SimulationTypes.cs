@@ -55,4 +55,13 @@ namespace LifeSimulation.Simulation.Core
         BirthPlacement = 4,
         ExperimentSampling = 5
     }
+
+    public enum DeathCause : byte
+    {
+        Debug = 0,
+        Starvation = 1,
+        Dehydration = 2,
+        Age = 3,
+        Health = 4
+    }
 }

@@ -39,6 +39,16 @@ namespace LifeSimulation.Simulation.Core
             return _indexById.TryGetValue(id, out index);
         }
 
+        public CreatureId GetIdAt(int index)
+        {
+            if ((uint)index >= (uint)Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return _identities[index];
+        }
+
         public bool Remove(CreatureId id)
         {
             if (!_indexById.TryGetValue(id, out int removedIndex))

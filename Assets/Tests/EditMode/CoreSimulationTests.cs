@@ -88,5 +88,30 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(replacement.Value, Is.GreaterThan(removed.Value));
         }
+
+        [Test]
+        public void WorldAppliesRequestedDeathsAtTheEndOfItsFixedStep()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            CreatureId creature = world.GetCreatureIdAt(0);
+
+            world.RequestDeath(creature, DeathCause.Debug);
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.CreatureCount, Is.EqualTo(0));
+            Assert.That(world.TryGetCreatureIndex(creature, out _), Is.False);
+        }
+
+        [Test]
+        public void WorldRejectsVariableStepDeltas()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+
+            Assert.That(
+                () => world.Step(config.FixedDeltaTime * 0.5f),
+                Throws.ArgumentException);
+        }
     }
 }
