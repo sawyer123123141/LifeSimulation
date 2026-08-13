@@ -23,6 +23,9 @@ namespace LifeSimulation.Simulation.Core
         private int _deathCount;
         private float _cumulativeFoodConsumed;
         private float _cumulativeWaterConsumed;
+        private float _cumulativeCarcassConsumed;
+        private int _attackHitCount;
+        private int _predationDeathCount;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -231,6 +234,10 @@ namespace LifeSimulation.Simulation.Core
                         default,
                         _pendingDeathCauses[index]));
                     _deathCount++;
+                    if (_pendingDeathCauses[index] == DeathCause.Predation)
+                    {
+                        _predationDeathCount++;
+                    }
                 }
             }
 
@@ -606,6 +613,10 @@ namespace LifeSimulation.Simulation.Core
                         : allocatedAmount * phenotype.PlantFoodYieldMultiplier;
                     NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
                     _cumulativeFoodConsumed += nutrition;
+                    if (resource.Kind == ResourceKind.Carcass)
+                    {
+                        _cumulativeCarcassConsumed += nutrition;
+                    }
                 }
                 else
                 {
@@ -681,6 +692,7 @@ namespace LifeSimulation.Simulation.Core
                 ref CombatState targetCombat = ref Creatures.GetCombatRefAt(targetIndex);
                 targetNeeds.Health -= damage;
                 targetCombat.WoundSeverity += damage / defender.HealthCapacity;
+                _attackHitCount++;
                 if (targetNeeds.Health <= 0f)
                 {
                     RequestDeath(decision.TargetCreatureId, DeathCause.Predation);
@@ -742,7 +754,10 @@ namespace LifeSimulation.Simulation.Core
                 _cumulativeFoodConsumed,
                 _cumulativeWaterConsumed,
                 _birthCount,
-                _deathCount);
+                _deathCount,
+                _attackHitCount,
+                _predationDeathCount,
+                _cumulativeCarcassConsumed);
         }
 
         private static float Lerp(float minimum, float maximum, float t)

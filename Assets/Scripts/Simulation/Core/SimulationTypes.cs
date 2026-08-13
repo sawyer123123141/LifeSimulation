@@ -82,7 +82,10 @@ namespace LifeSimulation.Simulation.Core
             float cumulativeFoodConsumed,
             float cumulativeWaterConsumed,
             int birthCount,
-            int deathCount)
+            int deathCount,
+            int attackHitCount = 0,
+            int predationDeathCount = 0,
+            float cumulativeCarcassConsumed = 0f)
         {
             Tick = tick;
             Population = population;
@@ -101,6 +104,9 @@ namespace LifeSimulation.Simulation.Core
             CumulativeWaterConsumed = cumulativeWaterConsumed;
             BirthCount = birthCount;
             DeathCount = deathCount;
+            AttackHitCount = attackHitCount;
+            PredationDeathCount = predationDeathCount;
+            CumulativeCarcassConsumed = cumulativeCarcassConsumed;
         }
 
         public long Tick { get; }
@@ -120,6 +126,9 @@ namespace LifeSimulation.Simulation.Core
         public float CumulativeWaterConsumed { get; }
         public int BirthCount { get; }
         public int DeathCount { get; }
+        public int AttackHitCount { get; }
+        public int PredationDeathCount { get; }
+        public float CumulativeCarcassConsumed { get; }
     }
 
     public struct ReproductionState
