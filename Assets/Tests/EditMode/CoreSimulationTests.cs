@@ -98,6 +98,7 @@ namespace LifeSimulation.Tests.EditMode
             var store = new CreatureStore(initialCapacity: 2);
             CreatureId first = store.Add(new Genome(0f, 0f, 0f, 0f, 0f, 0f), new SimVector2(-1f, 0f));
             CreatureId moved = store.Add(new Genome(1f, 1f, 1f, 1f, 1f, 1f), new SimVector2(3f, 4f));
+            store.SetDecisionAt(1, new CreatureDecision(CreatureAction.SeekWater, targetResourceIndex: 3, score: 0.9f));
 
             Assert.That(store.Remove(first), Is.True);
             Assert.That(store.TryGetIndex(moved, out int movedIndex), Is.True);
@@ -106,6 +107,8 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(store.GetNeedsAt(movedIndex).Energy, Is.EqualTo(store.GetPhenotypeAt(movedIndex).EnergyCapacity));
             Assert.That(store.GetMovementAt(movedIndex).Position.X, Is.EqualTo(3f));
             Assert.That(store.GetMovementAt(movedIndex).Position.Y, Is.EqualTo(4f));
+            Assert.That(store.GetDecisionAt(movedIndex).Action, Is.EqualTo(CreatureAction.SeekWater));
+            Assert.That(store.GetDecisionAt(movedIndex).TargetResourceIndex, Is.EqualTo(3));
         }
 
         [Test]
