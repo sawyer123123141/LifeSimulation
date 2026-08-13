@@ -87,8 +87,8 @@ namespace LifeSimulation.Simulation.Behavior
                 return currentDecision;
             }
 
-            float foodValue = memory.FoodExperienceCount > 0 ? memory.FoodOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
-            float waterValue = memory.WaterExperienceCount > 0 ? memory.WaterOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float foodValue = KnownOutcomeOrCuriosity(memory.FoodOutcomeValue, memory.FoodExperienceCount, phenotype.Exploration);
+            float waterValue = KnownOutcomeOrCuriosity(memory.WaterOutcomeValue, memory.WaterExperienceCount, phenotype.Exploration);
             float foodScore = Urgency(needs.Energy, phenotype.EnergyCapacity) * memory.FoodConfidence * foodValue;
             float waterScore = Urgency(needs.Hydration, phenotype.HydrationCapacity) * memory.WaterConfidence * waterValue;
             if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
@@ -114,8 +114,8 @@ namespace LifeSimulation.Simulation.Behavior
             ResourceObservation water,
             out DecisionDiagnostics diagnostics)
         {
-            float foodValue = memory.FoodExperienceCount > 0 ? memory.FoodOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
-            float waterValue = memory.WaterExperienceCount > 0 ? memory.WaterOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float foodValue = KnownOutcomeOrCuriosity(memory.FoodOutcomeValue, memory.FoodExperienceCount, phenotype.Exploration);
+            float waterValue = KnownOutcomeOrCuriosity(memory.WaterOutcomeValue, memory.WaterExperienceCount, phenotype.Exploration);
             float foodScore = food.IsValid ? Urgency(needs.Energy, phenotype.EnergyCapacity) * Availability(food.Distance) * foodValue : -1f;
             float waterScore = water.IsValid ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance) * waterValue : -1f;
             diagnostics = new DecisionDiagnostics(foodScore, waterScore, food.IsValid, water.IsValid);
@@ -175,6 +175,13 @@ namespace LifeSimulation.Simulation.Behavior
         private static float Availability(float distance)
         {
             return 1f / (1f + Math.Max(0f, distance));
+        }
+
+        private static float KnownOutcomeOrCuriosity(float learnedValue, int experienceCount, float exploration)
+        {
+            return experienceCount > 0 && learnedValue >= 0.05f
+                ? learnedValue
+                : 0.5f + (0.5f * exploration);
         }
     }
 }

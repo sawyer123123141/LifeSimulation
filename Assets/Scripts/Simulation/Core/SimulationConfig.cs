@@ -6,6 +6,7 @@ namespace LifeSimulation.Simulation.Core
     {
         Prototype1 = 0,
         PredationVariation = 1,
+        PhysiologyVariation = 2,
     }
 
     public readonly struct SimulationSchedule
@@ -93,7 +94,7 @@ namespace LifeSimulation.Simulation.Core
         public static SimulationConfig CreatePrototype3Defaults(int worldSeed, int initialPopulation)
         {
             SimulationConfig defaults = CreatePrototype2Defaults(worldSeed, initialPopulation);
-            return new SimulationConfig(worldSeed, initialPopulation, defaults.Schedule, defaults.MaximumPopulation, defaults.FounderProfile, cognitionEnabled: true, physiologyEnabled: true);
+            return new SimulationConfig(worldSeed, initialPopulation, defaults.Schedule, defaults.MaximumPopulation, FounderProfile.PhysiologyVariation, cognitionEnabled: true, physiologyEnabled: true);
         }
 
         public void Validate()

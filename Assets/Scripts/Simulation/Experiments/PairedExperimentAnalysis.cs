@@ -15,6 +15,9 @@ namespace LifeSimulation.Simulation.Experiments
         VisionRange = 6,
         WaterEfficiency = 7,
         FoodEfficiency = 8,
+        TemperatureTolerance = 9,
+        FertilityInvestment = 10,
+        LifespanTendency = 11,
     }
 
     public readonly struct PairedExperimentSummary
@@ -162,6 +165,12 @@ namespace LifeSimulation.Simulation.Experiments
                     return result.FinalStatistics.MeanWaterEfficiencyGene;
                 case ExperimentMetric.FoodEfficiency:
                     return result.FinalStatistics.MeanFoodEfficiencyGene;
+                case ExperimentMetric.TemperatureTolerance:
+                    return result.FinalStatistics.MeanTemperatureToleranceGene;
+                case ExperimentMetric.FertilityInvestment:
+                    return result.FinalStatistics.MeanFertilityInvestmentGene;
+                case ExperimentMetric.LifespanTendency:
+                    return result.FinalStatistics.MeanLifespanTendencyGene;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(metric));
             }

@@ -180,6 +180,20 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PairedAnalysisExposesPhysiologyTraitMetrics()
+        {
+            ExperimentResult[] control = { CreateResult("p3-control", 42, waterEfficiency: 0.5f, temperatureTolerance: 0.3f) };
+            ExperimentResult[] treatment = { CreateResult("p3-treatment", 42, waterEfficiency: 0.5f, temperatureTolerance: 0.7f) };
+
+            PairedExperimentSummary summary = PairedExperimentAnalysis.Summarize(
+                control,
+                treatment,
+                ExperimentMetric.TemperatureTolerance);
+
+            Assert.That(summary.MeanTreatmentMinusControl, Is.EqualTo(0.4f).Within(0.0001f));
+        }
+
+        [Test]
         public void BootstrapAnalysisKeepsAUniformPositivePairedEffectAboveZero()
         {
             ExperimentResult[] baseline =
@@ -283,7 +297,7 @@ namespace LifeSimulation.Tests.EditMode
             return total;
         }
 
-        private static ExperimentResult CreateResult(string scenarioId, int seed, float waterEfficiency)
+        private static ExperimentResult CreateResult(string scenarioId, int seed, float waterEfficiency, float temperatureTolerance = 0f)
         {
             var statistics = new SimulationStatistics(
                 tick: 100,
@@ -302,7 +316,8 @@ namespace LifeSimulation.Tests.EditMode
                 cumulativeFoodConsumed: 0f,
                 cumulativeWaterConsumed: 0f,
                 birthCount: 5,
-                deathCount: 2);
+                deathCount: 2,
+                meanTemperatureToleranceGene: temperatureTolerance);
             return new ExperimentResult(
                 scenarioId,
                 seed,

@@ -37,6 +37,16 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PhysiologyFounderProfileSeedsVariationWithoutPredatorTraits()
+        {
+            var world = new SimulationWorld(SimulationConfig.CreatePrototype3Defaults(42, 2));
+
+            Assert.That(world.Creatures.GetGenomeAt(0).TemperatureTolerance, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void ScheduleRejectsFrequenciesThatDoNotDivideBaseFrequency()
         {
             var schedule = new SimulationSchedule(20, 20, 3, 2, 2, 1, 1, 1);

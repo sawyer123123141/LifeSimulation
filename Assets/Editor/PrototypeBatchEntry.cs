@@ -149,5 +149,61 @@ namespace LifeSimulation.EditorTools
 
             Debug.Log($"Prototype 1 paired experiment results saved to {outputPath} and {summaryPath}");
         }
+
+        public static void RunPrototype3Experiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype3-physiology-scenarios.csv");
+            SimulationScenario[] scenarios =
+            {
+                Prototype3Scenarios.PlantNutritionPoor,
+                Prototype3Scenarios.PlantNutritionRich,
+            };
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,temperature_tolerance,fertility_investment,lifespan_tendency,cumulative_food,cumulative_water,event_overflowed,population_cap_reached,state_hash");
+                for (int seedOffset = 0; seedOffset < options.SeedCount; seedOffset++)
+                {
+                    int seed = options.FirstSeed + seedOffset;
+                    for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
+                    {
+                        SimulationConfig defaults = SimulationConfig.CreatePrototype3Defaults(seed, options.FounderPopulation);
+                        var config = new SimulationConfig(
+                            seed,
+                            options.FounderPopulation,
+                            defaults.Schedule,
+                            options.MaximumPopulation,
+                            defaults.FounderProfile,
+                            cognitionEnabled: true,
+                            physiologyEnabled: true);
+                        ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], options.Ticks);
+                        SimulationStatistics stats = result.FinalStatistics;
+                        writer.WriteLine(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11},{12},{13}",
+                            result.ScenarioId,
+                            result.WorldSeed,
+                            result.CompletedTicks,
+                            stats.Population,
+                            stats.BirthCount,
+                            stats.DeathCount,
+                            stats.MeanTemperatureToleranceGene,
+                            stats.MeanFertilityInvestmentGene,
+                            stats.MeanLifespanTendencyGene,
+                            stats.CumulativeFoodConsumed,
+                            stats.CumulativeWaterConsumed,
+                            result.EventOverflowed,
+                            result.PopulationCapReached,
+                            result.FinalStateHash));
+                    }
+                }
+            }
+
+            Debug.Log($"Prototype 3 physiology experiment results saved to {outputPath}");
+        }
     }
 }

@@ -91,6 +91,11 @@ namespace LifeSimulation.Simulation.Core
                 return PredationFounderFactory.Create(Config.WorldSeed, founderOrdinal);
             }
 
+            if (Config.FounderProfile == FounderProfile.PhysiologyVariation)
+            {
+                return PhysiologyFounderFactory.Create(Config.WorldSeed, founderOrdinal);
+            }
+
             const float standardDeviation = 0.12f;
             return new Genome(
                 FounderGene(founderOrdinal, 0, standardDeviation),
@@ -731,7 +736,11 @@ namespace LifeSimulation.Simulation.Core
                     }
                     else if (Config.CognitionEnabled)
                     {
-                        MemorySystem.LearnResourceOutcome(ref Creatures.GetMemoryRefAt(request.CreatureIndex), ResourceKind.Food, nutrition / 20f, phenotype.LearningRate);
+                        MemorySystem.LearnResourceOutcome(
+                            ref Creatures.GetMemoryRefAt(request.CreatureIndex),
+                            ResourceKind.Food,
+                            Math.Min(1f, nutrition * phenotype.FoodYield * 20f),
+                            phenotype.LearningRate);
                     }
                 }
                 else
@@ -740,7 +749,11 @@ namespace LifeSimulation.Simulation.Core
                     _cumulativeWaterConsumed += allocatedAmount;
                     if (Config.CognitionEnabled)
                     {
-                        MemorySystem.LearnResourceOutcome(ref Creatures.GetMemoryRefAt(request.CreatureIndex), ResourceKind.Water, allocatedAmount, Creatures.GetPhenotypeAt(request.CreatureIndex).LearningRate);
+                        MemorySystem.LearnResourceOutcome(
+                            ref Creatures.GetMemoryRefAt(request.CreatureIndex),
+                            ResourceKind.Water,
+                            Math.Min(1f, allocatedAmount * 20f),
+                            Creatures.GetPhenotypeAt(request.CreatureIndex).LearningRate);
                     }
                 }
             }
