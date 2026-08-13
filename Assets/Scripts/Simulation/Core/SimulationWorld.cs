@@ -288,10 +288,11 @@ namespace LifeSimulation.Simulation.Core
                 }
             }
 
+            long explorationEpoch = tick / (Config.Schedule.BaseFrequencyHz * 5L);
             float angle = DeterministicRandom.Float01(
                 Config.WorldSeed,
-                RandomDomain.Wander,
-                tick,
+                RandomDomain.Exploration,
+                explorationEpoch,
                 creatureId.Value,
                 0,
                 0) * ((float)Math.PI * 2f);

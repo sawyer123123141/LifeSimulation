@@ -105,5 +105,21 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
         }
+
+        [Test]
+        public void WanderingCreatureUsesAHeadingLongEnoughToExploreMeaningfully()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId creature = world.Spawn();
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+
+            for (int index = 0; index < 100; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(SimVector2.Distance(new SimVector2(0f, 0f), world.GetCreatureMovementAt(0).Position), Is.GreaterThan(10f));
+        }
     }
 }

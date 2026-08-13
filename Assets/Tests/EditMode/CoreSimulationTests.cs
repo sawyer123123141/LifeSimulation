@@ -325,6 +325,8 @@ namespace LifeSimulation.Tests.EditMode
 
             for (int index = 0; index < 20; index++)
             {
+                world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+                world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
                 world.Step(config.FixedDeltaTime);
             }
 

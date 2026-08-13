@@ -106,7 +106,8 @@ namespace LifeSimulation.Simulation.Core
         Crossover = 2,
         Mutation = 3,
         BirthPlacement = 4,
-        ExperimentSampling = 5
+        ExperimentSampling = 5,
+        Exploration = 6
     }
 
     public enum DeathCause : byte

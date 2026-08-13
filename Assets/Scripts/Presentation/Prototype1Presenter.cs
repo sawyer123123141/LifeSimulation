@@ -109,9 +109,9 @@ namespace LifeSimulation.Presentation
             _simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
 
             CreateResource(ResourceKind.Food, new Vector3(-12f, 0.25f, -8f), new Color(0.95f, 0.72f, 0.15f));
+            CreateResource(ResourceKind.Water, new Vector3(-7f, 0.25f, -8f), new Color(0.15f, 0.65f, 1f));
             CreateResource(ResourceKind.Food, new Vector3(10f, 0.25f, 12f), new Color(0.95f, 0.72f, 0.15f));
-            CreateResource(ResourceKind.Water, new Vector3(12f, 0.25f, -11f), new Color(0.15f, 0.65f, 1f));
-            CreateResource(ResourceKind.Water, new Vector3(-9f, 0.25f, 11f), new Color(0.15f, 0.65f, 1f));
+            CreateResource(ResourceKind.Water, new Vector3(5f, 0.25f, 12f), new Color(0.15f, 0.65f, 1f));
         }
 
         private void CreateResource(ResourceKind kind, Vector3 displayPosition, Color color)
