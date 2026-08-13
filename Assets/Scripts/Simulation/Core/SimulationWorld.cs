@@ -25,6 +25,10 @@ namespace LifeSimulation.Simulation.Core
         private long _birthOrdinal;
         private int _birthCount;
         private int _deathCount;
+        private int _starvationDeathCount;
+        private int _dehydrationDeathCount;
+        private int _ageDeathCount;
+        private int _healthDeathCount;
         private float _cumulativeFoodConsumed;
         private float _cumulativeWaterConsumed;
         private float _cumulativeCarcassConsumed;
@@ -262,10 +266,7 @@ namespace LifeSimulation.Simulation.Core
                         default,
                         _pendingDeathCauses[index]));
                     _deathCount++;
-                    if (_pendingDeathCauses[index] == DeathCause.Predation)
-                    {
-                        _predationDeathCount++;
-                    }
+                    CountDeathCause(_pendingDeathCauses[index]);
                 }
             }
 
@@ -411,7 +412,10 @@ namespace LifeSimulation.Simulation.Core
                 movement.DistanceSinceLastNeeds = 0f;
                 if (needs.Health <= 0f)
                 {
-                    RequestDeath(Creatures.GetIdAt(index), DeathCause.Health);
+                    DeathCause cause = needs.Hydration <= 0f
+                        ? DeathCause.Dehydration
+                        : needs.Energy <= 0f ? DeathCause.Starvation : DeathCause.Health;
+                    RequestDeath(Creatures.GetIdAt(index), cause);
                 }
                 else if (Config.PhysiologyEnabled && needs.Age >= Creatures.GetPhenotypeAt(index).MaximumAgeSeconds)
                 {
@@ -1056,7 +1060,23 @@ namespace LifeSimulation.Simulation.Core
                 urgencyExponentTotal * reciprocalPopulation,
                 travelSensitivityTotal * reciprocalPopulation,
                 riskAversionTotal * reciprocalPopulation,
-                commitmentTotal * reciprocalPopulation);
+                commitmentTotal * reciprocalPopulation,
+                _starvationDeathCount,
+                _dehydrationDeathCount,
+                _ageDeathCount,
+                _healthDeathCount);
+        }
+
+        private void CountDeathCause(DeathCause cause)
+        {
+            switch (cause)
+            {
+                case DeathCause.Starvation: _starvationDeathCount++; break;
+                case DeathCause.Dehydration: _dehydrationDeathCount++; break;
+                case DeathCause.Age: _ageDeathCount++; break;
+                case DeathCause.Health: _healthDeathCount++; break;
+                case DeathCause.Predation: _predationDeathCount++; break;
+            }
         }
 
         private static float Lerp(float minimum, float maximum, float t)

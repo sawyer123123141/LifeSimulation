@@ -92,7 +92,11 @@ namespace LifeSimulation.Simulation.Core
             float meanUrgencyExponentGene = 0f,
             float meanTravelSensitivityGene = 0f,
             float meanRiskAversionGene = 0f,
-            float meanCommitmentGene = 0f)
+            float meanCommitmentGene = 0f,
+            int starvationDeathCount = 0,
+            int dehydrationDeathCount = 0,
+            int ageDeathCount = 0,
+            int healthDeathCount = 0)
         {
             Tick = tick;
             Population = population;
@@ -121,6 +125,10 @@ namespace LifeSimulation.Simulation.Core
             MeanTravelSensitivityGene = meanTravelSensitivityGene;
             MeanRiskAversionGene = meanRiskAversionGene;
             MeanCommitmentGene = meanCommitmentGene;
+            StarvationDeathCount = starvationDeathCount;
+            DehydrationDeathCount = dehydrationDeathCount;
+            AgeDeathCount = ageDeathCount;
+            HealthDeathCount = healthDeathCount;
         }
 
         public long Tick { get; }
@@ -150,6 +158,10 @@ namespace LifeSimulation.Simulation.Core
         public float MeanTravelSensitivityGene { get; }
         public float MeanRiskAversionGene { get; }
         public float MeanCommitmentGene { get; }
+        public int StarvationDeathCount { get; }
+        public int DehydrationDeathCount { get; }
+        public int AgeDeathCount { get; }
+        public int HealthDeathCount { get; }
     }
 
     public struct ReproductionState

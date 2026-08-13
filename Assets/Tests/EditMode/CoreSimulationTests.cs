@@ -493,6 +493,26 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void StatisticsReportDehydrationAsTheCauseWhenBothCoreNeedsAreEmpty()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+            needs.Health = 1f;
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Statistics.DeathCount, Is.EqualTo(1));
+            Assert.That(world.Statistics.DehydrationDeathCount, Is.EqualTo(1));
+            Assert.That(world.Statistics.StarvationDeathCount, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TwoReadyNearbyParentsCreateOneDeterministicChildOnReproductionTick()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);

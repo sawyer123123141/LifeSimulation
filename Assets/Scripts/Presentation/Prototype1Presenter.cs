@@ -93,12 +93,13 @@ namespace LifeSimulation.Presentation
 
         private static void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 132f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 154f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
             GUI.Label(new Rect(476f, 106f, 250f, 22f), $"Water used: {stats.CumulativeWaterConsumed:0.0}");
             GUI.Label(new Rect(476f, 128f, 250f, 22f), "M: mature mating demo");
+            GUI.Label(new Rect(476f, 150f, 250f, 22f), $"Deaths: food {stats.StarvationDeathCount}  water {stats.DehydrationDeathCount}");
         }
 
         private void HandleInput()
