@@ -432,6 +432,8 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(world.Statistics.Population, Is.GreaterThanOrEqualTo(2));
             float founderMean = (world.Creatures.GetGenomeAt(0).BodySize + world.Creatures.GetGenomeAt(1).BodySize) * 0.5f;
             Assert.That(world.Statistics.MeanBodySizeGene, Is.EqualTo(founderMean).Within(0.001f));
+            float founderWaterMean = (world.Creatures.GetGenomeAt(0).WaterEfficiency + world.Creatures.GetGenomeAt(1).WaterEfficiency) * 0.5f;
+            Assert.That(world.Statistics.MeanWaterEfficiencyGene, Is.EqualTo(founderWaterMean).Within(0.001f));
         }
 
         [Test]

@@ -491,6 +491,11 @@ namespace LifeSimulation.Simulation.Core
         private SimulationStatistics BuildStatistics(long tick)
         {
             float bodySizeTotal = 0f;
+            float movementSpeedTotal = 0f;
+            float metabolicPaceTotal = 0f;
+            float visionRangeTotal = 0f;
+            float waterEfficiencyTotal = 0f;
+            float foodEfficiencyTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -500,6 +505,11 @@ namespace LifeSimulation.Simulation.Core
                 Phenotype phenotype = Creatures.GetPhenotypeAt(index);
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 bodySizeTotal += genome.BodySize;
+                movementSpeedTotal += genome.MovementSpeed;
+                metabolicPaceTotal += genome.MetabolicPace;
+                visionRangeTotal += genome.VisionRange;
+                waterEfficiencyTotal += genome.WaterEfficiency;
+                foodEfficiencyTotal += genome.FoodEfficiency;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -520,6 +530,11 @@ namespace LifeSimulation.Simulation.Core
                 Creatures.Count,
                 highestGeneration,
                 bodySizeTotal * reciprocalPopulation,
+                movementSpeedTotal * reciprocalPopulation,
+                metabolicPaceTotal * reciprocalPopulation,
+                visionRangeTotal * reciprocalPopulation,
+                waterEfficiencyTotal * reciprocalPopulation,
+                foodEfficiencyTotal * reciprocalPopulation,
                 energyFractionTotal * reciprocalPopulation,
                 hydrationFractionTotal * reciprocalPopulation,
                 food,

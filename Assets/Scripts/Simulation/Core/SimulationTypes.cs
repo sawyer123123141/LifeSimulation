@@ -70,6 +70,11 @@ namespace LifeSimulation.Simulation.Core
             int population,
             int highestGeneration,
             float meanBodySizeGene,
+            float meanMovementSpeedGene,
+            float meanMetabolicPaceGene,
+            float meanVisionRangeGene,
+            float meanWaterEfficiencyGene,
+            float meanFoodEfficiencyGene,
             float meanEnergyFraction,
             float meanHydrationFraction,
             float availableFood,
@@ -81,6 +86,11 @@ namespace LifeSimulation.Simulation.Core
             Population = population;
             HighestGeneration = highestGeneration;
             MeanBodySizeGene = meanBodySizeGene;
+            MeanMovementSpeedGene = meanMovementSpeedGene;
+            MeanMetabolicPaceGene = meanMetabolicPaceGene;
+            MeanVisionRangeGene = meanVisionRangeGene;
+            MeanWaterEfficiencyGene = meanWaterEfficiencyGene;
+            MeanFoodEfficiencyGene = meanFoodEfficiencyGene;
             MeanEnergyFraction = meanEnergyFraction;
             MeanHydrationFraction = meanHydrationFraction;
             AvailableFood = availableFood;
@@ -93,6 +103,11 @@ namespace LifeSimulation.Simulation.Core
         public int Population { get; }
         public int HighestGeneration { get; }
         public float MeanBodySizeGene { get; }
+        public float MeanMovementSpeedGene { get; }
+        public float MeanMetabolicPaceGene { get; }
+        public float MeanVisionRangeGene { get; }
+        public float MeanWaterEfficiencyGene { get; }
+        public float MeanFoodEfficiencyGene { get; }
         public float MeanEnergyFraction { get; }
         public float MeanHydrationFraction { get; }
         public float AvailableFood { get; }

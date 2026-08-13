@@ -63,15 +63,17 @@ namespace LifeSimulation.Presentation
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(12f, 12f, 380f, 170f), "LifeSimulation — Prototype 1");
+            GUI.Box(new Rect(12f, 12f, 440f, 214f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             DrawSelectedCreatureInspector();
             var stats = _world.Statistics;
-            GUI.Label(new Rect(24f, 84f, 360f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
-            GUI.Label(new Rect(24f, 106f, 330f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
-            GUI.Label(new Rect(24f, 128f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
-            GUI.Label(new Rect(24f, 150f, 350f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");
+            GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
+            GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
+            GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
+            GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
+            GUI.Label(new Rect(24f, 172f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
+            GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");
         }
 
         private void HandleInput()
@@ -170,7 +172,8 @@ namespace LifeSimulation.Presentation
                 CreatureAction action = _world.GetCreatureDecisionAt(index).Action;
                 view.position = new Vector3(movement.Position.X, 0.55f, movement.Position.Y);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
-                view.localScale = Vector3.one * (GetActionScale(action) * ageScale);
+                float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
+                view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale);
                 view.GetComponent<Renderer>().material.color = GetActionColor(action);
             }
         }
@@ -246,10 +249,10 @@ namespace LifeSimulation.Presentation
 
         private void DrawSelectedCreatureInspector()
         {
-            GUI.Box(new Rect(12f, 178f, 400f, 140f), "Creature Inspector");
+            GUI.Box(new Rect(12f, 232f, 400f, 140f), "Creature Inspector");
             if (!_hasSelectedCreature || !_world.TryGetCreatureIndex(_selectedCreature, out int index))
             {
-                GUI.Label(new Rect(24f, 204f, 350f, 22f), "Click a creature to inspect it.");
+                GUI.Label(new Rect(24f, 258f, 350f, 22f), "Click a creature to inspect it.");
                 return;
             }
 
@@ -258,11 +261,11 @@ namespace LifeSimulation.Presentation
             var genome = _world.Creatures.GetGenomeAt(index);
             var lineage = _world.Creatures.GetLineageAt(index);
             var decision = _world.GetCreatureDecisionAt(index);
-            GUI.Label(new Rect(24f, 204f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
-            GUI.Label(new Rect(24f, 226f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
-            GUI.Label(new Rect(24f, 248f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
-            GUI.Label(new Rect(24f, 270f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
-            GUI.Label(new Rect(24f, 292f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
+            GUI.Label(new Rect(24f, 258f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
+            GUI.Label(new Rect(24f, 280f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
+            GUI.Label(new Rect(24f, 302f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
+            GUI.Label(new Rect(24f, 324f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
+            GUI.Label(new Rect(24f, 346f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
         }
     }
 }
