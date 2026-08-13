@@ -1,4 +1,5 @@
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -68,6 +69,25 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(fastNeeds.Energy, Is.LessThan(slowNeeds.Energy));
             Assert.That(fastNeeds.Hydration, Is.LessThan(slowNeeds.Hydration));
+        }
+
+        [Test]
+        public void TwoParentCrossoverIsDeterministicAndMutationRemainsBounded()
+        {
+            var firstParent = new Genome(0f, 0f, 0f, 0f, 0f, 0f);
+            var secondParent = new Genome(1f, 1f, 1f, 1f, 1f, 1f);
+
+            Genome firstChild = GenomeInheritance.CreateChild(firstParent, secondParent, 42, 7, 0.2f);
+            Genome repeatedChild = GenomeInheritance.CreateChild(firstParent, secondParent, 42, 7, 0.2f);
+
+            Assert.That(repeatedChild.BodySize, Is.EqualTo(firstChild.BodySize));
+            Assert.That(repeatedChild.MovementSpeed, Is.EqualTo(firstChild.MovementSpeed));
+            Assert.That(firstChild.BodySize, Is.InRange(0f, 1f));
+            Assert.That(firstChild.MovementSpeed, Is.InRange(0f, 1f));
+            Assert.That(firstChild.MetabolicPace, Is.InRange(0f, 1f));
+            Assert.That(firstChild.VisionRange, Is.InRange(0f, 1f));
+            Assert.That(firstChild.WaterEfficiency, Is.InRange(0f, 1f));
+            Assert.That(firstChild.FoodEfficiency, Is.InRange(0f, 1f));
         }
     }
 }
