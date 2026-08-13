@@ -1,5 +1,6 @@
 using System;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Resources;
 
 namespace LifeSimulation.Simulation.Core
 {
@@ -13,6 +14,7 @@ namespace LifeSimulation.Simulation.Core
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Config.Validate();
             Creatures = new CreatureStore(Config.InitialPopulation);
+            Resources = new ResourceStore(initialCapacity: 8);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];
 
             for (int index = 0; index < Config.InitialPopulation; index++)
@@ -23,6 +25,7 @@ namespace LifeSimulation.Simulation.Core
 
         public SimulationConfig Config { get; }
         public CreatureStore Creatures { get; }
+        public ResourceStore Resources { get; }
         public int CreatureCount => Creatures.Count;
         public long CurrentTick { get; private set; }
 
@@ -76,6 +79,11 @@ namespace LifeSimulation.Simulation.Core
             if (IsDue(nextTick, Config.Schedule.NeedsHz))
             {
                 TickNeeds();
+            }
+
+            if (IsDue(nextTick, Config.Schedule.ResourcesHz))
+            {
+                Resources.Regenerate(1f / Config.Schedule.ResourcesHz);
             }
 
             for (int index = 0; index < _pendingDeathCount; index++)

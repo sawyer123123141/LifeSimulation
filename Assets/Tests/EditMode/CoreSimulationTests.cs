@@ -1,6 +1,7 @@
 using System;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -161,6 +162,31 @@ namespace LifeSimulation.Tests.EditMode
             CreatureNeeds after = world.GetCreatureNeedsAt(0);
             Assert.That(after.Energy, Is.LessThan(before.Energy));
             Assert.That(after.Age, Is.EqualTo(0.5f).Within(0.0001f));
+        }
+
+        [Test]
+        public void WorldRegeneratesResourcesOnlyAtTheConfiguredFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            world.Resources.Add(
+                ResourceKind.Water,
+                new SimVector2(0f, 0f),
+                interactionRadius: 1f,
+                initialAmount: 0f,
+                capacity: 10f,
+                regenerationPerSecond: 2f);
+
+            for (int index = 0; index < 19; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Resources.GetAt(0).Amount, Is.EqualTo(0f));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.Resources.GetAt(0).Amount, Is.EqualTo(2f));
         }
 
         [Test]
