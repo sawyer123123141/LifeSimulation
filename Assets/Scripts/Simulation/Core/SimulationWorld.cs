@@ -14,6 +14,7 @@ namespace LifeSimulation.Simulation.Core
         private long _spawnOrdinal;
         private SimVector2[] _resourcePositions;
         private SimVector2[] _creaturePositions;
+        private float[] _combatDamage;
         private ResourceRequest[] _resourceRequests;
         private float[] _resourceAllocations;
         private readonly ReproductionSystem _reproduction;
@@ -40,6 +41,7 @@ namespace LifeSimulation.Simulation.Core
             _pendingDeathCauses = new DeathCause[_pendingDeaths.Length];
             _resourcePositions = new SimVector2[8];
             _creaturePositions = new SimVector2[Math.Max(Config.InitialPopulation, 1)];
+            _combatDamage = new float[Math.Max(Config.InitialPopulation, 1)];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
             _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation);
@@ -651,6 +653,8 @@ namespace LifeSimulation.Simulation.Core
 
         private void TickCombat(long tick)
         {
+            EnsureCombatDamageCapacity(Creatures.Count);
+            Array.Clear(_combatDamage, 0, Creatures.Count);
             for (int index = 0; index < Creatures.Count; index++)
             {
                 ref CombatState combat = ref Creatures.GetCombatRefAt(index);
@@ -688,15 +692,32 @@ namespace LifeSimulation.Simulation.Core
                 }
 
                 float damage = 4f + (12f * attacker.AttackPower);
-                ref CreatureNeeds targetNeeds = ref Creatures.GetNeedsRefAt(targetIndex);
-                ref CombatState targetCombat = ref Creatures.GetCombatRefAt(targetIndex);
+                _combatDamage[targetIndex] += damage;
+                _attackHitCount++;
+            }
+
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                float damage = _combatDamage[index];
+                if (damage <= 0f)
+                {
+                    continue;
+                }
+
+                Phenotype defender = Creatures.GetPhenotypeAt(index);
+                ref CreatureNeeds targetNeeds = ref Creatures.GetNeedsRefAt(index);
+                ref CombatState targetCombat = ref Creatures.GetCombatRefAt(index);
                 targetNeeds.Health -= damage;
                 targetCombat.WoundSeverity += damage / defender.HealthCapacity;
-                _attackHitCount++;
-                if (targetNeeds.Health <= 0f)
-                {
-                    RequestDeath(decision.TargetCreatureId, DeathCause.Predation);
-                }
+                if (targetNeeds.Health <= 0f) RequestDeath(Creatures.GetIdAt(index), DeathCause.Predation);
+            }
+        }
+
+        private void EnsureCombatDamageCapacity(int required)
+        {
+            if (required > _combatDamage.Length)
+            {
+                Array.Resize(ref _combatDamage, Math.Max(required, _combatDamage.Length * 2));
             }
         }
 
