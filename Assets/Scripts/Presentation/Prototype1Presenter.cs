@@ -93,11 +93,12 @@ namespace LifeSimulation.Presentation
 
         private static void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 110f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 132f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
             GUI.Label(new Rect(476f, 106f, 250f, 22f), $"Water used: {stats.CumulativeWaterConsumed:0.0}");
+            GUI.Label(new Rect(476f, 128f, 250f, 22f), "M: mature mating demo");
         }
 
         private void HandleInput()
@@ -117,6 +118,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.P)) ResetPredationSimulation();
             if (Input.GetKeyDown(KeyCode.C)) ResetCognitionSimulation();
             if (Input.GetKeyDown(KeyCode.T)) ResetPhysiologySimulation();
+            if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -196,6 +198,18 @@ namespace LifeSimulation.Presentation
             ResetSimulation(
                 Prototype1Scenarios.Baseline,
                 CreatePlayableConfig(SimulationConfig.CreatePrototype3Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length)));
+        }
+
+        private void ResetMatingDemo()
+        {
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: DemoFounderPositions.Length)));
+            for (int index = 0; index < _world.CreatureCount; index++)
+            {
+                _world.Creatures.GetNeedsRefAt(index).Age = 21f;
+            }
+            _scenarioId = "mature-mating-demo";
         }
 
         private static SimulationConfig CreatePlayableConfig(SimulationConfig defaults)
