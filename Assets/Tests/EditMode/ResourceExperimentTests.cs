@@ -57,6 +57,26 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(second.FinalStatistics.Population, Is.EqualTo(first.FinalStatistics.Population));
         }
 
+        [Test]
+        public void BaselineScenarioSustainsFoundersLongEnoughForTheFirstMatureCycle()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
+
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 400);
+
+            Assert.That(result.FinalStatistics.Population, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void BaselineScenarioProducesAnOffspringWithinTheFirstExperimentWindow()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
+
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 1000);
+
+            Assert.That(result.FinalStatistics.BirthCount, Is.GreaterThan(0));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;

@@ -482,6 +482,17 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void StateHashChangesWhenReproductionCooldownChanges()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            second.Creatures.GetReproductionRefAt(0).CooldownRemaining = 5f;
+
+            Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
+        }
+
+        [Test]
         public void EventBufferRetainsEventsInOrderAndReportsOverflow()
         {
             var events = new SimulationEventBuffer(capacity: 1);

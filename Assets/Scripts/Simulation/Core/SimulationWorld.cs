@@ -250,6 +250,9 @@ namespace LifeSimulation.Simulation.Core
                 hash = Hash(hash, unchecked((ulong)(long)decision.TargetResourceIndex));
                 hash = HashFloat(hash, decision.Score);
                 hash = Hash(hash, unchecked((ulong)decision.DecisionTick));
+
+                ReproductionState reproduction = Creatures.GetReproductionRefAt(index);
+                hash = HashFloat(hash, reproduction.CooldownRemaining);
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));
