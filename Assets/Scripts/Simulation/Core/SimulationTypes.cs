@@ -95,6 +95,11 @@ namespace LifeSimulation.Simulation.Core
         public float AvailableWater { get; }
     }
 
+    public struct ReproductionState
+    {
+        public float CooldownRemaining;
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,

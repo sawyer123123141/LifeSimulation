@@ -8,6 +8,8 @@ namespace LifeSimulation.Simulation.Core
 {
     public sealed class SimulationWorld
     {
+        private const float AdultAgeSeconds = 20f;
+        private const float ReproductionCooldownSeconds = 15f;
         private CreatureId[] _pendingDeaths;
         private int _pendingDeathCount;
         private long _spawnOrdinal;
@@ -434,6 +436,13 @@ namespace LifeSimulation.Simulation.Core
         private void TickReproduction()
         {
             int candidateCount = Creatures.Count;
+            float deltaTime = 1f / Config.Schedule.ReproductionHz;
+            for (int index = 0; index < candidateCount; index++)
+            {
+                ref ReproductionState reproduction = ref Creatures.GetReproductionRefAt(index);
+                reproduction.CooldownRemaining = Math.Max(0f, reproduction.CooldownRemaining - deltaTime);
+            }
+
             for (int firstIndex = 0; firstIndex < candidateCount; firstIndex++)
             {
                 if (!IsReadyToReproduce(firstIndex))
@@ -466,6 +475,8 @@ namespace LifeSimulation.Simulation.Core
                         secondParent);
                     ChargeReproductionCost(firstIndex);
                     ChargeReproductionCost(secondIndex);
+                    Creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = ReproductionCooldownSeconds;
+                    Creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = ReproductionCooldownSeconds;
                     return;
                 }
             }
@@ -477,7 +488,9 @@ namespace LifeSimulation.Simulation.Core
             Phenotype phenotype = Creatures.GetPhenotypeAt(index);
             return needs.Energy >= phenotype.EnergyCapacity * 0.7f
                 && needs.Hydration >= phenotype.HydrationCapacity * 0.7f
-                && needs.Health >= phenotype.HealthCapacity * 0.7f;
+                && needs.Health >= phenotype.HealthCapacity * 0.7f
+                && needs.Age >= AdultAgeSeconds
+                && Creatures.GetReproductionRefAt(index).CooldownRemaining <= 0f;
         }
 
         private void ChargeReproductionCost(int index)

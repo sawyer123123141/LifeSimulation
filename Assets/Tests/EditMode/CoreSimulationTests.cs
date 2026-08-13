@@ -320,6 +320,8 @@ namespace LifeSimulation.Tests.EditMode
             CreatureId second = world.Spawn();
             world.SetCreaturePosition(first, new SimVector2(0f, 0f));
             world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+            world.Creatures.GetNeedsRefAt(0).Age = 20f;
+            world.Creatures.GetNeedsRefAt(1).Age = 20f;
 
             for (int index = 0; index < 20; index++)
             {
@@ -331,6 +333,53 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(lineage.FirstParent, Is.EqualTo(first));
             Assert.That(lineage.SecondParent, Is.EqualTo(second));
             Assert.That(lineage.Generation, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void NewbornParentsCannotReproduceBeforeMaturity()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+            world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void SuccessfulParentsRespectTheirReproductionCooldown()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.Creatures.GetNeedsRefAt(0).Age = 20f;
+            world.Creatures.GetNeedsRefAt(1).Age = 20f;
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+                world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(3));
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+                world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(3));
         }
 
         [Test]

@@ -14,6 +14,7 @@ namespace LifeSimulation.Simulation.Core
         private MovementState[] _movement;
         private CreatureDecision[] _decisions;
         private CreatureLineage[] _lineages;
+        private ReproductionState[] _reproduction;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
@@ -31,6 +32,7 @@ namespace LifeSimulation.Simulation.Core
             _movement = new MovementState[_identities.Length];
             _decisions = new CreatureDecision[_identities.Length];
             _lineages = new CreatureLineage[_identities.Length];
+            _reproduction = new ReproductionState[_identities.Length];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -70,6 +72,12 @@ namespace LifeSimulation.Simulation.Core
             return _lineages[index];
         }
 
+        public ref ReproductionState GetReproductionRefAt(int index)
+        {
+            ValidateIndex(index);
+            return ref _reproduction[index];
+        }
+
         private CreatureId AddInternal(
             Genome genome,
             SimVector2 position,
@@ -87,6 +95,7 @@ namespace LifeSimulation.Simulation.Core
             _movement[Count] = new MovementState(position);
             _decisions[Count] = new CreatureDecision(CreatureAction.Wander, -1, 0f);
             _lineages[Count] = new CreatureLineage(id, firstParent, secondParent, generation);
+            _reproduction[Count] = default;
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -175,6 +184,7 @@ namespace LifeSimulation.Simulation.Core
                 _movement[removedIndex] = _movement[lastIndex];
                 _decisions[removedIndex] = _decisions[lastIndex];
                 _lineages[removedIndex] = _lineages[lastIndex];
+                _reproduction[removedIndex] = _reproduction[lastIndex];
                 _indexById[movedId] = removedIndex;
             }
 
@@ -197,6 +207,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _movement, nextCapacity);
             Array.Resize(ref _decisions, nextCapacity);
             Array.Resize(ref _lineages, nextCapacity);
+            Array.Resize(ref _reproduction, nextCapacity);
         }
 
         private void ValidateIndex(int index)
