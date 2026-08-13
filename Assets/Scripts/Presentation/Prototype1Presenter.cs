@@ -406,7 +406,7 @@ namespace LifeSimulation.Presentation
 
         private void DrawSelectedCreatureInspector()
         {
-            GUI.Box(new Rect(12f, 232f, 440f, 184f), "Creature Inspector");
+            GUI.Box(new Rect(12f, 232f, 440f, 270f), "Creature Inspector");
             if (!_hasSelectedCreature || !_world.TryGetCreatureIndex(_selectedCreature, out int index))
             {
                 GUI.Label(new Rect(24f, 258f, 350f, 22f), "Click a creature to inspect it.");
@@ -426,14 +426,22 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 324f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
             GUI.Label(new Rect(24f, 346f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
             GUI.Label(new Rect(24f, 368f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
+            float optionalDetailY = 390f;
+            if (_world.Config.FounderProfile == FounderProfile.PredationVariation)
+            {
+                GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"P1 traits: attack {genome.Attack:0.00} | defense {genome.Defense:0.00} | aggression {genome.Aggression:0.00} | diet {genome.DietSpecialization:0.00}");
+                optionalDetailY += 22f;
+            }
             if (_world.Config.CognitionEnabled)
             {
-                GUI.Label(new Rect(24f, 390f, 420f, 22f), $"Learned: food {memory.FoodOutcomeValue:0.00} ({memory.FoodExperienceCount}) | water {memory.WaterOutcomeValue:0.00} ({memory.WaterExperienceCount})");
+                GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"Learned: food {memory.FoodOutcomeValue:0.00} ({memory.FoodExperienceCount}) | water {memory.WaterOutcomeValue:0.00} ({memory.WaterExperienceCount})");
+                optionalDetailY += 22f;
             }
             if (_world.Config.PhysiologyEnabled)
             {
-                GUI.Label(new Rect(24f, 412f, 420f, 22f), $"Temperature tolerance: {genome.TemperatureTolerance:0.00} | local field {TemperatureField.Sample(_world.GetCreatureMovementAt(index).Position, _world.CurrentTick):0.0} C");
-                GUI.Label(new Rect(24f, 434f, 420f, 22f), $"Life history: fertility {genome.FertilityInvestment:0.00} | lifespan {genome.LifespanTendency:0.00} | max age {phenotype.MaximumAgeSeconds:0}s");
+                GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"Temperature tolerance: {genome.TemperatureTolerance:0.00} | local field {TemperatureField.Sample(_world.GetCreatureMovementAt(index).Position, _world.CurrentTick):0.0} C");
+                optionalDetailY += 22f;
+                GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"Life history: fertility {genome.FertilityInvestment:0.00} | lifespan {genome.LifespanTendency:0.00} | max age {phenotype.MaximumAgeSeconds:0}s");
             }
         }
     }
