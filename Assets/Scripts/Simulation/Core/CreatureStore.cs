@@ -12,6 +12,7 @@ namespace LifeSimulation.Simulation.Core
         private Phenotype[] _phenotypes;
         private CreatureNeeds[] _needs;
         private MovementState[] _movement;
+        private CreatureDecision[] _decisions;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
@@ -27,6 +28,7 @@ namespace LifeSimulation.Simulation.Core
             _phenotypes = new Phenotype[_identities.Length];
             _needs = new CreatureNeeds[_identities.Length];
             _movement = new MovementState[_identities.Length];
+            _decisions = new CreatureDecision[_identities.Length];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -53,6 +55,7 @@ namespace LifeSimulation.Simulation.Core
             _phenotypes[Count] = Phenotype.FromGenome(genome);
             _needs[Count] = CreatureNeeds.Full(_phenotypes[Count]);
             _movement[Count] = new MovementState(position);
+            _decisions[Count] = new CreatureDecision(CreatureAction.Wander, -1, 0f);
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -109,6 +112,18 @@ namespace LifeSimulation.Simulation.Core
             return ref _movement[index];
         }
 
+        public CreatureDecision GetDecisionAt(int index)
+        {
+            ValidateIndex(index);
+            return _decisions[index];
+        }
+
+        public void SetDecisionAt(int index, CreatureDecision decision)
+        {
+            ValidateIndex(index);
+            _decisions[index] = decision;
+        }
+
         public bool Remove(CreatureId id)
         {
             if (!_indexById.TryGetValue(id, out int removedIndex))
@@ -127,6 +142,7 @@ namespace LifeSimulation.Simulation.Core
                 _phenotypes[removedIndex] = _phenotypes[lastIndex];
                 _needs[removedIndex] = _needs[lastIndex];
                 _movement[removedIndex] = _movement[lastIndex];
+                _decisions[removedIndex] = _decisions[lastIndex];
                 _indexById[movedId] = removedIndex;
             }
 
@@ -147,6 +163,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _phenotypes, nextCapacity);
             Array.Resize(ref _needs, nextCapacity);
             Array.Resize(ref _movement, nextCapacity);
+            Array.Resize(ref _decisions, nextCapacity);
         }
 
         private void ValidateIndex(int index)

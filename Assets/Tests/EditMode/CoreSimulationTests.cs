@@ -98,6 +98,7 @@ namespace LifeSimulation.Tests.EditMode
             var store = new CreatureStore(initialCapacity: 2);
             CreatureId first = store.Add(new Genome(0f, 0f, 0f, 0f, 0f, 0f), new SimVector2(-1f, 0f));
             CreatureId moved = store.Add(new Genome(1f, 1f, 1f, 1f, 1f, 1f), new SimVector2(3f, 4f));
+            store.SetDecisionAt(1, new CreatureDecision(CreatureAction.SeekWater, targetResourceIndex: 3, score: 0.9f));
 
             Assert.That(store.Remove(first), Is.True);
             Assert.That(store.TryGetIndex(moved, out int movedIndex), Is.True);
@@ -106,6 +107,8 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(store.GetNeedsAt(movedIndex).Energy, Is.EqualTo(store.GetPhenotypeAt(movedIndex).EnergyCapacity));
             Assert.That(store.GetMovementAt(movedIndex).Position.X, Is.EqualTo(3f));
             Assert.That(store.GetMovementAt(movedIndex).Position.Y, Is.EqualTo(4f));
+            Assert.That(store.GetDecisionAt(movedIndex).Action, Is.EqualTo(CreatureAction.SeekWater));
+            Assert.That(store.GetDecisionAt(movedIndex).TargetResourceIndex, Is.EqualTo(3));
         }
 
         [Test]
@@ -209,6 +212,46 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(after.Position.X, Is.EqualTo(second.GetCreatureMovementAt(0).Position.X));
             Assert.That(after.Position.Y, Is.EqualTo(second.GetCreatureMovementAt(0).Position.Y));
             Assert.That(SimVector2.Distance(after.Position, initial.Position), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void WorldRefreshesCreatureDecisionsAtTheConfiguredFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+
+            for (int index = 0; index < 9; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.GetCreatureDecisionAt(0).DecisionTick, Is.EqualTo(-1));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.GetCreatureDecisionAt(0).DecisionTick, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void HungryCreatureConsumesFoodAfterReachingItsSelectedResource()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            world.Spawn();
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            ref MovementState movement = ref world.Creatures.GetMovementRefAt(0);
+            movement = new MovementState(new SimVector2(0f, 0f));
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 5f, 10f, 10f, 0f);
+
+            for (int index = 0; index < 10; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.GetCreatureDecisionAt(0).Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(world.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(0f));
+            Assert.That(world.Resources.GetAt(0).Amount, Is.LessThan(10f));
         }
 
         [Test]
