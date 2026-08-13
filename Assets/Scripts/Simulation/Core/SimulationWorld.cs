@@ -461,6 +461,7 @@ namespace LifeSimulation.Simulation.Core
                 1f / Config.Schedule.ReproductionHz,
                 ref _birthOrdinal,
                 CurrentTick + 1,
+                Config.MaximumPopulation,
                 Events);
         }
 

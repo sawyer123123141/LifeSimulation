@@ -36,15 +36,17 @@ namespace LifeSimulation.Simulation.Core
 
     public sealed class SimulationConfig
     {
-        public SimulationConfig(int worldSeed, int initialPopulation, SimulationSchedule schedule)
+        public SimulationConfig(int worldSeed, int initialPopulation, SimulationSchedule schedule, int maximumPopulation = 1000)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
             Schedule = schedule;
+            MaximumPopulation = maximumPopulation;
         }
 
         public int WorldSeed { get; }
         public int InitialPopulation { get; }
+        public int MaximumPopulation { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -53,7 +55,8 @@ namespace LifeSimulation.Simulation.Core
             return new SimulationConfig(
                 worldSeed,
                 initialPopulation,
-                new SimulationSchedule(20, 20, 4, 2, 2, 1, 1, 1));
+                new SimulationSchedule(20, 20, 4, 2, 2, 1, 1, 1),
+                maximumPopulation: 1000);
         }
 
         public void Validate()
@@ -61,6 +64,11 @@ namespace LifeSimulation.Simulation.Core
             if (InitialPopulation < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(InitialPopulation), "Founder population cannot be negative.");
+            }
+
+            if (MaximumPopulation < InitialPopulation)
+            {
+                throw new ArgumentOutOfRangeException(nameof(MaximumPopulation), "Population limit cannot be lower than the founder population.");
             }
 
             if (Schedule.BaseFrequencyHz <= 0)

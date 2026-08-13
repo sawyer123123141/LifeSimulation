@@ -36,7 +36,7 @@ namespace LifeSimulation.Simulation.Biology
 
         public UniformGrid Grid { get; }
 
-        public int Step(int worldSeed, float deltaTime, ref long birthOrdinal, long tick, SimulationEventBuffer events)
+        public int Step(int worldSeed, float deltaTime, ref long birthOrdinal, long tick, int maximumPopulation, SimulationEventBuffer events)
         {
             if (events == null)
             {
@@ -58,6 +58,11 @@ namespace LifeSimulation.Simulation.Biology
             Array.Sort(_candidates, 0, candidateCount, _creatureIndexComparer);
             for (int candidateIndex = 0; candidateIndex < candidateCount; candidateIndex++)
             {
+                if (_creatures.Count >= maximumPopulation)
+                {
+                    break;
+                }
+
                 int firstIndex = _candidates[candidateIndex];
                 if (_matched[firstIndex] || !IsReady(firstIndex))
                 {

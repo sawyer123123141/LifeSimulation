@@ -519,5 +519,27 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.Statistics.DeathCount, Is.EqualTo(1));
         }
+
+        [Test]
+        public void PopulationSafetyLimitPreventsAdditionalBirths()
+        {
+            var schedule = new SimulationSchedule(20, 20, 4, 2, 2, 1, 1, 1);
+            var config = new SimulationConfig(42, initialPopulation: 0, schedule, maximumPopulation: 2);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.Creatures.GetNeedsRefAt(0).Age = 20f;
+            world.Creatures.GetNeedsRefAt(1).Age = 20f;
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+                world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(2));
+            Assert.That(world.Statistics.BirthCount, Is.EqualTo(0));
+        }
     }
 }
