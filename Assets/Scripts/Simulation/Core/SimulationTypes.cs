@@ -141,7 +141,8 @@ namespace LifeSimulation.Simulation.Core
         BirthPlacement = 4,
         ExperimentSampling = 5,
         Exploration = 6,
-        FounderGenome = 7
+        FounderGenome = 7,
+        AttackResolution = 8
     }
 
     public enum DeathCause : byte
@@ -151,7 +152,8 @@ namespace LifeSimulation.Simulation.Core
         Starvation = 2,
         Dehydration = 3,
         Age = 4,
-        Health = 5
+        Health = 5,
+        Predation = 6
     }
 
     public enum SimulationEventKind : byte

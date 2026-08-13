@@ -77,6 +77,73 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CreaturePerceptionSelectsNearestOtherCreatureAndBreaksDistanceTiesByStableId()
+        {
+            var creatures = new CreatureStore(initialCapacity: 3);
+            CreatureId observer = creatures.Add(Genome.Neutral, new SimVector2(0f, 0f));
+            CreatureId expected = creatures.Add(Genome.Neutral, new SimVector2(-1f, 0f));
+            creatures.Add(Genome.Neutral, new SimVector2(1f, 0f));
+            var positions = new[]
+            {
+                creatures.GetMovementAt(0).Position,
+                creatures.GetMovementAt(1).Position,
+                creatures.GetMovementAt(2).Position,
+            };
+            var grid = new UniformGrid(new ArenaBounds(-4f, 4f, -4f, 4f), 2f, initialOccupantCapacity: 3);
+            grid.Rebuild(positions, positions.Length);
+
+            CreatureObservation observation = PerceptionSystem.FindNearestOtherCreature(
+                creatures,
+                grid,
+                new SimVector2(0f, 0f),
+                visionRange: 2f,
+                observer);
+
+            Assert.That(observation.IsValid, Is.True);
+            Assert.That(observation.CreatureId, Is.EqualTo(expected));
+            Assert.That(observation.Distance, Is.EqualTo(1f).Within(0.0001f));
+        }
+
+        [Test]
+        public void PredationDecisionPursuesAWeakerNearbyCreatureWhenHungerMakesMeatWorthwhile()
+        {
+            Phenotype hunter = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, aggression: 1f, dietSpecialization: 1f));
+            Phenotype prey = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
+            CreatureNeeds needs = CreatureNeeds.Full(hunter);
+            needs.Energy = hunter.EnergyCapacity * 0.05f;
+            var preyObservation = new CreatureObservation(new CreatureId(2), 1, 0.5f);
+
+            CreatureDecision decision = PredationSystem.Decide(
+                needs,
+                hunter,
+                prey,
+                preyObservation,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f));
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekPrey));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(new CreatureId(2)));
+        }
+
+        [Test]
+        public void PredationDecisionFleesAThreatWhenFearOutweighsAPlantSeekingScore()
+        {
+            Phenotype fearful = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, defense: 0.1f, fear: 1f));
+            Phenotype hunter = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, aggression: 1f, dietSpecialization: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(fearful);
+            var hunterObservation = new CreatureObservation(new CreatureId(2), 1, 0.25f);
+
+            CreatureDecision decision = PredationSystem.Decide(
+                needs,
+                fearful,
+                hunter,
+                hunterObservation,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f));
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Flee));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(new CreatureId(2)));
+        }
+
+        [Test]
         public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);

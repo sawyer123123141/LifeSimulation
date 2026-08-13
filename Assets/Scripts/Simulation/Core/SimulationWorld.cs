@@ -13,6 +13,7 @@ namespace LifeSimulation.Simulation.Core
         private int _pendingDeathCount;
         private long _spawnOrdinal;
         private SimVector2[] _resourcePositions;
+        private SimVector2[] _creaturePositions;
         private ResourceRequest[] _resourceRequests;
         private float[] _resourceAllocations;
         private readonly ReproductionSystem _reproduction;
@@ -31,9 +32,11 @@ namespace LifeSimulation.Simulation.Core
             Resources = new ResourceStore(initialCapacity: 8);
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
+            CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];
             _pendingDeathCauses = new DeathCause[_pendingDeaths.Length];
             _resourcePositions = new SimVector2[8];
+            _creaturePositions = new SimVector2[Math.Max(Config.InitialPopulation, 1)];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
             _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation);
@@ -50,6 +53,7 @@ namespace LifeSimulation.Simulation.Core
         public ResourceStore Resources { get; }
         public ArenaBounds Arena { get; }
         public UniformGrid ResourceGrid { get; }
+        public UniformGrid CombatGrid { get; }
         public UniformGrid CreatureGrid => _reproduction.Grid;
         public SimulationEventBuffer Events { get; }
         public int CreatureCount => Creatures.Count;
@@ -174,6 +178,7 @@ namespace LifeSimulation.Simulation.Core
             if (IsDue(nextTick, Config.Schedule.PerceptionHz))
             {
                 RebuildResourceGrid();
+                RebuildCombatGrid();
             }
 
             if (IsDue(nextTick, Config.Schedule.DecisionsHz))
@@ -182,6 +187,7 @@ namespace LifeSimulation.Simulation.Core
             }
 
             TickMovement(nextTick);
+            TickCombat(nextTick);
             if (IsDue(nextTick, Config.Schedule.NeedsHz))
             {
                 TickNeeds();
@@ -202,6 +208,19 @@ namespace LifeSimulation.Simulation.Core
             for (int index = 0; index < _pendingDeathCount; index++)
             {
                 CreatureId deceased = _pendingDeaths[index];
+                if (_pendingDeathCauses[index] == DeathCause.Predation
+                    && Creatures.TryGetIndex(deceased, out int deceasedIndex))
+                {
+                    Phenotype phenotype = Creatures.GetPhenotypeAt(deceasedIndex);
+                    Resources.Add(
+                        ResourceKind.Carcass,
+                        Creatures.GetMovementAt(deceasedIndex).Position,
+                        interactionRadius: 1.1f,
+                        initialAmount: 10f * phenotype.BodyMass,
+                        capacity: 10f * phenotype.BodyMass,
+                        regenerationPerSecond: 0f);
+                }
+
                 if (Creatures.Remove(deceased))
                 {
                     Events.TryWrite(new SimulationEvent(
@@ -261,6 +280,7 @@ namespace LifeSimulation.Simulation.Core
                 CreatureDecision decision = Creatures.GetDecisionAt(index);
                 hash = Hash(hash, unchecked((ulong)decision.Action));
                 hash = Hash(hash, unchecked((ulong)(long)decision.TargetResourceIndex));
+                hash = Hash(hash, unchecked((ulong)decision.TargetCreatureId.Value));
                 hash = HashFloat(hash, decision.Score);
                 hash = Hash(hash, unchecked((ulong)decision.DecisionTick));
 
@@ -345,13 +365,36 @@ namespace LifeSimulation.Simulation.Core
             if ((decision.Action == CreatureAction.SeekFood
                     || decision.Action == CreatureAction.SeekWater
                     || decision.Action == CreatureAction.Eat
-                    || decision.Action == CreatureAction.Drink)
+                    || decision.Action == CreatureAction.Drink
+                    || decision.Action == CreatureAction.SeekCarcass
+                    || decision.Action == CreatureAction.FeedCarcass)
                 && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
             {
                 ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
                 if (resource.IsActive && resource.Amount > 0f)
                 {
                     return resource.Position;
+                }
+            }
+
+            if (decision.Action == CreatureAction.SeekPrey || decision.Action == CreatureAction.Attack)
+            {
+                if (Creatures.TryGetIndex(decision.TargetCreatureId, out int targetIndex))
+                {
+                    return Creatures.GetMovementAt(targetIndex).Position;
+                }
+            }
+
+            if (decision.Action == CreatureAction.Flee
+                && Creatures.TryGetIndex(decision.TargetCreatureId, out int threatIndex))
+            {
+                SimVector2 threatPosition = Creatures.GetMovementAt(threatIndex).Position;
+                float x = position.X - threatPosition.X;
+                float y = position.Y - threatPosition.Y;
+                float length = (float)Math.Sqrt((x * x) + (y * y));
+                if (length > 0.0001f)
+                {
+                    return new SimVector2(position.X + (x / length), position.Y + (y / length));
                 }
             }
 
@@ -386,7 +429,37 @@ namespace LifeSimulation.Simulation.Core
                     movement.Position,
                     phenotype.VisionRange,
                     ResourceKind.Water);
+                ResourceObservation carcass = PerceptionSystem.FindNearestAvailableResource(
+                    Resources,
+                    ResourceGrid,
+                    movement.Position,
+                    phenotype.VisionRange,
+                    ResourceKind.Carcass);
                 CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out DecisionDiagnostics diagnostics);
+                if (Config.FounderProfile == FounderProfile.PredationVariation)
+                {
+                    CreatureObservation other = PerceptionSystem.FindNearestOtherCreature(
+                        Creatures,
+                        CombatGrid,
+                        movement.Position,
+                        phenotype.VisionRange,
+                        Creatures.GetIdAt(index));
+                    if (other.IsValid)
+                    {
+                        decision = PredationSystem.Decide(
+                            Creatures.GetNeedsAt(index),
+                            phenotype,
+                            Creatures.GetPhenotypeAt(other.CreatureIndex),
+                            other,
+                            decision);
+                    }
+
+                    decision = PredationSystem.PreferCarcassWhenUseful(
+                        Creatures.GetNeedsAt(index),
+                        phenotype,
+                        carcass,
+                        decision);
+                }
                 if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
                     && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
                 {
@@ -400,11 +473,34 @@ namespace LifeSimulation.Simulation.Core
                     }
                 }
 
+                if (decision.Action == CreatureAction.SeekCarcass
+                    && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
+                {
+                    ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
+                    if (resource.Kind == ResourceKind.Carcass
+                        && SimVector2.Distance(movement.Position, resource.Position) <= resource.InteractionRadius)
+                    {
+                        decision = new CreatureDecision(CreatureAction.FeedCarcass, decision.TargetResourceIndex, decision.Score);
+                    }
+                }
+
+                if (decision.Action == CreatureAction.SeekPrey
+                    && Creatures.TryGetIndex(decision.TargetCreatureId, out int preyIndex)
+                    && SimVector2.Distance(movement.Position, Creatures.GetMovementAt(preyIndex).Position) <= 1.1f)
+                {
+                    decision = new CreatureDecision(
+                        CreatureAction.Attack,
+                        -1,
+                        decision.Score,
+                        targetCreatureId: decision.TargetCreatureId);
+                }
+
                 Creatures.SetDecisionAt(index, new CreatureDecision(
                     decision.Action,
                     decision.TargetResourceIndex,
                     decision.Score,
-                    tick));
+                    tick,
+                    decision.TargetCreatureId));
                 Creatures.SetDecisionDiagnosticsAt(index, diagnostics);
             }
         }
@@ -428,6 +524,25 @@ namespace LifeSimulation.Simulation.Core
             }
         }
 
+        private void RebuildCombatGrid()
+        {
+            EnsureCreaturePositionCapacity(Creatures.Count);
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                _creaturePositions[index] = Creatures.GetMovementAt(index).Position;
+            }
+
+            CombatGrid.Rebuild(_creaturePositions, Creatures.Count);
+        }
+
+        private void EnsureCreaturePositionCapacity(int required)
+        {
+            if (required > _creaturePositions.Length)
+            {
+                Array.Resize(ref _creaturePositions, Math.Max(required, _creaturePositions.Length * 2));
+            }
+        }
+
         private void ResolveResourceInteractions()
         {
             _resourceRequestCount = 0;
@@ -437,7 +552,9 @@ namespace LifeSimulation.Simulation.Core
                 if ((decision.Action != CreatureAction.SeekFood
                         && decision.Action != CreatureAction.SeekWater
                         && decision.Action != CreatureAction.Eat
-                        && decision.Action != CreatureAction.Drink)
+                        && decision.Action != CreatureAction.Drink
+                        && decision.Action != CreatureAction.SeekCarcass
+                        && decision.Action != CreatureAction.FeedCarcass)
                     || (uint)decision.TargetResourceIndex >= (uint)Resources.Count)
                 {
                     continue;
@@ -446,7 +563,8 @@ namespace LifeSimulation.Simulation.Core
                 ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
                 if (!resource.IsActive || resource.Amount <= 0f
                     || ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.Eat) && resource.Kind != ResourceKind.Food)
-                    || ((decision.Action == CreatureAction.SeekWater || decision.Action == CreatureAction.Drink) && resource.Kind != ResourceKind.Water))
+                    || ((decision.Action == CreatureAction.SeekWater || decision.Action == CreatureAction.Drink) && resource.Kind != ResourceKind.Water)
+                    || ((decision.Action == CreatureAction.SeekCarcass || decision.Action == CreatureAction.FeedCarcass) && resource.Kind != ResourceKind.Carcass))
                 {
                     continue;
                 }
@@ -458,7 +576,7 @@ namespace LifeSimulation.Simulation.Core
                 }
 
                 Phenotype phenotype = Creatures.GetPhenotypeAt(creatureIndex);
-                float requestedAmount = (decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.Eat)
+                float requestedAmount = (decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.Eat || decision.Action == CreatureAction.SeekCarcass || decision.Action == CreatureAction.FeedCarcass)
                     ? phenotype.IngestionRate * Config.FixedDeltaTime
                     : 1.25f * Config.FixedDeltaTime;
                 EnsureResourceRequestCapacity(_resourceRequestCount + 1);
@@ -480,10 +598,14 @@ namespace LifeSimulation.Simulation.Core
                 ResourceRequest request = _resourceRequests[requestIndex];
                 ResourceState resource = Resources.GetAt(request.ResourceIndex);
                 ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(request.CreatureIndex);
-                if (resource.Kind == ResourceKind.Food)
+                if (resource.Kind == ResourceKind.Food || resource.Kind == ResourceKind.Carcass)
                 {
-                    NeedsSystem.ConsumeFood(ref needs, Creatures.GetPhenotypeAt(request.CreatureIndex), allocatedAmount);
-                    _cumulativeFoodConsumed += allocatedAmount;
+                    Phenotype phenotype = Creatures.GetPhenotypeAt(request.CreatureIndex);
+                    float nutrition = resource.Kind == ResourceKind.Carcass
+                        ? allocatedAmount * phenotype.MeatYieldMultiplier
+                        : allocatedAmount * phenotype.PlantFoodYieldMultiplier;
+                    NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
+                    _cumulativeFoodConsumed += nutrition;
                 }
                 else
                 {
@@ -514,6 +636,56 @@ namespace LifeSimulation.Simulation.Core
                 CurrentTick + 1,
                 Config.MaximumPopulation,
                 Events);
+        }
+
+        private void TickCombat(long tick)
+        {
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                ref CombatState combat = ref Creatures.GetCombatRefAt(index);
+                combat.AttackRecoveryRemaining = Math.Max(0f, combat.AttackRecoveryRemaining - Config.FixedDeltaTime);
+                CreatureDecision decision = Creatures.GetDecisionAt(index);
+                if (decision.Action != CreatureAction.Attack
+                    || combat.AttackRecoveryRemaining > 0f
+                    || !Creatures.TryGetIndex(decision.TargetCreatureId, out int targetIndex)
+                    || targetIndex == index)
+                {
+                    continue;
+                }
+
+                MovementState attackerMovement = Creatures.GetMovementAt(index);
+                MovementState defenderMovement = Creatures.GetMovementAt(targetIndex);
+                if (SimVector2.Distance(attackerMovement.Position, defenderMovement.Position) > 1.1f)
+                {
+                    continue;
+                }
+
+                Phenotype attacker = Creatures.GetPhenotypeAt(index);
+                Phenotype defender = Creatures.GetPhenotypeAt(targetIndex);
+                float hitChance = 0.20f + (0.70f * PredationSystem.Threat(attacker, defender));
+                float roll = DeterministicRandom.Float01(
+                    Config.WorldSeed,
+                    RandomDomain.AttackResolution,
+                    tick,
+                    Creatures.GetIdAt(index).Value,
+                    decision.TargetCreatureId.Value,
+                    0);
+                combat.AttackRecoveryRemaining = 0.75f;
+                if (roll > hitChance)
+                {
+                    continue;
+                }
+
+                float damage = 4f + (12f * attacker.AttackPower);
+                ref CreatureNeeds targetNeeds = ref Creatures.GetNeedsRefAt(targetIndex);
+                ref CombatState targetCombat = ref Creatures.GetCombatRefAt(targetIndex);
+                targetNeeds.Health -= damage;
+                targetCombat.WoundSeverity += damage / defender.HealthCapacity;
+                if (targetNeeds.Health <= 0f)
+                {
+                    RequestDeath(decision.TargetCreatureId, DeathCause.Predation);
+                }
+            }
         }
 
         private SimulationStatistics BuildStatistics(long tick)
@@ -549,7 +721,7 @@ namespace LifeSimulation.Simulation.Core
             {
                 ResourceState resource = Resources.GetAt(index);
                 if (resource.Kind == ResourceKind.Food) food += resource.Amount;
-                else water += resource.Amount;
+                else if (resource.Kind == ResourceKind.Water) water += resource.Amount;
             }
 
             float reciprocalPopulation = Creatures.Count == 0 ? 0f : 1f / Creatures.Count;

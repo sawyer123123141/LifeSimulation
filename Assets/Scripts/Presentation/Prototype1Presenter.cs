@@ -17,6 +17,13 @@ namespace LifeSimulation.Presentation
             new SimVector2(-11.6f, -7.6f),
         };
 
+        private static readonly SimVector2[] PredationFounderPositions =
+        {
+            new SimVector2(-13f, -9f), new SimVector2(-11f, -9f), new SimVector2(-9f, -9f), new SimVector2(-7f, -9f),
+            new SimVector2(-13f, -6f), new SimVector2(-11f, -6f), new SimVector2(-9f, -6f), new SimVector2(-7f, -6f),
+            new SimVector2(-12f, -3f), new SimVector2(-10f, -3f), new SimVector2(-8f, -3f), new SimVector2(-6f, -3f),
+        };
+
         private readonly Dictionary<CreatureId, Transform> _creatureViews = new Dictionary<CreatureId, Transform>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private readonly List<Transform> _resourceViews = new List<Transform>();
@@ -91,6 +98,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.B)) ResetSimulation(Prototype1Scenarios.Baseline);
             if (Input.GetKeyDown(KeyCode.D)) ResetSimulation(Prototype1Scenarios.Drought);
             if (Input.GetKeyDown(KeyCode.F)) ResetSimulation(Prototype1Scenarios.FoodScarcity);
+            if (Input.GetKeyDown(KeyCode.P)) ResetPredationSimulation();
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -116,7 +124,7 @@ namespace LifeSimulation.Presentation
 
         }
 
-        private void ResetSimulation(SimulationScenario scenario)
+        private void ResetSimulation(SimulationScenario scenario, SimulationConfig config = null)
         {
             foreach (KeyValuePair<CreatureId, Transform> creatureView in _creatureViews)
             {
@@ -130,7 +138,7 @@ namespace LifeSimulation.Presentation
             }
 
             _resourceViews.Clear();
-            _world = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
+            _world = new SimulationWorld(config ?? SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
             scenario.ApplyTo(_world);
             _scenarioId = scenario.Id;
             _accumulator = 0f;
@@ -144,23 +152,40 @@ namespace LifeSimulation.Presentation
             SynchronizePresentation();
         }
 
+        private void ResetPredationSimulation()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length);
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                new SimulationConfig(
+                    defaults.WorldSeed,
+                    defaults.InitialPopulation,
+                    defaults.Schedule,
+                    maximumPopulation: 150,
+                    founderProfile: FounderProfile.PredationVariation));
+        }
+
         private void CreateResourceView(ResourceState resource)
         {
-            var view = GameObject.CreatePrimitive(resource.Kind == ResourceKind.Food ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+            PrimitiveType primitive = resource.Kind == ResourceKind.Food
+                ? PrimitiveType.Cylinder
+                : resource.Kind == ResourceKind.Water ? PrimitiveType.Cube : PrimitiveType.Sphere;
+            var view = GameObject.CreatePrimitive(primitive);
             view.name = resource.Kind.ToString();
             view.transform.position = new Vector3(resource.Position.X, 0.25f, resource.Position.Y);
             view.transform.localScale = new Vector3(2f, 0.5f, 2f);
-            view.GetComponent<Renderer>().material.color = resource.Kind == ResourceKind.Food
-                ? new Color(0.95f, 0.72f, 0.15f)
-                : new Color(0.15f, 0.65f, 1f);
+            view.GetComponent<Renderer>().material.color = GetResourceColor(resource.Kind);
             _resourceViews.Add(view.transform);
         }
 
         private void ArrangeDemoFounders()
         {
-            for (int index = 0; index < _world.CreatureCount && index < DemoFounderPositions.Length; index++)
+            SimVector2[] positions = _world.Config.FounderProfile == FounderProfile.PredationVariation
+                ? PredationFounderPositions
+                : DemoFounderPositions;
+            for (int index = 0; index < _world.CreatureCount && index < positions.Length; index++)
             {
-                _world.SetCreaturePosition(_world.GetCreatureIdAt(index), DemoFounderPositions[index]);
+                _world.SetCreaturePosition(_world.GetCreatureIdAt(index), positions[index]);
             }
         }
 
@@ -169,16 +194,26 @@ namespace LifeSimulation.Presentation
             for (int index = 0; index < _world.Resources.Count; index++)
             {
                 var resource = _world.Resources.GetAt(index);
+                if (index >= _resourceViews.Count)
+                {
+                    CreateResourceView(resource);
+                }
+
                 Transform view = _resourceViews[index];
                 float fraction = resource.Capacity <= 0f ? 0f : resource.Amount / resource.Capacity;
                 float height = Mathf.Lerp(0.08f, 0.5f, fraction);
                 view.position = new Vector3(resource.Position.X, height * 0.5f, resource.Position.Y);
                 view.localScale = new Vector3(2f, height, 2f);
-                Color baseColor = resource.Kind == ResourceKind.Food
-                    ? new Color(0.95f, 0.72f, 0.15f)
-                    : new Color(0.15f, 0.65f, 1f);
+                Color baseColor = GetResourceColor(resource.Kind);
                 view.GetComponent<Renderer>().material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
             }
+        }
+
+        private static Color GetResourceColor(ResourceKind kind)
+        {
+            if (kind == ResourceKind.Food) return new Color(0.95f, 0.72f, 0.15f);
+            if (kind == ResourceKind.Water) return new Color(0.15f, 0.65f, 1f);
+            return new Color(0.55f, 0.12f, 0.08f);
         }
 
         private void SynchronizePresentation()
@@ -242,6 +277,11 @@ namespace LifeSimulation.Presentation
                     return new Color(0.15f, 0.68f, 1f);
                 case CreatureAction.Reproduce:
                     return new Color(0.9f, 0.25f, 0.9f);
+                case CreatureAction.SeekPrey:
+                case CreatureAction.Attack:
+                    return new Color(0.98f, 0.2f, 0.16f);
+                case CreatureAction.Flee:
+                    return new Color(0.2f, 0.95f, 0.95f);
                 default:
                     return new Color(0.35f, 0.92f, 0.45f);
             }
@@ -249,7 +289,7 @@ namespace LifeSimulation.Presentation
 
         private static float GetActionScale(CreatureAction action)
         {
-            if (action == CreatureAction.Eat || action == CreatureAction.Drink || action == CreatureAction.Reproduce)
+            if (action == CreatureAction.Eat || action == CreatureAction.Drink || action == CreatureAction.Reproduce || action == CreatureAction.Attack)
             {
                 return 1.12f + (0.08f * Mathf.Sin(Time.unscaledTime * 8f));
             }

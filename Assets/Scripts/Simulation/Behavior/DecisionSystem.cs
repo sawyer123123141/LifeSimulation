@@ -1,5 +1,6 @@
 using System;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
 
 namespace LifeSimulation.Simulation.Behavior
 {
@@ -13,22 +14,34 @@ namespace LifeSimulation.Simulation.Behavior
         Rest,
         SeekMate,
         Reproduce,
+        SeekPrey,
+        Attack,
+        Flee,
+        SeekCarcass,
+        FeedCarcass,
     }
 
     public readonly struct CreatureDecision
     {
-        public CreatureDecision(CreatureAction action, int targetResourceIndex, float score, long decisionTick = -1)
+        public CreatureDecision(
+            CreatureAction action,
+            int targetResourceIndex,
+            float score,
+            long decisionTick = -1,
+            CreatureId targetCreatureId = default)
         {
             Action = action;
             TargetResourceIndex = targetResourceIndex;
             Score = score;
             DecisionTick = decisionTick;
+            TargetCreatureId = targetCreatureId;
         }
 
         public CreatureAction Action { get; }
         public int TargetResourceIndex { get; }
         public float Score { get; }
         public long DecisionTick { get; }
+        public CreatureId TargetCreatureId { get; }
     }
 
     public readonly struct DecisionDiagnostics

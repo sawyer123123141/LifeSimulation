@@ -7,6 +7,7 @@ namespace LifeSimulation.Simulation.Resources
     {
         Food,
         Water,
+        Carcass,
     }
 
     public readonly struct ResourceId : IEquatable<ResourceId>
