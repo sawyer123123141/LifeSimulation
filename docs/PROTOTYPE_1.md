@@ -1,5 +1,10 @@
 # Prototype 1: Can Evolution Happen?
 
+Detailed architecture and executable implementation plan:
+
+- [`superpowers/specs/2026-08-12-prototype-1-design.md`](superpowers/specs/2026-08-12-prototype-1-design.md)
+- [`superpowers/plans/2026-08-12-p0-evolution-proof-implementation.md`](superpowers/plans/2026-08-12-p0-evolution-proof-implementation.md)
+
 ## Success criteria
 
 Prototype 1 succeeds when all of these are true:

@@ -1,5 +1,10 @@
 # Roadmap
 
+Detailed cross-prototype architecture and delivery sequencing:
+
+- [`superpowers/specs/2026-08-12-product-architecture.md`](superpowers/specs/2026-08-12-product-architecture.md)
+- [`superpowers/plans/2026-08-12-p0-p7-program-plan.md`](superpowers/plans/2026-08-12-p0-p7-program-plan.md)
+
 ## P0 - Core evolution proof
 
 Goal: prove heritable traits can create measurable natural selection.
