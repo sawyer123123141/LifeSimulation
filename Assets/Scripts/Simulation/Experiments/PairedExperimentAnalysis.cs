@@ -106,6 +106,40 @@ namespace LifeSimulation.Simulation.Experiments
             return differences;
         }
 
+        public static float CalculateStandardizedEffect(
+            IReadOnlyList<ExperimentResult> control,
+            IReadOnlyList<ExperimentResult> treatment,
+            ExperimentMetric metric)
+        {
+            float[] differences = CalculateDifferences(control, treatment, metric);
+            double sum = 0d;
+            for (int index = 0; index < differences.Length; index++)
+            {
+                sum += differences[index];
+            }
+
+            double mean = sum / differences.Length;
+            if (differences.Length == 1)
+            {
+                return mean == 0d ? 0f : (mean > 0d ? float.PositiveInfinity : float.NegativeInfinity);
+            }
+
+            double sumOfSquaredDeviation = 0d;
+            for (int index = 0; index < differences.Length; index++)
+            {
+                double deviation = differences[index] - mean;
+                sumOfSquaredDeviation += deviation * deviation;
+            }
+
+            double sampleDeviation = Math.Sqrt(sumOfSquaredDeviation / (differences.Length - 1));
+            if (sampleDeviation == 0d)
+            {
+                return mean == 0d ? 0f : (mean > 0d ? float.PositiveInfinity : float.NegativeInfinity);
+            }
+
+            return (float)(mean / sampleDeviation);
+        }
+
         private static float GetMetric(ExperimentResult result, ExperimentMetric metric)
         {
             switch (metric)
@@ -186,6 +220,53 @@ namespace LifeSimulation.Simulation.Experiments
             int lowerIndex = (int)Math.Floor((resampledMeans.Length - 1) * 0.025d);
             int upperIndex = (int)Math.Ceiling((resampledMeans.Length - 1) * 0.975d);
             return new PairedBootstrapInterval(resampledMeans[lowerIndex], resampledMeans[upperIndex]);
+        }
+    }
+
+    public readonly struct PairedEvolutionAssessment
+    {
+        public PairedEvolutionAssessment(
+            bool intervalExcludesZero,
+            bool meetsMinimumEffectSize,
+            bool meetsDirectionConsistency,
+            float standardizedEffect)
+        {
+            IntervalExcludesZero = intervalExcludesZero;
+            MeetsMinimumEffectSize = meetsMinimumEffectSize;
+            MeetsDirectionConsistency = meetsDirectionConsistency;
+            StandardizedEffect = standardizedEffect;
+        }
+
+        public bool IntervalExcludesZero { get; }
+        public bool MeetsMinimumEffectSize { get; }
+        public bool MeetsDirectionConsistency { get; }
+        public float StandardizedEffect { get; }
+        public bool MeetsStatisticalCriterion => IntervalExcludesZero
+            && MeetsMinimumEffectSize
+            && MeetsDirectionConsistency;
+        public bool RequiresMechanismEvidence => true;
+    }
+
+    public static class PairedEvolutionCriterion
+    {
+        public const float MinimumStandardizedEffect = 0.5f;
+        public const float MinimumDirectionConsistency = 0.75f;
+
+        public static PairedEvolutionAssessment Assess(
+            PairedExperimentSummary summary,
+            PairedBootstrapInterval interval,
+            float standardizedEffect)
+        {
+            if (float.IsNaN(standardizedEffect))
+            {
+                throw new ArgumentOutOfRangeException(nameof(standardizedEffect));
+            }
+
+            return new PairedEvolutionAssessment(
+                interval.ExcludesZero,
+                Math.Abs(standardizedEffect) >= MinimumStandardizedEffect,
+                summary.DirectionConsistency >= MinimumDirectionConsistency,
+                standardizedEffect);
         }
     }
 }

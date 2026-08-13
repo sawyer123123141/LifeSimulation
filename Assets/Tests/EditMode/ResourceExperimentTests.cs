@@ -159,6 +159,49 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(interval.UpperBound, Is.EqualTo(0.30f).Within(0.0001f));
         }
 
+        [Test]
+        public void EvolutionCriterionRequiresIntervalEffectSizeAndConsistentDirection()
+        {
+            var summary = new PairedExperimentSummary(
+                pairCount: 20,
+                meanTreatmentMinusControl: 0.12f,
+                positiveDifferenceCount: 16,
+                negativeDifferenceCount: 2);
+            var interval = new PairedBootstrapInterval(0.03f, 0.20f);
+
+            PairedEvolutionAssessment assessment = PairedEvolutionCriterion.Assess(
+                summary,
+                interval,
+                standardizedEffect: 0.60f);
+
+            Assert.That(assessment.MeetsStatisticalCriterion, Is.True);
+            Assert.That(assessment.RequiresMechanismEvidence, Is.True);
+        }
+
+        [Test]
+        public void PairedAnalysisCalculatesAStandardizedWithinPairEffect()
+        {
+            ExperimentResult[] baseline =
+            {
+                CreateResult("baseline", 42, waterEfficiency: 0.20f),
+                CreateResult("baseline", 43, waterEfficiency: 0.30f),
+                CreateResult("baseline", 44, waterEfficiency: 0.40f),
+            };
+            ExperimentResult[] drought =
+            {
+                CreateResult("drought", 42, waterEfficiency: 0.30f),
+                CreateResult("drought", 43, waterEfficiency: 0.50f),
+                CreateResult("drought", 44, waterEfficiency: 0.70f),
+            };
+
+            float effect = PairedExperimentAnalysis.CalculateStandardizedEffect(
+                baseline,
+                drought,
+                ExperimentMetric.WaterEfficiency);
+
+            Assert.That(effect, Is.EqualTo(2f).Within(0.0001f));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;

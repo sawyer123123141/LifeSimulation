@@ -49,22 +49,32 @@ namespace LifeSimulation.EditorTools
             string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
             Directory.CreateDirectory(outputDirectory);
             string outputPath = Path.Combine(outputDirectory, "prototype1-paired-scenarios.csv");
+            string summaryPath = Path.Combine(outputDirectory, "prototype1-paired-summary.csv");
             SimulationScenario[] scenarios =
             {
                 Prototype1Scenarios.Baseline,
                 Prototype1Scenarios.Drought,
                 Prototype1Scenarios.FoodScarcity,
             };
+            const int firstSeed = 42;
+            const int seedCount = 5;
+            var resultsByScenario = new ExperimentResult[scenarios.Length][];
+            for (int scenarioIndex = 0; scenarioIndex < resultsByScenario.Length; scenarioIndex++)
+            {
+                resultsByScenario[scenarioIndex] = new ExperimentResult[seedCount];
+            }
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
                 writer.WriteLine("scenario,seed,ticks,population,births,deaths,size,speed,metabolism,vision,water_efficiency,food_efficiency,state_hash");
-                for (int seed = 42; seed < 47; seed++)
+                for (int seedOffset = 0; seedOffset < seedCount; seedOffset++)
                 {
+                    int seed = firstSeed + seedOffset;
                     for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
                     {
                         SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(seed, initialPopulation: 50);
                         ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], ticks: 20000);
+                        resultsByScenario[scenarioIndex][seedOffset] = result;
                         SimulationStatistics stats = result.FinalStatistics;
                         writer.WriteLine(string.Format(
                             CultureInfo.InvariantCulture,
@@ -86,7 +96,49 @@ namespace LifeSimulation.EditorTools
                 }
             }
 
-            Debug.Log($"Prototype 1 paired experiment results saved to {outputPath}");
+            using (var writer = new StreamWriter(summaryPath, append: false))
+            {
+                writer.WriteLine("control,treatment,metric,pairs,mean_treatment_minus_control,standardized_effect,direction_consistency,interval_lower,interval_upper,meets_statistical_criterion,requires_mechanism_evidence");
+                Array metrics = Enum.GetValues(typeof(ExperimentMetric));
+                for (int treatmentIndex = 1; treatmentIndex < scenarios.Length; treatmentIndex++)
+                {
+                    for (int metricIndex = 0; metricIndex < metrics.Length; metricIndex++)
+                    {
+                        var metric = (ExperimentMetric)metrics.GetValue(metricIndex);
+                        PairedExperimentSummary summary = PairedExperimentAnalysis.Summarize(
+                            resultsByScenario[0],
+                            resultsByScenario[treatmentIndex],
+                            metric);
+                        PairedBootstrapInterval interval = PairedBootstrapAnalysis.EstimateMeanDifferenceInterval(
+                            resultsByScenario[0],
+                            resultsByScenario[treatmentIndex],
+                            metric,
+                            resampleCount: 1024,
+                            randomSeed: firstSeed);
+                        float effect = PairedExperimentAnalysis.CalculateStandardizedEffect(
+                            resultsByScenario[0],
+                            resultsByScenario[treatmentIndex],
+                            metric);
+                        PairedEvolutionAssessment assessment = PairedEvolutionCriterion.Assess(summary, interval, effect);
+                        writer.WriteLine(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "{0},{1},{2},{3},{4:F6},{5:F6},{6:F4},{7:F6},{8:F6},{9},{10}",
+                            resultsByScenario[0][0].ScenarioId,
+                            resultsByScenario[treatmentIndex][0].ScenarioId,
+                            metric,
+                            summary.PairCount,
+                            summary.MeanTreatmentMinusControl,
+                            effect,
+                            summary.DirectionConsistency,
+                            interval.LowerBound,
+                            interval.UpperBound,
+                            assessment.MeetsStatisticalCriterion,
+                            assessment.RequiresMechanismEvidence));
+                    }
+                }
+            }
+
+            Debug.Log($"Prototype 1 paired experiment results saved to {outputPath} and {summaryPath}");
         }
     }
 }
