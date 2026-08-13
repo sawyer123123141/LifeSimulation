@@ -265,9 +265,28 @@ namespace LifeSimulation.Tests.EditMode
                 world.Step(config.FixedDeltaTime);
             }
 
-            Assert.That(world.GetCreatureDecisionAt(0).Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(world.GetCreatureDecisionAt(0).Action, Is.EqualTo(CreatureAction.Eat));
             Assert.That(world.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(0f));
             Assert.That(world.Resources.GetAt(0).Amount, Is.LessThan(10f));
+        }
+
+        [Test]
+        public void HungryCreatureAtFoodPatchReportsEatingRatherThanSeeking()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId creature = world.Spawn();
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 5f, 10f, 10f, 0f);
+
+            for (int index = 0; index < 10; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.GetCreatureDecisionAt(0).Action, Is.EqualTo(CreatureAction.Eat));
         }
 
         [Test]

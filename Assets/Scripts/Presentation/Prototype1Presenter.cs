@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 using UnityEngine;
@@ -8,6 +9,7 @@ namespace LifeSimulation.Presentation
     public sealed class Prototype1Presenter : MonoBehaviour
     {
         private readonly Dictionary<CreatureId, Transform> _creatureViews = new Dictionary<CreatureId, Transform>();
+        private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private SimulationWorld _world;
         private float _accumulator;
         private float _speedMultiplier = 4f;
@@ -48,13 +50,14 @@ namespace LifeSimulation.Presentation
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(12f, 12f, 350f, 148f), "LifeSimulation — Prototype 1");
+            GUI.Box(new Rect(12f, 12f, 380f, 170f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             var stats = _world.Statistics;
             GUI.Label(new Rect(24f, 84f, 330f, 22f), $"Generation: {stats.HighestGeneration}    Mean body gene: {stats.MeanBodySizeGene:0.00}");
             GUI.Label(new Rect(24f, 106f, 330f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 128f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
+            GUI.Label(new Rect(24f, 150f, 350f, 22f), "Green: wander · Gold: seek/eat food · Blue: seek/drink water");
         }
 
         private void HandleInput()
@@ -108,6 +111,7 @@ namespace LifeSimulation.Presentation
 
         private void SynchronizePresentation()
         {
+            RemoveStaleCreatureViews();
             for (int index = 0; index < _world.CreatureCount; index++)
             {
                 CreatureId id = _world.GetCreatureIdAt(index);
@@ -121,8 +125,54 @@ namespace LifeSimulation.Presentation
                 }
 
                 var movement = _world.GetCreatureMovementAt(index);
+                CreatureAction action = _world.GetCreatureDecisionAt(index).Action;
                 view.position = new Vector3(movement.Position.X, 0.55f, movement.Position.Y);
+                view.localScale = Vector3.one * GetActionScale(action);
+                view.GetComponent<Renderer>().material.color = GetActionColor(action);
             }
+        }
+
+        private void RemoveStaleCreatureViews()
+        {
+            _staleCreatureIds.Clear();
+            foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
+            {
+                if (!_world.TryGetCreatureIndex(pair.Key, out _))
+                {
+                    Destroy(pair.Value.gameObject);
+                    _staleCreatureIds.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0; index < _staleCreatureIds.Count; index++)
+            {
+                _creatureViews.Remove(_staleCreatureIds[index]);
+            }
+        }
+
+        private static Color GetActionColor(CreatureAction action)
+        {
+            switch (action)
+            {
+                case CreatureAction.SeekFood:
+                case CreatureAction.Eat:
+                    return new Color(1f, 0.72f, 0.12f);
+                case CreatureAction.SeekWater:
+                case CreatureAction.Drink:
+                    return new Color(0.15f, 0.68f, 1f);
+                default:
+                    return new Color(0.35f, 0.92f, 0.45f);
+            }
+        }
+
+        private static float GetActionScale(CreatureAction action)
+        {
+            if (action == CreatureAction.Eat || action == CreatureAction.Drink)
+            {
+                return 1.12f + (0.08f * Mathf.Sin(Time.unscaledTime * 8f));
+            }
+
+            return 1f;
         }
     }
 }

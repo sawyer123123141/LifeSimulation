@@ -272,7 +272,10 @@ namespace LifeSimulation.Simulation.Core
         private SimVector2 GetMovementTarget(int creatureIndex, CreatureId creatureId, long tick, SimVector2 position)
         {
             CreatureDecision decision = Creatures.GetDecisionAt(creatureIndex);
-            if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
+            if ((decision.Action == CreatureAction.SeekFood
+                    || decision.Action == CreatureAction.SeekWater
+                    || decision.Action == CreatureAction.Eat
+                    || decision.Action == CreatureAction.Drink)
                 && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
             {
                 ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
@@ -313,6 +316,19 @@ namespace LifeSimulation.Simulation.Core
                     phenotype.VisionRange,
                     ResourceKind.Water);
                 CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water);
+                if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
+                    && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
+                {
+                    ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
+                    if (SimVector2.Distance(movement.Position, resource.Position) <= resource.InteractionRadius)
+                    {
+                        decision = new CreatureDecision(
+                            resource.Kind == ResourceKind.Food ? CreatureAction.Eat : CreatureAction.Drink,
+                            decision.TargetResourceIndex,
+                            decision.Score);
+                    }
+                }
+
                 Creatures.SetDecisionAt(index, new CreatureDecision(
                     decision.Action,
                     decision.TargetResourceIndex,
@@ -346,7 +362,10 @@ namespace LifeSimulation.Simulation.Core
             for (int creatureIndex = 0; creatureIndex < Creatures.Count; creatureIndex++)
             {
                 CreatureDecision decision = Creatures.GetDecisionAt(creatureIndex);
-                if ((decision.Action != CreatureAction.SeekFood && decision.Action != CreatureAction.SeekWater)
+                if ((decision.Action != CreatureAction.SeekFood
+                        && decision.Action != CreatureAction.SeekWater
+                        && decision.Action != CreatureAction.Eat
+                        && decision.Action != CreatureAction.Drink)
                     || (uint)decision.TargetResourceIndex >= (uint)Resources.Count)
                 {
                     continue;
@@ -354,8 +373,8 @@ namespace LifeSimulation.Simulation.Core
 
                 ResourceState resource = Resources.GetAt(decision.TargetResourceIndex);
                 if (!resource.IsActive || resource.Amount <= 0f
-                    || (decision.Action == CreatureAction.SeekFood && resource.Kind != ResourceKind.Food)
-                    || (decision.Action == CreatureAction.SeekWater && resource.Kind != ResourceKind.Water))
+                    || ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.Eat) && resource.Kind != ResourceKind.Food)
+                    || ((decision.Action == CreatureAction.SeekWater || decision.Action == CreatureAction.Drink) && resource.Kind != ResourceKind.Water))
                 {
                     continue;
                 }
@@ -367,7 +386,7 @@ namespace LifeSimulation.Simulation.Core
                 }
 
                 Phenotype phenotype = Creatures.GetPhenotypeAt(creatureIndex);
-                float requestedAmount = decision.Action == CreatureAction.SeekFood
+                float requestedAmount = (decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.Eat)
                     ? phenotype.IngestionRate * Config.FixedDeltaTime
                     : 1.25f * Config.FixedDeltaTime;
                 EnsureResourceRequestCapacity(_resourceRequestCount + 1);
