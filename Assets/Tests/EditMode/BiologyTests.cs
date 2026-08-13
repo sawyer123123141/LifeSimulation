@@ -104,5 +104,22 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(needs.Energy, Is.EqualTo(phenotype.EnergyCapacity));
             Assert.That(needs.Hydration, Is.EqualTo(phenotype.HydrationCapacity));
         }
+
+        [Test]
+        public void FoodEfficiencyRaisesNetEnergyRecoveredAtItsOwnIngestionRate()
+        {
+            Phenotype lowFood = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0f));
+            Phenotype highFood = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 1f));
+            CreatureNeeds lowNeeds = CreatureNeeds.Full(lowFood);
+            CreatureNeeds highNeeds = CreatureNeeds.Full(highFood);
+            lowNeeds.Energy = 0f;
+            highNeeds.Energy = 0f;
+
+            NeedsSystem.ConsumeFood(ref lowNeeds, lowFood, lowFood.IngestionRate);
+            NeedsSystem.ConsumeFood(ref highNeeds, highFood, highFood.IngestionRate);
+
+            Assert.That(highNeeds.Energy, Is.GreaterThan(lowNeeds.Energy));
+            Assert.That(highFood.BasalEnergyCostMultiplier, Is.GreaterThan(lowFood.BasalEnergyCostMultiplier));
+        }
     }
 }

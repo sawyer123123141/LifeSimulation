@@ -96,8 +96,8 @@ namespace LifeSimulation.Simulation.Biology
                 (float)Math.Pow(bodyMass, 0.67d) * 100f,
                 1f + (3f * genome.MovementSpeed),
                 4f + (12f * genome.VisionRange),
-                0.75f + (0.5f * genome.FoodEfficiency),
-                1.25f - (0.5f * genome.FoodEfficiency),
+                0.75f + (0.65f * genome.FoodEfficiency),
+                1.25f - (0.3f * genome.FoodEfficiency),
                 0.7f + (0.8f * genome.MetabolicPace),
                 1f - (0.55f * genome.WaterEfficiency),
                 (float)Math.Pow(bodyMass, 0.75d) * (0.7f + (0.8f * genome.MetabolicPace)) * maintenance);
