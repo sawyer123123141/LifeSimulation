@@ -143,6 +143,27 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldTicksNeedsOnlyAtTheConfiguredFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            CreatureNeeds before = world.GetCreatureNeedsAt(0);
+
+            for (int index = 0; index < 9; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.GetCreatureNeedsAt(0).Energy, Is.EqualTo(before.Energy));
+
+            world.Step(config.FixedDeltaTime);
+
+            CreatureNeeds after = world.GetCreatureNeedsAt(0);
+            Assert.That(after.Energy, Is.LessThan(before.Energy));
+            Assert.That(after.Age, Is.EqualTo(0.5f).Within(0.0001f));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);

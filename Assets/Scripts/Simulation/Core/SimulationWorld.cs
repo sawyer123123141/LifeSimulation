@@ -1,4 +1,5 @@
 using System;
+using LifeSimulation.Simulation.Biology;
 
 namespace LifeSimulation.Simulation.Core
 {
@@ -40,6 +41,11 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.TryGetIndex(id, out index);
         }
 
+        public CreatureNeeds GetCreatureNeedsAt(int index)
+        {
+            return Creatures.GetNeedsAt(index);
+        }
+
         public void RequestDeath(CreatureId id, DeathCause cause)
         {
             if (!Creatures.TryGetIndex(id, out _))
@@ -66,13 +72,19 @@ namespace LifeSimulation.Simulation.Core
                 throw new ArgumentException("Simulation steps must use the configured fixed delta.", nameof(fixedDeltaTime));
             }
 
+            long nextTick = CurrentTick + 1;
+            if (IsDue(nextTick, Config.Schedule.NeedsHz))
+            {
+                TickNeeds();
+            }
+
             for (int index = 0; index < _pendingDeathCount; index++)
             {
                 Creatures.Remove(_pendingDeaths[index]);
             }
 
             _pendingDeathCount = 0;
-            CurrentTick++;
+            CurrentTick = nextTick;
         }
 
         public ulong ComputeStateHash()
@@ -98,6 +110,22 @@ namespace LifeSimulation.Simulation.Core
             }
 
             Array.Resize(ref _pendingDeaths, Math.Max(required, _pendingDeaths.Length * 2));
+        }
+
+        private bool IsDue(long tick, int frequencyHz)
+        {
+            int interval = Config.Schedule.BaseFrequencyHz / frequencyHz;
+            return tick % interval == 0;
+        }
+
+        private void TickNeeds()
+        {
+            float deltaTime = 1f / Config.Schedule.NeedsHz;
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(index);
+                NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, 0f);
+            }
         }
 
         private static ulong Hash(ulong hash, ulong value)
