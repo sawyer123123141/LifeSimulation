@@ -10,6 +10,7 @@ namespace LifeSimulation.Presentation
     {
         private readonly Dictionary<CreatureId, Transform> _creatureViews = new Dictionary<CreatureId, Transform>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
+        private readonly List<Transform> _resourceViews = new List<Transform>();
         private SimulationWorld _world;
         private Camera _simulationCamera;
         private float _accumulator;
@@ -29,7 +30,7 @@ namespace LifeSimulation.Presentation
 
         private void Awake()
         {
-            _world = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 80));
+            _world = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
             CreateEnvironment();
             SynchronizePresentation();
         }
@@ -112,11 +113,30 @@ namespace LifeSimulation.Presentation
             view.transform.position = displayPosition;
             view.transform.localScale = new Vector3(2f, 0.5f, 2f);
             view.GetComponent<Renderer>().material.color = color;
+            _resourceViews.Add(view.transform);
+        }
+
+        private void SynchronizeResourceViews()
+        {
+            for (int index = 0; index < _world.Resources.Count; index++)
+            {
+                var resource = _world.Resources.GetAt(index);
+                Transform view = _resourceViews[index];
+                float fraction = resource.Capacity <= 0f ? 0f : resource.Amount / resource.Capacity;
+                float height = Mathf.Lerp(0.08f, 0.5f, fraction);
+                view.position = new Vector3(resource.Position.X, height * 0.5f, resource.Position.Y);
+                view.localScale = new Vector3(2f, height, 2f);
+                Color baseColor = resource.Kind == ResourceKind.Food
+                    ? new Color(0.95f, 0.72f, 0.15f)
+                    : new Color(0.15f, 0.65f, 1f);
+                view.GetComponent<Renderer>().material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
+            }
         }
 
         private void SynchronizePresentation()
         {
             RemoveStaleCreatureViews();
+            SynchronizeResourceViews();
             for (int index = 0; index < _world.CreatureCount; index++)
             {
                 CreatureId id = _world.GetCreatureIdAt(index);
