@@ -33,6 +33,7 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.InRange(0f, 1f));
             Assert.That(world.Creatures.GetGenomeAt(0).DietSpecialization, Is.InRange(0f, 1f));
             Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.Not.EqualTo(0f));
+            Assert.That(world.Creatures.GetGenomeAt(0).TemperatureTolerance, Is.InRange(0f, 1f));
         }
 
         [Test]

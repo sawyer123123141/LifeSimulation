@@ -281,6 +281,7 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.MemoryRetention);
                 hash = HashFloat(hash, genome.LearningRate);
                 hash = HashFloat(hash, genome.Exploration);
+                hash = HashFloat(hash, genome.TemperatureTolerance);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 hash = HashFloat(hash, needs.Energy);

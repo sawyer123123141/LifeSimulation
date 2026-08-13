@@ -217,6 +217,7 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(first.Fear, Is.InRange(0f, 1f));
             Assert.That(first.Aggression, Is.InRange(0f, 1f));
             Assert.That(first.DietSpecialization, Is.InRange(0f, 1f));
+            Assert.That(first.TemperatureTolerance, Is.InRange(0f, 1f));
         }
     }
 }
