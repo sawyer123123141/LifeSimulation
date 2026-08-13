@@ -14,19 +14,12 @@ namespace LifeSimulation.Simulation.Biology
                 baseline.VisionRange,
                 baseline.WaterEfficiency,
                 baseline.FoodEfficiency,
-                Trait(worldSeed, founderOrdinal, 0),
-                Trait(worldSeed, founderOrdinal, 1),
-                Trait(worldSeed, founderOrdinal, 2),
-                Trait(worldSeed, founderOrdinal, 3),
-                Trait(worldSeed, founderOrdinal, 4),
-                Trait(worldSeed, founderOrdinal, 5),
-                Trait(worldSeed, founderOrdinal, 6),
-                Trait(worldSeed, founderOrdinal, 7),
-                Trait(worldSeed, founderOrdinal, 8),
-                Trait(worldSeed, founderOrdinal, 9),
-                Trait(worldSeed, founderOrdinal, 10),
-                Trait(worldSeed, founderOrdinal, 11),
-                Trait(worldSeed, founderOrdinal, 12));
+                attack: Trait(worldSeed, founderOrdinal, 0),
+                defense: Trait(worldSeed, founderOrdinal, 1),
+                maneuverability: Trait(worldSeed, founderOrdinal, 2),
+                fear: Trait(worldSeed, founderOrdinal, 3),
+                aggression: Trait(worldSeed, founderOrdinal, 4),
+                dietSpecialization: Trait(worldSeed, founderOrdinal, 5));
         }
 
         private static float Trait(int worldSeed, long founderOrdinal, int traitIndex)
