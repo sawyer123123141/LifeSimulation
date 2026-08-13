@@ -59,6 +59,7 @@ namespace LifeSimulation.Presentation
             }
 
             SynchronizePresentation();
+            _world.Events.Clear();
         }
 
         private void OnGUI()
