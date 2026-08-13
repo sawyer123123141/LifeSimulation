@@ -843,6 +843,9 @@ namespace LifeSimulation.Simulation.Core
             float visionRangeTotal = 0f;
             float waterEfficiencyTotal = 0f;
             float foodEfficiencyTotal = 0f;
+            float temperatureToleranceTotal = 0f;
+            float fertilityInvestmentTotal = 0f;
+            float lifespanTendencyTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -857,6 +860,9 @@ namespace LifeSimulation.Simulation.Core
                 visionRangeTotal += genome.VisionRange;
                 waterEfficiencyTotal += genome.WaterEfficiency;
                 foodEfficiencyTotal += genome.FoodEfficiency;
+                temperatureToleranceTotal += genome.TemperatureTolerance;
+                fertilityInvestmentTotal += genome.FertilityInvestment;
+                lifespanTendencyTotal += genome.LifespanTendency;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -892,7 +898,10 @@ namespace LifeSimulation.Simulation.Core
                 _deathCount,
                 _attackHitCount,
                 _predationDeathCount,
-                _cumulativeCarcassConsumed);
+                _cumulativeCarcassConsumed,
+                temperatureToleranceTotal * reciprocalPopulation,
+                fertilityInvestmentTotal * reciprocalPopulation,
+                lifespanTendencyTotal * reciprocalPopulation);
         }
 
         private static float Lerp(float minimum, float maximum, float t)

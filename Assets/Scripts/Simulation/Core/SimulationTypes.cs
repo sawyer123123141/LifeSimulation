@@ -85,7 +85,10 @@ namespace LifeSimulation.Simulation.Core
             int deathCount,
             int attackHitCount = 0,
             int predationDeathCount = 0,
-            float cumulativeCarcassConsumed = 0f)
+            float cumulativeCarcassConsumed = 0f,
+            float meanTemperatureToleranceGene = 0f,
+            float meanFertilityInvestmentGene = 0f,
+            float meanLifespanTendencyGene = 0f)
         {
             Tick = tick;
             Population = population;
@@ -107,6 +110,9 @@ namespace LifeSimulation.Simulation.Core
             AttackHitCount = attackHitCount;
             PredationDeathCount = predationDeathCount;
             CumulativeCarcassConsumed = cumulativeCarcassConsumed;
+            MeanTemperatureToleranceGene = meanTemperatureToleranceGene;
+            MeanFertilityInvestmentGene = meanFertilityInvestmentGene;
+            MeanLifespanTendencyGene = meanLifespanTendencyGene;
         }
 
         public long Tick { get; }
@@ -129,6 +135,9 @@ namespace LifeSimulation.Simulation.Core
         public int AttackHitCount { get; }
         public int PredationDeathCount { get; }
         public float CumulativeCarcassConsumed { get; }
+        public float MeanTemperatureToleranceGene { get; }
+        public float MeanFertilityInvestmentGene { get; }
+        public float MeanLifespanTendencyGene { get; }
     }
 
     public struct ReproductionState
