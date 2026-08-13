@@ -37,13 +37,11 @@ The first prototype intentionally stays small. No procedural planet, giant biome
 - Vision range
 - Water efficiency
 - Food efficiency
-- Fear
-- Aggression
 
 Genes must have tradeoffs. Faster or larger creatures should not simply be universally better.
 
 ### Brain
-The prototype uses a utility-based decision system. Creatures score competing actions based on their current needs, perceptions, risk, cost, and genetic tendencies.
+The prototype uses a utility-based decision system. Creatures score competing actions from current needs, perceptions, and travel cost; the score terms are inspectable in-game.
 
 Initial actions:
 - Wander
@@ -52,10 +50,9 @@ Initial actions:
 - Seek water
 - Drink
 - Rest
-- Flee
 - Reproduce
 
-A severely thirsty creature may still flee if danger outweighs the benefit of reaching water. The system should store enough information to explain **why** an action won.
+Predator avoidance, fear, aggression, and memory are later prototype work. The system stores enough information to explain **why** an action won.
 
 ### Evolution
 - Reproduction
@@ -66,6 +63,20 @@ A severely thirsty creature may still flee if danger outweighs the benefit of re
 - Population statistics across generations
 
 Prototype success means environmental pressure can measurably shift trait distributions without manually scripting the outcome.
+
+## Current prototype controls
+
+Open the project in Unity 6 and enter Play mode. The runtime bootstrap starts four varied founders near food and water so reproduction is visible.
+
+- `Space`: pause/resume
+- `1`, `2`, `4`, `8`: simulation speed
+- `B`: baseline resources
+- `D`: drought treatment
+- `F`: food-scarcity treatment
+
+Click a creature to inspect its identity, needs, inherited traits, lineage, current action, and food/water decision scores.
+
+For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, and `-lifeSimTicks`; for example use `-lifeSimSeedCount 20 -lifeSimTicks 50000` for a longer 20-seed sweep. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
 
 ## Architecture rule
 
