@@ -8,6 +8,8 @@
 
 **Tech Stack:** Unity 6000.2.14f1, C#, Unity Test Framework, runtime UI Toolkit, NUnit, batch-mode EditMode/PlayMode tests, CSV/JSON experiment summaries.
 
+**Unity command convention:** Compile/import commands use `-batchmode -nographics -quit`. Test commands use `-batchmode -nographics -runTests` without `-quit`; Unity Test Framework owns process exit and must produce the requested XML result before the run is accepted.
+
 ## Global constraints
 
 - Use Unity 6000.2.14f1 and C#.
