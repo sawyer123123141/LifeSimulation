@@ -365,6 +365,27 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CognitionEnabledWorldStoresSeenResourcesAndLetsUnrefreshedMemoryDecay()
+        {
+            var world = new SimulationWorld(SimulationConfig.CreatePrototype2Defaults(42, 0));
+            CreatureId creature = world.Spawn();
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+            ResourceId food = world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f);
+
+            for (int index = 0; index < 10; index++) world.Step(world.Config.FixedDeltaTime);
+
+            MemoryState observed = world.GetCreatureMemoryAt(0);
+            Assert.That(observed.FoodConfidence, Is.EqualTo(1f));
+            Assert.That(observed.FoodPosition.X, Is.EqualTo(0f));
+            world.Resources.SetActive(food, false);
+
+            for (int index = 0; index < 10; index++) world.Step(world.Config.FixedDeltaTime);
+
+            Assert.That(world.GetCreatureMemoryAt(0).FoodConfidence, Is.LessThan(1f));
+            Assert.That(world.GetCreatureMemoryAt(0).FoodAge, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void HungryCreatureConsumesFoodAfterReachingItsSelectedResource()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);

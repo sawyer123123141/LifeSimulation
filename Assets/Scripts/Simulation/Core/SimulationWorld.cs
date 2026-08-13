@@ -136,6 +136,11 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.GetDecisionDiagnosticsAt(index);
         }
 
+        public MemoryState GetCreatureMemoryAt(int index)
+        {
+            return Creatures.GetMemoryRefAt(index);
+        }
+
         public void SetCreaturePosition(CreatureId id, SimVector2 position)
         {
             if (!Creatures.TryGetIndex(id, out int index))
@@ -299,6 +304,20 @@ namespace LifeSimulation.Simulation.Core
                 CombatState combat = Creatures.GetCombatRefAt(index);
                 hash = HashFloat(hash, combat.WoundSeverity);
                 hash = HashFloat(hash, combat.AttackRecoveryRemaining);
+
+                MemoryState memory = Creatures.GetMemoryRefAt(index);
+                hash = HashFloat(hash, memory.FoodPosition.X);
+                hash = HashFloat(hash, memory.FoodPosition.Y);
+                hash = HashFloat(hash, memory.WaterPosition.X);
+                hash = HashFloat(hash, memory.WaterPosition.Y);
+                hash = HashFloat(hash, memory.ThreatPosition.X);
+                hash = HashFloat(hash, memory.ThreatPosition.Y);
+                hash = HashFloat(hash, memory.FoodConfidence);
+                hash = HashFloat(hash, memory.WaterConfidence);
+                hash = HashFloat(hash, memory.ThreatConfidence);
+                hash = HashFloat(hash, memory.FoodAge);
+                hash = HashFloat(hash, memory.WaterAge);
+                hash = HashFloat(hash, memory.ThreatAge);
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));
@@ -348,6 +367,11 @@ namespace LifeSimulation.Simulation.Core
                 if (needs.Health <= 0f)
                 {
                     RequestDeath(Creatures.GetIdAt(index), DeathCause.Health);
+                }
+
+                if (Config.CognitionEnabled)
+                {
+                    MemorySystem.TickDecay(ref Creatures.GetMemoryRefAt(index), deltaTime, confidenceDecayPerSecond: 0.04f);
                 }
             }
         }
@@ -444,6 +468,12 @@ namespace LifeSimulation.Simulation.Core
                     movement.Position,
                     phenotype.VisionRange,
                     ResourceKind.Carcass);
+                if (Config.CognitionEnabled)
+                {
+                    ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
+                    if (food.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Food, Resources.GetAt(food.ResourceIndex).Position);
+                    if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
+                }
                 CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out DecisionDiagnostics diagnostics);
                 if (Config.FounderProfile == FounderProfile.PredationVariation)
                 {
@@ -461,6 +491,10 @@ namespace LifeSimulation.Simulation.Core
                             Creatures.GetPhenotypeAt(other.CreatureIndex),
                             other,
                             decision);
+                        if (Config.CognitionEnabled && decision.Action == CreatureAction.Flee)
+                        {
+                            MemorySystem.RememberThreat(ref Creatures.GetMemoryRefAt(index), Creatures.GetMovementAt(other.CreatureIndex).Position);
+                        }
                     }
 
                     decision = PredationSystem.PreferCarcassWhenUseful(

@@ -47,19 +47,22 @@ namespace LifeSimulation.Simulation.Core
             int initialPopulation,
             SimulationSchedule schedule,
             int maximumPopulation = 1000,
-            FounderProfile founderProfile = FounderProfile.Prototype1)
+            FounderProfile founderProfile = FounderProfile.Prototype1,
+            bool cognitionEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
             Schedule = schedule;
             MaximumPopulation = maximumPopulation;
             FounderProfile = founderProfile;
+            CognitionEnabled = cognitionEnabled;
         }
 
         public int WorldSeed { get; }
         public int InitialPopulation { get; }
         public int MaximumPopulation { get; }
         public FounderProfile FounderProfile { get; }
+        public bool CognitionEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -70,6 +73,18 @@ namespace LifeSimulation.Simulation.Core
                 initialPopulation,
                 new SimulationSchedule(20, 20, 4, 2, 2, 1, 1, 1),
                 maximumPopulation: 1000);
+        }
+
+        public static SimulationConfig CreatePrototype2Defaults(int worldSeed, int initialPopulation)
+        {
+            SimulationConfig defaults = CreatePrototype1Defaults(worldSeed, initialPopulation);
+            return new SimulationConfig(
+                worldSeed,
+                initialPopulation,
+                defaults.Schedule,
+                defaults.MaximumPopulation,
+                FounderProfile.PredationVariation,
+                cognitionEnabled: true);
         }
 
         public void Validate()
