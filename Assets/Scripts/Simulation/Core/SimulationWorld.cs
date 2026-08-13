@@ -146,10 +146,53 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, unchecked((ulong)Config.WorldSeed));
             hash = Hash(hash, unchecked((ulong)CurrentTick));
             hash = Hash(hash, unchecked((ulong)CreatureCount));
+            hash = Hash(hash, unchecked((ulong)_spawnOrdinal));
 
             for (int index = 0; index < CreatureCount; index++)
             {
                 hash = Hash(hash, unchecked((ulong)GetCreatureIdAt(index).Value));
+                Genome genome = Creatures.GetGenomeAt(index);
+                hash = HashFloat(hash, genome.BodySize);
+                hash = HashFloat(hash, genome.MovementSpeed);
+                hash = HashFloat(hash, genome.MetabolicPace);
+                hash = HashFloat(hash, genome.VisionRange);
+                hash = HashFloat(hash, genome.WaterEfficiency);
+                hash = HashFloat(hash, genome.FoodEfficiency);
+
+                CreatureNeeds needs = Creatures.GetNeedsAt(index);
+                hash = HashFloat(hash, needs.Energy);
+                hash = HashFloat(hash, needs.Hydration);
+                hash = HashFloat(hash, needs.Rest);
+                hash = HashFloat(hash, needs.Health);
+                hash = HashFloat(hash, needs.Age);
+
+                MovementState movement = Creatures.GetMovementAt(index);
+                hash = HashFloat(hash, movement.PreviousPosition.X);
+                hash = HashFloat(hash, movement.PreviousPosition.Y);
+                hash = HashFloat(hash, movement.Position.X);
+                hash = HashFloat(hash, movement.Position.Y);
+                hash = HashFloat(hash, movement.DistanceSinceLastNeeds);
+
+                CreatureDecision decision = Creatures.GetDecisionAt(index);
+                hash = Hash(hash, unchecked((ulong)decision.Action));
+                hash = Hash(hash, unchecked((ulong)(long)decision.TargetResourceIndex));
+                hash = HashFloat(hash, decision.Score);
+                hash = Hash(hash, unchecked((ulong)decision.DecisionTick));
+            }
+
+            hash = Hash(hash, unchecked((ulong)Resources.Count));
+            for (int index = 0; index < Resources.Count; index++)
+            {
+                ResourceState resource = Resources.GetAt(index);
+                hash = Hash(hash, unchecked((ulong)resource.Id.Value));
+                hash = Hash(hash, unchecked((ulong)resource.Kind));
+                hash = HashFloat(hash, resource.Position.X);
+                hash = HashFloat(hash, resource.Position.Y);
+                hash = HashFloat(hash, resource.InteractionRadius);
+                hash = HashFloat(hash, resource.Amount);
+                hash = HashFloat(hash, resource.Capacity);
+                hash = HashFloat(hash, resource.RegenerationPerSecond);
+                hash = Hash(hash, resource.IsActive ? 1UL : 0UL);
             }
 
             return hash;
@@ -350,6 +393,11 @@ namespace LifeSimulation.Simulation.Core
         private static ulong Hash(ulong hash, ulong value)
         {
             return (hash ^ value) * 1099511628211UL;
+        }
+
+        private static ulong HashFloat(ulong hash, float value)
+        {
+            return Hash(hash, unchecked((ulong)(uint)BitConverter.SingleToInt32Bits(value)));
         }
     }
 }

@@ -266,5 +266,17 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(second.ComputeStateHash(), Is.EqualTo(first.ComputeStateHash()));
         }
+
+        [Test]
+        public void StateHashChangesWhenAuthoritativeCreaturePositionChanges()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            ref MovementState movement = ref second.Creatures.GetMovementRefAt(0);
+            movement.Position = new SimVector2(12f, -3f);
+
+            Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
+        }
     }
 }
