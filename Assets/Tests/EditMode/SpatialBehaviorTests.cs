@@ -179,6 +179,38 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CognitiveResourceDecisionUsesLearnedOutcomesRatherThanAssumingWaterIsAlwaysBest()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, learningRate: 1f, exploration: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+            var memory = new MemoryState { FoodOutcomeValue = 1f, WaterOutcomeValue = 0.05f, FoodExperienceCount = 1, WaterExperienceCount = 1 };
+
+            CreatureDecision decision = DecisionSystem.DecideFromLearnedOutcomes(
+                needs,
+                phenotype,
+                memory,
+                new ResourceObservation(new ResourceId(1), 0, 1f),
+                new ResourceObservation(new ResourceId(2), 1, 1f),
+                out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+        }
+
+        [Test]
+        public void LearningUpdatesOnlyTheExperiencedResourceOutcome()
+        {
+            var memory = new MemoryState();
+
+            MemorySystem.LearnResourceOutcome(ref memory, ResourceKind.Water, outcome: 1f, learningRate: 0.5f);
+
+            Assert.That(memory.WaterOutcomeValue, Is.EqualTo(0.5f));
+            Assert.That(memory.WaterExperienceCount, Is.EqualTo(1));
+            Assert.That(memory.FoodOutcomeValue, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);

@@ -32,6 +32,35 @@ namespace LifeSimulation.Simulation.Behavior
             memory.ThreatAge = 0f;
         }
 
+        public static void LearnResourceOutcome(ref MemoryState memory, ResourceKind kind, float outcome, float learningRate)
+        {
+            if (outcome < 0f || float.IsNaN(outcome) || float.IsInfinity(outcome))
+            {
+                throw new ArgumentOutOfRangeException(nameof(outcome));
+            }
+
+            if (learningRate < 0f || learningRate > 1f || float.IsNaN(learningRate) || float.IsInfinity(learningRate))
+            {
+                throw new ArgumentOutOfRangeException(nameof(learningRate));
+            }
+
+            if (kind == ResourceKind.Food)
+            {
+                memory.FoodOutcomeValue += (outcome - memory.FoodOutcomeValue) * learningRate;
+                memory.FoodExperienceCount++;
+                return;
+            }
+
+            if (kind == ResourceKind.Water)
+            {
+                memory.WaterOutcomeValue += (outcome - memory.WaterOutcomeValue) * learningRate;
+                memory.WaterExperienceCount++;
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
         public static void TickDecay(ref MemoryState memory, float deltaTime, float confidenceDecayPerSecond)
         {
             if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))

@@ -113,7 +113,9 @@ namespace LifeSimulation.Simulation.Biology
             float meatYieldMultiplier,
             float memoryConfidenceDecayPerSecond,
             float cognitionRestCostMultiplier,
-            float temperatureTolerance)
+            float temperatureTolerance,
+            float learningRate,
+            float exploration)
         {
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
@@ -136,6 +138,8 @@ namespace LifeSimulation.Simulation.Biology
             MemoryConfidenceDecayPerSecond = memoryConfidenceDecayPerSecond;
             CognitionRestCostMultiplier = cognitionRestCostMultiplier;
             TemperatureTolerance = temperatureTolerance;
+            LearningRate = learningRate;
+            Exploration = exploration;
         }
 
         public float BodyMass { get; }
@@ -159,6 +163,8 @@ namespace LifeSimulation.Simulation.Biology
         public float MemoryConfidenceDecayPerSecond { get; }
         public float CognitionRestCostMultiplier { get; }
         public float TemperatureTolerance { get; }
+        public float LearningRate { get; }
+        public float Exploration { get; }
 
         public static Phenotype FromGenome(Genome genome)
         {
@@ -201,7 +207,9 @@ namespace LifeSimulation.Simulation.Biology
                 0.5f + genome.DietSpecialization,
                 0.12f - (0.10f * genome.MemoryRetention),
                 1f + (0.6f * genome.MemoryCapacity) + (0.25f * genome.LearningRate),
-                2f + (8f * genome.TemperatureTolerance));
+                2f + (8f * genome.TemperatureTolerance),
+                genome.LearningRate,
+                genome.Exploration);
         }
     }
 }

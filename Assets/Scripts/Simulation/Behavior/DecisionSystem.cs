@@ -103,6 +103,29 @@ namespace LifeSimulation.Simulation.Behavior
             return new CreatureDecision(CreatureAction.SeekFood, -1, foodScore);
         }
 
+        public static CreatureDecision DecideFromLearnedOutcomes(
+            CreatureNeeds needs,
+            Phenotype phenotype,
+            MemoryState memory,
+            ResourceObservation food,
+            ResourceObservation water,
+            out DecisionDiagnostics diagnostics)
+        {
+            float foodValue = memory.FoodExperienceCount > 0 ? memory.FoodOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float waterValue = memory.WaterExperienceCount > 0 ? memory.WaterOutcomeValue : 0.1f + (0.3f * phenotype.Exploration);
+            float foodScore = food.IsValid ? Urgency(needs.Energy, phenotype.EnergyCapacity) * Availability(food.Distance) * foodValue : -1f;
+            float waterScore = water.IsValid ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance) * waterValue : -1f;
+            diagnostics = new DecisionDiagnostics(foodScore, waterScore, food.IsValid, water.IsValid);
+            if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
+            {
+                return new CreatureDecision(CreatureAction.Wander, -1, 0f);
+            }
+
+            return waterScore > foodScore
+                ? new CreatureDecision(CreatureAction.SeekWater, water.ResourceIndex, waterScore)
+                : new CreatureDecision(CreatureAction.SeekFood, food.ResourceIndex, foodScore);
+        }
+
         public static CreatureDecision Decide(
             CreatureNeeds needs,
             Phenotype phenotype,

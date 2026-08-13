@@ -326,6 +326,10 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, memory.ActiveRememberedTarget.X);
                 hash = HashFloat(hash, memory.ActiveRememberedTarget.Y);
                 hash = Hash(hash, memory.HasActiveRememberedTarget ? 1UL : 0UL);
+                hash = HashFloat(hash, memory.FoodOutcomeValue);
+                hash = HashFloat(hash, memory.WaterOutcomeValue);
+                hash = Hash(hash, unchecked((ulong)memory.FoodExperienceCount));
+                hash = Hash(hash, unchecked((ulong)memory.WaterExperienceCount));
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));
@@ -499,7 +503,9 @@ namespace LifeSimulation.Simulation.Core
                     if (food.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Food, Resources.GetAt(food.ResourceIndex).Position);
                     if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
                 }
-                CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out DecisionDiagnostics diagnostics);
+                CreatureDecision decision = Config.CognitionEnabled
+                    ? DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, out DecisionDiagnostics diagnostics)
+                    : DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out diagnostics);
                 if (Config.CognitionEnabled)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
@@ -695,11 +701,19 @@ namespace LifeSimulation.Simulation.Core
                     {
                         _cumulativeCarcassConsumed += nutrition;
                     }
+                    else if (Config.CognitionEnabled)
+                    {
+                        MemorySystem.LearnResourceOutcome(ref Creatures.GetMemoryRefAt(request.CreatureIndex), ResourceKind.Food, nutrition / 20f, phenotype.LearningRate);
+                    }
                 }
                 else
                 {
                     NeedsSystem.DrinkWater(ref needs, Creatures.GetPhenotypeAt(request.CreatureIndex), allocatedAmount);
                     _cumulativeWaterConsumed += allocatedAmount;
+                    if (Config.CognitionEnabled)
+                    {
+                        MemorySystem.LearnResourceOutcome(ref Creatures.GetMemoryRefAt(request.CreatureIndex), ResourceKind.Water, allocatedAmount, Creatures.GetPhenotypeAt(request.CreatureIndex).LearningRate);
+                    }
                 }
             }
         }
