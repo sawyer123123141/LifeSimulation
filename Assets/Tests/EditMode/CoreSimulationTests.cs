@@ -215,6 +215,24 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldRefreshesCreatureDecisionsAtTheConfiguredFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+
+            for (int index = 0; index < 9; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.GetCreatureDecisionAt(0).DecisionTick, Is.EqualTo(-1));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.GetCreatureDecisionAt(0).DecisionTick, Is.EqualTo(10));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);

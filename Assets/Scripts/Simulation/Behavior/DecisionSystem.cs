@@ -17,16 +17,18 @@ namespace LifeSimulation.Simulation.Behavior
 
     public readonly struct CreatureDecision
     {
-        public CreatureDecision(CreatureAction action, int targetResourceIndex, float score)
+        public CreatureDecision(CreatureAction action, int targetResourceIndex, float score, long decisionTick = -1)
         {
             Action = action;
             TargetResourceIndex = targetResourceIndex;
             Score = score;
+            DecisionTick = decisionTick;
         }
 
         public CreatureAction Action { get; }
         public int TargetResourceIndex { get; }
         public float Score { get; }
+        public long DecisionTick { get; }
     }
 
     public static class DecisionSystem
