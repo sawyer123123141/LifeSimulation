@@ -211,6 +211,16 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void FailedSearchSubstantiallyReducesTrustInTheRememberedResource()
+        {
+            var memory = new MemoryState { WaterConfidence = 1f };
+
+            MemorySystem.RecordFailedSearch(ref memory, ResourceKind.Water);
+
+            Assert.That(memory.WaterConfidence, Is.EqualTo(0.35f));
+        }
+
+        [Test]
         public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);

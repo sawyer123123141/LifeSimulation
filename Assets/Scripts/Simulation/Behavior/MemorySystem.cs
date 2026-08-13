@@ -61,6 +61,23 @@ namespace LifeSimulation.Simulation.Behavior
             throw new ArgumentOutOfRangeException(nameof(kind));
         }
 
+        public static void RecordFailedSearch(ref MemoryState memory, ResourceKind kind)
+        {
+            if (kind == ResourceKind.Food)
+            {
+                memory.FoodConfidence *= 0.35f;
+                return;
+            }
+
+            if (kind == ResourceKind.Water)
+            {
+                memory.WaterConfidence *= 0.35f;
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
         public static void TickDecay(ref MemoryState memory, float deltaTime, float confidenceDecayPerSecond)
         {
             if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))

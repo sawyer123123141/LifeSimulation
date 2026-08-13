@@ -479,6 +479,23 @@ namespace LifeSimulation.Simulation.Core
             {
                 MovementState movement = Creatures.GetMovementAt(index);
                 Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+                if (Config.CognitionEnabled)
+                {
+                    ref MemoryState previousMemory = ref Creatures.GetMemoryRefAt(index);
+                    CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
+                    if (previousMemory.HasActiveRememberedTarget
+                        && SimVector2.Distance(movement.Position, previousMemory.ActiveRememberedTarget) <= 1f)
+                    {
+                        if (previousDecision.Action == CreatureAction.SeekFood)
+                        {
+                            MemorySystem.RecordFailedSearch(ref previousMemory, ResourceKind.Food);
+                        }
+                        else if (previousDecision.Action == CreatureAction.SeekWater)
+                        {
+                            MemorySystem.RecordFailedSearch(ref previousMemory, ResourceKind.Water);
+                        }
+                    }
+                }
                 ResourceObservation food = PerceptionSystem.FindNearestAvailableResource(
                     Resources,
                     ResourceGrid,
