@@ -8,6 +8,8 @@
 
 **Tech Stack:** Unity 6000.2.14f1, C#, Unity Test Framework, runtime UI Toolkit, NUnit, batch-mode EditMode/PlayMode tests, CSV/JSON experiment summaries.
 
+**Unity command convention:** Compile/import commands use `-batchmode -nographics -quit`. Test commands use `-batchmode -nographics -runTests` without `-quit`; Unity Test Framework owns process exit and must produce the requested XML result before the run is accepted.
+
 ## Global constraints
 
 - Use Unity 6000.2.14f1 and C#.
@@ -69,13 +71,13 @@
 
 ### Tests
 
-- `Tests/EditMode/LifeSimulation.EditModeTests.asmdef`: NUnit simulation tests.
-- `Tests/EditMode/CoreSimulationTests.cs`: config, random, stores, lifecycle, events, and replay hashes.
-- `Tests/EditMode/BiologyTests.cs`: phenotype bounds/trade-offs, needs, health, age, crossover, mutation, and reproduction.
-- `Tests/EditMode/SpatialBehaviorTests.cs`: grid/brute-force comparison, perception, movement, decisions, and diagnostics.
-- `Tests/EditMode/ResourceExperimentTests.cs`: conservation, treatments, manifests, statistics, and paired founders.
-- `Tests/PlayMode/LifeSimulation.PlayModeTests.asmdef`: Unity boundary tests.
-- `Tests/PlayMode/PresentationTests.cs`: bootstrap, pacing, visual pooling, selection, and debug state.
+- `Assets/Tests/EditMode/LifeSimulation.EditModeTests.asmdef`: NUnit simulation tests.
+- `Assets/Tests/EditMode/CoreSimulationTests.cs`: config, random, stores, lifecycle, events, and replay hashes.
+- `Assets/Tests/EditMode/BiologyTests.cs`: phenotype bounds/trade-offs, needs, health, age, crossover, mutation, and reproduction.
+- `Assets/Tests/EditMode/SpatialBehaviorTests.cs`: grid/brute-force comparison, perception, movement, decisions, and diagnostics.
+- `Assets/Tests/EditMode/ResourceExperimentTests.cs`: conservation, treatments, manifests, statistics, and paired founders.
+- `Assets/Tests/PlayMode/LifeSimulation.PlayModeTests.asmdef`: Unity boundary tests.
+- `Assets/Tests/PlayMode/PresentationTests.cs`: bootstrap, pacing, visual pooling, selection, and debug state.
 
 Related small records stay in their responsible file; independent systems remain separate to avoid giant files.
 
@@ -116,7 +118,7 @@ Expected: Unity exits `0`, imports the project, and reports no compiler errors.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add .gitattributes .gitignore Assets Packages ProjectSettings Tests
+git add .gitattributes .gitignore Assets Packages ProjectSettings
 git commit -m "build: bootstrap Unity project"
 ```
 
@@ -126,7 +128,7 @@ git commit -m "build: bootstrap Unity project"
 - Create: `Assets/Scripts/Simulation/Core/SimulationTypes.cs`
 - Create: `Assets/Scripts/Simulation/Core/SimulationConfig.cs`
 - Create: `Assets/Scripts/Simulation/Core/DeterministicRandom.cs`
-- Test: `Tests/EditMode/CoreSimulationTests.cs`
+- Test: `Assets/Tests/EditMode/CoreSimulationTests.cs`
 
 **Interfaces:**
 - Produces `readonly struct SimVector2`, `readonly struct CreatureId`, `readonly struct TargetHandle`, `enum CreatureAction`, `enum ResourceKind`, and `enum DeathCause`.
@@ -167,7 +169,7 @@ Expected: all Task 2 tests pass and the simulation assembly has no `UnityEngine`
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add deterministic simulation primitives"
 ```
 
@@ -222,7 +224,7 @@ Expected: lifecycle tests pass; after warm-up the fixture reports no recurring m
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Core Tests/EditMode/CoreSimulationTests.cs
+git add Assets/Scripts/Simulation/Core Assets/Tests/EditMode/CoreSimulationTests.cs
 git commit -m "feat: add dense simulation world lifecycle"
 ```
 
@@ -264,7 +266,7 @@ Expected: all trade-off and threshold tests pass; same seed/ticks retain the sam
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Biology Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Biology Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add genome phenotype and needs biology"
 ```
 
@@ -302,7 +304,7 @@ Expected: conservation holds within documented floating tolerance and reorder fi
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Systems Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Systems Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add finite renewable resources"
 ```
 
@@ -346,7 +348,7 @@ Expected: grid equals brute force; candidate counts demonstrate locality on a 1,
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Spatial Assets/Scripts/Simulation/Behavior Tests/EditMode
+git add Assets/Scripts/Simulation/Spatial Assets/Scripts/Simulation/Behavior Assets/Tests/EditMode
 git commit -m "feat: add spatial perception and movement"
 ```
 
@@ -396,7 +398,7 @@ Expected: documented actions win for documented reasons; stable fixtures do not 
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Behavior Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Behavior Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add explainable utility decisions"
 ```
 
@@ -435,7 +437,7 @@ Expected: no duplicate pairs or broken ID mappings; genomes remain finite/in ran
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Biology Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Biology Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add two-parent inheritance"
 ```
 
@@ -478,7 +480,7 @@ Expected: manifests replay; treatment affects only resource configuration; found
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add Assets/Scripts/Simulation/Systems Assets/Scripts/Simulation/Core Tests/EditMode
+git add Assets/Scripts/Simulation/Systems Assets/Scripts/Simulation/Core Assets/Tests/EditMode
 git commit -m "feat: add evolutionary experiment harness"
 ```
 
@@ -520,7 +522,7 @@ Expected: all tests pass; zero visuals still permits headless simulation; visibl
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add Assets Tests ProjectSettings
+git add Assets ProjectSettings
 git commit -m "feat: add prototype presentation and inspection"
 ```
 

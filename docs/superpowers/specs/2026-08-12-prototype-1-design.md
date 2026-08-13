@@ -629,16 +629,17 @@ Assets/
     Debug/           experiment and benchmark Unity entry points
   Scenes/            one prototype scene
   Settings/          minimal authored configuration assets
-Tests/
-  EditMode/          grouped simulation tests by subsystem
-  PlayMode/          Unity boundary tests
+Assets/
+  Tests/
+    EditMode/        grouped simulation tests by subsystem
+    PlayMode/        Unity boundary tests
 docs/
   superpowers/
     specs/            approved architecture
     plans/            phased implementation plan
 ```
 
-Assembly definitions enforce dependency direction. Generated IDE files, Unity caches, builds, logs, benchmark bulk output, and user settings remain ignored. Small curated benchmark summaries and scenario definitions may be committed; large raw run data is stored outside Git.
+Assembly definitions enforce dependency direction. Unity imports tests only from `Assets` or packages, so the repository uses `Assets/Tests` rather than the preliminary root-level folder direction. Generated IDE files, Unity caches, builds, logs, benchmark bulk output, and user settings remain ignored. Small curated benchmark summaries and scenario definitions may be committed; large raw run data is stored outside Git.
 
 ## Implementation milestones and acceptance gates
 
