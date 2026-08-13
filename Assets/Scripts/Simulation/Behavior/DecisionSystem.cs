@@ -19,6 +19,7 @@ namespace LifeSimulation.Simulation.Behavior
         Flee,
         SeekCarcass,
         FeedCarcass,
+        SeekThermalComfort,
     }
 
     public readonly struct CreatureDecision

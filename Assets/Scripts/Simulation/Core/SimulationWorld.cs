@@ -467,6 +467,11 @@ namespace LifeSimulation.Simulation.Core
                 }
             }
 
+            if (Config.PhysiologyEnabled && decision.Action == CreatureAction.SeekThermalComfort)
+            {
+                return ThermoregulationSystem.FindNearbyComfortTarget(position, tick, Arena);
+            }
+
             long explorationEpoch = tick / (Config.Schedule.BaseFrequencyHz * 5L);
             float angle = DeterministicRandom.Float01(
                 Config.WorldSeed,
@@ -568,6 +573,10 @@ namespace LifeSimulation.Simulation.Core
                         phenotype,
                         carcass,
                         decision);
+                }
+                if (Config.PhysiologyEnabled)
+                {
+                    decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision);
                 }
                 if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
                     && (uint)decision.TargetResourceIndex < (uint)Resources.Count)

@@ -239,6 +239,23 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ThermalDiscomfortCanOverrideWanderingAndChooseABetterNearbyPatch()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, temperatureTolerance: 0f));
+            var position = new SimVector2(8f, 0f);
+
+            CreatureDecision decision = ThermoregulationSystem.PreferThermalComfort(
+                phenotype,
+                position,
+                tick: 0,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f));
+            SimVector2 target = ThermoregulationSystem.FindNearbyComfortTarget(position, 0, new ArenaBounds(-25f, 25f, -25f, 25f));
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekThermalComfort));
+            Assert.That(Math.Abs(TemperatureField.Sample(target, 0) - 20f), Is.LessThan(Math.Abs(TemperatureField.Sample(position, 0) - 20f)));
+        }
+
+        [Test]
         public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
