@@ -1,3 +1,4 @@
+using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Resources;
@@ -88,6 +89,26 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(first.CompletedTicks, Is.EqualTo(120));
             Assert.That(second.FinalStateHash, Is.EqualTo(first.FinalStateHash));
             Assert.That(second.FinalStatistics.Population, Is.EqualTo(first.FinalStatistics.Population));
+        }
+
+        [Test]
+        public void ScenarioCanPlaceAllFoundersAtAControlledLocation()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);
+            var world = new SimulationWorld(config);
+            var scenario = new SimulationScenario(
+                "controlled-founders",
+                new ResourceDefinition[0],
+                founderPlacement: new SimVector2(2f, -3f));
+
+            scenario.ApplyTo(world);
+
+            for (int index = 0; index < world.CreatureCount; index++)
+            {
+                MovementState movement = world.GetCreatureMovementAt(index);
+                Assert.That(movement.Position.X, Is.EqualTo(2f));
+                Assert.That(movement.Position.Y, Is.EqualTo(-3f));
+            }
         }
 
         [Test]

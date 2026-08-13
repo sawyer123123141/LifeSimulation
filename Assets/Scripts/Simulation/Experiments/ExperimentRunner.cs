@@ -1,5 +1,7 @@
 using System;
+using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 
 namespace LifeSimulation.Simulation.Experiments
 {
@@ -12,7 +14,11 @@ namespace LifeSimulation.Simulation.Experiments
             SimulationStatistics finalStatistics,
             ulong finalStateHash,
             bool eventOverflowed,
-            bool populationCapReached)
+            bool populationCapReached,
+            int leftFoodTargetDecisions = 0,
+            int rightFoodTargetDecisions = 0,
+            float totalFoodTargetDistance = 0f,
+            int foodTargetDecisionCount = 0)
         {
             ScenarioId = scenarioId;
             WorldSeed = worldSeed;
@@ -21,6 +27,10 @@ namespace LifeSimulation.Simulation.Experiments
             FinalStateHash = finalStateHash;
             EventOverflowed = eventOverflowed;
             PopulationCapReached = populationCapReached;
+            LeftFoodTargetDecisions = leftFoodTargetDecisions;
+            RightFoodTargetDecisions = rightFoodTargetDecisions;
+            TotalFoodTargetDistance = totalFoodTargetDistance;
+            FoodTargetDecisionCount = foodTargetDecisionCount;
         }
 
         public string ScenarioId { get; }
@@ -30,6 +40,11 @@ namespace LifeSimulation.Simulation.Experiments
         public ulong FinalStateHash { get; }
         public bool EventOverflowed { get; }
         public bool PopulationCapReached { get; }
+        public int LeftFoodTargetDecisions { get; }
+        public int RightFoodTargetDecisions { get; }
+        public float TotalFoodTargetDistance { get; }
+        public int FoodTargetDecisionCount { get; }
+        public float MeanFoodTargetDistance => FoodTargetDecisionCount == 0 ? 0f : TotalFoodTargetDistance / FoodTargetDecisionCount;
     }
 
     public static class ExperimentRunner
@@ -55,9 +70,14 @@ namespace LifeSimulation.Simulation.Experiments
             scenario.ApplyTo(world);
             bool eventOverflowed = false;
             bool populationCapReached = false;
+            int leftFoodTargetDecisions = 0;
+            int rightFoodTargetDecisions = 0;
+            float totalFoodTargetDistance = 0f;
+            int foodTargetDecisionCount = 0;
             for (int index = 0; index < ticks; index++)
             {
                 world.Step(config.FixedDeltaTime);
+                CountFoodTargetDecisions(world, ref leftFoodTargetDecisions, ref rightFoodTargetDecisions, ref totalFoodTargetDistance, ref foodTargetDecisionCount);
                 eventOverflowed |= world.Events.Overflowed;
                 populationCapReached |= world.CreatureCount >= config.MaximumPopulation;
                 world.Events.Clear();
@@ -70,7 +90,35 @@ namespace LifeSimulation.Simulation.Experiments
                 world.Statistics,
                 world.ComputeStateHash(),
                 eventOverflowed,
-                populationCapReached);
+                populationCapReached,
+                leftFoodTargetDecisions,
+                rightFoodTargetDecisions,
+                totalFoodTargetDistance,
+                foodTargetDecisionCount);
+        }
+
+        private static void CountFoodTargetDecisions(SimulationWorld world, ref int leftCount, ref int rightCount, ref float totalDistance, ref int targetCount)
+        {
+            for (int creatureIndex = 0; creatureIndex < world.CreatureCount; creatureIndex++)
+            {
+                CreatureDecision decision = world.GetCreatureDecisionAt(creatureIndex);
+                if (decision.DecisionTick != world.CurrentTick
+                    || (decision.Action != CreatureAction.SeekFood && decision.Action != CreatureAction.Eat)
+                    || (uint)decision.TargetResourceIndex >= (uint)world.Resources.Count)
+                {
+                    continue;
+                }
+
+                ResourceState target = world.Resources.GetAt(decision.TargetResourceIndex);
+                if (target.Kind == ResourceKind.Food)
+                {
+                    MovementState movement = world.GetCreatureMovementAt(creatureIndex);
+                    totalDistance += SimVector2.Distance(movement.PreviousPosition, target.Position);
+                    targetCount++;
+                    if (target.Position.X < 0f) leftCount++;
+                    else rightCount++;
+                }
+            }
         }
     }
 }

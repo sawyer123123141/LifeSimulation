@@ -28,7 +28,9 @@ The travel-sensitivity interval crosses zero and the effect is below the project
 
 ## Next calibration action
 
-Add per-run near/far target-choice telemetry. A revised scenario must show that the food-layout treatment causes a sustained, measurable difference in actual target selection before a larger 20-seed selection run is justified.
+Per-run target telemetry was added and the run was repeated with all founders placed at `(0, 0)`. The layout still did not create enough sustained travel pressure: mean selected food-target distance was approximately `3.49` in the near-adequate layout and `3.54` in the far-rich layout. As creatures settle around patches, the map-relative far patch ceases to be far for most descendants.
+
+Do not scale this to 20 seeds or claim policy-gene selection. The next useful behavior step is scoring remembered resources as full competitors with visible resources, including confidence, age, and actual travel distance. A later behavioral-selection experiment should use a pressure that remains individual-relative across generations, rather than fixed map positions.
 
 ## Evidence files
 

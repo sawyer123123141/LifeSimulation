@@ -15,6 +15,11 @@
 - Keep `Eat`, `Drink`, `FeedCarcass`, and `Attack` as deterministic execution states; keep reproduction pairwise.
 - Stop after producing and reporting a Legacy decision trace; top-K, travel/risk scoring, stickiness, and heritable policy weights are out of this slice.
 
+## Follow-up milestones
+
+- Reproduction usability: add `SeekMate` as a low-priority, safety-gated intent; retain two-parent pair resolution and survival dominance. Add a watchable starter-habitat configuration with clustered founders and stable renewable resources. Do not make reproduction timer-driven.
+- Commitment: add a heritable stickiness bonus only after a sampled trace demonstrates target dithering in a relevant scenario.
+
 ---
 
 ### Task 1: Define versioned intent and trace records

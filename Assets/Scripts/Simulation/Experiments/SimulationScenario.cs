@@ -60,8 +60,9 @@ namespace LifeSimulation.Simulation.Experiments
     public sealed class SimulationScenario
     {
         private readonly ResourceDefinition[] _resources;
+        private readonly SimVector2? _founderPlacement;
 
-        public SimulationScenario(string id, ResourceDefinition[] resources)
+        public SimulationScenario(string id, ResourceDefinition[] resources, SimVector2? founderPlacement = null)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -70,6 +71,7 @@ namespace LifeSimulation.Simulation.Experiments
 
             Id = id;
             _resources = resources ?? throw new ArgumentNullException(nameof(resources));
+            _founderPlacement = founderPlacement;
         }
 
         public string Id { get; }
@@ -85,6 +87,15 @@ namespace LifeSimulation.Simulation.Experiments
             if (world.Resources.Count != 0)
             {
                 throw new InvalidOperationException("A scenario can only be applied to a world with no existing resources.");
+            }
+
+            if (_founderPlacement.HasValue)
+            {
+                SimVector2 placement = _founderPlacement.Value;
+                for (int index = 0; index < world.CreatureCount; index++)
+                {
+                    world.SetCreaturePosition(world.GetCreatureIdAt(index), placement);
+                }
             }
 
             float populationScale = Math.Max(1f, world.Config.InitialPopulation / 4f);
@@ -155,7 +166,7 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 0f), 1.5f, farFoodAmount, farFoodAmount, 0.75f, nutritionMultiplier: 1.5f),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(-4f, -5f), 1.5f, 12f, 12f, 0.75f),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(18f, -5f), 1.5f, 12f, 12f, 0.75f),
-            });
+            }, founderPlacement: new SimVector2(0f, 0f));
         }
     }
 }

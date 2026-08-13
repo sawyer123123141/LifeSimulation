@@ -553,7 +553,7 @@ namespace LifeSimulation.Simulation.Core
                         }
                     }
                 }
-                if (Config.CognitionEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
+                if (Config.CognitionEnabled)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
                     if (memory.HasActiveRememberedTarget
@@ -573,7 +573,22 @@ namespace LifeSimulation.Simulation.Core
                 CreatureDecision decision;
                 if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
                 {
-                    decision = DecisionSystem.DecideIntentUtilityV1(Creatures.GetNeedsAt(index), Creatures.GetGenomeAt(index), phenotype, Resources, foodCandidates, waterCandidates, other, threatIntensity, out diagnostics);
+                    decision = DecisionSystem.DecideIntentUtilityV1(Creatures.GetNeedsAt(index), Creatures.GetGenomeAt(index), phenotype, Resources, movement.Position, foodCandidates, waterCandidates, Creatures.GetMemoryRefAt(index), Config.CognitionEnabled, other, threatIntensity, out diagnostics);
+                    if (Config.CognitionEnabled)
+                    {
+                        ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
+                        memory.HasActiveRememberedTarget = false;
+                        if (decision.TargetResourceIndex < 0 && decision.Action == CreatureAction.SeekFood)
+                        {
+                            memory.ActiveRememberedTarget = memory.FoodPosition;
+                            memory.HasActiveRememberedTarget = true;
+                        }
+                        else if (decision.TargetResourceIndex < 0 && decision.Action == CreatureAction.SeekWater)
+                        {
+                            memory.ActiveRememberedTarget = memory.WaterPosition;
+                            memory.HasActiveRememberedTarget = true;
+                        }
+                    }
                 }
                 else if (Config.CognitionEnabled)
                 {

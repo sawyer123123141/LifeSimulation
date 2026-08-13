@@ -197,8 +197,11 @@ namespace LifeSimulation.Simulation.Behavior
             Genome genome,
             Phenotype phenotype,
             ResourceStore resources,
+            SimVector2 origin,
             ResourceCandidateBuffer foodCandidates,
             ResourceCandidateBuffer waterCandidates,
+            MemoryState memory,
+            bool cognitionEnabled,
             CreatureObservation threat,
             float threatIntensity,
             out DecisionDiagnostics diagnostics)
@@ -209,6 +212,11 @@ namespace LifeSimulation.Simulation.Behavior
 
             ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, ref candidates, ref bestFoodScore);
             ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, ref candidates, ref bestWaterScore);
+            if (cognitionEnabled)
+            {
+                ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, ref candidates, ref bestFoodScore);
+                ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, ref candidates, ref bestWaterScore);
+            }
             diagnostics = new DecisionDiagnostics(bestFoodScore, bestWaterScore, foodCandidates.Count > 0, waterCandidates.Count > 0);
             if (!candidates.TryGetBest(out DecisionCandidate best) || best.Score < MinimumUrgencyToSeekResource)
             {
@@ -245,6 +253,42 @@ namespace LifeSimulation.Simulation.Behavior
 
                 candidates.TryAdd(new DecisionCandidate(intent, observation.ResourceIndex, default, score));
             }
+        }
+
+        private static void ScoreRememberedResource(
+            CreatureIntent intent,
+            CreatureNeeds needs,
+            Genome genome,
+            Phenotype phenotype,
+            SimVector2 origin,
+            SimVector2 location,
+            float confidence,
+            float age,
+            float learnedValue,
+            int experienceCount,
+            ref DecisionCandidateBuffer candidates,
+            ref float bestScore)
+        {
+            if (confidence <= 0f)
+            {
+                return;
+            }
+
+            bool seekingWater = intent == CreatureIntent.SeekWater;
+            float capacity = seekingWater ? phenotype.HydrationCapacity : phenotype.EnergyCapacity;
+            float current = seekingWater ? needs.Hydration : needs.Energy;
+            float urgency = (float)Math.Pow(Urgency(current, capacity), 0.5f + (2.5f * genome.UrgencyExponent));
+            float distance = SimVector2.Distance(origin, location);
+            float expectedValue = KnownOutcomeOrCuriosity(learnedValue, experienceCount, phenotype.Exploration);
+            float staleness = 1f / (1f + Math.Max(0f, age));
+            float travelBurden = (0.5f + (1.5f * genome.TravelSensitivity)) * EstimateTravelBurden(distance, phenotype);
+            float score = Math.Max(0f, (urgency * confidence * staleness * expectedValue) - travelBurden);
+            if (score > bestScore)
+            {
+                bestScore = score;
+            }
+
+            candidates.TryAdd(new DecisionCandidate(intent, -1, default, score));
         }
 
         private static float ResourceUtility(

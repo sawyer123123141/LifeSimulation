@@ -335,7 +335,7 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
 
-            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, Genome.Neutral, phenotype, resources, food, default, default, threatIntensity: 0f, out _);
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, threatIntensity: 0f, out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
@@ -354,7 +354,7 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 2f));
 
-            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f, riskAversion: 1f), phenotype, resources, food, default, new CreatureObservation(new CreatureId(99), 0, 1f), threatIntensity: 0.8f, out _);
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f, riskAversion: 1f), phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, new CreatureObservation(new CreatureId(99), 0, 1f), threatIntensity: 0.8f, out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
             Assert.That(decision.TargetResourceIndex, Is.EqualTo(0));
@@ -375,11 +375,36 @@ namespace LifeSimulation.Tests.EditMode
             food.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
             food.Consider(new ResourceObservation(resources.GetAt(1).Id, 1, 10f));
 
-            CreatureDecision lowDecision = DecisionSystem.DecideIntentUtilityV1(needs, lowSensitivity, phenotype, resources, food, default, default, 0f, out _);
-            CreatureDecision highDecision = DecisionSystem.DecideIntentUtilityV1(needs, highSensitivity, phenotype, resources, food, default, default, 0f, out _);
+            CreatureDecision lowDecision = DecisionSystem.DecideIntentUtilityV1(needs, lowSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, 0f, out _);
+            CreatureDecision highDecision = DecisionSystem.DecideIntentUtilityV1(needs, highSensitivity, phenotype, resources, new SimVector2(0f, 0f), food, default, default, cognitionEnabled: false, default, 0f, out _);
 
             Assert.That(lowDecision.TargetResourceIndex, Is.EqualTo(1));
             Assert.That(highDecision.TargetResourceIndex, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void IntentUtilityLetsAHighConfidenceRememberedFoodTargetCompeteWithVisibleWater()
+        {
+            Genome genome = Genome.Neutral;
+            Phenotype phenotype = Phenotype.FromGenome(genome);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 1);
+            resources.Add(ResourceKind.Water, new SimVector2(1f, 0f), 1f, 10f, 10f, 0f);
+            var water = new ResourceCandidateBuffer();
+            water.Consider(new ResourceObservation(resources.GetAt(0).Id, 0, 1f));
+            var memory = new MemoryState
+            {
+                FoodPosition = new SimVector2(2f, 0f),
+                FoodConfidence = 1f,
+                FoodOutcomeValue = 1f,
+                FoodExperienceCount = 1,
+            };
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(needs, genome, phenotype, resources, new SimVector2(0f, 0f), default, water, memory, cognitionEnabled: true, default, 0f, out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(-1));
         }
 
         [Test]
