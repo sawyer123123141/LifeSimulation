@@ -37,10 +37,12 @@ namespace LifeSimulation.Simulation.Behavior
         {
             PreviousPosition = position;
             Position = position;
+            DistanceSinceLastNeeds = 0f;
         }
 
         public SimVector2 PreviousPosition;
         public SimVector2 Position;
+        public float DistanceSinceLastNeeds;
     }
 
     public static class MovementSystem
@@ -76,7 +78,9 @@ namespace LifeSimulation.Simulation.Behavior
                     state.Position.Y + (offsetY * scale)));
             }
 
-            return SimVector2.Distance(state.PreviousPosition, state.Position);
+            float actualDistance = SimVector2.Distance(state.PreviousPosition, state.Position);
+            state.DistanceSinceLastNeeds += actualDistance;
+            return actualDistance;
         }
     }
 }

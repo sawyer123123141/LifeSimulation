@@ -193,6 +193,25 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldPlacesFoundersDeterministicallyAndMovesThemAtTheBaseFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            MovementState initial = first.GetCreatureMovementAt(0);
+
+            first.Step(config.FixedDeltaTime);
+            second.Step(config.FixedDeltaTime);
+
+            MovementState after = first.GetCreatureMovementAt(0);
+            Assert.That(initial.Position.X, Is.EqualTo(second.GetCreatureMovementAt(0).PreviousPosition.X));
+            Assert.That(initial.Position.Y, Is.EqualTo(second.GetCreatureMovementAt(0).PreviousPosition.Y));
+            Assert.That(after.Position.X, Is.EqualTo(second.GetCreatureMovementAt(0).Position.X));
+            Assert.That(after.Position.Y, Is.EqualTo(second.GetCreatureMovementAt(0).Position.Y));
+            Assert.That(SimVector2.Distance(after.Position, initial.Position), Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);
