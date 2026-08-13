@@ -115,6 +115,11 @@ namespace LifeSimulation.Simulation.Core
             return Creatures.GetDecisionAt(index);
         }
 
+        public DecisionDiagnostics GetCreatureDecisionDiagnosticsAt(int index)
+        {
+            return Creatures.GetDecisionDiagnosticsAt(index);
+        }
+
         public void SetCreaturePosition(CreatureId id, SimVector2 position)
         {
             if (!Creatures.TryGetIndex(id, out int index))
@@ -361,7 +366,7 @@ namespace LifeSimulation.Simulation.Core
                     movement.Position,
                     phenotype.VisionRange,
                     ResourceKind.Water);
-                CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water);
+                CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out DecisionDiagnostics diagnostics);
                 if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
                     && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
                 {
@@ -380,6 +385,7 @@ namespace LifeSimulation.Simulation.Core
                     decision.TargetResourceIndex,
                     decision.Score,
                     tick));
+                Creatures.SetDecisionDiagnosticsAt(index, diagnostics);
             }
         }
 

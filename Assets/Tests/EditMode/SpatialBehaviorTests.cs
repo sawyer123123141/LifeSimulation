@@ -93,6 +93,24 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void DecisionDiagnosticsExposeTheCompetingSurvivalScores()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = phenotype.EnergyCapacity * 0.2f;
+            needs.Hydration = phenotype.HydrationCapacity * 0.1f;
+            var food = new ResourceObservation(new ResourceId(1), 0, 2f);
+            var water = new ResourceObservation(new ResourceId(2), 1, 1f);
+
+            CreatureDecision decision = DecisionSystem.Decide(needs, phenotype, food, water, out DecisionDiagnostics diagnostics);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekWater));
+            Assert.That(diagnostics.FoodVisible, Is.True);
+            Assert.That(diagnostics.WaterVisible, Is.True);
+            Assert.That(diagnostics.WaterScore, Is.GreaterThan(diagnostics.FoodScore));
+        }
+
+        [Test]
         public void DecisionWandersWhenNoSurvivalNeedIsUrgent()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);

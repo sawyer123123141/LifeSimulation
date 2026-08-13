@@ -249,6 +249,26 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldRetainsDiagnosticsFromEachCreatureDecision()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId creature = world.Spawn();
+            world.SetCreaturePosition(creature, new SimVector2(0f, 0f));
+            world.Creatures.GetNeedsRefAt(0).Hydration = 0f;
+            world.Resources.Add(ResourceKind.Water, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f);
+
+            for (int index = 0; index < 10; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            DecisionDiagnostics diagnostics = world.GetCreatureDecisionDiagnosticsAt(0);
+            Assert.That(diagnostics.WaterVisible, Is.True);
+            Assert.That(diagnostics.WaterScore, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void HungryCreatureConsumesFoodAfterReachingItsSelectedResource()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);

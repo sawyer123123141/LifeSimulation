@@ -31,6 +31,22 @@ namespace LifeSimulation.Simulation.Behavior
         public long DecisionTick { get; }
     }
 
+    public readonly struct DecisionDiagnostics
+    {
+        public DecisionDiagnostics(float foodScore, float waterScore, bool foodVisible, bool waterVisible)
+        {
+            FoodScore = foodScore;
+            WaterScore = waterScore;
+            FoodVisible = foodVisible;
+            WaterVisible = waterVisible;
+        }
+
+        public float FoodScore { get; }
+        public float WaterScore { get; }
+        public bool FoodVisible { get; }
+        public bool WaterVisible { get; }
+    }
+
     public static class DecisionSystem
     {
         private const float MinimumUrgencyToSeekResource = 0.05f;
@@ -41,12 +57,23 @@ namespace LifeSimulation.Simulation.Behavior
             ResourceObservation food,
             ResourceObservation water)
         {
+            return Decide(needs, phenotype, food, water, out _);
+        }
+
+        public static CreatureDecision Decide(
+            CreatureNeeds needs,
+            Phenotype phenotype,
+            ResourceObservation food,
+            ResourceObservation water,
+            out DecisionDiagnostics diagnostics)
+        {
             float foodScore = food.IsValid
                 ? Urgency(needs.Energy, phenotype.EnergyCapacity) * Availability(food.Distance)
                 : -1f;
             float waterScore = water.IsValid
                 ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance)
                 : -1f;
+            diagnostics = new DecisionDiagnostics(foodScore, waterScore, food.IsValid, water.IsValid);
 
             if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
             {
