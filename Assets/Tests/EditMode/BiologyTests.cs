@@ -7,6 +7,18 @@ namespace LifeSimulation.Tests.EditMode
     public sealed class BiologyTests
     {
         [Test]
+        public void CognitionGenesTradeLowerMemoryDecayForHigherMaintenanceAndRestCost()
+        {
+            Phenotype lowCognition = Phenotype.FromGenome(Genome.Neutral);
+            Phenotype highCognition = Phenotype.FromGenome(new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                memoryCapacity: 1f, memoryRetention: 1f, learningRate: 1f, exploration: 1f));
+
+            Assert.That(highCognition.MemoryConfidenceDecayPerSecond, Is.LessThan(lowCognition.MemoryConfidenceDecayPerSecond));
+            Assert.That(highCognition.BasalEnergyCostMultiplier, Is.GreaterThan(lowCognition.BasalEnergyCostMultiplier));
+            Assert.That(highCognition.CognitionRestCostMultiplier, Is.GreaterThan(lowCognition.CognitionRestCostMultiplier));
+        }
+        [Test]
         public void LargerGenomeCreatesMoreReserveCapacityAndHigherBasalCost()
         {
             Phenotype small = Phenotype.FromGenome(Genome.Neutral.WithBodySize(0f));

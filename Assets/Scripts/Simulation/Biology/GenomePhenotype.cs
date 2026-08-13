@@ -16,7 +16,11 @@ namespace LifeSimulation.Simulation.Biology
             float maneuverability = 0f,
             float fear = 0f,
             float aggression = 0f,
-            float dietSpecialization = 0f)
+            float dietSpecialization = 0f,
+            float memoryCapacity = 0f,
+            float memoryRetention = 0f,
+            float learningRate = 0f,
+            float exploration = 0f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);
@@ -30,6 +34,10 @@ namespace LifeSimulation.Simulation.Biology
             Fear = Clamp01(fear);
             Aggression = Clamp01(aggression);
             DietSpecialization = Clamp01(dietSpecialization);
+            MemoryCapacity = Clamp01(memoryCapacity);
+            MemoryRetention = Clamp01(memoryRetention);
+            LearningRate = Clamp01(learningRate);
+            Exploration = Clamp01(exploration);
         }
 
         public static Genome Neutral => new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
@@ -46,6 +54,10 @@ namespace LifeSimulation.Simulation.Biology
         public float Fear { get; }
         public float Aggression { get; }
         public float DietSpecialization { get; }
+        public float MemoryCapacity { get; }
+        public float MemoryRetention { get; }
+        public float LearningRate { get; }
+        public float Exploration { get; }
 
         public Genome WithBodySize(float value)
         {
@@ -61,7 +73,11 @@ namespace LifeSimulation.Simulation.Biology
                 Maneuverability,
                 Fear,
                 Aggression,
-                DietSpecialization);
+                DietSpecialization,
+                MemoryCapacity,
+                MemoryRetention,
+                LearningRate,
+                Exploration);
         }
 
         private static float Clamp01(float value)
@@ -90,7 +106,9 @@ namespace LifeSimulation.Simulation.Biology
             float fearResponse,
             float aggression,
             float plantFoodYieldMultiplier,
-            float meatYieldMultiplier)
+            float meatYieldMultiplier,
+            float memoryConfidenceDecayPerSecond,
+            float cognitionRestCostMultiplier)
         {
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
@@ -110,6 +128,8 @@ namespace LifeSimulation.Simulation.Biology
             Aggression = aggression;
             PlantFoodYieldMultiplier = plantFoodYieldMultiplier;
             MeatYieldMultiplier = meatYieldMultiplier;
+            MemoryConfidenceDecayPerSecond = memoryConfidenceDecayPerSecond;
+            CognitionRestCostMultiplier = cognitionRestCostMultiplier;
         }
 
         public float BodyMass { get; }
@@ -130,6 +150,8 @@ namespace LifeSimulation.Simulation.Biology
         public float Aggression { get; }
         public float PlantFoodYieldMultiplier { get; }
         public float MeatYieldMultiplier { get; }
+        public float MemoryConfidenceDecayPerSecond { get; }
+        public float CognitionRestCostMultiplier { get; }
 
         public static Phenotype FromGenome(Genome genome)
         {
@@ -144,7 +166,11 @@ namespace LifeSimulation.Simulation.Biology
                 + (0.08f * genome.Maneuverability)
                 + (0.03f * genome.Fear)
                 + (0.04f * genome.Aggression)
-                + (0.04f * genome.DietSpecialization);
+                + (0.04f * genome.DietSpecialization)
+                + (0.08f * genome.MemoryCapacity)
+                + (0.05f * genome.MemoryRetention)
+                + (0.04f * genome.LearningRate)
+                + (0.02f * genome.Exploration);
 
             return new Phenotype(
                 bodyMass,
@@ -164,7 +190,9 @@ namespace LifeSimulation.Simulation.Biology
                 genome.Fear,
                 genome.Aggression,
                 1f - (0.3f * genome.DietSpecialization),
-                0.5f + genome.DietSpecialization);
+                0.5f + genome.DietSpecialization,
+                0.12f - (0.10f * genome.MemoryRetention),
+                1f + (0.6f * genome.MemoryCapacity) + (0.25f * genome.LearningRate));
         }
     }
 }

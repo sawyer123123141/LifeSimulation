@@ -153,6 +153,8 @@ namespace LifeSimulation.Simulation.Core
         public float FoodAge;
         public float WaterAge;
         public float ThreatAge;
+        public SimVector2 ActiveRememberedTarget;
+        public bool HasActiveRememberedTarget;
     }
 
     public enum RandomDomain : ulong

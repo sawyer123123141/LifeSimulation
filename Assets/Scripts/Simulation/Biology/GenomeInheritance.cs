@@ -31,7 +31,11 @@ namespace LifeSimulation.Simulation.Biology
                 InheritTrait(firstParent.Maneuverability, secondParent.Maneuverability, worldSeed, birthOrdinal, 8, mutationStandardDeviation),
                 InheritTrait(firstParent.Fear, secondParent.Fear, worldSeed, birthOrdinal, 9, mutationStandardDeviation),
                 InheritTrait(firstParent.Aggression, secondParent.Aggression, worldSeed, birthOrdinal, 10, mutationStandardDeviation),
-                InheritTrait(firstParent.DietSpecialization, secondParent.DietSpecialization, worldSeed, birthOrdinal, 11, mutationStandardDeviation));
+                InheritTrait(firstParent.DietSpecialization, secondParent.DietSpecialization, worldSeed, birthOrdinal, 11, mutationStandardDeviation),
+                InheritTrait(firstParent.MemoryCapacity, secondParent.MemoryCapacity, worldSeed, birthOrdinal, 12, mutationStandardDeviation),
+                InheritTrait(firstParent.MemoryRetention, secondParent.MemoryRetention, worldSeed, birthOrdinal, 13, mutationStandardDeviation),
+                InheritTrait(firstParent.LearningRate, secondParent.LearningRate, worldSeed, birthOrdinal, 14, mutationStandardDeviation),
+                InheritTrait(firstParent.Exploration, secondParent.Exploration, worldSeed, birthOrdinal, 15, mutationStandardDeviation));
         }
 
         private static float InheritTrait(

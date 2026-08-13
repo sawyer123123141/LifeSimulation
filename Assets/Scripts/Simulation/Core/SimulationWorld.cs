@@ -276,6 +276,10 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.Fear);
                 hash = HashFloat(hash, genome.Aggression);
                 hash = HashFloat(hash, genome.DietSpecialization);
+                hash = HashFloat(hash, genome.MemoryCapacity);
+                hash = HashFloat(hash, genome.MemoryRetention);
+                hash = HashFloat(hash, genome.LearningRate);
+                hash = HashFloat(hash, genome.Exploration);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 hash = HashFloat(hash, needs.Energy);
@@ -318,6 +322,9 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, memory.FoodAge);
                 hash = HashFloat(hash, memory.WaterAge);
                 hash = HashFloat(hash, memory.ThreatAge);
+                hash = HashFloat(hash, memory.ActiveRememberedTarget.X);
+                hash = HashFloat(hash, memory.ActiveRememberedTarget.Y);
+                hash = Hash(hash, memory.HasActiveRememberedTarget ? 1UL : 0UL);
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));
@@ -371,7 +378,10 @@ namespace LifeSimulation.Simulation.Core
 
                 if (Config.CognitionEnabled)
                 {
-                    MemorySystem.TickDecay(ref Creatures.GetMemoryRefAt(index), deltaTime, confidenceDecayPerSecond: 0.04f);
+                    MemorySystem.TickDecay(
+                        ref Creatures.GetMemoryRefAt(index),
+                        deltaTime,
+                        Creatures.GetPhenotypeAt(index).MemoryConfidenceDecayPerSecond);
                 }
             }
         }
@@ -407,6 +417,16 @@ namespace LifeSimulation.Simulation.Core
                 if (resource.IsActive && resource.Amount > 0f)
                 {
                     return resource.Position;
+                }
+            }
+
+            if (Config.CognitionEnabled)
+            {
+                MemoryState memory = Creatures.GetMemoryRefAt(creatureIndex);
+                if (memory.HasActiveRememberedTarget
+                    && (decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater))
+                {
+                    return memory.ActiveRememberedTarget;
                 }
             }
 
@@ -475,6 +495,23 @@ namespace LifeSimulation.Simulation.Core
                     if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
                 }
                 CreatureDecision decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out DecisionDiagnostics diagnostics);
+                if (Config.CognitionEnabled)
+                {
+                    ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
+                    memory.HasActiveRememberedTarget = false;
+                    decision = DecisionSystem.PreferRememberedResource(
+                        Creatures.GetNeedsAt(index),
+                        phenotype,
+                        memory,
+                        decision,
+                        out SimVector2 rememberedTarget);
+                    if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
+                        && decision.TargetResourceIndex < 0)
+                    {
+                        memory.ActiveRememberedTarget = rememberedTarget;
+                        memory.HasActiveRememberedTarget = true;
+                    }
+                }
                 if (Config.FounderProfile == FounderProfile.PredationVariation)
                 {
                     CreatureObservation other = PerceptionSystem.FindNearestOtherCreature(

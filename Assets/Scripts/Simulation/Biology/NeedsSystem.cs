@@ -50,7 +50,7 @@ namespace LifeSimulation.Simulation.Biology
 
             needs.Energy = Math.Max(0f, needs.Energy - energyCost);
             needs.Hydration = Math.Max(0f, needs.Hydration - hydrationCost);
-            needs.Rest = Math.Max(0f, needs.Rest - (0.1f * deltaTime));
+            needs.Rest = Math.Max(0f, needs.Rest - (0.1f * phenotype.CognitionRestCostMultiplier * deltaTime));
             needs.Age += deltaTime;
 
             if (needs.Energy <= 0f)
