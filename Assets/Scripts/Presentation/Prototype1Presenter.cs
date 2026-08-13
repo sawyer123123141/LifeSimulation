@@ -11,9 +11,12 @@ namespace LifeSimulation.Presentation
         private readonly Dictionary<CreatureId, Transform> _creatureViews = new Dictionary<CreatureId, Transform>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private SimulationWorld _world;
+        private Camera _simulationCamera;
         private float _accumulator;
         private float _speedMultiplier = 4f;
         private bool _isPaused;
+        private CreatureId _selectedCreature;
+        private bool _hasSelectedCreature;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateIfNeeded()
@@ -53,6 +56,7 @@ namespace LifeSimulation.Presentation
             GUI.Box(new Rect(12f, 12f, 380f, 170f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
+            DrawSelectedCreatureInspector();
             var stats = _world.Statistics;
             GUI.Label(new Rect(24f, 84f, 330f, 22f), $"Generation: {stats.HighestGeneration}    Mean body gene: {stats.MeanBodySizeGene:0.00}");
             GUI.Label(new Rect(24f, 106f, 330f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
@@ -71,6 +75,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.Alpha2)) _speedMultiplier = 2f;
             if (Input.GetKeyDown(KeyCode.Alpha4)) _speedMultiplier = 4f;
             if (Input.GetKeyDown(KeyCode.Alpha8)) _speedMultiplier = 8f;
+            if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
         private void CreateEnvironment()
@@ -86,12 +91,12 @@ namespace LifeSimulation.Presentation
             directionalLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
             var cameraObject = new GameObject("Simulation Camera");
-            var simulationCamera = cameraObject.AddComponent<Camera>();
-            simulationCamera.orthographic = true;
-            simulationCamera.orthographicSize = 29f;
-            simulationCamera.transform.position = new Vector3(0f, 40f, 0f);
-            simulationCamera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
+            _simulationCamera = cameraObject.AddComponent<Camera>();
+            _simulationCamera.orthographic = true;
+            _simulationCamera.orthographicSize = 29f;
+            _simulationCamera.transform.position = new Vector3(0f, 40f, 0f);
+            _simulationCamera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            _simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
 
             CreateResource(ResourceKind.Food, new Vector3(-12f, 0.25f, -8f), new Color(0.95f, 0.72f, 0.15f));
             CreateResource(ResourceKind.Food, new Vector3(10f, 0.25f, 12f), new Color(0.95f, 0.72f, 0.15f));
@@ -139,6 +144,11 @@ namespace LifeSimulation.Presentation
             {
                 if (!_world.TryGetCreatureIndex(pair.Key, out _))
                 {
+                    if (_hasSelectedCreature && pair.Key.Equals(_selectedCreature))
+                    {
+                        _hasSelectedCreature = false;
+                    }
+
                     Destroy(pair.Value.gameObject);
                     _staleCreatureIds.Add(pair.Key);
                 }
@@ -173,6 +183,46 @@ namespace LifeSimulation.Presentation
             }
 
             return 1f;
+        }
+
+        private void TrySelectCreature()
+        {
+            Ray ray = _simulationCamera.ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out RaycastHit hit))
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
+            {
+                if (pair.Value == hit.transform)
+                {
+                    _selectedCreature = pair.Key;
+                    _hasSelectedCreature = true;
+                    return;
+                }
+            }
+        }
+
+        private void DrawSelectedCreatureInspector()
+        {
+            GUI.Box(new Rect(12f, 178f, 400f, 140f), "Creature Inspector");
+            if (!_hasSelectedCreature || !_world.TryGetCreatureIndex(_selectedCreature, out int index))
+            {
+                GUI.Label(new Rect(24f, 204f, 350f, 22f), "Click a creature to inspect it.");
+                return;
+            }
+
+            var needs = _world.GetCreatureNeedsAt(index);
+            var phenotype = _world.Creatures.GetPhenotypeAt(index);
+            var genome = _world.Creatures.GetGenomeAt(index);
+            var lineage = _world.Creatures.GetLineageAt(index);
+            var decision = _world.GetCreatureDecisionAt(index);
+            GUI.Label(new Rect(24f, 204f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
+            GUI.Label(new Rect(24f, 226f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
+            GUI.Label(new Rect(24f, 248f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
+            GUI.Label(new Rect(24f, 270f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
+            GUI.Label(new Rect(24f, 292f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
         }
     }
 }
