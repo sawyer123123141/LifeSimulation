@@ -161,6 +161,23 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void SwapBackRemovalKeepsTheP2MemorySidecarAligned()
+        {
+            var store = new CreatureStore(initialCapacity: 2);
+            CreatureId first = store.Add();
+            CreatureId moved = store.Add();
+            ref MemoryState memory = ref store.GetMemoryRefAt(1);
+            memory.FoodPosition = new SimVector2(5f, -3f);
+            memory.FoodConfidence = 0.8f;
+
+            Assert.That(store.Remove(first), Is.True);
+            Assert.That(store.TryGetIndex(moved, out int movedIndex), Is.True);
+            Assert.That(store.GetMemoryRefAt(movedIndex).FoodPosition.X, Is.EqualTo(5f));
+            Assert.That(store.GetMemoryRefAt(movedIndex).FoodPosition.Y, Is.EqualTo(-3f));
+            Assert.That(store.GetMemoryRefAt(movedIndex).FoodConfidence, Is.EqualTo(0.8f));
+        }
+
+        [Test]
         public void WorldAppliesRequestedDeathsAtTheEndOfItsFixedStep()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);

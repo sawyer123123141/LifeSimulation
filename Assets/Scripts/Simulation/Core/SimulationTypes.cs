@@ -142,6 +142,19 @@ namespace LifeSimulation.Simulation.Core
         public float AttackRecoveryRemaining;
     }
 
+    public struct MemoryState
+    {
+        public SimVector2 FoodPosition;
+        public SimVector2 WaterPosition;
+        public SimVector2 ThreatPosition;
+        public float FoodConfidence;
+        public float WaterConfidence;
+        public float ThreatConfidence;
+        public float FoodAge;
+        public float WaterAge;
+        public float ThreatAge;
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,

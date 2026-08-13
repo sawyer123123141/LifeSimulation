@@ -144,6 +144,20 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void MemoryStoresObservationsAndLetsConfidenceDecayWithoutAllocatingHistory()
+        {
+            MemoryState memory = default;
+
+            MemorySystem.RememberResource(ref memory, ResourceKind.Food, new SimVector2(3f, -1f));
+            MemorySystem.TickDecay(ref memory, 2f, confidenceDecayPerSecond: 0.2f);
+
+            Assert.That(memory.FoodPosition.X, Is.EqualTo(3f));
+            Assert.That(memory.FoodPosition.Y, Is.EqualTo(-1f));
+            Assert.That(memory.FoodAge, Is.EqualTo(2f));
+            Assert.That(memory.FoodConfidence, Is.EqualTo(0.6f).Within(0.0001f));
+        }
+
+        [Test]
         public void DecisionPrefersTheMoreUrgentAvailableSurvivalNeed()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
