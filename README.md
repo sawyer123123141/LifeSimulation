@@ -76,7 +76,7 @@ Open the project in Unity 6 and enter Play mode. The runtime bootstrap starts fo
 
 Click a creature to inspect its identity, needs, inherited traits, lineage, current action, and food/water decision scores.
 
-For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, and `-lifeSimTicks`; for example use `-lifeSimSeedCount 20 -lifeSimTicks 50000` for a longer 20-seed sweep. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
+For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntry.RunPrototype1Experiments`. Defaults are five paired seeds, 50 founders, and 20,000 ticks. Override them without changing source with `-lifeSimFirstSeed`, `-lifeSimSeedCount`, `-lifeSimFounders`, `-lifeSimMaximumPopulation`, and `-lifeSimTicks`. The drought evidence configuration is `-lifeSimSeedCount 20 -lifeSimFounders 100 -lifeSimMaximumPopulation 1500 -lifeSimTicks 100000`. Results are written to ignored `ExperimentResults/` CSV files, including a paired statistical summary.
 
 ## Architecture rule
 

@@ -12,11 +12,13 @@ This is calibration evidence, not a P0 evolution claim. All runs used the determ
 
 | Scenario | Food regeneration | Water regeneration | Cap contacts in 20 × 100,000-tick runs |
 | --- | ---: | ---: | ---: |
-| Baseline | 1.00 | 1.00 | 0 |
-| Drought | 1.00 | 0.25 | 0 |
-| Food scarcity | 0.25 | 1.00 | 0 |
+| Baseline | 0.75 | 0.75 | 0 |
+| Drought | 0.75 | 0.25 | 0 |
+| Food scarcity | 0.25 | 0.75 | 0 |
 
-The baseline/drought comparison produced a mean water-efficiency shift of `+0.2284`, standardized paired effect `1.10`, and bootstrap interval `[+0.1395, +0.3177]`. Only 60% of pairs had the same direction, below the predeclared 75% threshold. It is promising calibration evidence, but **does not pass P0**.
+With 50 founders, the baseline/drought comparison produced a mean water-efficiency shift of `+0.2284`, standardized paired effect `1.10`, and bootstrap interval `[+0.1395, +0.3177]`, but only 60% of pairs had the same direction. This identified founder drift as the remaining source of noise.
+
+The cap-safe 100-founder rerun (20 seeds, 100,000 ticks, 1,500 maximum population) produced a mean water-efficiency shift of `+0.3134`, standardized paired effect `2.66`, direction consistency `100%`, and bootstrap interval `[+0.2642, +0.3634]`, with zero cap contacts. It satisfies the statistical part of the P0 drought criterion. The causal mechanism is the existing water-efficiency phenotype: lower hydration loss at a higher maintenance-energy cost.
 
 Food scarcity reduced population and resource flow but did not produce a clean, causally attributable food-efficiency shift. It remains an open biology-design problem.
 

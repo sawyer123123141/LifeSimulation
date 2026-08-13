@@ -232,12 +232,14 @@ namespace LifeSimulation.Tests.EditMode
                 "-lifeSimFirstSeed", "100",
                 "-lifeSimSeedCount", "20",
                 "-lifeSimFounders", "80",
+                "-lifeSimMaximumPopulation", "1500",
                 "-lifeSimTicks", "50000",
             });
 
             Assert.That(options.FirstSeed, Is.EqualTo(100));
             Assert.That(options.SeedCount, Is.EqualTo(20));
             Assert.That(options.FounderPopulation, Is.EqualTo(80));
+            Assert.That(options.MaximumPopulation, Is.EqualTo(1500));
             Assert.That(options.Ticks, Is.EqualTo(50000));
         }
 

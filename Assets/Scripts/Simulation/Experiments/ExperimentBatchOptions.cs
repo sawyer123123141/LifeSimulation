@@ -4,7 +4,7 @@ namespace LifeSimulation.Simulation.Experiments
 {
     public readonly struct ExperimentBatchOptions
     {
-        public ExperimentBatchOptions(int firstSeed, int seedCount, int founderPopulation, int ticks)
+        public ExperimentBatchOptions(int firstSeed, int seedCount, int founderPopulation, int maximumPopulation, int ticks)
         {
             if (seedCount <= 0)
             {
@@ -16,6 +16,11 @@ namespace LifeSimulation.Simulation.Experiments
                 throw new ArgumentOutOfRangeException(nameof(founderPopulation));
             }
 
+            if (maximumPopulation < founderPopulation)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maximumPopulation));
+            }
+
             if (ticks <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(ticks));
@@ -24,18 +29,21 @@ namespace LifeSimulation.Simulation.Experiments
             FirstSeed = firstSeed;
             SeedCount = seedCount;
             FounderPopulation = founderPopulation;
+            MaximumPopulation = maximumPopulation;
             Ticks = ticks;
         }
 
         public int FirstSeed { get; }
         public int SeedCount { get; }
         public int FounderPopulation { get; }
+        public int MaximumPopulation { get; }
         public int Ticks { get; }
 
         public static ExperimentBatchOptions Default => new ExperimentBatchOptions(
             firstSeed: 42,
             seedCount: 5,
             founderPopulation: 50,
+            maximumPopulation: 1000,
             ticks: 20000);
 
         public static ExperimentBatchOptions Parse(string[] arguments)
@@ -49,6 +57,7 @@ namespace LifeSimulation.Simulation.Experiments
             int firstSeed = defaults.FirstSeed;
             int seedCount = defaults.SeedCount;
             int founderPopulation = defaults.FounderPopulation;
+            int maximumPopulation = defaults.MaximumPopulation;
             int ticks = defaults.Ticks;
             for (int index = 0; index < arguments.Length; index++)
             {
@@ -63,13 +72,16 @@ namespace LifeSimulation.Simulation.Experiments
                     case "-lifeSimFounders":
                         founderPopulation = ReadValue(arguments, ref index, "-lifeSimFounders");
                         break;
+                    case "-lifeSimMaximumPopulation":
+                        maximumPopulation = ReadValue(arguments, ref index, "-lifeSimMaximumPopulation");
+                        break;
                     case "-lifeSimTicks":
                         ticks = ReadValue(arguments, ref index, "-lifeSimTicks");
                         break;
                 }
             }
 
-            return new ExperimentBatchOptions(firstSeed, seedCount, founderPopulation, ticks);
+            return new ExperimentBatchOptions(firstSeed, seedCount, founderPopulation, maximumPopulation, ticks);
         }
 
         private static int ReadValue(string[] arguments, ref int optionIndex, string optionName)

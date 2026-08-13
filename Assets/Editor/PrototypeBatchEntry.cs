@@ -72,7 +72,12 @@ namespace LifeSimulation.EditorTools
                     int seed = options.FirstSeed + seedOffset;
                     for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
                     {
-                        SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(seed, options.FounderPopulation);
+                        SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(seed, options.FounderPopulation);
+                        var config = new SimulationConfig(
+                            seed,
+                            options.FounderPopulation,
+                            defaults.Schedule,
+                            options.MaximumPopulation);
                         ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], options.Ticks);
                         resultsByScenario[scenarioIndex][seedOffset] = result;
                         SimulationStatistics stats = result.FinalStatistics;
