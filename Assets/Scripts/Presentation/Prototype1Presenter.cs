@@ -304,6 +304,8 @@ namespace LifeSimulation.Presentation
                     return new Color(0.98f, 0.2f, 0.16f);
                 case CreatureAction.Flee:
                     return new Color(0.2f, 0.95f, 0.95f);
+                case CreatureAction.SeekThermalComfort:
+                    return new Color(1f, 0.45f, 0.08f);
                 default:
                     return new Color(0.35f, 0.92f, 0.45f);
             }
