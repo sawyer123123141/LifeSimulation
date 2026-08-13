@@ -363,6 +363,7 @@ namespace LifeSimulation.Presentation
             if (_world.Config.PhysiologyEnabled)
             {
                 GUI.Label(new Rect(24f, 412f, 420f, 22f), $"Temperature tolerance: {genome.TemperatureTolerance:0.00} | local field {TemperatureField.Sample(_world.GetCreatureMovementAt(index).Position, _world.CurrentTick):0.0} C");
+                GUI.Label(new Rect(24f, 434f, 420f, 22f), $"Life history: fertility {genome.FertilityInvestment:0.00} | lifespan {genome.LifespanTendency:0.00} | max age {phenotype.MaximumAgeSeconds:0}s");
             }
         }
     }
