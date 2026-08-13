@@ -35,6 +35,18 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void FertilityAndLifespanGenesCreateOpposingReproductiveAndMaintenanceTradeoffs()
+        {
+            Phenotype low = Phenotype.FromGenome(Genome.Neutral);
+            Phenotype high = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fertilityInvestment: 1f, lifespanTendency: 1f));
+
+            Assert.That(high.ReproductionCooldownSeconds, Is.LessThan(low.ReproductionCooldownSeconds));
+            Assert.That(high.ReproductionEnergyCostFraction, Is.GreaterThan(low.ReproductionEnergyCostFraction));
+            Assert.That(high.MaximumAgeSeconds, Is.GreaterThan(low.MaximumAgeSeconds));
+            Assert.That(high.BasalEnergyCostMultiplier, Is.GreaterThan(low.BasalEnergyCostMultiplier));
+        }
+
+        [Test]
         public void CognitionGenesTradeLowerMemoryDecayForHigherMaintenanceAndRestCost()
         {
             Phenotype lowCognition = Phenotype.FromGenome(Genome.Neutral);
@@ -218,6 +230,8 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(first.Aggression, Is.InRange(0f, 1f));
             Assert.That(first.DietSpecialization, Is.InRange(0f, 1f));
             Assert.That(first.TemperatureTolerance, Is.InRange(0f, 1f));
+            Assert.That(first.FertilityInvestment, Is.InRange(0f, 1f));
+            Assert.That(first.LifespanTendency, Is.InRange(0f, 1f));
         }
     }
 }

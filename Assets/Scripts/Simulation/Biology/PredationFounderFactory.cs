@@ -24,7 +24,9 @@ namespace LifeSimulation.Simulation.Biology
                 Trait(worldSeed, founderOrdinal, 7),
                 Trait(worldSeed, founderOrdinal, 8),
                 Trait(worldSeed, founderOrdinal, 9),
-                Trait(worldSeed, founderOrdinal, 10));
+                Trait(worldSeed, founderOrdinal, 10),
+                Trait(worldSeed, founderOrdinal, 11),
+                Trait(worldSeed, founderOrdinal, 12));
         }
 
         private static float Trait(int worldSeed, long founderOrdinal, int traitIndex)

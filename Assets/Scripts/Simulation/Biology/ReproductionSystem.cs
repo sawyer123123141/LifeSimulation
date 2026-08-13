@@ -9,7 +9,6 @@ namespace LifeSimulation.Simulation.Biology
     public sealed class ReproductionSystem
     {
         private const float AdultAgeSeconds = 20f;
-        private const float ReproductionCooldownSeconds = 15f;
         private const float MateDistance = 2f;
 
         private readonly CreatureStore _creatures;
@@ -162,8 +161,8 @@ namespace LifeSimulation.Simulation.Biology
                 secondParent);
             ChargeCost(firstIndex);
             ChargeCost(secondIndex);
-            _creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = ReproductionCooldownSeconds;
-            _creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = ReproductionCooldownSeconds;
+            _creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = _creatures.GetPhenotypeAt(firstIndex).ReproductionCooldownSeconds;
+            _creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = _creatures.GetPhenotypeAt(secondIndex).ReproductionCooldownSeconds;
             _creatures.SetDecisionAt(firstIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
             _creatures.SetDecisionAt(secondIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
             return child;
@@ -184,7 +183,7 @@ namespace LifeSimulation.Simulation.Biology
         {
             ref CreatureNeeds needs = ref _creatures.GetNeedsRefAt(index);
             Phenotype phenotype = _creatures.GetPhenotypeAt(index);
-            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * 0.2f));
+            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * phenotype.ReproductionEnergyCostFraction));
             needs.Hydration = Math.Max(0f, needs.Hydration - (phenotype.HydrationCapacity * 0.1f));
         }
 

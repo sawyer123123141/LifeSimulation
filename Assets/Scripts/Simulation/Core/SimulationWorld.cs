@@ -282,6 +282,8 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.LearningRate);
                 hash = HashFloat(hash, genome.Exploration);
                 hash = HashFloat(hash, genome.TemperatureTolerance);
+                hash = HashFloat(hash, genome.FertilityInvestment);
+                hash = HashFloat(hash, genome.LifespanTendency);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
                 hash = HashFloat(hash, needs.Energy);
@@ -384,6 +386,10 @@ namespace LifeSimulation.Simulation.Core
                 if (needs.Health <= 0f)
                 {
                     RequestDeath(Creatures.GetIdAt(index), DeathCause.Health);
+                }
+                else if (Config.PhysiologyEnabled && needs.Age >= Creatures.GetPhenotypeAt(index).MaximumAgeSeconds)
+                {
+                    RequestDeath(Creatures.GetIdAt(index), DeathCause.Age);
                 }
 
                 if (Config.CognitionEnabled)

@@ -21,7 +21,9 @@ namespace LifeSimulation.Simulation.Biology
             float memoryRetention = 0f,
             float learningRate = 0f,
             float exploration = 0f,
-            float temperatureTolerance = 0f)
+            float temperatureTolerance = 0f,
+            float fertilityInvestment = 0f,
+            float lifespanTendency = 0f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);
@@ -40,6 +42,8 @@ namespace LifeSimulation.Simulation.Biology
             LearningRate = Clamp01(learningRate);
             Exploration = Clamp01(exploration);
             TemperatureTolerance = Clamp01(temperatureTolerance);
+            FertilityInvestment = Clamp01(fertilityInvestment);
+            LifespanTendency = Clamp01(lifespanTendency);
         }
 
         public static Genome Neutral => new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
@@ -61,6 +65,8 @@ namespace LifeSimulation.Simulation.Biology
         public float LearningRate { get; }
         public float Exploration { get; }
         public float TemperatureTolerance { get; }
+        public float FertilityInvestment { get; }
+        public float LifespanTendency { get; }
 
         public Genome WithBodySize(float value)
         {
@@ -81,7 +87,9 @@ namespace LifeSimulation.Simulation.Biology
                 MemoryRetention,
                 LearningRate,
                 Exploration,
-                TemperatureTolerance);
+                TemperatureTolerance,
+                FertilityInvestment,
+                LifespanTendency);
         }
 
         private static float Clamp01(float value)
@@ -115,7 +123,10 @@ namespace LifeSimulation.Simulation.Biology
             float cognitionRestCostMultiplier,
             float temperatureTolerance,
             float learningRate,
-            float exploration)
+            float exploration,
+            float reproductionCooldownSeconds,
+            float reproductionEnergyCostFraction,
+            float maximumAgeSeconds)
         {
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
@@ -140,6 +151,9 @@ namespace LifeSimulation.Simulation.Biology
             TemperatureTolerance = temperatureTolerance;
             LearningRate = learningRate;
             Exploration = exploration;
+            ReproductionCooldownSeconds = reproductionCooldownSeconds;
+            ReproductionEnergyCostFraction = reproductionEnergyCostFraction;
+            MaximumAgeSeconds = maximumAgeSeconds;
         }
 
         public float BodyMass { get; }
@@ -165,6 +179,9 @@ namespace LifeSimulation.Simulation.Biology
         public float TemperatureTolerance { get; }
         public float LearningRate { get; }
         public float Exploration { get; }
+        public float ReproductionCooldownSeconds { get; }
+        public float ReproductionEnergyCostFraction { get; }
+        public float MaximumAgeSeconds { get; }
 
         public static Phenotype FromGenome(Genome genome)
         {
@@ -184,7 +201,9 @@ namespace LifeSimulation.Simulation.Biology
                 + (0.05f * genome.MemoryRetention)
                 + (0.04f * genome.LearningRate)
                 + (0.02f * genome.Exploration)
-                + (0.06f * genome.TemperatureTolerance);
+                + (0.06f * genome.TemperatureTolerance)
+                + (0.08f * genome.FertilityInvestment)
+                + (0.07f * genome.LifespanTendency);
 
             return new Phenotype(
                 bodyMass,
@@ -209,7 +228,10 @@ namespace LifeSimulation.Simulation.Biology
                 1f + (0.6f * genome.MemoryCapacity) + (0.25f * genome.LearningRate),
                 2f + (8f * genome.TemperatureTolerance),
                 genome.LearningRate,
-                genome.Exploration);
+                genome.Exploration,
+                16f - (8f * genome.FertilityInvestment),
+                0.15f + (0.20f * genome.FertilityInvestment),
+                90f + (180f * genome.LifespanTendency));
         }
     }
 }
