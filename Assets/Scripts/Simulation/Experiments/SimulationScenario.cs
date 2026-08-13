@@ -95,15 +95,15 @@ namespace LifeSimulation.Simulation.Experiments
     {
         public static SimulationScenario Baseline { get; } = new SimulationScenario(
             "baseline",
-            CreateResources(foodAmount: 30f, foodRegeneration: 3f, waterAmount: 30f, waterRegeneration: 3f));
+            CreateResources(foodAmount: 12f, foodRegeneration: 1f, waterAmount: 12f, waterRegeneration: 1f));
 
         public static SimulationScenario Drought { get; } = new SimulationScenario(
             "drought",
-            CreateResources(foodAmount: 30f, foodRegeneration: 3f, waterAmount: 12f, waterRegeneration: 0.75f));
+            CreateResources(foodAmount: 12f, foodRegeneration: 1f, waterAmount: 12f, waterRegeneration: 0.25f));
 
         public static SimulationScenario FoodScarcity { get; } = new SimulationScenario(
             "food-scarcity",
-            CreateResources(foodAmount: 12f, foodRegeneration: 0.75f, waterAmount: 30f, waterRegeneration: 3f));
+            CreateResources(foodAmount: 12f, foodRegeneration: 0.25f, waterAmount: 12f, waterRegeneration: 1f));
 
         private static ResourceDefinition[] CreateResources(
             float foodAmount,
