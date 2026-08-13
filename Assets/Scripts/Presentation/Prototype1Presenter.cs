@@ -36,6 +36,8 @@ namespace LifeSimulation.Presentation
         private string _scenarioId;
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
+        private SimulationEvent _recentEvent;
+        private bool _hasRecentEvent;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateIfNeeded()
@@ -67,6 +69,7 @@ namespace LifeSimulation.Presentation
             }
 
             SynchronizePresentation();
+            CaptureRecentEvent();
             _world.Events.Clear();
         }
 
@@ -91,15 +94,35 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
-        private static void DrawPopulationCondition(SimulationStatistics stats)
+        private void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 154f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 176f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
             GUI.Label(new Rect(476f, 106f, 250f, 22f), $"Water used: {stats.CumulativeWaterConsumed:0.0}");
             GUI.Label(new Rect(476f, 128f, 250f, 22f), "M: mature mating demo");
             GUI.Label(new Rect(476f, 150f, 250f, 22f), $"Deaths: food {stats.StarvationDeathCount}  water {stats.DehydrationDeathCount}");
+            GUI.Label(new Rect(476f, 172f, 250f, 22f), _hasRecentEvent ? FormatRecentEvent() : "Latest event: waiting");
+        }
+
+        private void CaptureRecentEvent()
+        {
+            if (_world.Events.Count > 0)
+            {
+                _recentEvent = _world.Events.GetAt(_world.Events.Count - 1);
+                _hasRecentEvent = true;
+            }
+        }
+
+        private string FormatRecentEvent()
+        {
+            if (_recentEvent.Kind == SimulationEventKind.Birth)
+            {
+                return $"Latest birth: #{_recentEvent.Subject.Value}";
+            }
+
+            return $"Latest death: #{_recentEvent.Subject.Value} ({_recentEvent.DeathCause})";
         }
 
         private void HandleInput()
@@ -164,6 +187,7 @@ namespace LifeSimulation.Presentation
             _scenarioId = scenario.Id;
             _accumulator = 0f;
             _hasSelectedCreature = false;
+            _hasRecentEvent = false;
             for (int index = 0; index < _world.Resources.Count; index++)
             {
                 CreateResourceView(_world.Resources.GetAt(index));
