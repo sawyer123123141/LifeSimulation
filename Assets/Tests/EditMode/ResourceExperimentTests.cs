@@ -65,6 +65,7 @@ namespace LifeSimulation.Tests.EditMode
             ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 2000);
 
             Assert.That(result.EventOverflowed, Is.False);
+            Assert.That(result.PopulationCapReached, Is.False);
         }
 
         [Test]
@@ -275,7 +276,14 @@ namespace LifeSimulation.Tests.EditMode
                 cumulativeWaterConsumed: 0f,
                 birthCount: 5,
                 deathCount: 2);
-            return new ExperimentResult(scenarioId, seed, 100, statistics, finalStateHash: 0UL, eventOverflowed: false);
+            return new ExperimentResult(
+                scenarioId,
+                seed,
+                100,
+                statistics,
+                finalStateHash: 0UL,
+                eventOverflowed: false,
+                populationCapReached: false);
         }
     }
 }

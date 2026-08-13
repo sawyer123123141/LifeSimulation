@@ -66,7 +66,7 @@ namespace LifeSimulation.EditorTools
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
-                writer.WriteLine("scenario,seed,ticks,population,births,deaths,size,speed,metabolism,vision,water_efficiency,food_efficiency,cumulative_food,cumulative_water,event_overflowed,state_hash");
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,size,speed,metabolism,vision,water_efficiency,food_efficiency,cumulative_food,cumulative_water,event_overflowed,population_cap_reached,state_hash");
                 for (int seedOffset = 0; seedOffset < options.SeedCount; seedOffset++)
                 {
                     int seed = options.FirstSeed + seedOffset;
@@ -78,7 +78,7 @@ namespace LifeSimulation.EditorTools
                         SimulationStatistics stats = result.FinalStatistics;
                         writer.WriteLine(string.Format(
                             CultureInfo.InvariantCulture,
-                            "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14},{15}",
+                            "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14},{15},{16}",
                             result.ScenarioId,
                             result.WorldSeed,
                             result.CompletedTicks,
@@ -94,6 +94,7 @@ namespace LifeSimulation.EditorTools
                             stats.CumulativeFoodConsumed,
                             stats.CumulativeWaterConsumed,
                             result.EventOverflowed,
+                            result.PopulationCapReached,
                             result.FinalStateHash));
                     }
                 }

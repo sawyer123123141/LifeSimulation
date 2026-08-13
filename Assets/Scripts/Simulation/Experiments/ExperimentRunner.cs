@@ -11,7 +11,8 @@ namespace LifeSimulation.Simulation.Experiments
             long completedTicks,
             SimulationStatistics finalStatistics,
             ulong finalStateHash,
-            bool eventOverflowed)
+            bool eventOverflowed,
+            bool populationCapReached)
         {
             ScenarioId = scenarioId;
             WorldSeed = worldSeed;
@@ -19,6 +20,7 @@ namespace LifeSimulation.Simulation.Experiments
             FinalStatistics = finalStatistics;
             FinalStateHash = finalStateHash;
             EventOverflowed = eventOverflowed;
+            PopulationCapReached = populationCapReached;
         }
 
         public string ScenarioId { get; }
@@ -27,6 +29,7 @@ namespace LifeSimulation.Simulation.Experiments
         public SimulationStatistics FinalStatistics { get; }
         public ulong FinalStateHash { get; }
         public bool EventOverflowed { get; }
+        public bool PopulationCapReached { get; }
     }
 
     public static class ExperimentRunner
@@ -51,10 +54,12 @@ namespace LifeSimulation.Simulation.Experiments
             var world = new SimulationWorld(config);
             scenario.ApplyTo(world);
             bool eventOverflowed = false;
+            bool populationCapReached = false;
             for (int index = 0; index < ticks; index++)
             {
                 world.Step(config.FixedDeltaTime);
                 eventOverflowed |= world.Events.Overflowed;
+                populationCapReached |= world.CreatureCount >= config.MaximumPopulation;
                 world.Events.Clear();
             }
 
@@ -64,7 +69,8 @@ namespace LifeSimulation.Simulation.Experiments
                 world.CurrentTick,
                 world.Statistics,
                 world.ComputeStateHash(),
-                eventOverflowed);
+                eventOverflowed,
+                populationCapReached);
         }
     }
 }
