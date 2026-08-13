@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Resources;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace LifeSimulation.Presentation
         private float _accumulator;
         private float _speedMultiplier = 4f;
         private bool _isPaused;
+        private string _scenarioId;
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
 
@@ -38,10 +40,8 @@ namespace LifeSimulation.Presentation
 
         private void Awake()
         {
-            _world = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
             CreateEnvironment();
-            ArrangeDemoFounders();
-            SynchronizePresentation();
+            ResetSimulation(Prototype1Scenarios.Baseline);
         }
 
         private void Update()
@@ -65,14 +65,14 @@ namespace LifeSimulation.Presentation
         {
             GUI.Box(new Rect(12f, 12f, 440f, 214f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
-            GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
+            GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             DrawSelectedCreatureInspector();
             var stats = _world.Statistics;
             GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
             GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F scenario reset");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");
         }
 
@@ -87,6 +87,9 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.Alpha2)) _speedMultiplier = 2f;
             if (Input.GetKeyDown(KeyCode.Alpha4)) _speedMultiplier = 4f;
             if (Input.GetKeyDown(KeyCode.Alpha8)) _speedMultiplier = 8f;
+            if (Input.GetKeyDown(KeyCode.B)) ResetSimulation(Prototype1Scenarios.Baseline);
+            if (Input.GetKeyDown(KeyCode.D)) ResetSimulation(Prototype1Scenarios.Drought);
+            if (Input.GetKeyDown(KeyCode.F)) ResetSimulation(Prototype1Scenarios.FoodScarcity);
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -110,20 +113,45 @@ namespace LifeSimulation.Presentation
             _simulationCamera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             _simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
 
-            CreateResource(ResourceKind.Food, new Vector3(-12f, 0.25f, -8f), new Color(0.95f, 0.72f, 0.15f));
-            CreateResource(ResourceKind.Water, new Vector3(-7f, 0.25f, -8f), new Color(0.15f, 0.65f, 1f));
-            CreateResource(ResourceKind.Food, new Vector3(10f, 0.25f, 12f), new Color(0.95f, 0.72f, 0.15f));
-            CreateResource(ResourceKind.Water, new Vector3(5f, 0.25f, 12f), new Color(0.15f, 0.65f, 1f));
         }
 
-        private void CreateResource(ResourceKind kind, Vector3 displayPosition, Color color)
+        private void ResetSimulation(SimulationScenario scenario)
         {
-            _world.Resources.Add(kind, new SimVector2(displayPosition.x, displayPosition.z), 1.5f, 30f, 30f, 3f);
-            var view = GameObject.CreatePrimitive(kind == ResourceKind.Food ? PrimitiveType.Cylinder : PrimitiveType.Cube);
-            view.name = kind.ToString();
-            view.transform.position = displayPosition;
+            foreach (KeyValuePair<CreatureId, Transform> creatureView in _creatureViews)
+            {
+                Destroy(creatureView.Value.gameObject);
+            }
+
+            _creatureViews.Clear();
+            for (int index = 0; index < _resourceViews.Count; index++)
+            {
+                Destroy(_resourceViews[index].gameObject);
+            }
+
+            _resourceViews.Clear();
+            _world = new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));
+            scenario.ApplyTo(_world);
+            _scenarioId = scenario.Id;
+            _accumulator = 0f;
+            _hasSelectedCreature = false;
+            for (int index = 0; index < _world.Resources.Count; index++)
+            {
+                CreateResourceView(_world.Resources.GetAt(index));
+            }
+
+            ArrangeDemoFounders();
+            SynchronizePresentation();
+        }
+
+        private void CreateResourceView(ResourceState resource)
+        {
+            var view = GameObject.CreatePrimitive(resource.Kind == ResourceKind.Food ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+            view.name = resource.Kind.ToString();
+            view.transform.position = new Vector3(resource.Position.X, 0.25f, resource.Position.Y);
             view.transform.localScale = new Vector3(2f, 0.5f, 2f);
-            view.GetComponent<Renderer>().material.color = color;
+            view.GetComponent<Renderer>().material.color = resource.Kind == ResourceKind.Food
+                ? new Color(0.95f, 0.72f, 0.15f)
+                : new Color(0.15f, 0.65f, 1f);
             _resourceViews.Add(view.transform);
         }
 
