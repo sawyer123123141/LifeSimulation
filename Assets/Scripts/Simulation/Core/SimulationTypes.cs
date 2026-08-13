@@ -73,7 +73,9 @@ namespace LifeSimulation.Simulation.Core
             float meanEnergyFraction,
             float meanHydrationFraction,
             float availableFood,
-            float availableWater)
+            float availableWater,
+            int birthCount,
+            int deathCount)
         {
             Tick = tick;
             Population = population;
@@ -83,6 +85,8 @@ namespace LifeSimulation.Simulation.Core
             MeanHydrationFraction = meanHydrationFraction;
             AvailableFood = availableFood;
             AvailableWater = availableWater;
+            BirthCount = birthCount;
+            DeathCount = deathCount;
         }
 
         public long Tick { get; }
@@ -93,6 +97,8 @@ namespace LifeSimulation.Simulation.Core
         public float MeanHydrationFraction { get; }
         public float AvailableFood { get; }
         public float AvailableWater { get; }
+        public int BirthCount { get; }
+        public int DeathCount { get; }
     }
 
     public struct ReproductionState
@@ -112,10 +118,43 @@ namespace LifeSimulation.Simulation.Core
 
     public enum DeathCause : byte
     {
-        Debug = 0,
-        Starvation = 1,
-        Dehydration = 2,
-        Age = 3,
-        Health = 4
+        None = 0,
+        Debug = 1,
+        Starvation = 2,
+        Dehydration = 3,
+        Age = 4,
+        Health = 5
+    }
+
+    public enum SimulationEventKind : byte
+    {
+        Birth = 0,
+        Death = 1
+    }
+
+    public readonly struct SimulationEvent
+    {
+        public SimulationEvent(
+            long tick,
+            SimulationEventKind kind,
+            CreatureId subject,
+            CreatureId firstRelated,
+            CreatureId secondRelated,
+            DeathCause deathCause)
+        {
+            Tick = tick;
+            Kind = kind;
+            Subject = subject;
+            FirstRelated = firstRelated;
+            SecondRelated = secondRelated;
+            DeathCause = deathCause;
+        }
+
+        public long Tick { get; }
+        public SimulationEventKind Kind { get; }
+        public CreatureId Subject { get; }
+        public CreatureId FirstRelated { get; }
+        public CreatureId SecondRelated { get; }
+        public DeathCause DeathCause { get; }
     }
 }

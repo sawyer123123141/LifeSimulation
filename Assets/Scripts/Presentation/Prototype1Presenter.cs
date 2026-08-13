@@ -68,7 +68,7 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 62f, 300f, 22f), $"Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             DrawSelectedCreatureInspector();
             var stats = _world.Statistics;
-            GUI.Label(new Rect(24f, 84f, 330f, 22f), $"Generation: {stats.HighestGeneration}    Mean body gene: {stats.MeanBodySizeGene:0.00}");
+            GUI.Label(new Rect(24f, 84f, 360f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
             GUI.Label(new Rect(24f, 106f, 330f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 128f, 330f, 22f), "Space pause · 1/2/4/8 set speed");
             GUI.Label(new Rect(24f, 150f, 350f, 22f), "Green: wander · Gold: food · Blue: water · Purple: reproduce");

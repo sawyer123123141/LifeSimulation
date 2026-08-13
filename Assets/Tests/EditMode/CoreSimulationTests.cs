@@ -457,5 +457,67 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
         }
+
+        [Test]
+        public void EventBufferRetainsEventsInOrderAndReportsOverflow()
+        {
+            var events = new SimulationEventBuffer(capacity: 1);
+            var birth = new SimulationEvent(
+                tick: 10,
+                kind: SimulationEventKind.Birth,
+                subject: new CreatureId(3),
+                firstRelated: new CreatureId(1),
+                secondRelated: new CreatureId(2),
+                deathCause: DeathCause.Debug);
+
+            Assert.That(events.TryWrite(birth), Is.True);
+            Assert.That(events.TryWrite(birth), Is.False);
+            Assert.That(events.Count, Is.EqualTo(1));
+            Assert.That(events.Overflowed, Is.True);
+            Assert.That(events.GetAt(0).Subject, Is.EqualTo(new CreatureId(3)));
+        }
+
+        [Test]
+        public void WorldEmitsBirthAndAppliedDeathEvents()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.Creatures.GetNeedsRefAt(0).Age = 20f;
+            world.Creatures.GetNeedsRefAt(1).Age = 20f;
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+                world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Events.Count, Is.EqualTo(1));
+            SimulationEvent birth = world.Events.GetAt(0);
+            Assert.That(birth.Kind, Is.EqualTo(SimulationEventKind.Birth));
+            Assert.That(birth.FirstRelated, Is.EqualTo(first));
+            Assert.That(birth.SecondRelated, Is.EqualTo(second));
+            Assert.That(world.Statistics.BirthCount, Is.EqualTo(1));
+            Assert.That(world.Statistics.DeathCount, Is.EqualTo(0));
+
+            world.Events.Clear();
+            world.RequestDeath(birth.Subject, DeathCause.Debug);
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.Events.Count, Is.EqualTo(1));
+            SimulationEvent death = world.Events.GetAt(0);
+            Assert.That(death.Kind, Is.EqualTo(SimulationEventKind.Death));
+            Assert.That(death.Subject, Is.EqualTo(birth.Subject));
+            Assert.That(death.DeathCause, Is.EqualTo(DeathCause.Debug));
+
+            for (int index = 0; index < 19; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Statistics.DeathCount, Is.EqualTo(1));
+        }
     }
 }

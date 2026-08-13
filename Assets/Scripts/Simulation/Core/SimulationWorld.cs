@@ -9,6 +9,7 @@ namespace LifeSimulation.Simulation.Core
     public sealed class SimulationWorld
     {
         private CreatureId[] _pendingDeaths;
+        private DeathCause[] _pendingDeathCauses;
         private int _pendingDeathCount;
         private long _spawnOrdinal;
         private SimVector2[] _resourcePositions;
@@ -17,6 +18,8 @@ namespace LifeSimulation.Simulation.Core
         private readonly ReproductionSystem _reproduction;
         private int _resourceRequestCount;
         private long _birthOrdinal;
+        private int _birthCount;
+        private int _deathCount;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -27,10 +30,12 @@ namespace LifeSimulation.Simulation.Core
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];
+            _pendingDeathCauses = new DeathCause[_pendingDeaths.Length];
             _resourcePositions = new SimVector2[8];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
             _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation);
+            Events = new SimulationEventBuffer(capacity: 1024);
 
             for (int index = 0; index < Config.InitialPopulation; index++)
             {
@@ -44,6 +49,7 @@ namespace LifeSimulation.Simulation.Core
         public ArenaBounds Arena { get; }
         public UniformGrid ResourceGrid { get; }
         public UniformGrid CreatureGrid => _reproduction.Grid;
+        public SimulationEventBuffer Events { get; }
         public int CreatureCount => Creatures.Count;
         public long CurrentTick { get; private set; }
         public SimulationStatistics Statistics { get; private set; }
@@ -114,6 +120,7 @@ namespace LifeSimulation.Simulation.Core
 
             EnsurePendingDeathCapacity(_pendingDeathCount + 1);
             _pendingDeaths[_pendingDeathCount++] = id;
+            _pendingDeathCauses[_pendingDeathCount - 1] = cause;
         }
 
         public void Step(float fixedDeltaTime)
@@ -159,7 +166,18 @@ namespace LifeSimulation.Simulation.Core
 
             for (int index = 0; index < _pendingDeathCount; index++)
             {
-                Creatures.Remove(_pendingDeaths[index]);
+                CreatureId deceased = _pendingDeaths[index];
+                if (Creatures.Remove(deceased))
+                {
+                    Events.TryWrite(new SimulationEvent(
+                        nextTick,
+                        SimulationEventKind.Death,
+                        deceased,
+                        default,
+                        default,
+                        _pendingDeathCauses[index]));
+                    _deathCount++;
+                }
             }
 
             _pendingDeathCount = 0;
@@ -232,6 +250,7 @@ namespace LifeSimulation.Simulation.Core
             }
 
             Array.Resize(ref _pendingDeaths, Math.Max(required, _pendingDeaths.Length * 2));
+            Array.Resize(ref _pendingDeathCauses, _pendingDeaths.Length);
         }
 
         private bool IsDue(long tick, int frequencyHz)
@@ -437,11 +456,12 @@ namespace LifeSimulation.Simulation.Core
 
         private void TickReproduction()
         {
-            _reproduction.Step(
+            _birthCount += _reproduction.Step(
                 Config.WorldSeed,
                 1f / Config.Schedule.ReproductionHz,
                 ref _birthOrdinal,
-                CurrentTick + 1);
+                CurrentTick + 1,
+                Events);
         }
 
         private SimulationStatistics BuildStatistics(long tick)
@@ -479,7 +499,9 @@ namespace LifeSimulation.Simulation.Core
                 energyFractionTotal * reciprocalPopulation,
                 hydrationFractionTotal * reciprocalPopulation,
                 food,
-                water);
+                water,
+                _birthCount,
+                _deathCount);
         }
 
         private static float Lerp(float minimum, float maximum, float t)

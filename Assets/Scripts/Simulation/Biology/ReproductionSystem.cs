@@ -36,9 +36,15 @@ namespace LifeSimulation.Simulation.Biology
 
         public UniformGrid Grid { get; }
 
-        public void Step(int worldSeed, float deltaTime, ref long birthOrdinal, long tick)
+        public int Step(int worldSeed, float deltaTime, ref long birthOrdinal, long tick, SimulationEventBuffer events)
         {
+            if (events == null)
+            {
+                throw new ArgumentNullException(nameof(events));
+            }
+
             int candidateCount = _creatures.Count;
+            int births = 0;
             RebuildGrid(candidateCount);
             EnsureCapacity(candidateCount);
             Array.Clear(_matched, 0, candidateCount);
@@ -64,10 +70,20 @@ namespace LifeSimulation.Simulation.Biology
                     continue;
                 }
 
-                CreateChild(firstIndex, secondIndex, worldSeed, ref birthOrdinal, tick);
+                CreatureId child = CreateChild(firstIndex, secondIndex, worldSeed, ref birthOrdinal, tick);
+                events.TryWrite(new SimulationEvent(
+                    tick,
+                    SimulationEventKind.Birth,
+                    child,
+                    _creatures.GetIdAt(firstIndex),
+                    _creatures.GetIdAt(secondIndex),
+                    DeathCause.None));
+                births++;
                 _matched[firstIndex] = true;
                 _matched[secondIndex] = true;
             }
+
+            return births;
         }
 
         private void RebuildGrid(int count)
@@ -122,7 +138,7 @@ namespace LifeSimulation.Simulation.Biology
             return bestIndex;
         }
 
-        private void CreateChild(int firstIndex, int secondIndex, int worldSeed, ref long birthOrdinal, long tick)
+        private CreatureId CreateChild(int firstIndex, int secondIndex, int worldSeed, ref long birthOrdinal, long tick)
         {
             CreatureId firstParent = _creatures.GetIdAt(firstIndex);
             CreatureId secondParent = _creatures.GetIdAt(secondIndex);
@@ -134,7 +150,7 @@ namespace LifeSimulation.Simulation.Biology
                 mutationStandardDeviation: 0.03f);
             SimVector2 firstPosition = _creatures.GetMovementAt(firstIndex).Position;
             SimVector2 secondPosition = _creatures.GetMovementAt(secondIndex).Position;
-            _creatures.AddChild(
+            CreatureId child = _creatures.AddChild(
                 childGenome,
                 new SimVector2((firstPosition.X + secondPosition.X) * 0.5f, (firstPosition.Y + secondPosition.Y) * 0.5f),
                 firstParent,
@@ -145,6 +161,7 @@ namespace LifeSimulation.Simulation.Biology
             _creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = ReproductionCooldownSeconds;
             _creatures.SetDecisionAt(firstIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
             _creatures.SetDecisionAt(secondIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
+            return child;
         }
 
         private bool IsReady(int index)
