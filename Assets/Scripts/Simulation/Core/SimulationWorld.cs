@@ -20,6 +20,8 @@ namespace LifeSimulation.Simulation.Core
         private long _birthOrdinal;
         private int _birthCount;
         private int _deathCount;
+        private float _cumulativeFoodConsumed;
+        private float _cumulativeWaterConsumed;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -466,10 +468,12 @@ namespace LifeSimulation.Simulation.Core
                 if (resource.Kind == ResourceKind.Food)
                 {
                     NeedsSystem.ConsumeFood(ref needs, Creatures.GetPhenotypeAt(request.CreatureIndex), allocatedAmount);
+                    _cumulativeFoodConsumed += allocatedAmount;
                 }
                 else
                 {
                     NeedsSystem.DrinkWater(ref needs, Creatures.GetPhenotypeAt(request.CreatureIndex), allocatedAmount);
+                    _cumulativeWaterConsumed += allocatedAmount;
                 }
             }
         }
@@ -548,6 +552,8 @@ namespace LifeSimulation.Simulation.Core
                 hydrationFractionTotal * reciprocalPopulation,
                 food,
                 water,
+                _cumulativeFoodConsumed,
+                _cumulativeWaterConsumed,
                 _birthCount,
                 _deathCount);
         }

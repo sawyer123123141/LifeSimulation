@@ -79,6 +79,8 @@ namespace LifeSimulation.Simulation.Core
             float meanHydrationFraction,
             float availableFood,
             float availableWater,
+            float cumulativeFoodConsumed,
+            float cumulativeWaterConsumed,
             int birthCount,
             int deathCount)
         {
@@ -95,6 +97,8 @@ namespace LifeSimulation.Simulation.Core
             MeanHydrationFraction = meanHydrationFraction;
             AvailableFood = availableFood;
             AvailableWater = availableWater;
+            CumulativeFoodConsumed = cumulativeFoodConsumed;
+            CumulativeWaterConsumed = cumulativeWaterConsumed;
             BirthCount = birthCount;
             DeathCount = deathCount;
         }
@@ -112,6 +116,8 @@ namespace LifeSimulation.Simulation.Core
         public float MeanHydrationFraction { get; }
         public float AvailableFood { get; }
         public float AvailableWater { get; }
+        public float CumulativeFoodConsumed { get; }
+        public float CumulativeWaterConsumed { get; }
         public int BirthCount { get; }
         public int DeathCount { get; }
     }

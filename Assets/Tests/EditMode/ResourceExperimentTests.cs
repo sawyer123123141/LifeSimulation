@@ -68,6 +68,17 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ExperimentStatisticsReportCumulativeResourceConsumption()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
+
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks: 1000);
+
+            Assert.That(result.FinalStatistics.CumulativeFoodConsumed, Is.GreaterThan(0f));
+            Assert.That(result.FinalStatistics.CumulativeWaterConsumed, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void BaselineScenarioSustainsFoundersLongEnoughForTheFirstMatureCycle()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
@@ -260,6 +271,8 @@ namespace LifeSimulation.Tests.EditMode
                 meanHydrationFraction: 0.5f,
                 availableFood: 20f,
                 availableWater: 20f,
+                cumulativeFoodConsumed: 0f,
+                cumulativeWaterConsumed: 0f,
                 birthCount: 5,
                 deathCount: 2);
             return new ExperimentResult(scenarioId, seed, 100, statistics, finalStateHash: 0UL, eventOverflowed: false);
