@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.IO;
 using LifeSimulation.Simulation.Core;
@@ -56,24 +57,23 @@ namespace LifeSimulation.EditorTools
                 Prototype1Scenarios.Drought,
                 Prototype1Scenarios.FoodScarcity,
             };
-            const int firstSeed = 42;
-            const int seedCount = 5;
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
             var resultsByScenario = new ExperimentResult[scenarios.Length][];
             for (int scenarioIndex = 0; scenarioIndex < resultsByScenario.Length; scenarioIndex++)
             {
-                resultsByScenario[scenarioIndex] = new ExperimentResult[seedCount];
+                resultsByScenario[scenarioIndex] = new ExperimentResult[options.SeedCount];
             }
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
                 writer.WriteLine("scenario,seed,ticks,population,births,deaths,size,speed,metabolism,vision,water_efficiency,food_efficiency,state_hash");
-                for (int seedOffset = 0; seedOffset < seedCount; seedOffset++)
+                for (int seedOffset = 0; seedOffset < options.SeedCount; seedOffset++)
                 {
-                    int seed = firstSeed + seedOffset;
+                    int seed = options.FirstSeed + seedOffset;
                     for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
                     {
-                        SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(seed, initialPopulation: 50);
-                        ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], ticks: 20000);
+                        SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(seed, options.FounderPopulation);
+                        ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], options.Ticks);
                         resultsByScenario[scenarioIndex][seedOffset] = result;
                         SimulationStatistics stats = result.FinalStatistics;
                         writer.WriteLine(string.Format(
@@ -114,7 +114,7 @@ namespace LifeSimulation.EditorTools
                             resultsByScenario[treatmentIndex],
                             metric,
                             resampleCount: 1024,
-                            randomSeed: firstSeed);
+                            randomSeed: options.FirstSeed);
                         float effect = PairedExperimentAnalysis.CalculateStandardizedEffect(
                             resultsByScenario[0],
                             resultsByScenario[treatmentIndex],

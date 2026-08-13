@@ -202,6 +202,23 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(effect, Is.EqualTo(2f).Within(0.0001f));
         }
 
+        [Test]
+        public void ExperimentBatchOptionsAcceptsAReproducibleLargeSweep()
+        {
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(new[]
+            {
+                "-lifeSimFirstSeed", "100",
+                "-lifeSimSeedCount", "20",
+                "-lifeSimFounders", "80",
+                "-lifeSimTicks", "50000",
+            });
+
+            Assert.That(options.FirstSeed, Is.EqualTo(100));
+            Assert.That(options.SeedCount, Is.EqualTo(20));
+            Assert.That(options.FounderPopulation, Is.EqualTo(80));
+            Assert.That(options.Ticks, Is.EqualTo(50000));
+        }
+
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)
         {
             float total = 0f;
