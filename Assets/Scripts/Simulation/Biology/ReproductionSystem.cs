@@ -9,17 +9,21 @@ namespace LifeSimulation.Simulation.Biology
     public sealed class ReproductionSystem
     {
         private const float AdultAgeSeconds = 20f;
+        private const float LegacyReproductionCooldownSeconds = 15f;
+        private const float LegacyReproductionEnergyCostFraction = 0.2f;
         private const float MateDistance = 2f;
 
         private readonly CreatureStore _creatures;
+        private readonly bool _physiologyEnabled;
         private readonly CreatureIndexComparer _creatureIndexComparer;
         private SimVector2[] _creaturePositions;
         private int[] _candidates;
         private bool[] _matched;
 
-        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity)
+        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled)
         {
             _creatures = creatures ?? throw new ArgumentNullException(nameof(creatures));
+            _physiologyEnabled = physiologyEnabled;
             if (initialCapacity < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(initialCapacity));
@@ -161,8 +165,8 @@ namespace LifeSimulation.Simulation.Biology
                 secondParent);
             ChargeCost(firstIndex);
             ChargeCost(secondIndex);
-            _creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = _creatures.GetPhenotypeAt(firstIndex).ReproductionCooldownSeconds;
-            _creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = _creatures.GetPhenotypeAt(secondIndex).ReproductionCooldownSeconds;
+            _creatures.GetReproductionRefAt(firstIndex).CooldownRemaining = CooldownFor(firstIndex);
+            _creatures.GetReproductionRefAt(secondIndex).CooldownRemaining = CooldownFor(secondIndex);
             _creatures.SetDecisionAt(firstIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
             _creatures.SetDecisionAt(secondIndex, new CreatureDecision(CreatureAction.Reproduce, -1, 1f, tick));
             return child;
@@ -183,8 +187,14 @@ namespace LifeSimulation.Simulation.Biology
         {
             ref CreatureNeeds needs = ref _creatures.GetNeedsRefAt(index);
             Phenotype phenotype = _creatures.GetPhenotypeAt(index);
-            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * phenotype.ReproductionEnergyCostFraction));
+            float energyCost = _physiologyEnabled ? phenotype.ReproductionEnergyCostFraction : LegacyReproductionEnergyCostFraction;
+            needs.Energy = Math.Max(0f, needs.Energy - (phenotype.EnergyCapacity * energyCost));
             needs.Hydration = Math.Max(0f, needs.Hydration - (phenotype.HydrationCapacity * 0.1f));
+        }
+
+        private float CooldownFor(int index)
+        {
+            return _physiologyEnabled ? _creatures.GetPhenotypeAt(index).ReproductionCooldownSeconds : LegacyReproductionCooldownSeconds;
         }
 
         private void EnsureCapacity(int required)
