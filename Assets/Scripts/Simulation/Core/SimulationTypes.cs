@@ -63,6 +63,38 @@ namespace LifeSimulation.Simulation.Core
         public int Generation { get; }
     }
 
+    public readonly struct SimulationStatistics
+    {
+        public SimulationStatistics(
+            long tick,
+            int population,
+            int highestGeneration,
+            float meanBodySizeGene,
+            float meanEnergyFraction,
+            float meanHydrationFraction,
+            float availableFood,
+            float availableWater)
+        {
+            Tick = tick;
+            Population = population;
+            HighestGeneration = highestGeneration;
+            MeanBodySizeGene = meanBodySizeGene;
+            MeanEnergyFraction = meanEnergyFraction;
+            MeanHydrationFraction = meanHydrationFraction;
+            AvailableFood = availableFood;
+            AvailableWater = availableWater;
+        }
+
+        public long Tick { get; }
+        public int Population { get; }
+        public int HighestGeneration { get; }
+        public float MeanBodySizeGene { get; }
+        public float MeanEnergyFraction { get; }
+        public float MeanHydrationFraction { get; }
+        public float AvailableFood { get; }
+        public float AvailableWater { get; }
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,

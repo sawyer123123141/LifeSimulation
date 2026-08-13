@@ -315,6 +315,26 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldPublishesPopulationStatisticsAtTheConfiguredFrequency()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 2);
+            var world = new SimulationWorld(config);
+
+            for (int index = 0; index < 19; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Statistics.Tick, Is.EqualTo(0));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.Statistics.Tick, Is.EqualTo(20));
+            Assert.That(world.Statistics.Population, Is.GreaterThanOrEqualTo(2));
+            Assert.That(world.Statistics.MeanBodySizeGene, Is.EqualTo(0.5f).Within(0.001f));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);
