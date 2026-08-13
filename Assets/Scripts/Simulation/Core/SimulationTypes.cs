@@ -47,6 +47,22 @@ namespace LifeSimulation.Simulation.Core
         }
     }
 
+    public readonly struct CreatureLineage
+    {
+        public CreatureLineage(CreatureId lineageId, CreatureId firstParent, CreatureId secondParent, int generation)
+        {
+            LineageId = lineageId;
+            FirstParent = firstParent;
+            SecondParent = secondParent;
+            Generation = generation;
+        }
+
+        public CreatureId LineageId { get; }
+        public CreatureId FirstParent { get; }
+        public CreatureId SecondParent { get; }
+        public int Generation { get; }
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,

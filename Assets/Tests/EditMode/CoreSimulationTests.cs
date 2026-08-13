@@ -93,6 +93,22 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ChildLineageRecordsBothParentsAndTheNextGeneration()
+        {
+            var store = new CreatureStore(initialCapacity: 3);
+            CreatureId firstParent = store.Add();
+            CreatureId secondParent = store.Add();
+            CreatureId child = store.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+
+            Assert.That(store.TryGetIndex(child, out int childIndex), Is.True);
+            CreatureLineage lineage = store.GetLineageAt(childIndex);
+            Assert.That(lineage.FirstParent, Is.EqualTo(firstParent));
+            Assert.That(lineage.SecondParent, Is.EqualTo(secondParent));
+            Assert.That(lineage.Generation, Is.EqualTo(1));
+            Assert.That(lineage.LineageId, Is.EqualTo(child));
+        }
+
+        [Test]
         public void SwapBackRemovalKeepsBiologyAlignedWithTheMovedCreature()
         {
             var store = new CreatureStore(initialCapacity: 2);
@@ -255,6 +271,50 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CreatureWithNoHealthDiesAtTheEndOfTheScheduledNeedsStep()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+            needs.Health = 1f;
+
+            for (int index = 0; index < 9; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(1));
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.CreatureCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TwoReadyNearbyParentsCreateOneDeterministicChildOnReproductionTick()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            CreatureId first = world.Spawn();
+            CreatureId second = world.Spawn();
+            world.SetCreaturePosition(first, new SimVector2(0f, 0f));
+            world.SetCreaturePosition(second, new SimVector2(0.5f, 0f));
+
+            for (int index = 0; index < 20; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.CreatureCount, Is.EqualTo(3));
+            CreatureLineage lineage = world.Creatures.GetLineageAt(2);
+            Assert.That(lineage.FirstParent, Is.EqualTo(first));
+            Assert.That(lineage.SecondParent, Is.EqualTo(second));
+            Assert.That(lineage.Generation, Is.EqualTo(1));
+        }
+
+        [Test]
         public void EqualWorldsProduceTheSameStateHashAfterEqualSteps()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 3);
@@ -265,6 +325,18 @@ namespace LifeSimulation.Tests.EditMode
             second.Step(config.FixedDeltaTime);
 
             Assert.That(second.ComputeStateHash(), Is.EqualTo(first.ComputeStateHash()));
+        }
+
+        [Test]
+        public void StateHashChangesWhenAuthoritativeCreaturePositionChanges()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            ref MovementState movement = ref second.Creatures.GetMovementRefAt(0);
+            movement.Position = new SimVector2(12f, -3f);
+
+            Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
         }
     }
 }
