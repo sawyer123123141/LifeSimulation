@@ -100,6 +100,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.D)) ResetSimulation(Prototype1Scenarios.Drought);
             if (Input.GetKeyDown(KeyCode.F)) ResetSimulation(Prototype1Scenarios.FoodScarcity);
             if (Input.GetKeyDown(KeyCode.P)) ResetPredationSimulation();
+            if (Input.GetKeyDown(KeyCode.C)) ResetCognitionSimulation();
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -164,6 +165,13 @@ namespace LifeSimulation.Presentation
                     defaults.Schedule,
                     maximumPopulation: 150,
                     founderProfile: FounderProfile.PredationVariation));
+        }
+
+        private void ResetCognitionSimulation()
+        {
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length));
         }
 
         private void CreateResourceView(ResourceState resource)
@@ -332,12 +340,17 @@ namespace LifeSimulation.Presentation
             var lineage = _world.Creatures.GetLineageAt(index);
             var decision = _world.GetCreatureDecisionAt(index);
             var diagnostics = _world.GetCreatureDecisionDiagnosticsAt(index);
+            MemoryState memory = _world.GetCreatureMemoryAt(index);
             GUI.Label(new Rect(24f, 258f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
             GUI.Label(new Rect(24f, 280f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
             GUI.Label(new Rect(24f, 302f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
             GUI.Label(new Rect(24f, 324f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
             GUI.Label(new Rect(24f, 346f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
             GUI.Label(new Rect(24f, 368f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
+            if (_world.Config.CognitionEnabled)
+            {
+                GUI.Label(new Rect(24f, 390f, 420f, 22f), $"Learned: food {memory.FoodOutcomeValue:0.00} ({memory.FoodExperienceCount}) | water {memory.WaterOutcomeValue:0.00} ({memory.WaterExperienceCount})");
+            }
         }
     }
 }
