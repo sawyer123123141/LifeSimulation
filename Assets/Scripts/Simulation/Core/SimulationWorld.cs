@@ -919,9 +919,10 @@ namespace LifeSimulation.Simulation.Core
                 if (resource.Kind == ResourceKind.Food || resource.Kind == ResourceKind.Carcass)
                 {
                     Phenotype phenotype = Creatures.GetPhenotypeAt(request.CreatureIndex);
+                    Genome genome = Creatures.GetGenomeAt(request.CreatureIndex);
                     float nutrition = resource.Kind == ResourceKind.Carcass
                         ? allocatedAmount * phenotype.MeatYieldMultiplier
-                        : allocatedAmount * phenotype.PlantFoodYieldMultiplier * resource.NutritionMultiplier;
+                        : allocatedAmount * phenotype.PlantFoodYieldMultiplier * resource.NutritionMultiplier * (1f - (resource.PlantDefense * (1f - genome.FoodEfficiency)));
                     NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
                     _cumulativeFoodConsumed += nutrition;
                     if (resource.Kind == ResourceKind.Carcass)

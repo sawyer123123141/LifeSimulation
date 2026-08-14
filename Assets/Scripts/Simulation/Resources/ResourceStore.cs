@@ -15,6 +15,7 @@ namespace LifeSimulation.Simulation.Resources
         private float[] _regenerationPerSecond;
         private bool[] _isActive;
         private float[] _nutritionMultipliers;
+        private float[] _plantDefense;
         private readonly Dictionary<ResourceId, int> _indexById;
         private long _nextId;
 
@@ -35,6 +36,7 @@ namespace LifeSimulation.Simulation.Resources
             _regenerationPerSecond = new float[capacity];
             _isActive = new bool[capacity];
             _nutritionMultipliers = new float[capacity];
+            _plantDefense = new float[capacity];
             _indexById = new Dictionary<ResourceId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -80,7 +82,8 @@ namespace LifeSimulation.Simulation.Resources
                 _capacities[index],
                 _regenerationPerSecond[index],
                 _isActive[index],
-                _nutritionMultipliers[index]);
+                _nutritionMultipliers[index],
+                _plantDefense[index]);
         }
 
         public bool TryGetIndex(ResourceId id, out int index)
@@ -114,7 +117,7 @@ namespace LifeSimulation.Simulation.Resources
             _positions[index] = position;
         }
 
-        public void SetFoodProjection(ResourceId id, float amount, float nutritionMultiplier)
+        public void SetFoodProjection(ResourceId id, float amount, float nutritionMultiplier, float plantDefense = 0f)
         {
             if (!_indexById.TryGetValue(id, out int index) || _kinds[index] != ResourceKind.Food)
             {
@@ -123,6 +126,7 @@ namespace LifeSimulation.Simulation.Resources
 
             _amounts[index] = Math.Max(0f, Math.Min(_capacities[index], amount));
             _nutritionMultipliers[index] = Math.Max(0f, nutritionMultiplier);
+            _plantDefense[index] = Math.Max(0f, Math.Min(1f, plantDefense));
         }
 
         public float ConsumeAt(int index, float requestedAmount)
@@ -194,6 +198,7 @@ namespace LifeSimulation.Simulation.Resources
             Array.Resize(ref _regenerationPerSecond, nextCapacity);
             Array.Resize(ref _isActive, nextCapacity);
             Array.Resize(ref _nutritionMultipliers, nextCapacity);
+            Array.Resize(ref _plantDefense, nextCapacity);
         }
 
         private static void ValidateDefinition(

@@ -33,7 +33,7 @@ namespace LifeSimulation.Simulation.Environment
             {
                 PlantPatchState patch = patches.GetAt(index);
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(patch.Genome);
-                resources.SetFoodProjection(patch.FoodResourceId, patch.Biomass, patch.Nutrition * phenotype.NutritionMultiplier);
+                resources.SetFoodProjection(patch.FoodResourceId, patch.Biomass, patch.Nutrition * phenotype.NutritionMultiplier, phenotype.Defense);
             }
         }
     }

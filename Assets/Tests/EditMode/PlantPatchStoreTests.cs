@@ -31,6 +31,7 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(resources.GetAt(0).Id, Is.EqualTo(resourceId));
             Assert.That(resources.GetAt(0).Amount, Is.EqualTo(3f));
             Assert.That(resources.GetAt(0).NutritionMultiplier, Is.EqualTo(1.25f * PlantPhenotype.FromGenome(PlantGenome.Neutral).NutritionMultiplier));
+            Assert.That(resources.GetAt(0).PlantDefense, Is.EqualTo(PlantPhenotype.FromGenome(PlantGenome.Neutral).Defense));
         }
 
         [Test]

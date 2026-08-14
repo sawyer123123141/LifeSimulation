@@ -46,7 +46,8 @@ namespace LifeSimulation.Simulation.Resources
             float capacity,
             float regenerationPerSecond,
             bool isActive,
-            float nutritionMultiplier)
+            float nutritionMultiplier,
+            float plantDefense = 0f)
         {
             Id = id;
             Kind = kind;
@@ -57,6 +58,7 @@ namespace LifeSimulation.Simulation.Resources
             RegenerationPerSecond = regenerationPerSecond;
             IsActive = isActive;
             NutritionMultiplier = nutritionMultiplier;
+            PlantDefense = plantDefense;
         }
 
         public ResourceId Id { get; }
@@ -68,5 +70,6 @@ namespace LifeSimulation.Simulation.Resources
         public float RegenerationPerSecond { get; }
         public bool IsActive { get; }
         public float NutritionMultiplier { get; }
+        public float PlantDefense { get; }
     }
 }
