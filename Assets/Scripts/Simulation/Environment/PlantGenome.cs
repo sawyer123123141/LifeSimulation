@@ -67,7 +67,7 @@ namespace LifeSimulation.Simulation.Environment
 
         public static PlantPhenotype FromGenome(PlantGenome genome)
         {
-            float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
+            float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.08f * genome.WaterEfficiency) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
             return new PlantPhenotype(
                 Math.Max(.1f, growth),
                 .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),

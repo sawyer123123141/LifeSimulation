@@ -13,8 +13,11 @@ namespace LifeSimulation.Simulation.Environment
                 PlantPatchState patch = patches.GetAt(index);
                 if (patch.Biomass <= 0f || patch.Biomass >= patch.Capacity) continue;
                 EnvironmentSample sample = field.Sample(patch.Position);
-                float limit = Math.Max(0f, Math.Min(sample.Moisture, Math.Min(sample.Fertility, sample.Temperature)));
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(patch.Genome);
+                float moistureAdaptation = sample.Moisture <= 0f
+                    ? 0f
+                    : Math.Min(1f, sample.Moisture + ((1f - sample.Moisture) * (.7f * patch.Genome.WaterEfficiency + .3f * patch.Genome.MoistureTolerance)));
+                float limit = Math.Max(0f, Math.Min(moistureAdaptation, Math.Min(sample.Fertility, sample.Temperature)));
                 float growth = patch.GrowthRate * phenotype.GrowthRateMultiplier * patch.Biomass * (1f - (patch.Biomass / patch.Capacity)) * limit * deltaTime;
                 float next = Math.Min(patch.Capacity, patch.Biomass + growth);
                 patches.SetBiomass(index, next);

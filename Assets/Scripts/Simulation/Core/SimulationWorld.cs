@@ -47,7 +47,7 @@ namespace LifeSimulation.Simulation.Core
             Creatures = new CreatureStore(Config.InitialPopulation);
             Resources = new ResourceStore(initialCapacity: 8);
             Plants = new PlantPatchStore(initialCapacity: 8);
-            Environment = new EnvironmentField();
+            Environment = Config.PlantCohortsEnabled ? EnvironmentField.CreateMoistureGradient() : new EnvironmentField();
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
             CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
