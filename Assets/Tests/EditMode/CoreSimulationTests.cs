@@ -50,6 +50,7 @@ namespace LifeSimulation.Tests.EditMode
                 defaults.Schedule,
                 founderProfile: FounderProfile.PredationVariation,
                 decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1));
+            world.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, aggression: 1f, dietSpecialization: 1f));
 
             for (int index = 0; index < 20; index++)
             {
@@ -60,6 +61,8 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(world.Statistics.MeanDefenseGene, Is.GreaterThan(0f));
             Assert.That(world.Statistics.MeanAggressionGene, Is.GreaterThan(0f));
             Assert.That(world.Statistics.MeanDietSpecializationGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.ViableHunterCount, Is.GreaterThan(0));
+            Assert.That(world.Statistics.ViableHunterCount + world.Statistics.NonHunterCount, Is.EqualTo(world.Statistics.Population));
         }
 
         [Test]

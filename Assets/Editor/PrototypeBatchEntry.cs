@@ -442,7 +442,7 @@ namespace LifeSimulation.EditorTools
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
-                writer.WriteLine("condition,seed,tick,population,births,deaths,predation_deaths,attack_hits,food,water,carcass_food,attack,defense,aggression,diet_specialization");
+                writer.WriteLine("condition,seed,tick,population,viable_hunters,non_hunters,births,deaths,predation_deaths,attack_hits,food,water,carcass_food,attack,defense,aggression,diet_specialization");
                 for (int offset = 0; offset < options.SeedCount; offset++)
                 {
                     int seed = options.FirstSeed + offset;
@@ -458,7 +458,6 @@ namespace LifeSimulation.EditorTools
         {
             var world = new SimulationWorld(config);
             Prototype1Scenarios.Baseline.ApplyTo(world);
-            WritePredationTimeSample(writer, condition, config.WorldSeed, world.Statistics);
             for (int index = 0; index < ticks; index++)
             {
                 world.Step(config.FixedDeltaTime);
@@ -474,11 +473,13 @@ namespace LifeSimulation.EditorTools
         {
             writer.WriteLine(string.Format(
                 CultureInfo.InvariantCulture,
-                "{0},{1},{2},{3},{4},{5},{6},{7},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14:F4}",
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10:F4},{11:F4},{12:F4},{13:F4},{14:F4},{15:F4},{16:F4}",
                 condition,
                 seed,
                 stats.Tick,
                 stats.Population,
+                stats.ViableHunterCount,
+                stats.NonHunterCount,
                 stats.BirthCount,
                 stats.DeathCount,
                 stats.PredationDeathCount,
