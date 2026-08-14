@@ -1,6 +1,7 @@
 using System;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
+using LifeSimulation.Simulation.Environment;
 
 namespace LifeSimulation.Simulation.Experiments
 {
@@ -14,7 +15,8 @@ namespace LifeSimulation.Simulation.Experiments
             float capacity,
             float regenerationPerSecond,
             bool isActive = true,
-            float nutritionMultiplier = 1f)
+            float nutritionMultiplier = 1f,
+            PlantGenome? plantGenome = null)
         {
             Kind = kind;
             Position = position;
@@ -24,6 +26,7 @@ namespace LifeSimulation.Simulation.Experiments
             RegenerationPerSecond = regenerationPerSecond;
             IsActive = isActive;
             NutritionMultiplier = nutritionMultiplier;
+            PlantGenome = plantGenome;
         }
 
         public ResourceKind Kind { get; }
@@ -34,6 +37,7 @@ namespace LifeSimulation.Simulation.Experiments
         public float RegenerationPerSecond { get; }
         public bool IsActive { get; }
         public float NutritionMultiplier { get; }
+        public PlantGenome? PlantGenome { get; }
 
         public ResourceId AddTo(ResourceStore resources, float populationScale)
         {
@@ -110,7 +114,12 @@ namespace LifeSimulation.Simulation.Experiments
                     float capacity = definition.Capacity * populationScale;
                     float biomass = definition.InitialAmount * populationScale;
                     float growthRate = capacity <= 0f ? 0f : definition.RegenerationPerSecond / capacity;
-                    world.AddPlantPatch(resourceId, definition.Position, biomass, capacity, growthRate, waterDemand: 0f, nutrition: definition.NutritionMultiplier, defense: 0f);
+                    int patchIndex = world.AddPlantPatch(resourceId, definition.Position, biomass, capacity, growthRate, waterDemand: 0f, nutrition: definition.NutritionMultiplier, defense: 0f);
+                    if (definition.PlantGenome.HasValue)
+                    {
+                        PlantPatchState patch = world.Plants.GetAt(patchIndex);
+                        world.Plants.SetGenomeAndLineage(patchIndex, definition.PlantGenome.Value, patch.Lineage);
+                    }
                 }
             }
         }
@@ -186,6 +195,21 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(3f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
             };
+        }
+
+        public static SimulationScenario DefendedPlants { get; } = CreateDefenseScenario("p4-defended-plants", defense: .85f);
+        public static SimulationScenario UndefendedPlants { get; } = CreateDefenseScenario("p4-undefended-plants", defense: 0f);
+
+        private static SimulationScenario CreateDefenseScenario(string id, float defense)
+        {
+            PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);
+            return new SimulationScenario(id, new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, .75f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, .75f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 12f, 12f, .75f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, .75f),
+            });
         }
     }
 
