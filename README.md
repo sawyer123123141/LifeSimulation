@@ -93,6 +93,8 @@ For headless evidence sweeps, run `LifeSimulation.EditorTools.PrototypeBatchEntr
 
 For the current P1 control, use Unity's `Life Simulation > Run Predator-Prey Control Experiments`. It writes paired prey-only and mixed-predation runs to `ExperimentResults/predator-prey-control.csv`; traits stay unlabeled, so the comparison measures emergent hunting pressure rather than a hardcoded predator class.
 
+For P1 dynamics, `Life Simulation > Run Predator-Prey Time Series` writes 40 evenly spaced samples per seed and condition to `ExperimentResults/predator-prey-timeseries.csv`. It records population, births/deaths, attacks, predation deaths, food/water, carcass feeding, and P1 trait means so population changes can be inspected before claiming cycles.
+
 ## Architecture rule
 
 > The simulation must not depend heavily on Unity GameObjects or MonoBehaviour update loops.

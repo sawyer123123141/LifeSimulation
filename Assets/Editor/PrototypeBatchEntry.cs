@@ -430,6 +430,68 @@ namespace LifeSimulation.EditorTools
             return removed;
         }
 
+        [MenuItem("Life Simulation/Run Predator-Prey Time Series")]
+        public static void RunPredatorPreyTimeSeries()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "predator-prey-timeseries.csv");
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+            int sampleInterval = Math.Max(1, options.Ticks / 40);
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("condition,seed,tick,population,births,deaths,predation_deaths,attack_hits,food,water,carcass_food,attack,defense,aggression,diet_specialization");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    WritePredationTimeSeries(writer, "prey-only", CreatePredationExperimentConfig(seed, options, FounderProfile.Prototype1), options.Ticks, sampleInterval);
+                    WritePredationTimeSeries(writer, "mixed-predation", CreatePredationExperimentConfig(seed, options, FounderProfile.PredationVariation), options.Ticks, sampleInterval);
+                }
+            }
+
+            Debug.Log($"Predator-prey time series saved to {outputPath}");
+        }
+
+        private static void WritePredationTimeSeries(StreamWriter writer, string condition, SimulationConfig config, int ticks, int sampleInterval)
+        {
+            var world = new SimulationWorld(config);
+            Prototype1Scenarios.Baseline.ApplyTo(world);
+            WritePredationTimeSample(writer, condition, config.WorldSeed, world.Statistics);
+            for (int index = 0; index < ticks; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+                if (world.CurrentTick % sampleInterval == 0 || world.CurrentTick == ticks)
+                {
+                    WritePredationTimeSample(writer, condition, config.WorldSeed, world.Statistics);
+                }
+            }
+        }
+
+        private static void WritePredationTimeSample(StreamWriter writer, string condition, int seed, SimulationStatistics stats)
+        {
+            writer.WriteLine(string.Format(
+                CultureInfo.InvariantCulture,
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14:F4}",
+                condition,
+                seed,
+                stats.Tick,
+                stats.Population,
+                stats.BirthCount,
+                stats.DeathCount,
+                stats.PredationDeathCount,
+                stats.AttackHitCount,
+                stats.AvailableFood,
+                stats.AvailableWater,
+                stats.CumulativeCarcassConsumed,
+                stats.MeanAttackGene,
+                stats.MeanDefenseGene,
+                stats.MeanAggressionGene,
+                stats.MeanDietSpecializationGene));
+        }
+
         private readonly struct PredationInterventionResult
         {
             public PredationInterventionResult(int populationAtRemoval, int populationAtReintroduction, int huntersRemoved, int huntersReintroduced, SimulationStatistics finalStatistics, ulong finalStateHash)
