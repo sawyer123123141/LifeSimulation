@@ -153,6 +153,7 @@ namespace LifeSimulation.EditorTools
             Debug.Log($"Prototype 1 paired experiment results saved to {outputPath} and {summaryPath}");
         }
 
+        [MenuItem("Life Simulation/Run Prototype 3 Physiology Experiments")]
         public static void RunPrototype3Experiments()
         {
             string rootPath = Directory.GetParent(Application.dataPath).FullName;
