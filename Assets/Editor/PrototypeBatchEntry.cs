@@ -592,7 +592,12 @@ namespace LifeSimulation.EditorTools
         {
             var world = new SimulationWorld(config);
             Prototype1Scenarios.Baseline.ApplyTo(world);
-            const int relocationInterval = 100;
+            const int relocationInterval = 400;
+            RelocateOases(world, useLeftOasis: true);
+            for (int founderIndex = 0; founderIndex < world.CreatureCount; founderIndex++)
+            {
+                world.SetCreaturePosition(world.GetCreatureIdAt(founderIndex), new SimVector2(-10f, -8f));
+            }
             for (int index = 0; index < ticks; index++)
             {
                 if (world.CurrentTick > 0 && world.CurrentTick % relocationInterval == 0)
