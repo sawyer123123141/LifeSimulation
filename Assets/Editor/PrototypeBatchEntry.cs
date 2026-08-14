@@ -552,6 +552,80 @@ namespace LifeSimulation.EditorTools
                 result.FinalStateHash));
         }
 
+        [MenuItem("Life Simulation/Run Cognition Relocation Experiments")]
+        public static void RunCognitionRelocationExperiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "cognition-relocation.csv");
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("condition,seed,ticks,population,births,deaths,food,water,memory_capacity,memory_retention,learning_rate,exploration,state_hash");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    WriteRelocationCognitionResult(writer, "memory-disabled", CreateCognitionExperimentConfig(seed, options, cognitionEnabled: false), options.Ticks);
+                    WriteRelocationCognitionResult(writer, "memory-enabled", CreateCognitionExperimentConfig(seed, options, cognitionEnabled: true), options.Ticks);
+                }
+            }
+
+            Debug.Log($"Cognition relocation results saved to {outputPath}");
+        }
+
+        private static void WriteRelocationCognitionResult(StreamWriter writer, string condition, SimulationConfig config, int ticks)
+        {
+            ExperimentResult result = RunRelocatingCognitionExperiment(config, ticks);
+            SimulationStatistics stats = result.FinalStatistics;
+            writer.WriteLine(string.Format(
+                CultureInfo.InvariantCulture,
+                "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12}",
+                condition, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount,
+                stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, stats.MeanMemoryCapacityGene,
+                stats.MeanMemoryRetentionGene, stats.MeanLearningRateGene, stats.MeanExplorationGene, result.FinalStateHash));
+        }
+
+        private static ExperimentResult RunRelocatingCognitionExperiment(SimulationConfig config, int ticks)
+        {
+            var world = new SimulationWorld(config);
+            Prototype1Scenarios.Baseline.ApplyTo(world);
+            const int relocationInterval = 100;
+            for (int index = 0; index < ticks; index++)
+            {
+                if (world.CurrentTick > 0 && world.CurrentTick % relocationInterval == 0)
+                {
+                    bool useLeftOasis = ((world.CurrentTick / relocationInterval) & 1) == 0;
+                    RelocateOases(world, useLeftOasis);
+                }
+
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+            }
+
+            return new ExperimentResult(
+                "cognition-relocation",
+                config.WorldSeed,
+                world.CurrentTick,
+                world.Statistics,
+                world.ComputeStateHash(),
+                eventOverflowed: false,
+                populationCapReached: world.CreatureCount >= config.MaximumPopulation);
+        }
+
+        private static void RelocateOases(SimulationWorld world, bool useLeftOasis)
+        {
+            SimVector2 foodPosition = useLeftOasis ? new SimVector2(-12f, -8f) : new SimVector2(10f, 12f);
+            SimVector2 waterPosition = useLeftOasis ? new SimVector2(-7f, -8f) : new SimVector2(5f, 12f);
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (resource.Kind == ResourceKind.Food) world.Resources.SetPosition(resource.Id, foodPosition);
+                else if (resource.Kind == ResourceKind.Water) world.Resources.SetPosition(resource.Id, waterPosition);
+            }
+        }
+
         private readonly struct PredationInterventionResult
         {
             public PredationInterventionResult(int populationAtRemoval, int populationAtReintroduction, int huntersRemoved, int huntersReintroduced, SimulationStatistics finalStatistics, ulong finalStateHash)
