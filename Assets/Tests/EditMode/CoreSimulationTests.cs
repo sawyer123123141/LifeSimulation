@@ -529,6 +529,29 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CognitionEnabledWandererStaysNearItsRememberedPairedResourceHome()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 2f, 100f, 100f, 0f);
+            world.Resources.Add(ResourceKind.Water, new SimVector2(0f, 0f), 2f, 100f, 100f, 0f);
+            ref MemoryState memory = ref world.Creatures.GetMemoryRefAt(0);
+            memory.FoodPosition = new SimVector2(0f, 0f);
+            memory.FoodConfidence = 1f;
+            memory.WaterPosition = new SimVector2(0f, 0f);
+            memory.WaterConfidence = 1f;
+
+            for (int index = 0; index < 200; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            MovementState movement = world.GetCreatureMovementAt(0);
+            Assert.That(SimVector2.Distance(movement.Position, new SimVector2(0f, 0f)), Is.LessThan(6f));
+        }
+
+        [Test]
         public void HungryCreatureConsumesFoodAfterReachingItsSelectedResource()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);

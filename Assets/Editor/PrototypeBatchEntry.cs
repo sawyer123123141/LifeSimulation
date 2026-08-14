@@ -235,6 +235,33 @@ namespace LifeSimulation.EditorTools
             Debug.Log($"Prototype 4 plant biomass smoke results saved to {outputPath}");
         }
 
+        [MenuItem("Life Simulation/Run Prototype 4 Starter Habitat Smoke Test")]
+        public static void RunPrototype4StarterHabitatSmokeTest()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-starter-habitat-smoke.csv");
+            int[] seeds = { 42, 43, 44, 45, 46 };
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("seed,ticks,population,births,deaths,starvation_deaths,dehydration_deaths,highest_generation,food,water,state_hash");
+                for (int index = 0; index < seeds.Length; index++)
+                {
+                    SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(seeds[index], 4);
+                    var config = new SimulationConfig(
+                        seeds[index], 4, defaults.Schedule, maximumPopulation: 16,
+                        defaults.FounderProfile, cognitionEnabled: true, physiologyEnabled: true,
+                        decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1, plantCohortsEnabled: true);
+                    ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.WatchableStarterHabitat, ticks: 12000);
+                    SimulationStatistics stats = result.FinalStatistics;
+                    writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6},{7},{8:F4},{9:F4},{10}", seeds[index], result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.StarvationDeathCount, stats.DehydrationDeathCount, stats.HighestGeneration, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
+                }
+            }
+
+            Debug.Log($"Prototype 4 starter habitat smoke results saved to {outputPath}");
+        }
+
         [MenuItem("Life Simulation/Run Prototype 4 Plant Heredity Smoke Test")]
         public static void RunPrototype4PlantHereditySmokeTest()
         {
@@ -368,6 +395,43 @@ namespace LifeSimulation.EditorTools
             }
 
             Debug.Log($"Prototype 4 consumer defense trace saved to {outputPath}");
+        }
+
+        [MenuItem("Life Simulation/Run Prototype 4 Starter Habitat Trace")]
+        public static void RunPrototype4StarterHabitatTrace()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-starter-habitat-trace.csv");
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            var world = new SimulationWorld(config);
+            Prototype4Scenarios.WatchableStarterHabitat.ApplyTo(world);
+            CreatureId sampledCreature = world.GetCreatureIdAt(0);
+            world.EnableDecisionTrace(sampledCreature, capacity: 512);
+            SimVector2 homePatch = world.Resources.GetAt(0).Position;
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("tick,energy,hydration,x,y,home_distance,action,target_resource,food_score,water_score,food_visible,water_visible");
+                int traceIndex = 0;
+                for (int index = 0; index < 4000; index++)
+                {
+                    world.Step(config.FixedDeltaTime);
+                    while (traceIndex < world.DecisionTrace.Count)
+                    {
+                        DecisionTraceEntry trace = world.DecisionTrace.GetAt(traceIndex++);
+                        if (world.Creatures.TryGetIndex(sampledCreature, out int creatureIndex))
+                        {
+                            MovementState movement = world.GetCreatureMovementAt(creatureIndex);
+                            CreatureNeeds needs = world.GetCreatureNeedsAt(creatureIndex);
+                            writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:F4},{2:F4},{3:F4},{4:F4},{5:F4},{6},{7},{8:F4},{9:F4},{10},{11}", trace.Tick, needs.Energy, needs.Hydration, movement.Position.X, movement.Position.Y, SimVector2.Distance(movement.Position, homePatch), trace.Winner.Action, trace.Winner.TargetResourceIndex, trace.FoodScore, trace.WaterScore, trace.FoodVisible, trace.WaterVisible));
+                        }
+                    }
+                }
+            }
+
+            Debug.Log($"Prototype 4 starter habitat trace saved to {outputPath}");
         }
 
         [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]

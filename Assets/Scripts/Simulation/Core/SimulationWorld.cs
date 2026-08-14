@@ -558,6 +558,34 @@ namespace LifeSimulation.Simulation.Core
                 return ThermoregulationSystem.FindNearbyComfortTarget(position, tick, Arena);
             }
 
+            if (Config.CognitionEnabled && decision.Action == CreatureAction.Wander)
+            {
+                MemoryState memory = Creatures.GetMemoryRefAt(creatureIndex);
+                bool useFoodHome = memory.FoodConfidence >= 0.5f && memory.FoodConfidence >= memory.WaterConfidence;
+                bool useWaterHome = memory.WaterConfidence >= 0.5f && memory.WaterConfidence > memory.FoodConfidence;
+                if (useFoodHome || useWaterHome)
+                {
+                    SimVector2 home = useFoodHome ? memory.FoodPosition : memory.WaterPosition;
+                    const float homeRadius = 3f;
+                    if (SimVector2.Distance(position, home) > homeRadius)
+                    {
+                        return home;
+                    }
+
+                    long homeEpoch = tick / (Config.Schedule.BaseFrequencyHz * 5L);
+                    float homeAngle = DeterministicRandom.Float01(
+                        Config.WorldSeed,
+                        RandomDomain.Exploration,
+                        homeEpoch,
+                        creatureId.Value,
+                        0,
+                        2) * ((float)Math.PI * 2f);
+                    return new SimVector2(
+                        home.X + ((float)Math.Cos(homeAngle) * homeRadius),
+                        home.Y + ((float)Math.Sin(homeAngle) * homeRadius));
+                }
+            }
+
             long explorationEpoch = tick / (Config.Schedule.BaseFrequencyHz * 5L);
             float angle = DeterministicRandom.Float01(
                 Config.WorldSeed,

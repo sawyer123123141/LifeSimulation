@@ -147,6 +147,28 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void Prototype4WatchableStarterHabitatClustersFoundersAtRenewablePairedResources()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            var world = new SimulationWorld(config);
+
+            Prototype4Scenarios.WatchableStarterHabitat.ApplyTo(world);
+
+            Assert.That(world.Resources.Count, Is.EqualTo(4));
+            Assert.That(world.Plants.Count, Is.EqualTo(2));
+            Assert.That(world.Resources.GetAt(0).Capacity, Is.EqualTo(600f));
+            Assert.That(world.Resources.GetAt(0).RegenerationPerSecond, Is.EqualTo(30f));
+            Assert.That(world.Resources.GetAt(0).Position.X, Is.EqualTo(world.Resources.GetAt(1).Position.X));
+            Assert.That(world.Resources.GetAt(0).Position.Y, Is.EqualTo(world.Resources.GetAt(1).Position.Y));
+            for (int index = 0; index < world.CreatureCount; index++)
+            {
+                MovementState movement = world.GetCreatureMovementAt(index);
+                Assert.That(movement.Position.X, Is.EqualTo(-12f));
+                Assert.That(movement.Position.Y, Is.EqualTo(-8f));
+            }
+        }
+
+        [Test]
         public void ResourceStoreCanRelocateAnExistingResourceWithoutChangingItsBudget()
         {
             var resources = new ResourceStore(initialCapacity: 1);

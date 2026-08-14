@@ -177,6 +177,10 @@ namespace LifeSimulation.Simulation.Experiments
         public static SimulationScenario PlantBackedBaseline { get; } = new SimulationScenario(
             "p4-plant-backed-baseline",
             CreatePlantSites());
+        public static SimulationScenario WatchableStarterHabitat { get; } = new SimulationScenario(
+            "p4-watchable-starter-habitat",
+            CreateWatchableStarterHabitat(),
+            founderPlacement: new SimVector2(-12f, -8f));
 
         private static ResourceDefinition[] CreatePlantSites()
         {
@@ -194,6 +198,17 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(-2f, 5f), 1.5f, 0f, 12f, 0f, isActive: false),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(3f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
+            };
+        }
+
+        private static ResourceDefinition[] CreateWatchableStarterHabitat()
+        {
+            return new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 600f, 600f, 30f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, 60f, 60f, 3f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 600f, 600f, 30f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, 12f), 1.5f, 60f, 60f, 3f),
             };
         }
 

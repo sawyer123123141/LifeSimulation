@@ -75,7 +75,7 @@ namespace LifeSimulation.Presentation
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(12f, 12f, 440f, 214f), "LifeSimulation — Prototype 1");
+            GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             DrawSelectedCreatureInspector();
@@ -94,13 +94,13 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · E starter habitat");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
         private void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 198f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 220f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
@@ -151,6 +151,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.C)) ResetCognitionSimulation();
             if (Input.GetKeyDown(KeyCode.T)) ResetPhysiologySimulation();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
+            if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
             if (Input.GetMouseButtonDown(0)) TrySelectCreature();
         }
 
@@ -244,6 +245,24 @@ namespace LifeSimulation.Presentation
             _scenarioId = "mature-mating-demo";
         }
 
+        private void ResetWatchableStarterHabitat()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
+            var config = new SimulationConfig(
+                defaults.WorldSeed,
+                defaults.InitialPopulation,
+                defaults.Schedule,
+                maximumPopulation: 16,
+                defaults.FounderProfile,
+                defaults.CognitionEnabled,
+                defaults.PhysiologyEnabled,
+                DecisionPolicyVersion.IntentUtilityV1,
+                defaults.PlantCohortsEnabled);
+            ResetSimulation(
+                Prototype4Scenarios.WatchableStarterHabitat,
+                config);
+        }
+
         private static SimulationConfig CreatePlayableConfig(SimulationConfig defaults)
         {
             return new SimulationConfig(
@@ -254,7 +273,8 @@ namespace LifeSimulation.Presentation
                 defaults.FounderProfile,
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
-                DecisionPolicyVersion.IntentUtilityV1);
+                DecisionPolicyVersion.IntentUtilityV1,
+                defaults.PlantCohortsEnabled);
         }
 
         private void CreateResourceView(ResourceState resource)
