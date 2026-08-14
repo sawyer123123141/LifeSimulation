@@ -1,6 +1,7 @@
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
+using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
@@ -108,6 +109,40 @@ namespace LifeSimulation.Tests.EditMode
                 MovementState movement = world.GetCreatureMovementAt(index);
                 Assert.That(movement.Position.X, Is.EqualTo(2f));
                 Assert.That(movement.Position.Y, Is.EqualTo(-3f));
+            }
+        }
+
+        [Test]
+        public void Prototype4DefenseCalibrationChangesOnlyPlantDefenseBetweenPairedConditions()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var controlWorld = new SimulationWorld(config);
+            var defendedWorld = new SimulationWorld(config);
+
+            Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(controlWorld);
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(defendedWorld);
+
+            Assert.That(controlWorld.Resources.Count, Is.EqualTo(defendedWorld.Resources.Count));
+            Assert.That(controlWorld.Plants.Count, Is.EqualTo(defendedWorld.Plants.Count));
+            Assert.That(controlWorld.Resources.GetAt(0).Position.X, Is.EqualTo(controlWorld.Resources.GetAt(1).Position.X));
+            Assert.That(controlWorld.Resources.GetAt(0).Position.Y, Is.EqualTo(controlWorld.Resources.GetAt(1).Position.Y));
+            Assert.That(controlWorld.Resources.GetAt(2).Position.X, Is.EqualTo(controlWorld.Resources.GetAt(3).Position.X));
+            Assert.That(controlWorld.Resources.GetAt(2).Position.Y, Is.EqualTo(controlWorld.Resources.GetAt(3).Position.Y));
+            for (int index = 0; index < controlWorld.CreatureCount; index++)
+            {
+                Assert.That(controlWorld.GetCreatureMovementAt(index).Position.X, Is.EqualTo(defendedWorld.GetCreatureMovementAt(index).Position.X));
+                Assert.That(controlWorld.GetCreatureMovementAt(index).Position.Y, Is.EqualTo(defendedWorld.GetCreatureMovementAt(index).Position.Y));
+            }
+
+            for (int index = 0; index < controlWorld.Plants.Count; index++)
+            {
+                PlantPatchState control = controlWorld.Plants.GetAt(index);
+                PlantPatchState defended = defendedWorld.Plants.GetAt(index);
+                Assert.That(control.Biomass, Is.EqualTo(defended.Biomass));
+                Assert.That(control.Capacity, Is.EqualTo(defended.Capacity));
+                Assert.That(control.GrowthRate, Is.EqualTo(defended.GrowthRate));
+                Assert.That(control.Genome.Defense, Is.EqualTo(0f));
+                Assert.That(defended.Genome.Defense, Is.EqualTo(0.3f));
             }
         }
 

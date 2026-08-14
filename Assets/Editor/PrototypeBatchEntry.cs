@@ -283,6 +283,48 @@ namespace LifeSimulation.EditorTools
             Debug.Log($"Prototype 4 plant defense experiment results saved to {outputPath}");
         }
 
+        [MenuItem("Life Simulation/Run Prototype 4 Consumer Defense Calibration")]
+        public static void RunPrototype4ConsumerDefenseCalibration()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-consumer-defense-calibration.csv");
+            SimulationScenario[] scenarios =
+            {
+                Prototype4Scenarios.ConsumerDefenseCalibrationControl,
+                Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
+            };
+            int[] seeds = { 42, 43, 44, 45, 46 };
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,food_efficiency,plant_defense,cumulative_food,cumulative_water,state_hash");
+                for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
+                {
+                    for (int seedIndex = 0; seedIndex < seeds.Length; seedIndex++)
+                    {
+                        SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(seeds[seedIndex], 12);
+                        var config = new SimulationConfig(
+                            seeds[seedIndex],
+                            initialPopulation: 12,
+                            defaults.Schedule,
+                            maximumPopulation: 48,
+                            defaults.FounderProfile,
+                            cognitionEnabled: true,
+                            physiologyEnabled: true,
+                            decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                            plantCohortsEnabled: true);
+                        ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], ticks: 12000);
+                        SimulationStatistics stats = result.FinalStatistics;
+                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.MeanFoodEfficiencyGene, stats.MeanPlantDefenseGene, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
+                    }
+                }
+            }
+
+            Debug.Log($"Prototype 4 consumer defense calibration results saved to {outputPath}");
+        }
+
         [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]
         public static void RunDecisionPolicyTravelExperiments()
         {

@@ -199,6 +199,8 @@ namespace LifeSimulation.Simulation.Experiments
 
         public static SimulationScenario DefendedPlants { get; } = CreateDefenseScenario("p4-defended-plants", defense: .85f);
         public static SimulationScenario UndefendedPlants { get; } = CreateDefenseScenario("p4-undefended-plants", defense: 0f);
+        public static SimulationScenario ConsumerDefenseCalibrationControl { get; } = CreateConsumerDefenseCalibrationScenario("p4-defense-calibration-control", defense: 0f);
+        public static SimulationScenario ConsumerDefenseCalibrationModerate { get; } = CreateConsumerDefenseCalibrationScenario("p4-defense-calibration-moderate", defense: .3f);
 
         private static SimulationScenario CreateDefenseScenario(string id, float defense)
         {
@@ -210,6 +212,18 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 12f, 12f, .75f, nutritionMultiplier: 1f, plantGenome: genome),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, .75f),
             });
+        }
+
+        private static SimulationScenario CreateConsumerDefenseCalibrationScenario(string id, float defense)
+        {
+            PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);
+            return new SimulationScenario(id, new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 1.5f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 1.5f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 1.5f),
+            }, founderPlacement: new SimVector2(-12f, -8f));
         }
     }
 
