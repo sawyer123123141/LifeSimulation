@@ -84,6 +84,10 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
             GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 216f, 400f, 22f), $"Predation: {stats.AttackHitCount} hits  {stats.PredationDeathCount} kills  {stats.CumulativeCarcassConsumed:0.0} meat");
+            if (_world.Config.CognitionEnabled)
+            {
+                GUI.Label(new Rect(24f, 260f, 420f, 22f), $"Mean P2 genes: memory {stats.MeanMemoryCapacityGene:0.00} | retention {stats.MeanMemoryRetentionGene:0.00} | learning {stats.MeanLearningRateGene:0.00}");
+            }
             if (_world.Config.PhysiologyEnabled)
             {
                 GUI.Label(new Rect(24f, 238f, 420f, 22f), $"Mean P3 genes: temperature {stats.MeanTemperatureToleranceGene:0.00} | fertility {stats.MeanFertilityInvestmentGene:0.00} | lifespan {stats.MeanLifespanTendencyGene:0.00}");
@@ -438,6 +442,8 @@ namespace LifeSimulation.Presentation
             }
             if (_world.Config.CognitionEnabled)
             {
+                GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"P2 traits: memory {genome.MemoryCapacity:0.00} | retention {genome.MemoryRetention:0.00} | learning {genome.LearningRate:0.00} | explore {genome.Exploration:0.00}");
+                optionalDetailY += 22f;
                 GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"Learned: food {memory.FoodOutcomeValue:0.00} ({memory.FoodExperienceCount}) | water {memory.WaterOutcomeValue:0.00} ({memory.WaterExperienceCount})");
                 optionalDetailY += 22f;
             }
