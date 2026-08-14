@@ -47,4 +47,33 @@ namespace LifeSimulation.Simulation.Environment
 
         private static float Clamp01(float value) { return Math.Max(0f, Math.Min(1f, value)); }
     }
+
+    public readonly struct PlantPhenotype
+    {
+        public PlantPhenotype(float growthRateMultiplier, float nutritionMultiplier, float defense, float dispersalRange, float seedInvestmentFraction)
+        {
+            GrowthRateMultiplier = growthRateMultiplier;
+            NutritionMultiplier = nutritionMultiplier;
+            Defense = defense;
+            DispersalRange = dispersalRange;
+            SeedInvestmentFraction = seedInvestmentFraction;
+        }
+
+        public float GrowthRateMultiplier { get; }
+        public float NutritionMultiplier { get; }
+        public float Defense { get; }
+        public float DispersalRange { get; }
+        public float SeedInvestmentFraction { get; }
+
+        public static PlantPhenotype FromGenome(PlantGenome genome)
+        {
+            float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
+            return new PlantPhenotype(
+                Math.Max(.1f, growth),
+                .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),
+                genome.Defense,
+                4f + (20f * genome.Dispersal),
+                .02f + (.10f * genome.SeedInvestment));
+        }
+    }
 }
