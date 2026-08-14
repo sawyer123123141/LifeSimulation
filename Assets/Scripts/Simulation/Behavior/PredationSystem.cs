@@ -41,6 +41,11 @@ namespace LifeSimulation.Simulation.Behavior
 
         public static float Threat(Phenotype attacker, Phenotype defender)
         {
+            if (HuntCapability(attacker, defender) <= 0f)
+            {
+                return 0f;
+            }
+
             float pressure = attacker.AttackPower * (0.5f + attacker.Aggression);
             float resistance = defender.Defense + (0.25f * defender.Maneuverability) + 0.01f;
             return Clamp01(pressure / (pressure + resistance));

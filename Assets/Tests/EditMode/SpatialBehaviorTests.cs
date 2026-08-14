@@ -168,6 +168,16 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PredationThreatIgnoresCreaturesWithoutAFeasibleHuntingStrategy()
+        {
+            Phenotype nonHunter = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f));
+            Phenotype defender = Phenotype.FromGenome(Genome.Neutral);
+
+            Assert.That(PredationSystem.HuntCapability(nonHunter, defender), Is.EqualTo(0f));
+            Assert.That(PredationSystem.Threat(nonHunter, defender), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void MemoryStoresObservationsAndLetsConfidenceDecayWithoutAllocatingHistory()
         {
             MemoryState memory = default;
