@@ -5,6 +5,7 @@ using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
+using LifeSimulation.Simulation.Resources;
 using UnityEditor;
 using UnityEngine;
 
