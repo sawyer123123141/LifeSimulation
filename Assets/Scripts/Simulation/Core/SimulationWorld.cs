@@ -739,6 +739,22 @@ namespace LifeSimulation.Simulation.Core
                     decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision);
                 }
                 CreatureDecision selectedIntent = decision;
+                if (Config.CognitionEnabled
+                    && decision.TargetResourceIndex < 0
+                    && (decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater))
+                {
+                    ResourceObservation visibleResource = decision.Action == CreatureAction.SeekFood ? food : water;
+                    if (visibleResource.IsValid)
+                    {
+                        ResourceState resource = Resources.GetAt(visibleResource.ResourceIndex);
+                        MemoryState memory = Creatures.GetMemoryRefAt(index);
+                        SimVector2 rememberedTarget = decision.Action == CreatureAction.SeekFood ? memory.FoodPosition : memory.WaterPosition;
+                        if (SimVector2.Distance(rememberedTarget, resource.Position) <= resource.InteractionRadius)
+                        {
+                            decision = new CreatureDecision(decision.Action, visibleResource.ResourceIndex, decision.Score);
+                        }
+                    }
+                }
                 if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
                     && (uint)decision.TargetResourceIndex < (uint)Resources.Count)
                 {

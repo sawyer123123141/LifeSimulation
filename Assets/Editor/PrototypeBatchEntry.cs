@@ -299,7 +299,7 @@ namespace LifeSimulation.EditorTools
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
-                writer.WriteLine("scenario,seed,ticks,population,births,deaths,food_efficiency,plant_defense,cumulative_food,cumulative_water,state_hash");
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,starvation_deaths,dehydration_deaths,food_efficiency,plant_defense,cumulative_food,cumulative_water,state_hash");
                 for (int scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
                 {
                     for (int seedIndex = 0; seedIndex < seeds.Length; seedIndex++)
@@ -317,12 +317,57 @@ namespace LifeSimulation.EditorTools
                             plantCohortsEnabled: true);
                         ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], ticks: 12000);
                         SimulationStatistics stats = result.FinalStatistics;
-                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.MeanFoodEfficiencyGene, stats.MeanPlantDefenseGene, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
+                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6},{7},{8:F4},{9:F4},{10:F4},{11:F4},{12}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.StarvationDeathCount, stats.DehydrationDeathCount, stats.MeanFoodEfficiencyGene, stats.MeanPlantDefenseGene, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
                     }
                 }
             }
 
             Debug.Log($"Prototype 4 consumer defense calibration results saved to {outputPath}");
+        }
+
+        [MenuItem("Life Simulation/Run Prototype 4 Consumer Defense Trace")]
+        public static void RunPrototype4ConsumerDefenseTrace()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-consumer-defense-trace.csv");
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var config = new SimulationConfig(
+                42,
+                initialPopulation: 12,
+                defaults.Schedule,
+                maximumPopulation: 48,
+                defaults.FounderProfile,
+                cognitionEnabled: true,
+                physiologyEnabled: true,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true);
+            var world = new SimulationWorld(config);
+            Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(world);
+            CreatureId sampledCreature = world.GetCreatureIdAt(0);
+            world.EnableDecisionTrace(sampledCreature, capacity: 256);
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("tick,energy,hydration,action,target_resource,food_score,water_score,food_visible,water_visible");
+                int traceIndex = 0;
+                for (int index = 0; index < 1200; index++)
+                {
+                    world.Step(config.FixedDeltaTime);
+                    while (traceIndex < world.DecisionTrace.Count)
+                    {
+                        DecisionTraceEntry trace = world.DecisionTrace.GetAt(traceIndex++);
+                        if (world.Creatures.TryGetIndex(sampledCreature, out int creatureIndex))
+                        {
+                            CreatureNeeds needs = world.GetCreatureNeedsAt(creatureIndex);
+                            writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:F4},{2:F4},{3},{4},{5:F4},{6:F4},{7},{8}", trace.Tick, needs.Energy, needs.Hydration, trace.Winner.Action, trace.Winner.TargetResourceIndex, trace.FoodScore, trace.WaterScore, trace.FoodVisible, trace.WaterVisible));
+                        }
+                    }
+                }
+            }
+
+            Debug.Log($"Prototype 4 consumer defense trace saved to {outputPath}");
         }
 
         [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]

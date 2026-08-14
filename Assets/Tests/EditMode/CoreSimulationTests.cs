@@ -504,6 +504,31 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void VisibleFoodBindsRememberedSeekIntentToAnExecutableEatAction()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            world.Creatures.GetNeedsRefAt(0).Energy = 80f;
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 2f, 10f, 10f, 0f);
+            ref MemoryState memory = ref world.Creatures.GetMemoryRefAt(0);
+            memory.FoodPosition = new SimVector2(0f, 0f);
+            memory.FoodConfidence = 1f;
+            memory.FoodOutcomeValue = 1f;
+            memory.FoodExperienceCount = 1;
+
+            for (int index = 0; index < 10; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            CreatureDecision decision = world.GetCreatureDecisionAt(0);
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Eat));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(0));
+            Assert.That(world.Resources.GetAt(0).Amount, Is.LessThan(10f));
+        }
+
+        [Test]
         public void HungryCreatureConsumesFoodAfterReachingItsSelectedResource()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
