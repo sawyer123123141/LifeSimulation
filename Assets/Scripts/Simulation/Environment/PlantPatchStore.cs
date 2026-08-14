@@ -15,6 +15,10 @@ namespace LifeSimulation.Simulation.Environment
         private float[] _waterDemands;
         private float[] _nutrition;
         private float[] _defense;
+        private PlantGenome[] _genomes;
+        private PlantLineage[] _lineages;
+        private float[] _ages;
+        private float[] _seedReserves;
         private int _nextId = 1;
 
         public PlantPatchStore(int initialCapacity)
@@ -29,6 +33,10 @@ namespace LifeSimulation.Simulation.Environment
             _waterDemands = new float[capacity];
             _nutrition = new float[capacity];
             _defense = new float[capacity];
+            _genomes = new PlantGenome[capacity];
+            _lineages = new PlantLineage[capacity];
+            _ages = new float[capacity];
+            _seedReserves = new float[capacity];
         }
 
         public int Count { get; private set; }
@@ -51,12 +59,21 @@ namespace LifeSimulation.Simulation.Environment
             _waterDemands[index] = waterDemand;
             _nutrition[index] = nutrition;
             _defense[index] = defense;
+            _genomes[index] = PlantGenome.Neutral;
+            _lineages[index] = new PlantLineage(_ids[index], default, generation: 0);
             return index;
         }
 
         public PlantPatchState GetAt(int index)
         {
-            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _waterDemands[index], _nutrition[index], _defense[index]);
+            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _waterDemands[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index]);
+        }
+
+        public void SetGenomeAndLineage(int index, PlantGenome genome, PlantLineage lineage)
+        {
+            if ((uint)index >= (uint)Count) return;
+            _genomes[index] = genome;
+            _lineages[index] = lineage;
         }
 
         public int FindIndex(ResourceId foodResourceId)
@@ -96,6 +113,10 @@ namespace LifeSimulation.Simulation.Environment
             Array.Resize(ref _waterDemands, capacity);
             Array.Resize(ref _nutrition, capacity);
             Array.Resize(ref _defense, capacity);
+            Array.Resize(ref _genomes, capacity);
+            Array.Resize(ref _lineages, capacity);
+            Array.Resize(ref _ages, capacity);
+            Array.Resize(ref _seedReserves, capacity);
         }
     }
 }

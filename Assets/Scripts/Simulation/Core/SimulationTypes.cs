@@ -246,7 +246,10 @@ namespace LifeSimulation.Simulation.Core
         ExperimentSampling = 5,
         Exploration = 6,
         FounderGenome = 7,
-        AttackResolution = 8
+        AttackResolution = 8,
+        PlantMutation = 9,
+        PlantDispersal = 10,
+        PlantEstablishment = 11
     }
 
     public enum DeathCause : byte
