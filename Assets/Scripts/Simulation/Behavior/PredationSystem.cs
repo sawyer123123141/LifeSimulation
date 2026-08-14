@@ -72,13 +72,19 @@ namespace LifeSimulation.Simulation.Behavior
         public static float HuntCapability(Phenotype attacker, Phenotype defender)
         {
             float diet = Clamp01((attacker.MeatYieldMultiplier - 0.5f) / 1f);
-            if (diet < MinimumHuntingDiet || attacker.Aggression < MinimumHuntingAggression)
+            if (!HasViableHuntingStrategy(attacker))
             {
                 return 0f;
             }
 
             float advantage = attacker.AttackPower / (attacker.AttackPower + defender.Defense + (0.25f * defender.Maneuverability) + 0.01f);
             return Clamp01(advantage * attacker.Aggression * diet);
+        }
+
+        public static bool HasViableHuntingStrategy(Phenotype phenotype)
+        {
+            float diet = Clamp01((phenotype.MeatYieldMultiplier - 0.5f) / 1f);
+            return diet >= MinimumHuntingDiet && phenotype.Aggression >= MinimumHuntingAggression;
         }
 
         private static float Clamp01(float value)

@@ -175,6 +175,7 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(PredationSystem.HuntCapability(nonHunter, defender), Is.EqualTo(0f));
             Assert.That(PredationSystem.Threat(nonHunter, defender), Is.EqualTo(0f));
+            Assert.That(PredationSystem.HasViableHuntingStrategy(nonHunter), Is.False);
         }
 
         [Test]

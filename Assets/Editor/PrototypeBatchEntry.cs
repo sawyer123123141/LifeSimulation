@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.IO;
+using LifeSimulation.Simulation.Behavior;
+using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
 using UnityEditor;
@@ -313,6 +315,139 @@ namespace LifeSimulation.EditorTools
                 stats.MeanAggressionGene,
                 stats.MeanDietSpecializationGene,
                 result.FinalStateHash));
+        }
+
+        [MenuItem("Life Simulation/Run Predator Removal/Reintroduction Experiments")]
+        public static void RunPredatorRemovalReintroductionExperiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "predator-removal-reintroduction.csv");
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("condition,seed,ticks,population_at_removal,population_at_reintroduction,hunters_removed,hunters_reintroduced,final_population,births,deaths,predation_deaths,attack_hits,carcass_food,state_hash");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    SimulationConfig config = CreatePredationExperimentConfig(seed, options, FounderProfile.PredationVariation);
+                    WritePredationInterventionResult(writer, "uninterrupted", config, options.Ticks, applyIntervention: false);
+                    WritePredationInterventionResult(writer, "removal-reintroduction", config, options.Ticks, applyIntervention: true);
+                }
+            }
+
+            Debug.Log($"Predator removal/reintroduction results saved to {outputPath}");
+        }
+
+        private static void WritePredationInterventionResult(StreamWriter writer, string condition, SimulationConfig config, int ticks, bool applyIntervention)
+        {
+            PredationInterventionResult result = RunPredationIntervention(config, ticks, applyIntervention);
+            SimulationStatistics stats = result.FinalStatistics;
+            writer.WriteLine(string.Format(
+                CultureInfo.InvariantCulture,
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12:F4},{13}",
+                condition,
+                config.WorldSeed,
+                ticks,
+                result.PopulationAtRemoval,
+                result.PopulationAtReintroduction,
+                result.HuntersRemoved,
+                result.HuntersReintroduced,
+                stats.Population,
+                stats.BirthCount,
+                stats.DeathCount,
+                stats.PredationDeathCount,
+                stats.AttackHitCount,
+                stats.CumulativeCarcassConsumed,
+                result.FinalStateHash));
+        }
+
+        private static PredationInterventionResult RunPredationIntervention(SimulationConfig config, int ticks, bool applyIntervention)
+        {
+            var world = new SimulationWorld(config);
+            Prototype1Scenarios.Baseline.ApplyTo(world);
+            int removalTick = ticks / 2;
+            int reintroductionTick = (ticks * 3) / 4;
+            int populationAtRemoval = 0;
+            int populationAtReintroduction = 0;
+            int huntersRemoved = 0;
+            int huntersReintroduced = 0;
+            int reintroductionCount = Math.Max(2, config.InitialPopulation / 5);
+
+            for (int index = 0; index < ticks; index++)
+            {
+                if (world.CurrentTick == removalTick)
+                {
+                    populationAtRemoval = world.CreatureCount;
+                    if (applyIntervention)
+                    {
+                        huntersRemoved = RemoveViableHunters(world);
+                    }
+                }
+
+                if (world.CurrentTick == reintroductionTick)
+                {
+                    populationAtReintroduction = world.CreatureCount;
+                    if (applyIntervention)
+                    {
+                        for (int founder = 0; founder < reintroductionCount; founder++)
+                        {
+                            world.Spawn(PredationFounderFactory.Create(config.WorldSeed, 100000 + founder));
+                            huntersReintroduced++;
+                        }
+                    }
+                }
+
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+            }
+
+            return new PredationInterventionResult(
+                populationAtRemoval,
+                populationAtReintroduction,
+                huntersRemoved,
+                huntersReintroduced,
+                world.Statistics,
+                world.ComputeStateHash());
+        }
+
+        private static int RemoveViableHunters(SimulationWorld world)
+        {
+            int removed = 0;
+            for (int index = 0; index < world.CreatureCount; index++)
+            {
+                if (!PredationSystem.HasViableHuntingStrategy(world.Creatures.GetPhenotypeAt(index)))
+                {
+                    continue;
+                }
+
+                world.RequestDeath(world.GetCreatureIdAt(index), DeathCause.Debug);
+                removed++;
+            }
+
+            return removed;
+        }
+
+        private readonly struct PredationInterventionResult
+        {
+            public PredationInterventionResult(int populationAtRemoval, int populationAtReintroduction, int huntersRemoved, int huntersReintroduced, SimulationStatistics finalStatistics, ulong finalStateHash)
+            {
+                PopulationAtRemoval = populationAtRemoval;
+                PopulationAtReintroduction = populationAtReintroduction;
+                HuntersRemoved = huntersRemoved;
+                HuntersReintroduced = huntersReintroduced;
+                FinalStatistics = finalStatistics;
+                FinalStateHash = finalStateHash;
+            }
+
+            public int PopulationAtRemoval { get; }
+            public int PopulationAtReintroduction { get; }
+            public int HuntersRemoved { get; }
+            public int HuntersReintroduced { get; }
+            public SimulationStatistics FinalStatistics { get; }
+            public ulong FinalStateHash { get; }
         }
     }
 }
