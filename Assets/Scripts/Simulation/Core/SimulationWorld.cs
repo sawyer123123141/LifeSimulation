@@ -38,6 +38,7 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativePlantBiomassConsumed;
         private float _initialPlantBiomass;
         private long _plantSeedOrdinal;
+        private int _plantBirthCount;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -232,7 +233,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
-                    PlantReproductionSystem.Step(Plants, Resources, Config.WorldSeed, nextTick, ref _plantSeedOrdinal);
+                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, Config.WorldSeed, nextTick, ref _plantSeedOrdinal);
                     PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
                 }
                 else
@@ -1108,6 +1109,10 @@ namespace LifeSimulation.Simulation.Core
             float water = 0f;
             float plantBiomass = 0f;
             int dormantPlantPatches = 0;
+            int highestPlantGeneration = 0;
+            float plantGrowthTotal = 0f;
+            float plantNutritionTotal = 0f;
+            float plantDefenseTotal = 0f;
             for (int index = 0; index < Resources.Count; index++)
             {
                 ResourceState resource = Resources.GetAt(index);
@@ -1120,6 +1125,10 @@ namespace LifeSimulation.Simulation.Core
                 PlantPatchState patch = Plants.GetAt(index);
                 plantBiomass += patch.Biomass;
                 if (patch.IsDormant) dormantPlantPatches++;
+                highestPlantGeneration = Math.Max(highestPlantGeneration, patch.Lineage.Generation);
+                plantGrowthTotal += patch.Genome.Growth;
+                plantNutritionTotal += patch.Genome.Nutrition;
+                plantDefenseTotal += patch.Genome.Defense;
             }
 
             float reciprocalPopulation = Creatures.Count == 0 ? 0f : 1f / Creatures.Count;
@@ -1168,7 +1177,13 @@ namespace LifeSimulation.Simulation.Core
                 _cumulativePlantGrowth,
                 _cumulativePlantBiomassConsumed,
                 dormantPlantPatches,
-                plantBiomass - (_initialPlantBiomass + _cumulativePlantGrowth - _cumulativePlantBiomassConsumed));
+                plantBiomass - (_initialPlantBiomass + _cumulativePlantGrowth - _cumulativePlantBiomassConsumed),
+                _plantBirthCount,
+                Plants.Count,
+                highestPlantGeneration,
+                Plants.Count == 0 ? 0f : plantGrowthTotal / Plants.Count,
+                Plants.Count == 0 ? 0f : plantNutritionTotal / Plants.Count,
+                Plants.Count == 0 ? 0f : plantDefenseTotal / Plants.Count);
         }
 
         private void CountDeathCause(DeathCause cause)

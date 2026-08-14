@@ -235,6 +235,28 @@ namespace LifeSimulation.EditorTools
             Debug.Log($"Prototype 4 plant biomass smoke results saved to {outputPath}");
         }
 
+        [MenuItem("Life Simulation/Run Prototype 4 Plant Heredity Smoke Test")]
+        public static void RunPrototype4PlantHereditySmokeTest()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-plant-heredity-smoke.csv");
+            int[] seeds = { 42, 43, 44 };
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("seed,ticks,active_plants,plant_births,highest_generation,mean_growth,mean_nutrition,mean_defense,biomass,residual,state_hash");
+                for (int index = 0; index < seeds.Length; index++)
+                {
+                    SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(seeds[index], 0);
+                    ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.PlantBackedBaseline, 4000);
+                    SimulationStatistics stats = result.FinalStatistics;
+                    writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F6},{10}", seeds[index], result.CompletedTicks, stats.ActivePlantPatchCount, stats.PlantBirthCount, stats.HighestPlantGeneration, stats.MeanPlantGrowthGene, stats.MeanPlantNutritionGene, stats.MeanPlantDefenseGene, stats.TotalPlantBiomass, stats.PlantBiomassResidual, result.FinalStateHash));
+                }
+            }
+            Debug.Log($"Prototype 4 plant heredity smoke results saved to {outputPath}");
+        }
+
         [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]
         public static void RunDecisionPolicyTravelExperiments()
         {

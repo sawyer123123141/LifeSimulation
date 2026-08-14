@@ -110,7 +110,13 @@ namespace LifeSimulation.Simulation.Core
             float cumulativePlantGrowth = 0f,
             float cumulativePlantBiomassConsumed = 0f,
             int dormantPlantPatchCount = 0,
-            float plantBiomassResidual = 0f)
+            float plantBiomassResidual = 0f,
+            int plantBirthCount = 0,
+            int activePlantPatchCount = 0,
+            int highestPlantGeneration = 0,
+            float meanPlantGrowthGene = 0f,
+            float meanPlantNutritionGene = 0f,
+            float meanPlantDefenseGene = 0f)
         {
             Tick = tick;
             Population = population;
@@ -157,6 +163,12 @@ namespace LifeSimulation.Simulation.Core
             CumulativePlantBiomassConsumed = cumulativePlantBiomassConsumed;
             DormantPlantPatchCount = dormantPlantPatchCount;
             PlantBiomassResidual = plantBiomassResidual;
+            PlantBirthCount = plantBirthCount;
+            ActivePlantPatchCount = activePlantPatchCount;
+            HighestPlantGeneration = highestPlantGeneration;
+            MeanPlantGrowthGene = meanPlantGrowthGene;
+            MeanPlantNutritionGene = meanPlantNutritionGene;
+            MeanPlantDefenseGene = meanPlantDefenseGene;
         }
 
         public long Tick { get; }
@@ -205,6 +217,12 @@ namespace LifeSimulation.Simulation.Core
         public float CumulativePlantBiomassConsumed { get; }
         public int DormantPlantPatchCount { get; }
         public float PlantBiomassResidual { get; }
+        public int PlantBirthCount { get; }
+        public int ActivePlantPatchCount { get; }
+        public int HighestPlantGeneration { get; }
+        public float MeanPlantGrowthGene { get; }
+        public float MeanPlantNutritionGene { get; }
+        public float MeanPlantDefenseGene { get; }
     }
 
     public struct ReproductionState
