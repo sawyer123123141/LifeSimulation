@@ -98,6 +98,16 @@ namespace LifeSimulation.Simulation.Resources
             _isActive[index] = isActive;
         }
 
+        public void SetPosition(ResourceId id, SimVector2 position)
+        {
+            if (!_indexById.TryGetValue(id, out int index))
+            {
+                throw new ArgumentOutOfRangeException(nameof(id));
+            }
+
+            _positions[index] = position;
+        }
+
         public float ConsumeAt(int index, float requestedAmount)
         {
             ValidateIndex(index);

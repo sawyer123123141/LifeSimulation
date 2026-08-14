@@ -112,6 +112,21 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ResourceStoreCanRelocateAnExistingResourceWithoutChangingItsBudget()
+        {
+            var resources = new ResourceStore(initialCapacity: 1);
+            ResourceId id = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 5f, 10f, 0.5f);
+
+            resources.SetPosition(id, new SimVector2(7f, -3f));
+
+            ResourceState moved = resources.GetAt(0);
+            Assert.That(moved.Position.X, Is.EqualTo(7f));
+            Assert.That(moved.Position.Y, Is.EqualTo(-3f));
+            Assert.That(moved.Amount, Is.EqualTo(5f));
+            Assert.That(moved.Capacity, Is.EqualTo(10f));
+        }
+
+        [Test]
         public void HeadlessExperimentDrainsLifecycleEventsWithoutInvalidatingTheRun()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 20);
