@@ -104,6 +104,11 @@ namespace LifeSimulation.Simulation.Core
                 return PredationFounderFactory.Create(Config.WorldSeed, founderOrdinal);
             }
 
+            if (Config.FounderProfile == FounderProfile.CognitionVariation)
+            {
+                return CognitionFounderFactory.Create(Config.WorldSeed, founderOrdinal);
+            }
+
             if (Config.FounderProfile == FounderProfile.PhysiologyVariation)
             {
                 return PhysiologyFounderFactory.Create(Config.WorldSeed, founderOrdinal);

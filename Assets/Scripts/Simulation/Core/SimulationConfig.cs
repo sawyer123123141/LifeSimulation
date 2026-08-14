@@ -6,7 +6,8 @@ namespace LifeSimulation.Simulation.Core
     {
         Prototype1 = 0,
         PredationVariation = 1,
-        PhysiologyVariation = 2,
+        CognitionVariation = 2,
+        PhysiologyVariation = 3,
     }
 
     public enum DecisionPolicyVersion : byte
@@ -96,7 +97,7 @@ namespace LifeSimulation.Simulation.Core
                 initialPopulation,
                 defaults.Schedule,
                 defaults.MaximumPopulation,
-                FounderProfile.PredationVariation,
+                FounderProfile.CognitionVariation,
                 cognitionEnabled: true);
         }
 

@@ -76,6 +76,19 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void Prototype2FounderProfileSeedsCognitionVariationWithoutPredationTraits()
+        {
+            var world = new SimulationWorld(SimulationConfig.CreatePrototype2Defaults(42, 2));
+
+            Genome genome = world.Creatures.GetGenomeAt(0);
+            Assert.That(genome.MemoryCapacity, Is.GreaterThan(0f));
+            Assert.That(genome.MemoryRetention, Is.GreaterThan(0f));
+            Assert.That(genome.LearningRate, Is.GreaterThan(0f));
+            Assert.That(genome.Exploration, Is.GreaterThan(0f));
+            Assert.That(genome.Attack, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void ScheduleRejectsFrequenciesThatDoNotDivideBaseFrequency()
         {
             var schedule = new SimulationSchedule(20, 20, 3, 2, 2, 1, 1, 1);
