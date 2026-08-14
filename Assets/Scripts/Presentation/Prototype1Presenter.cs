@@ -433,10 +433,11 @@ namespace LifeSimulation.Presentation
 
         private void DrawSelectedCreatureInspector()
         {
-            GUI.Box(new Rect(12f, 232f, 440f, 270f), "Creature Inspector");
+            const float inspectorTop = 300f;
+            GUI.Box(new Rect(12f, inspectorTop, 440f, 270f), "Creature Inspector");
             if (!_hasSelectedCreature || !_world.TryGetCreatureIndex(_selectedCreature, out int index))
             {
-                GUI.Label(new Rect(24f, 258f, 350f, 22f), "Click a creature to inspect it.");
+                GUI.Label(new Rect(24f, inspectorTop + 26f, 350f, 22f), "Click a creature to inspect it.");
                 return;
             }
 
@@ -447,13 +448,13 @@ namespace LifeSimulation.Presentation
             var decision = _world.GetCreatureDecisionAt(index);
             var diagnostics = _world.GetCreatureDecisionDiagnosticsAt(index);
             MemoryState memory = _world.GetCreatureMemoryAt(index);
-            GUI.Label(new Rect(24f, 258f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
-            GUI.Label(new Rect(24f, 280f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
-            GUI.Label(new Rect(24f, 302f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
-            GUI.Label(new Rect(24f, 324f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
-            GUI.Label(new Rect(24f, 346f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
-            GUI.Label(new Rect(24f, 368f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
-            float optionalDetailY = 390f;
+            GUI.Label(new Rect(24f, inspectorTop + 26f, 360f, 22f), $"Selected #{_selectedCreature.Value} | Gen {lineage.Generation} | {decision.Action}");
+            GUI.Label(new Rect(24f, inspectorTop + 48f, 360f, 22f), $"Energy {needs.Energy:0}/{phenotype.EnergyCapacity:0} | Water {needs.Hydration:0}/{phenotype.HydrationCapacity:0}");
+            GUI.Label(new Rect(24f, inspectorTop + 70f, 360f, 22f), $"Health {needs.Health:0}/{phenotype.HealthCapacity:0} | Age {needs.Age:0.0}s");
+            GUI.Label(new Rect(24f, inspectorTop + 92f, 360f, 22f), $"Genes size {genome.BodySize:0.00} | speed {genome.MovementSpeed:0.00} | metabolism {genome.MetabolicPace:0.00}");
+            GUI.Label(new Rect(24f, inspectorTop + 114f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
+            GUI.Label(new Rect(24f, inspectorTop + 136f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
+            float optionalDetailY = inspectorTop + 158f;
             if (_world.Config.FounderProfile == FounderProfile.PredationVariation)
             {
                 GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"P1 traits: attack {genome.Attack:0.00} | defense {genome.Defense:0.00} | aggression {genome.Aggression:0.00} | diet {genome.DietSpecialization:0.00}");
