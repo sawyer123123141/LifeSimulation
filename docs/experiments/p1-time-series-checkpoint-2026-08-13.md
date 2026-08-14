@@ -11,7 +11,7 @@
 - Prey-only populations peaked between 238 and 271, with final populations between 213 and 260.
 - Mixed-predation populations peaked between 160 and 217, with final populations between 122 and 151.
 - Mixed runs repeatedly rose, fell, and stabilized at a lower population than prey-only controls while retaining high attack, defense, and meat-specialization means.
-- In seed 42, the mixed population rose from 55 at tick 500 to 160 at tick 7,000, fell to 140 around tick 10,000, rose again to 158 near tick 15,000, then fell to 112–129 by tick 18,000–20,000. Predation deaths, attacks, and carcass-food consumption increased throughout.
+- In seed 42, the mixed population rose from 55 at tick 500 to 160 at tick 7,000, fell to 140 around tick 10,000, rose again to 158 near tick 15,000, then fell to 112–129 by tick 18,000–20,000. Viable hunters rose from 16 at tick 500 to 103 at tick 15,000, then declined to 77 by tick 20,000 as total population pressure increased. Predation deaths, attacks, and carcass-food consumption increased throughout.
 
 ## Interpretation
 
@@ -19,4 +19,4 @@ P1 now demonstrates persistent, phenotype-driven hunting pressure and short popu
 
 ## Next evidence work
 
-Add phenotype-derived hunter and non-hunter population counts to the time series, then test a longer run. That will let us inspect whether hunting-capable cohorts lag non-hunting cohorts without introducing species labels.
+Run a longer paired series and quantify whether hunter and non-hunter cohorts show a repeatable lag without introducing species labels.
