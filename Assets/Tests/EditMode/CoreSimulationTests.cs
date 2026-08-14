@@ -89,6 +89,18 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void CognitionStatisticsExposeThePopulationTraitMeansUsedByP2Experiments()
+        {
+            var world = new SimulationWorld(SimulationConfig.CreatePrototype2Defaults(42, 4));
+            for (int index = 0; index < 20; index++) world.Step(world.Config.FixedDeltaTime);
+
+            Assert.That(world.Statistics.MeanMemoryCapacityGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanMemoryRetentionGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanLearningRateGene, Is.GreaterThan(0f));
+            Assert.That(world.Statistics.MeanExplorationGene, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void ScheduleRejectsFrequenciesThatDoNotDivideBaseFrequency()
         {
             var schedule = new SimulationSchedule(20, 20, 3, 2, 2, 1, 1, 1);

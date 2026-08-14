@@ -101,7 +101,11 @@ namespace LifeSimulation.Simulation.Core
             float meanDefenseGene = 0f,
             float meanAggressionGene = 0f,
             float meanDietSpecializationGene = 0f,
-            int viableHunterCount = 0)
+            int viableHunterCount = 0,
+            float meanMemoryCapacityGene = 0f,
+            float meanMemoryRetentionGene = 0f,
+            float meanLearningRateGene = 0f,
+            float meanExplorationGene = 0f)
         {
             Tick = tick;
             Population = population;
@@ -139,6 +143,10 @@ namespace LifeSimulation.Simulation.Core
             MeanAggressionGene = meanAggressionGene;
             MeanDietSpecializationGene = meanDietSpecializationGene;
             ViableHunterCount = viableHunterCount;
+            MeanMemoryCapacityGene = meanMemoryCapacityGene;
+            MeanMemoryRetentionGene = meanMemoryRetentionGene;
+            MeanLearningRateGene = meanLearningRateGene;
+            MeanExplorationGene = meanExplorationGene;
         }
 
         public long Tick { get; }
@@ -178,6 +186,10 @@ namespace LifeSimulation.Simulation.Core
         public float MeanDietSpecializationGene { get; }
         public int ViableHunterCount { get; }
         public int NonHunterCount => Population - ViableHunterCount;
+        public float MeanMemoryCapacityGene { get; }
+        public float MeanMemoryRetentionGene { get; }
+        public float MeanLearningRateGene { get; }
+        public float MeanExplorationGene { get; }
     }
 
     public struct ReproductionState

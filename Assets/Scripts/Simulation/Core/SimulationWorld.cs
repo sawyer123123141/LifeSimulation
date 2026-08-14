@@ -1007,6 +1007,10 @@ namespace LifeSimulation.Simulation.Core
             float aggressionTotal = 0f;
             float dietSpecializationTotal = 0f;
             int viableHunterCount = 0;
+            float memoryCapacityTotal = 0f;
+            float memoryRetentionTotal = 0f;
+            float learningRateTotal = 0f;
+            float explorationTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -1033,6 +1037,10 @@ namespace LifeSimulation.Simulation.Core
                 aggressionTotal += genome.Aggression;
                 dietSpecializationTotal += genome.DietSpecialization;
                 if (PredationSystem.HasViableHuntingStrategy(phenotype)) viableHunterCount++;
+                memoryCapacityTotal += genome.MemoryCapacity;
+                memoryRetentionTotal += genome.MemoryRetention;
+                learningRateTotal += genome.LearningRate;
+                explorationTotal += genome.Exploration;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -1084,7 +1092,11 @@ namespace LifeSimulation.Simulation.Core
                 defenseTotal * reciprocalPopulation,
                 aggressionTotal * reciprocalPopulation,
                 dietSpecializationTotal * reciprocalPopulation,
-                viableHunterCount);
+                viableHunterCount,
+                memoryCapacityTotal * reciprocalPopulation,
+                memoryRetentionTotal * reciprocalPopulation,
+                learningRateTotal * reciprocalPopulation,
+                explorationTotal * reciprocalPopulation);
         }
 
         private void CountDeathCause(DeathCause cause)

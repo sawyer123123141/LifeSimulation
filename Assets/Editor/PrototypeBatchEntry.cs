@@ -493,6 +493,65 @@ namespace LifeSimulation.EditorTools
                 stats.MeanDietSpecializationGene));
         }
 
+        [MenuItem("Life Simulation/Run Cognition Control Experiments")]
+        public static void RunCognitionControlExperiments()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "cognition-control.csv");
+            ExperimentBatchOptions options = ExperimentBatchOptions.Parse(Environment.GetCommandLineArgs());
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("condition,seed,ticks,population,births,deaths,food,water,memory_capacity,memory_retention,learning_rate,exploration,state_hash");
+                for (int offset = 0; offset < options.SeedCount; offset++)
+                {
+                    int seed = options.FirstSeed + offset;
+                    WriteCognitionControlResult(writer, "memory-disabled", CreateCognitionExperimentConfig(seed, options, cognitionEnabled: false), options.Ticks);
+                    WriteCognitionControlResult(writer, "memory-enabled", CreateCognitionExperimentConfig(seed, options, cognitionEnabled: true), options.Ticks);
+                }
+            }
+
+            Debug.Log($"Cognition control results saved to {outputPath}");
+        }
+
+        private static SimulationConfig CreateCognitionExperimentConfig(int seed, ExperimentBatchOptions options, bool cognitionEnabled)
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype2Defaults(seed, options.FounderPopulation);
+            return new SimulationConfig(
+                seed,
+                options.FounderPopulation,
+                defaults.Schedule,
+                options.MaximumPopulation,
+                FounderProfile.CognitionVariation,
+                cognitionEnabled,
+                physiologyEnabled: false,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1);
+        }
+
+        private static void WriteCognitionControlResult(StreamWriter writer, string condition, SimulationConfig config, int ticks)
+        {
+            ExperimentResult result = ExperimentRunner.Run(config, Prototype1Scenarios.Baseline, ticks);
+            SimulationStatistics stats = result.FinalStatistics;
+            writer.WriteLine(string.Format(
+                CultureInfo.InvariantCulture,
+                "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12}",
+                condition,
+                result.WorldSeed,
+                result.CompletedTicks,
+                stats.Population,
+                stats.BirthCount,
+                stats.DeathCount,
+                stats.CumulativeFoodConsumed,
+                stats.CumulativeWaterConsumed,
+                stats.MeanMemoryCapacityGene,
+                stats.MeanMemoryRetentionGene,
+                stats.MeanLearningRateGene,
+                stats.MeanExplorationGene,
+                result.FinalStateHash));
+        }
+
         private readonly struct PredationInterventionResult
         {
             public PredationInterventionResult(int populationAtRemoval, int populationAtReintroduction, int huntersRemoved, int huntersReintroduced, SimulationStatistics finalStatistics, ulong finalStateHash)
