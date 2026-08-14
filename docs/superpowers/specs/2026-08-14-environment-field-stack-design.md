@@ -26,7 +26,13 @@ A1 is first because it is the only piece that pays off immediately: the P4 produ
 
 Can a small set of seeded scalar fields produce spatially varied, temporally shifting selection pressure that is reproducible across runs and cheap enough to sample inside fixed-tick hot loops?
 
-Success is not visual. Success is that two runs with different world seeds present measurably different environmental conditions at the same simulation coordinates, that the same seed reproduces bit-identically, and that sampling costs little enough to call from perception or plant-growth loops.
+Success is not visual. Success is that two runs with different world seeds present measurably different environmental conditions at the same simulation coordinates, and that the same seed reproduces bit-identically.
+
+**Sampling cost is an open question, not an assumption.** A first-order estimate is discouraging: `SampleAll` evaluates the elevation fBm three times (rain shadow needs two extra probes for its finite difference), plus moisture and cave octaves. Each octave visits eight lattice corners, and each corner costs a full six-round `DeterministicRandom` mix. That lands somewhere around 7,000–9,000 operations per sample, plausibly 1–3 microseconds.
+
+For scale, the recorded P0 baseline is 0.245 ms per simulation step at 1,000 founders. One field sample per creature per tick would cost roughly 2 ms — several times the entire current simulation step. Sampling at needs frequency rather than movement frequency removes an order of magnitude, but the headroom is not obviously there.
+
+This drives the implementation ordering below: the benchmark is built first and its result determines octave counts, hash choice, and whether the tier-1 cache is optional or mandatory.
 
 ## Permanent constraints this design inherits
 
@@ -55,6 +61,8 @@ Generated once per world from tier 1, held in memory, never serialized. Determin
 
 Required for anything whose value at a point depends on *other* points. Rivers are the motivating case and are examined below. Lakes and coastlines fall out of the same pass. Later additions — mineral veins, reefs, volcanic regions — register here as additional generators.
 
+**Tier 2 is an ordered dependency graph, not a flat registry.** Lakes require the river routing to have run; coastline-derived moisture requires coastlines. Generators therefore declare which other generators they consume, and A2 resolves them in dependency order, failing loudly on a cycle. Implementing tier 2 as an unordered list is the obvious mistake and is called out here to prevent it.
+
 ### Why rivers cannot be tier 1
 
 A river exists at a point because water from an entire upstream catchment funnels through it. Answering "is there a river here?" requires knowing what lies uphill, which is a non-local query. Pure-function approaches produce river-shaped noise that does not connect, does not flow consistently downhill, and does not reach the sea — the failure is immediately visible.
@@ -62,6 +70,13 @@ A river exists at a point because water from an entire upstream catchment funnel
 A2 therefore builds a coarse global node network over the sphere, samples elevation at each node, routes flow downhill, and accumulates catchment area. A river segment exists where accumulated flow exceeds a threshold. Lakes are basins where flow has no downhill exit. Coastlines fall out of the elevation/sea-level boundary.
 
 This is a genuine departure from the storage-free property of tier 1, and it is accepted deliberately because the alternative does not produce believable rivers. The mitigating property is that the structures are derived, not authored: seed plus configuration regenerates them exactly, so nothing is ever written to disk.
+
+**River resolution must be hierarchical.** A single global network cannot carry rivers at both planet and walking scale: resolving kilometre-scale streams across a planet-sized world implies node counts in the hundreds of millions, far past what fits in memory. A2 therefore uses two levels:
+
+- a **coarse global network** sized to fit comfortably in memory, carrying only major rivers, lakes, and coastlines, generated once per world
+- **per-region refinement** generated on demand when a region is simulated or rendered at high fidelity, seeded by region identity and constrained to connect to whichever coarse river passes through it
+
+Refined tributaries are themselves disposable and regenerable. The constraint that makes this work is that refinement must be deterministic given `(regionId, seed, coarse network)`, so a region refined, discarded, and refined again produces identical rivers. A2's spec must define the node budget at each level and test that refinement is idempotent.
 
 ## Core decision: sample by sphere direction, simulate in local tangent 2D
 
@@ -97,7 +112,9 @@ readonly struct SimPosition
 }
 ```
 
-Callers use accessors rather than touching the fields directly, so the eventual substitution is contained. A3's spec must define the migration path explicitly before implementation.
+Callers use accessors rather than touching the fields directly, so the storage substitution is contained.
+
+**The type change is contained; the semantic change is not.** Any logic that branches on a discrete layer — `if (layer == Underground)` — does not translate mechanically to a continuous height, because "underground" stops being a category and becomes a comparison against the local surface elevation. Accessors hide the storage, not the meaning. This migration is materially cheaper than starting from full 3D, but it is not free, and A3's spec must enumerate the branch sites it will create and state how each one becomes a height comparison later.
 
 A3 sits behind a configuration flag defaulting to single-layer, so existing scenarios and frozen fixtures reproduce unchanged.
 
@@ -220,12 +237,45 @@ Tier-2 structures (A2) hold generated data but remain derived and disposable; th
 
 **Known limitation, stated explicitly:** Burst compilation, FMA contraction, or vectorization may alter float results. Until measured, cross-platform bit-identical field values are not claimed. Same-binary determinism is claimed and tested.
 
+### Field math is versioned, not just field configuration
+
+`SimulationConfig` and genome layouts already carry schema versions. The field *mathematics* needs one too, and this is the failure mode most likely to go unnoticed.
+
+Today fields are inert, so changing a noise constant harms nothing. Once sub-project B lets biology read them, every experiment outcome depends on the exact derivations — octave counts, the gradient table, the smoothstep, the suitability curves. Adjusting any of these silently moves results in previously frozen evidence, which is precisely the drift the program's gate system exists to prevent.
+
+Therefore:
+
+- `EnvironmentFields` exposes a constant `SchemaVersion`, incremented whenever any derivation changes in a way that alters output.
+- Experiment manifests record it alongside the config and genome schema versions.
+- A test pins the sampled output of a fixed `(seed, direction, tick, geography)` set against recorded golden values. That test failing is the intended signal: it means the version must be incremented and dependent evidence re-run or explicitly migrated.
+
+The golden-value test is introduced in A1, while nothing depends on the fields and the cost of establishing the baseline is zero.
+
 ## Error handling
 
 - `WorldGeography.Validate()` throws `ArgumentOutOfRangeException` on non-finite or out-of-range parameters, called once at configuration time, never in the sampling path.
 - `SampleAll` performs no validation and no allocation. It is a hot-loop function; callers pass a validated `WorldGeography`.
 - Directions are normalized defensively inside `SphereMapping`, not inside `SampleAll`.
 - Non-finite output is a defect, not a runtime-handled condition. The range-bound test exists to catch it.
+
+## Implementation ordering: benchmark first
+
+The standard delivery cycle puts the performance gate at phase 7. **A1 inverts that deliberately.** The sampling-cost estimate above is close enough to unaffordable that several design parameters cannot be chosen honestly without a measurement, and discovering that after the fields are built means rebuilding them.
+
+Order:
+
+1. `SimVector3`, `WorldGeography`, and `GradientNoise3D` — the minimum needed to evaluate one octave.
+2. **Benchmark harness and first measurement**, recorded to `docs/benchmarks/`.
+3. The measurement then decides three open parameters:
+   - **octave counts** for elevation, moisture, and caves
+   - **hash choice** — reuse the six-round `DeterministicRandom` mixer, or introduce a cheaper dedicated noise hash and accept that it is a second primitive to test
+   - **whether the tier-1 cache is optional or mandatory**, which the exclusions list currently assumes is optional
+4. `SphereMapping`, `EnvironmentFields`, and the remaining derivations, built against the chosen parameters.
+5. Remaining fixtures and the frozen-fixture regression run.
+
+This is consistent with `PERFORMANCE.md` ("optimize only measured bottlenecks") rather than a departure from it: the measurement is not an optimization pass, it is an input the design is missing.
+
+If the measured cost proves affordable, steps 3's decisions collapse to the defaults already written here and nothing is lost.
 
 ## Testing (A1)
 
@@ -242,8 +292,9 @@ Deterministic fixtures are written before implementation, per the standard deliv
 9. **Hash invariance** — enabling `EnvironmentEnabled` with no consumers leaves `ComputeStateHash` identical over 1,000 ticks.
 10. **Allocation guard** — 100,000 `SampleAll` calls allocate zero managed bytes.
 11. **Frozen-fixture regression** — all existing P0 through P3 fixtures produce unchanged results and unchanged state hashes.
+12. **Golden-value pin** — a fixed set of `(seed, direction, tick, geography)` inputs reproduces recorded output values, guarding the field mathematics against silent drift as described above.
 
-A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/`, following the project's benchmark discipline (commit SHA, hardware, build type).
+A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/`, following the project's benchmark discipline (commit SHA, hardware, build type). Per the ordering section, this benchmark is built early rather than last.
 
 ## Explicit exclusions
 
@@ -260,15 +311,17 @@ Deferred deliberately; none of these are in A1:
 - navigation, obstacles, or pathfinding
 - plate tectonics — out of scope for the whole environment program
 - hydraulic erosion — out of scope for A1 and A2. Flow accumulation finds where water *goes* on existing terrain; it does not carve valleys, so rivers will initially run through terrain that was not shaped by them. If that reads as artificial once terrain is visible (D), a light erosion pass applied to the elevation field is the remedy, and it warrants its own spec rather than being smuggled into A2.
-- any caching or memoization of tier-1 fields, until a benchmark justifies it
+- caching or memoization of tier-1 fields **is presumed excluded, but the early benchmark may overturn this** — see the implementation-ordering section. It is the one exclusion here that measurement is allowed to reverse within A1.
 - Burst or Jobs adoption
 
 ## Exit gate (A1)
 
 A1 is complete when:
 
-- all eleven test fixtures pass, sphere continuity included
+- all twelve test fixtures pass, sphere continuity and the golden-value pin included
 - `SampleAll` allocates zero bytes and its cost is recorded in `docs/benchmarks/`
+- the three benchmark-gated parameters — octave counts, hash choice, and cache necessity — are decided by measurement and their chosen values recorded with the benchmark
+- `EnvironmentFields.SchemaVersion` exists and is written into experiment manifests
 - frozen P0 through P3 fixtures reproduce with unchanged state hashes
 - two different world seeds are shown to produce measurably different environmental conditions at identical simulation coordinates
 - `TemperatureField` remains unmodified and P3 physiology evidence remains valid
