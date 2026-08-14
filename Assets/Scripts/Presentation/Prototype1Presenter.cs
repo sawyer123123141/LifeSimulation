@@ -168,10 +168,9 @@ namespace LifeSimulation.Presentation
 
             var cameraObject = new GameObject("Simulation Camera");
             _simulationCamera = cameraObject.AddComponent<Camera>();
-            _simulationCamera.orthographic = true;
-            _simulationCamera.orthographicSize = 29f;
-            _simulationCamera.transform.position = new Vector3(0f, 40f, 0f);
-            _simulationCamera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            _simulationCamera.orthographic = false;
+            _simulationCamera.fieldOfView = 55f;
+            cameraObject.AddComponent<GroundPlaneCameraController>();
             _simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
 
         }
