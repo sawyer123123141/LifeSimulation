@@ -105,7 +105,7 @@ namespace LifeSimulation.Simulation.Experiments
             {
                 ResourceDefinition definition = _resources[index];
                 ResourceId resourceId = definition.AddTo(world.Resources, populationScale);
-                if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food)
+                if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food && definition.IsActive)
                 {
                     float capacity = definition.Capacity * populationScale;
                     float biomass = definition.InitialAmount * populationScale;
@@ -167,13 +167,26 @@ namespace LifeSimulation.Simulation.Experiments
     {
         public static SimulationScenario PlantBackedBaseline { get; } = new SimulationScenario(
             "p4-plant-backed-baseline",
-            new[]
+            CreatePlantSites());
+
+        private static ResourceDefinition[] CreatePlantSites()
+        {
+            return new[]
             {
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: 1f),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, 0.75f),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: 1f),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, 0.75f),
-            });
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-18f, -14f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-4f, -15f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(4f, -3f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, -1f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-18f, 6f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-2f, 5f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(3f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 19f), 1.5f, 0f, 12f, 0f, isActive: false),
+            };
+        }
     }
 
     public static class DecisionPolicyScenarios

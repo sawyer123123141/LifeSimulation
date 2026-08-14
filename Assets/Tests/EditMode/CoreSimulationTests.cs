@@ -28,6 +28,8 @@ namespace LifeSimulation.Tests.EditMode
             Prototype4Scenarios.PlantBackedBaseline.ApplyTo(world);
 
             Assert.That(world.Plants.Count, Is.EqualTo(2));
+            Assert.That(world.Resources.Count, Is.EqualTo(12));
+            Assert.That(world.Resources.GetAt(4).IsActive, Is.False);
             Assert.That(world.Resources.GetAt(0).Amount, Is.EqualTo(world.Plants.GetAt(0).Biomass));
 
             for (int index = 0; index < config.Schedule.BaseFrequencyHz; index++)
