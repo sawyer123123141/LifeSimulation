@@ -58,7 +58,8 @@ namespace LifeSimulation.Simulation.Core
             FounderProfile founderProfile = FounderProfile.Prototype1,
             bool cognitionEnabled = false,
             bool physiologyEnabled = false,
-            DecisionPolicyVersion decisionPolicyVersion = DecisionPolicyVersion.Legacy)
+            DecisionPolicyVersion decisionPolicyVersion = DecisionPolicyVersion.Legacy,
+            bool plantCohortsEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -68,6 +69,7 @@ namespace LifeSimulation.Simulation.Core
             CognitionEnabled = cognitionEnabled;
             PhysiologyEnabled = physiologyEnabled;
             DecisionPolicyVersion = decisionPolicyVersion;
+            PlantCohortsEnabled = plantCohortsEnabled;
         }
 
         public int WorldSeed { get; }
@@ -77,6 +79,7 @@ namespace LifeSimulation.Simulation.Core
         public bool CognitionEnabled { get; }
         public bool PhysiologyEnabled { get; }
         public DecisionPolicyVersion DecisionPolicyVersion { get; }
+        public bool PlantCohortsEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -105,6 +108,12 @@ namespace LifeSimulation.Simulation.Core
         {
             SimulationConfig defaults = CreatePrototype2Defaults(worldSeed, initialPopulation);
             return new SimulationConfig(worldSeed, initialPopulation, defaults.Schedule, defaults.MaximumPopulation, FounderProfile.PhysiologyVariation, cognitionEnabled: true, physiologyEnabled: true);
+        }
+
+        public static SimulationConfig CreatePrototype4Defaults(int worldSeed, int initialPopulation)
+        {
+            SimulationConfig defaults = CreatePrototype3Defaults(worldSeed, initialPopulation);
+            return new SimulationConfig(worldSeed, initialPopulation, defaults.Schedule, defaults.MaximumPopulation, FounderProfile.PhysiologyVariation, cognitionEnabled: true, physiologyEnabled: true, decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1, plantCohortsEnabled: true);
         }
 
         public void Validate()

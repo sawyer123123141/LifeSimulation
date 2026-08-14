@@ -21,6 +21,26 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void Prototype4ScenarioProjectsPlantCohortsIntoStableFoodResources()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 0);
+            var world = new SimulationWorld(config);
+            Prototype4Scenarios.PlantBackedBaseline.ApplyTo(world);
+
+            Assert.That(world.Plants.Count, Is.EqualTo(2));
+            Assert.That(world.Resources.GetAt(0).Amount, Is.EqualTo(world.Plants.GetAt(0).Biomass));
+
+            for (int index = 0; index < config.Schedule.BaseFrequencyHz; index++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Resources.GetAt(0).Id, Is.EqualTo(world.Plants.GetAt(0).FoodResourceId));
+            Assert.That(world.Resources.GetAt(0).Amount, Is.EqualTo(world.Plants.GetAt(0).Biomass));
+            Assert.That(world.Statistics.PlantBiomassResidual, Is.EqualTo(0f).Within(.0001f));
+        }
+
+        [Test]
         public void PredationFounderProfileSeedsUnlabeledPredationVariation()
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 2);

@@ -210,6 +210,31 @@ namespace LifeSimulation.EditorTools
             Debug.Log($"Prototype 3 physiology experiment results saved to {outputPath}");
         }
 
+        [MenuItem("Life Simulation/Run Prototype 4 Plant Biomass Smoke Test")]
+        public static void RunPrototype4PlantBiomassSmokeTest()
+        {
+            string rootPath = Directory.GetParent(Application.dataPath).FullName;
+            string outputDirectory = Path.Combine(rootPath, "ExperimentResults");
+            Directory.CreateDirectory(outputDirectory);
+            string outputPath = Path.Combine(outputDirectory, "prototype4-plant-biomass-smoke.csv");
+            int[] seeds = { 42, 43, 44 };
+
+            using (var writer = new StreamWriter(outputPath, append: false))
+            {
+                writer.WriteLine("scenario,seed,ticks,population,plant_biomass,plant_growth,plant_consumed,dormant_patches,plant_residual,state_hash");
+                for (int index = 0; index < seeds.Length; index++)
+                {
+                    int seed = seeds[index];
+                    SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(seed, initialPopulation: 4);
+                    ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.PlantBackedBaseline, ticks: 2000);
+                    SimulationStatistics stats = result.FinalStatistics;
+                    writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4:F4},{5:F4},{6:F4},{7},{8:F6},{9}", result.ScenarioId, seed, result.CompletedTicks, stats.Population, stats.TotalPlantBiomass, stats.CumulativePlantGrowth, stats.CumulativePlantBiomassConsumed, stats.DormantPlantPatchCount, stats.PlantBiomassResidual, result.FinalStateHash));
+                }
+            }
+
+            Debug.Log($"Prototype 4 plant biomass smoke results saved to {outputPath}");
+        }
+
         [MenuItem("Life Simulation/Run Decision Policy Travel Experiments")]
         public static void RunDecisionPolicyTravelExperiments()
         {

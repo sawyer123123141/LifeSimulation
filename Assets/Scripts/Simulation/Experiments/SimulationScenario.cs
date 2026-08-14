@@ -35,7 +35,7 @@ namespace LifeSimulation.Simulation.Experiments
         public bool IsActive { get; }
         public float NutritionMultiplier { get; }
 
-        public void AddTo(ResourceStore resources, float populationScale)
+        public ResourceId AddTo(ResourceStore resources, float populationScale)
         {
             if (populationScale <= 0f || float.IsNaN(populationScale) || float.IsInfinity(populationScale))
             {
@@ -54,6 +54,8 @@ namespace LifeSimulation.Simulation.Experiments
             {
                 resources.SetActive(id, false);
             }
+
+            return id;
         }
     }
 
@@ -101,7 +103,15 @@ namespace LifeSimulation.Simulation.Experiments
             float populationScale = Math.Max(1f, world.Config.InitialPopulation / 4f);
             for (int index = 0; index < _resources.Length; index++)
             {
-                _resources[index].AddTo(world.Resources, populationScale);
+                ResourceDefinition definition = _resources[index];
+                ResourceId resourceId = definition.AddTo(world.Resources, populationScale);
+                if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food)
+                {
+                    float capacity = definition.Capacity * populationScale;
+                    float biomass = definition.InitialAmount * populationScale;
+                    float growthRate = capacity <= 0f ? 0f : definition.RegenerationPerSecond / capacity;
+                    world.AddPlantPatch(resourceId, definition.Position, biomass, capacity, growthRate, waterDemand: 0f, nutrition: definition.NutritionMultiplier, defense: 0f);
+                }
             }
         }
     }
@@ -151,6 +161,19 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, 0.75f),
             });
         }
+    }
+
+    public static class Prototype4Scenarios
+    {
+        public static SimulationScenario PlantBackedBaseline { get; } = new SimulationScenario(
+            "p4-plant-backed-baseline",
+            new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: 1f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, 0.75f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 12f, 12f, 0.75f, nutritionMultiplier: 1f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(5f, 12f), 1.5f, 12f, 12f, 0.75f),
+            });
     }
 
     public static class DecisionPolicyScenarios

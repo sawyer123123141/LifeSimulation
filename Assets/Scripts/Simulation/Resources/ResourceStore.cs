@@ -108,6 +108,17 @@ namespace LifeSimulation.Simulation.Resources
             _positions[index] = position;
         }
 
+        public void SetFoodProjection(ResourceId id, float amount, float nutritionMultiplier)
+        {
+            if (!_indexById.TryGetValue(id, out int index) || _kinds[index] != ResourceKind.Food)
+            {
+                return;
+            }
+
+            _amounts[index] = Math.Max(0f, Math.Min(_capacities[index], amount));
+            _nutritionMultipliers[index] = Math.Max(0f, nutritionMultiplier);
+        }
+
         public float ConsumeAt(int index, float requestedAmount)
         {
             ValidateIndex(index);
@@ -140,6 +151,22 @@ namespace LifeSimulation.Simulation.Resources
                     _amounts[index] = Math.Min(
                         _capacities[index],
                         _amounts[index] + (_regenerationPerSecond[index] * deltaTime));
+                }
+            }
+        }
+
+        public void RegenerateNonFood(float deltaTime)
+        {
+            if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+            {
+                throw new ArgumentOutOfRangeException(nameof(deltaTime));
+            }
+
+            for (int index = 0; index < Count; index++)
+            {
+                if (_isActive[index] && _kinds[index] != ResourceKind.Food)
+                {
+                    _amounts[index] = Math.Min(_capacities[index], _amounts[index] + (_regenerationPerSecond[index] * deltaTime));
                 }
             }
         }

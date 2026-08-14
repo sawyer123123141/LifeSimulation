@@ -34,6 +34,9 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativeCarcassConsumed;
         private int _attackHitCount;
         private int _predationDeathCount;
+        private float _cumulativePlantGrowth;
+        private float _cumulativePlantBiomassConsumed;
+        private float _initialPlantBiomass;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -41,6 +44,8 @@ namespace LifeSimulation.Simulation.Core
             Config.Validate();
             Creatures = new CreatureStore(Config.InitialPopulation);
             Resources = new ResourceStore(initialCapacity: 8);
+            Plants = new PlantPatchStore(initialCapacity: 8);
+            Environment = new EnvironmentField();
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
             CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
@@ -64,6 +69,8 @@ namespace LifeSimulation.Simulation.Core
         public SimulationConfig Config { get; }
         public CreatureStore Creatures { get; }
         public ResourceStore Resources { get; }
+        public PlantPatchStore Plants { get; }
+        public EnvironmentField Environment { get; }
         public ArenaBounds Arena { get; }
         public UniformGrid ResourceGrid { get; }
         public UniformGrid CombatGrid { get; }
@@ -73,6 +80,13 @@ namespace LifeSimulation.Simulation.Core
         public long CurrentTick { get; private set; }
         public SimulationStatistics Statistics { get; private set; }
         public DecisionTraceRecorder DecisionTrace { get; private set; }
+
+        public int AddPlantPatch(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense)
+        {
+            int patchIndex = Plants.Add(foodResourceId, position, biomass, capacity, growthRate, waterDemand, nutrition, defense);
+            _initialPlantBiomass += biomass;
+            return patchIndex;
+        }
 
         public void EnableDecisionTrace(CreatureId sampledCreatureId, int capacity)
         {
@@ -212,7 +226,17 @@ namespace LifeSimulation.Simulation.Core
             long nextTick = CurrentTick + 1;
             if (IsDue(nextTick, Config.Schedule.ResourcesHz))
             {
-                Resources.Regenerate(1f / Config.Schedule.ResourcesHz);
+                float resourceDeltaTime = 1f / Config.Schedule.ResourcesHz;
+                if (Config.PlantCohortsEnabled)
+                {
+                    Resources.RegenerateNonFood(resourceDeltaTime);
+                    _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
+                    PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
+                }
+                else
+                {
+                    Resources.Regenerate(resourceDeltaTime);
+                }
             }
 
             if (IsDue(nextTick, Config.Schedule.PerceptionHz))
@@ -379,6 +403,19 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, resource.RegenerationPerSecond);
                 hash = Hash(hash, resource.IsActive ? 1UL : 0UL);
                 hash = HashFloat(hash, resource.NutritionMultiplier);
+            }
+
+            hash = Hash(hash, unchecked((ulong)Plants.Count));
+            for (int index = 0; index < Plants.Count; index++)
+            {
+                PlantPatchState patch = Plants.GetAt(index);
+                hash = Hash(hash, unchecked((ulong)patch.Id.Value));
+                hash = Hash(hash, unchecked((ulong)patch.FoodResourceId.Value));
+                hash = HashFloat(hash, patch.Biomass);
+                hash = HashFloat(hash, patch.Capacity);
+                hash = HashFloat(hash, patch.GrowthRate);
+                hash = HashFloat(hash, patch.Nutrition);
+                hash = HashFloat(hash, patch.Defense);
             }
 
             return hash;
@@ -856,6 +893,14 @@ namespace LifeSimulation.Simulation.Core
 
                 ResourceRequest request = _resourceRequests[requestIndex];
                 ResourceState resource = Resources.GetAt(request.ResourceIndex);
+                if (Config.PlantCohortsEnabled && resource.Kind == ResourceKind.Food)
+                {
+                    int plantPatchIndex = Plants.FindIndex(resource.Id);
+                    if (plantPatchIndex >= 0)
+                    {
+                        _cumulativePlantBiomassConsumed += Plants.ConsumeAt(plantPatchIndex, allocatedAmount);
+                    }
+                }
                 ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(request.CreatureIndex);
                 if (resource.Kind == ResourceKind.Food || resource.Kind == ResourceKind.Carcass)
                 {
@@ -1048,11 +1093,20 @@ namespace LifeSimulation.Simulation.Core
 
             float food = 0f;
             float water = 0f;
+            float plantBiomass = 0f;
+            int dormantPlantPatches = 0;
             for (int index = 0; index < Resources.Count; index++)
             {
                 ResourceState resource = Resources.GetAt(index);
                 if (resource.Kind == ResourceKind.Food) food += resource.Amount;
                 else if (resource.Kind == ResourceKind.Water) water += resource.Amount;
+            }
+
+            for (int index = 0; index < Plants.Count; index++)
+            {
+                PlantPatchState patch = Plants.GetAt(index);
+                plantBiomass += patch.Biomass;
+                if (patch.IsDormant) dormantPlantPatches++;
             }
 
             float reciprocalPopulation = Creatures.Count == 0 ? 0f : 1f / Creatures.Count;
@@ -1096,7 +1150,12 @@ namespace LifeSimulation.Simulation.Core
                 memoryCapacityTotal * reciprocalPopulation,
                 memoryRetentionTotal * reciprocalPopulation,
                 learningRateTotal * reciprocalPopulation,
-                explorationTotal * reciprocalPopulation);
+                explorationTotal * reciprocalPopulation,
+                plantBiomass,
+                _cumulativePlantGrowth,
+                _cumulativePlantBiomassConsumed,
+                dormantPlantPatches,
+                plantBiomass - (_initialPlantBiomass + _cumulativePlantGrowth - _cumulativePlantBiomassConsumed));
         }
 
         private void CountDeathCause(DeathCause cause)

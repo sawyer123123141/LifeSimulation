@@ -105,7 +105,12 @@ namespace LifeSimulation.Simulation.Core
             float meanMemoryCapacityGene = 0f,
             float meanMemoryRetentionGene = 0f,
             float meanLearningRateGene = 0f,
-            float meanExplorationGene = 0f)
+            float meanExplorationGene = 0f,
+            float totalPlantBiomass = 0f,
+            float cumulativePlantGrowth = 0f,
+            float cumulativePlantBiomassConsumed = 0f,
+            int dormantPlantPatchCount = 0,
+            float plantBiomassResidual = 0f)
         {
             Tick = tick;
             Population = population;
@@ -147,6 +152,11 @@ namespace LifeSimulation.Simulation.Core
             MeanMemoryRetentionGene = meanMemoryRetentionGene;
             MeanLearningRateGene = meanLearningRateGene;
             MeanExplorationGene = meanExplorationGene;
+            TotalPlantBiomass = totalPlantBiomass;
+            CumulativePlantGrowth = cumulativePlantGrowth;
+            CumulativePlantBiomassConsumed = cumulativePlantBiomassConsumed;
+            DormantPlantPatchCount = dormantPlantPatchCount;
+            PlantBiomassResidual = plantBiomassResidual;
         }
 
         public long Tick { get; }
@@ -190,6 +200,11 @@ namespace LifeSimulation.Simulation.Core
         public float MeanMemoryRetentionGene { get; }
         public float MeanLearningRateGene { get; }
         public float MeanExplorationGene { get; }
+        public float TotalPlantBiomass { get; }
+        public float CumulativePlantGrowth { get; }
+        public float CumulativePlantBiomassConsumed { get; }
+        public int DormantPlantPatchCount { get; }
+        public float PlantBiomassResidual { get; }
     }
 
     public struct ReproductionState
