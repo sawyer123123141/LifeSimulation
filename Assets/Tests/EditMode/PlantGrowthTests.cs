@@ -39,5 +39,24 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(PlantPhenotype.FromGenome(highDefense).NutritionMultiplier, Is.LessThan(PlantPhenotype.FromGenome(lowDefense).NutritionMultiplier));
             Assert.That(PlantPhenotype.FromGenome(highDefense).GrowthRateMultiplier, Is.LessThan(PlantPhenotype.FromGenome(lowDefense).GrowthRateMultiplier));
         }
+
+        [Test]
+        public void MaturePlantTransfersBiomassToADeterministicClonalSeedling()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId childSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 0f, 12f, 0f);
+            resources.SetActive(childSite, false);
+            var patches = new PlantPatchStore(2);
+            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 0f, 1f, 0f);
+            long ordinal = 0;
+
+            int births = PlantReproductionSystem.Step(patches, resources, 42, 20, ref ordinal);
+
+            Assert.That(births, Is.EqualTo(1));
+            Assert.That(resources.GetAt(0).IsActive, Is.True);
+            Assert.That(patches.Count, Is.EqualTo(2));
+            Assert.That(patches.GetAt(0).Biomass + patches.GetAt(1).Biomass, Is.EqualTo(10f).Within(.0001f));
+            Assert.That(patches.GetAt(1).Lineage.Generation, Is.EqualTo(patches.GetAt(parentIndex).Lineage.Generation + 1));
+        }
     }
 }

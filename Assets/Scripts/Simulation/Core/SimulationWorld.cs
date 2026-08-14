@@ -37,6 +37,7 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativePlantGrowth;
         private float _cumulativePlantBiomassConsumed;
         private float _initialPlantBiomass;
+        private long _plantSeedOrdinal;
 
         public SimulationWorld(SimulationConfig config)
         {
@@ -81,10 +82,10 @@ namespace LifeSimulation.Simulation.Core
         public SimulationStatistics Statistics { get; private set; }
         public DecisionTraceRecorder DecisionTrace { get; private set; }
 
-        public int AddPlantPatch(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense)
+        public int AddPlantPatch(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense, bool countsAsInitialBiomass = true)
         {
             int patchIndex = Plants.Add(foodResourceId, position, biomass, capacity, growthRate, waterDemand, nutrition, defense);
-            _initialPlantBiomass += biomass;
+            if (countsAsInitialBiomass) _initialPlantBiomass += biomass;
             return patchIndex;
         }
 
@@ -231,6 +232,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
+                    PlantReproductionSystem.Step(Plants, Resources, Config.WorldSeed, nextTick, ref _plantSeedOrdinal);
                     PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
                 }
                 else
@@ -416,6 +418,17 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, patch.GrowthRate);
                 hash = HashFloat(hash, patch.Nutrition);
                 hash = HashFloat(hash, patch.Defense);
+                hash = HashFloat(hash, patch.Genome.Growth);
+                hash = HashFloat(hash, patch.Genome.SeedInvestment);
+                hash = HashFloat(hash, patch.Genome.WaterEfficiency);
+                hash = HashFloat(hash, patch.Genome.Nutrition);
+                hash = HashFloat(hash, patch.Genome.Defense);
+                hash = HashFloat(hash, patch.Genome.Dispersal);
+                hash = HashFloat(hash, patch.Genome.MoistureTolerance);
+                hash = HashFloat(hash, patch.Genome.TemperatureTolerance);
+                hash = Hash(hash, unchecked((ulong)patch.Lineage.LineageId.Value));
+                hash = Hash(hash, unchecked((ulong)patch.Lineage.ParentId.Value));
+                hash = Hash(hash, unchecked((ulong)patch.Lineage.Generation));
             }
 
             return hash;

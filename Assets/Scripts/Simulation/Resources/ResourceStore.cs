@@ -98,6 +98,12 @@ namespace LifeSimulation.Simulation.Resources
             _isActive[index] = isActive;
         }
 
+        public void SetActiveAt(int index, bool isActive)
+        {
+            if ((uint)index >= (uint)Count) return;
+            _isActive[index] = isActive;
+        }
+
         public void SetPosition(ResourceId id, SimVector2 position)
         {
             if (!_indexById.TryGetValue(id, out int index))
