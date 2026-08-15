@@ -99,12 +99,21 @@ The last four are one system, built in that order. Foraging comes first because 
 
 **Plans — how to build it**
 
-| File | Builds | Safe for a small model? |
-|---|---|---|
-| `superpowers/plans/2026-08-14-death-causes.md` | Recording what an animal died of | Yes. Cannot change results |
-| `superpowers/plans/2026-08-14-decision-diagnostics.md` | Recording why an animal chose what it chose | Yes. Cannot change results |
-| `superpowers/plans/2026-08-14-foraging-economics-scoring.md` | The patch-scoring functions | Yes. New files only |
-| `superpowers/plans/2026-08-14-local-model-capability-test.md` | Not a plan — a test for judging whether a local model can be trusted with the others | — |
+Build them in this order. Each assumes the ones above it are done.
+
+| # | File | Builds | Safe for a small model? |
+|---|---|---|---|
+| 1 | `superpowers/plans/2026-08-14-death-causes.md` | Recording what an animal died of | Yes. Cannot change results |
+| 2 | `superpowers/plans/2026-08-14-decision-diagnostics.md` | Recording why an animal chose what it chose | Yes. Cannot change results |
+| 3 | `superpowers/plans/2026-08-14-foraging-economics-scoring.md` | The patch-scoring functions | Yes. New files only |
+| 4 | `superpowers/plans/2026-08-14-foraging-economics-integration.md` | Wiring scoring into the simulation | No. Changes behaviour and hashes |
+| 5 | `superpowers/plans/2026-08-14-place-memory.md` | Remembering specific places, and learning their quality | No. Changes cognition-mode results |
+| 6 | `superpowers/plans/2026-08-14-mating-behaviour.md` | Seeking, choosing, and courting mates | No. Changes reproduction |
+| 7 | `superpowers/plans/2026-08-14-juvenile-behaviour.md` | Weaker young, then following a parent | No. Two stages; stage 1 ships alone |
+
+| — | `superpowers/plans/2026-08-14-local-model-capability-test.md` | Not a plan — a test for judging whether a local model can be trusted with the others | — |
+
+Plans 1–3 cannot damage recorded evidence. Plans 4–7 all change simulation behaviour, so each one needs its recorded results re-run afterwards, and each is gated behind a config flag so the old behaviour stays available.
 
 ### Elsewhere in the repository
 
