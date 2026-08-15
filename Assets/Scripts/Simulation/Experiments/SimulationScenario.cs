@@ -121,6 +121,10 @@ namespace LifeSimulation.Simulation.Experiments
                         world.Plants.SetGenomeAndLineage(patchIndex, definition.PlantGenome.Value, patch.Lineage);
                     }
                 }
+                else if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food && !definition.IsActive)
+                {
+                    world.PlantSites.Register(index);
+                }
             }
         }
     }

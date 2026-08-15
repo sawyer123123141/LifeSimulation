@@ -48,5 +48,17 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(store.GetAt(index).Lineage.Generation, Is.EqualTo(3));
             Assert.That(store.GetAt(index).Lineage.ParentId.Value, Is.EqualTo(2));
         }
+
+        [Test]
+        public void PlantSiteRegistryReturnsRegisteredResourceIndicesInOrder()
+        {
+            var registry = new PlantSiteRegistry(1);
+            registry.Register(5);
+            registry.Register(2);
+
+            Assert.That(registry.Count, Is.EqualTo(2));
+            Assert.That(registry.GetResourceIndexAt(0), Is.EqualTo(5));
+            Assert.That(registry.GetResourceIndexAt(1), Is.EqualTo(2));
+        }
     }
 }
