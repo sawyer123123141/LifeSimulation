@@ -22,5 +22,15 @@ namespace LifeSimulation.Simulation.Behavior
 
             return amountTaken * phenotype.PlantFoodYieldMultiplier * nutritionMultiplier;
         }
+
+        public static float TravelEnergy(float distance, Phenotype phenotype)
+        {
+            if (distance < 0f || float.IsNaN(distance) || float.IsInfinity(distance))
+            {
+                throw new ArgumentOutOfRangeException(nameof(distance));
+            }
+
+            return distance * phenotype.BodyMass * 0.5f;
+        }
     }
 }
