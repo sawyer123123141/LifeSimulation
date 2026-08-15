@@ -115,3 +115,4 @@ InitTestScene*.unity*
 
 tools/HeadlessTests/bin/
 tools/HeadlessTests/obj/
+!tools/HeadlessTests/*.csproj
