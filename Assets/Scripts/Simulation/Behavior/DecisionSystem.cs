@@ -200,17 +200,69 @@ namespace LifeSimulation.Simulation.Behavior
     public readonly struct DecisionDiagnostics
     {
         public DecisionDiagnostics(float foodScore, float waterScore, bool foodVisible, bool waterVisible)
+            : this(foodScore, waterScore, foodVisible, waterVisible, 0f, 0f, 0f, 0f, CreatureAction.Wander)
+        {
+        }
+
+        private DecisionDiagnostics(
+            float foodScore,
+            float waterScore,
+            bool foodVisible,
+            bool waterVisible,
+            float fleeScore,
+            float huntScore,
+            float carcassScore,
+            float thermalScore,
+            CreatureAction winningAction)
         {
             FoodScore = foodScore;
             WaterScore = waterScore;
             FoodVisible = foodVisible;
             WaterVisible = waterVisible;
+            FleeScore = fleeScore;
+            HuntScore = huntScore;
+            CarcassScore = carcassScore;
+            ThermalScore = thermalScore;
+            WinningAction = winningAction;
         }
 
         public float FoodScore { get; }
         public float WaterScore { get; }
         public bool FoodVisible { get; }
         public bool WaterVisible { get; }
+        public float FleeScore { get; }
+        public float HuntScore { get; }
+        public float CarcassScore { get; }
+        public float ThermalScore { get; }
+        public CreatureAction WinningAction { get; }
+
+        public DecisionDiagnostics WithPredationScores(float fleeScore, float huntScore)
+        {
+            return new DecisionDiagnostics(
+                FoodScore, WaterScore, FoodVisible, WaterVisible,
+                fleeScore, huntScore, CarcassScore, ThermalScore, WinningAction);
+        }
+
+        public DecisionDiagnostics WithCarcassScore(float carcassScore)
+        {
+            return new DecisionDiagnostics(
+                FoodScore, WaterScore, FoodVisible, WaterVisible,
+                FleeScore, HuntScore, carcassScore, ThermalScore, WinningAction);
+        }
+
+        public DecisionDiagnostics WithThermalScore(float thermalScore)
+        {
+            return new DecisionDiagnostics(
+                FoodScore, WaterScore, FoodVisible, WaterVisible,
+                FleeScore, HuntScore, CarcassScore, thermalScore, WinningAction);
+        }
+
+        public DecisionDiagnostics WithWinningAction(CreatureAction winningAction)
+        {
+            return new DecisionDiagnostics(
+                FoodScore, WaterScore, FoodVisible, WaterVisible,
+                FleeScore, HuntScore, CarcassScore, ThermalScore, winningAction);
+        }
     }
 
     public static class DecisionSystem
