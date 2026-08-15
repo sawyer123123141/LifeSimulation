@@ -805,5 +805,48 @@ namespace LifeSimulation.Tests.EditMode
                 ForagingEconomics.ShouldAbandon(
                     currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: float.PositiveInfinity));
         }
+
+        [Test]
+        public void PatchScoreDoesNotAllocateAcrossManyCalls()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+
+            // Warm up so JIT/type initialization allocations do not pollute the measurement.
+            for (int i = 0; i < 1000; i++)
+            {
+                ForagingEconomics.PatchScore(
+                    urgency: 1f, remainingAmount: 20f, distance: 3f, phenotype,
+                    nutritionMultiplier: 1f, handlingSeconds: 5f, referenceGain: 10f);
+            }
+
+            GC.Collect();
+            GC.Collect();
+
+            // GC.GetTotalMemory(false) reports process-wide heap size, which in this
+            // multi-threaded test host swings by hundreds of KB to over 1 MB between
+            // runs purely from other threads (tiered JIT compilation, the test runner's
+            // own bookkeeping) — noise that has nothing to do with PatchScore. That is
+            // far too large a "small tolerance" to reliably catch a real per-call
+            // allocation (e.g. boxing a float costs ~24 bytes/call, ~2.4 MB over this
+            // loop, which would be lost in that noise). GC.GetAllocatedBytesForCurrentThread
+            // counts only bytes allocated on this thread and was independently confirmed,
+            // via a standalone console harness calling PatchScore in a tight loop, to read
+            // exactly 0 for 100,000 calls, so it is used here as the precise measurement
+            // this test needs. A tolerance is still allowed for incidental framework
+            // allocations on this thread (e.g. from the test runner between iterations).
+            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+            for (int i = 0; i < 100000; i++)
+            {
+                ForagingEconomics.PatchScore(
+                    urgency: 1f, remainingAmount: 20f, distance: 3f, phenotype,
+                    nutritionMultiplier: 1f, handlingSeconds: 5f, referenceGain: 10f);
+            }
+
+            long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
+
+            const long toleranceBytes = 4096;
+            Assert.That(allocatedAfter - allocatedBefore, Is.LessThanOrEqualTo(toleranceBytes));
+        }
     }
 }
