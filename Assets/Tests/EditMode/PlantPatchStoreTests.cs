@@ -11,7 +11,7 @@ namespace LifeSimulation.Tests.EditMode
         public void PlantPatchUsesStablePairedFoodResourceAndClampsConsumption()
         {
             var store = new PlantPatchStore(2);
-            int index = store.Add(new ResourceId(7), new SimVector2(2f, 3f), 3f, 10f, .5f, .2f, 1.1f, .1f);
+            int index = store.Add(new ResourceId(7), new SimVector2(2f, 3f), 3f, 10f, .5f, 1.1f, .1f);
 
             Assert.That(store.GetAt(index).FoodResourceId.Value, Is.EqualTo(7));
             Assert.That(store.ConsumeAt(index, 9f), Is.EqualTo(3f));
@@ -24,7 +24,7 @@ namespace LifeSimulation.Tests.EditMode
             var resources = new ResourceStore(1);
             ResourceId resourceId = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 10f, 1f);
             var patches = new PlantPatchStore(1);
-            patches.Add(resourceId, new SimVector2(0f, 0f), 3f, 10f, .5f, .2f, 1.25f, 0f);
+            patches.Add(resourceId, new SimVector2(0f, 0f), 3f, 10f, .5f, 1.25f, 0f);
 
             PlantGrowthSystem.ProjectFoodResources(patches, resources);
 
@@ -41,7 +41,7 @@ namespace LifeSimulation.Tests.EditMode
             PlantGenome first = PlantGenome.CloneMutated(parent, 42, 5, .03f);
             PlantGenome second = PlantGenome.CloneMutated(parent, 42, 5, .03f);
             var store = new PlantPatchStore(1);
-            int index = store.Add(new ResourceId(3), new SimVector2(0f, 0f), 1f, 2f, .1f, 0f, 1f, 0f);
+            int index = store.Add(new ResourceId(3), new SimVector2(0f, 0f), 1f, 2f, .1f, 1f, 0f);
             store.SetGenomeAndLineage(index, first, new PlantLineage(new PlantPatchId(9), new PlantPatchId(2), 3));
 
             Assert.That(second.Growth, Is.EqualTo(first.Growth));

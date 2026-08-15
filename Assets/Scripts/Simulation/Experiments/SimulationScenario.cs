@@ -114,7 +114,7 @@ namespace LifeSimulation.Simulation.Experiments
                     float capacity = definition.Capacity * populationScale;
                     float biomass = definition.InitialAmount * populationScale;
                     float growthRate = capacity <= 0f ? 0f : definition.RegenerationPerSecond / capacity;
-                    int patchIndex = world.AddPlantPatch(resourceId, definition.Position, biomass, capacity, growthRate, waterDemand: 0f, nutrition: definition.NutritionMultiplier, defense: 0f);
+                    int patchIndex = world.AddPlantPatch(resourceId, definition.Position, biomass, capacity, growthRate, nutrition: definition.NutritionMultiplier, defense: 0f);
                     if (definition.PlantGenome.HasValue)
                     {
                         PlantPatchState patch = world.Plants.GetAt(patchIndex);

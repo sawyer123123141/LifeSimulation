@@ -11,7 +11,7 @@ namespace LifeSimulation.Tests.EditMode
         public void LogisticGrowthIsLimitedByTheEnvironmentAndCapacity()
         {
             var patches = new PlantPatchStore(1);
-            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 2f, 10f, 1f, 0f, 1f, 0f);
+            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 2f, 10f, 1f, 1f, 0f);
 
             float added = PlantGrowthSystem.Step(patches, new EnvironmentField(), 1f);
 
@@ -24,7 +24,7 @@ namespace LifeSimulation.Tests.EditMode
         public void ZeroMoisturePreventsPlantGrowth()
         {
             var patches = new PlantPatchStore(1);
-            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 2f, 10f, 1f, 0f, 1f, 0f);
+            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 2f, 10f, 1f, 1f, 0f);
 
             Assert.That(PlantGrowthSystem.Step(patches, new EnvironmentField(moisture: 0f), 1f), Is.EqualTo(0f));
             Assert.That(patches.GetAt(0).Biomass, Is.EqualTo(2f));
@@ -47,7 +47,7 @@ namespace LifeSimulation.Tests.EditMode
             ResourceId childSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 0f, 12f, 0f);
             resources.SetActive(childSite, false);
             var patches = new PlantPatchStore(2);
-            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 0f, 1f, 0f);
+            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
             long ordinal = 0;
 
             int births = PlantReproductionSystem.Step(patches, resources, 42, 20, ref ordinal);

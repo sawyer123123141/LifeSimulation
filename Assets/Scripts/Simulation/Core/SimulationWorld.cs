@@ -83,9 +83,9 @@ namespace LifeSimulation.Simulation.Core
         public SimulationStatistics Statistics { get; private set; }
         public DecisionTraceRecorder DecisionTrace { get; private set; }
 
-        public int AddPlantPatch(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense, bool countsAsInitialBiomass = true)
+        public int AddPlantPatch(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float nutrition, float defense, bool countsAsInitialBiomass = true)
         {
-            int patchIndex = Plants.Add(foodResourceId, position, biomass, capacity, growthRate, waterDemand, nutrition, defense);
+            int patchIndex = Plants.Add(foodResourceId, position, biomass, capacity, growthRate, nutrition, defense);
             if (countsAsInitialBiomass) _initialPlantBiomass += biomass;
             return patchIndex;
         }

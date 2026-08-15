@@ -26,7 +26,7 @@ namespace LifeSimulation.Simulation.Environment
                 float transferred = patches.ConsumeAt(parentIndex, seedBiomass);
                 if (transferred <= 0f) continue;
                 PlantGenome childGenome = PlantGenome.CloneMutated(parent.Genome, worldSeed, seedOrdinal++, MutationStandardDeviation);
-                int childIndex = patches.Add(site.Id, site.Position, transferred, site.Capacity, parent.GrowthRate, parent.WaterDemand, parent.Nutrition, parent.Defense);
+                int childIndex = patches.Add(site.Id, site.Position, transferred, site.Capacity, parent.GrowthRate, parent.Nutrition, parent.Defense);
                 PlantPatchState child = patches.GetAt(childIndex);
                 patches.SetGenomeAndLineage(childIndex, childGenome, new PlantLineage(child.Id, parent.Id, parent.Lineage.Generation + 1));
                 resources.SetActiveAt(siteIndex, true);

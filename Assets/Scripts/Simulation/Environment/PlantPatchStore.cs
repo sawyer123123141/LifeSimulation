@@ -12,7 +12,6 @@ namespace LifeSimulation.Simulation.Environment
         private float[] _biomass;
         private float[] _capacities;
         private float[] _growthRates;
-        private float[] _waterDemands;
         private float[] _nutrition;
         private float[] _defense;
         private PlantGenome[] _genomes;
@@ -30,7 +29,6 @@ namespace LifeSimulation.Simulation.Environment
             _biomass = new float[capacity];
             _capacities = new float[capacity];
             _growthRates = new float[capacity];
-            _waterDemands = new float[capacity];
             _nutrition = new float[capacity];
             _defense = new float[capacity];
             _genomes = new PlantGenome[capacity];
@@ -41,9 +39,9 @@ namespace LifeSimulation.Simulation.Environment
 
         public int Count { get; private set; }
 
-        public int Add(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense)
+        public int Add(ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float nutrition, float defense)
         {
-            if (capacity < 0f || biomass < 0f || biomass > capacity || growthRate < 0f || waterDemand < 0f || nutrition < 0f || defense < 0f)
+            if (capacity < 0f || biomass < 0f || biomass > capacity || growthRate < 0f || nutrition < 0f || defense < 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(biomass));
             }
@@ -56,7 +54,6 @@ namespace LifeSimulation.Simulation.Environment
             _biomass[index] = biomass;
             _capacities[index] = capacity;
             _growthRates[index] = growthRate;
-            _waterDemands[index] = waterDemand;
             _nutrition[index] = nutrition;
             _defense[index] = defense;
             _genomes[index] = PlantGenome.Neutral;
@@ -66,7 +63,7 @@ namespace LifeSimulation.Simulation.Environment
 
         public PlantPatchState GetAt(int index)
         {
-            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _waterDemands[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index]);
+            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index]);
         }
 
         public void SetGenomeAndLineage(int index, PlantGenome genome, PlantLineage lineage)
@@ -110,7 +107,6 @@ namespace LifeSimulation.Simulation.Environment
             Array.Resize(ref _biomass, capacity);
             Array.Resize(ref _capacities, capacity);
             Array.Resize(ref _growthRates, capacity);
-            Array.Resize(ref _waterDemands, capacity);
             Array.Resize(ref _nutrition, capacity);
             Array.Resize(ref _defense, capacity);
             Array.Resize(ref _genomes, capacity);

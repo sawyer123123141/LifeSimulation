@@ -11,7 +11,7 @@ namespace LifeSimulation.Simulation.Environment
 
     public readonly struct PlantPatchState
     {
-        public PlantPatchState(PlantPatchId id, ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float waterDemand, float nutrition, float defense, PlantGenome genome, PlantLineage lineage, float age, float seedReserve)
+        public PlantPatchState(PlantPatchId id, ResourceId foodResourceId, SimVector2 position, float biomass, float capacity, float growthRate, float nutrition, float defense, PlantGenome genome, PlantLineage lineage, float age, float seedReserve)
         {
             Id = id;
             FoodResourceId = foodResourceId;
@@ -19,7 +19,6 @@ namespace LifeSimulation.Simulation.Environment
             Biomass = biomass;
             Capacity = capacity;
             GrowthRate = growthRate;
-            WaterDemand = waterDemand;
             Nutrition = nutrition;
             Defense = defense;
             Genome = genome;
@@ -34,7 +33,6 @@ namespace LifeSimulation.Simulation.Environment
         public float Biomass { get; }
         public float Capacity { get; }
         public float GrowthRate { get; }
-        public float WaterDemand { get; }
         public float Nutrition { get; }
         public float Defense { get; }
         public PlantGenome Genome { get; }
