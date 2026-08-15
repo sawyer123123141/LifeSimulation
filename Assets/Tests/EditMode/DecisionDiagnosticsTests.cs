@@ -62,5 +62,24 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(diagnostics.FleeScore, Is.GreaterThan(0f));
             Assert.That(diagnostics.HuntScore, Is.EqualTo(0f));
         }
+
+        [Test]
+        public void ConsideringACarcassRecordsItsScore()
+        {
+            Phenotype scavenger = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, dietSpecialization: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(scavenger);
+            needs.Energy = 0f;
+            var carcass = new ResourceObservation(new ResourceId(3), 0, 1f);
+            var diagnostics = new DecisionDiagnostics(0f, 0f, foodVisible: false, waterVisible: false);
+
+            PredationSystem.PreferCarcassWhenUseful(
+                needs,
+                scavenger,
+                carcass,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f),
+                ref diagnostics);
+
+            Assert.That(diagnostics.CarcassScore, Is.GreaterThan(0f));
+        }
     }
 }

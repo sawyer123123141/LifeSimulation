@@ -70,6 +70,17 @@ namespace LifeSimulation.Simulation.Behavior
             ResourceObservation carcass,
             CreatureDecision currentDecision)
         {
+            DecisionDiagnostics ignoredDiagnostics = default;
+            return PreferCarcassWhenUseful(needs, phenotype, carcass, currentDecision, ref ignoredDiagnostics);
+        }
+
+        public static CreatureDecision PreferCarcassWhenUseful(
+            CreatureNeeds needs,
+            Phenotype phenotype,
+            ResourceObservation carcass,
+            CreatureDecision currentDecision,
+            ref DecisionDiagnostics diagnostics)
+        {
             if (!carcass.IsValid)
             {
                 return currentDecision;
@@ -77,6 +88,7 @@ namespace LifeSimulation.Simulation.Behavior
 
             float hunger = 1f - (needs.Energy / phenotype.EnergyCapacity);
             float score = hunger * phenotype.MeatYieldMultiplier / (1f + carcass.Distance);
+            diagnostics = diagnostics.WithCarcassScore(score);
             return score > currentDecision.Score && score >= 0.10f
                 ? new CreatureDecision(CreatureAction.SeekCarcass, carcass.ResourceIndex, score)
                 : currentDecision;
