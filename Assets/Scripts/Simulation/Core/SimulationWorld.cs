@@ -752,6 +752,20 @@ namespace LifeSimulation.Simulation.Core
                 {
                     decision = DecisionSystem.Decide(Creatures.GetNeedsAt(index), phenotype, food, water, out diagnostics);
                 }
+                if (Config.ForagingEconomicsEnabled
+                    && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy
+                    && !Config.CognitionEnabled
+                    && previousDecision.Action == CreatureAction.Eat)
+                {
+                    float currentPatchIntakeRate = index < _foragingEnergyGained.Length
+                        ? _foragingEnergyGained[index] / Config.FixedDeltaTime
+                        : 0f;
+                    float recentIntakeRate = Creatures.GetForagingRefAt(index).RecentIntakeRate;
+                    if (ForagingEconomics.ShouldAbandon(currentPatchIntakeRate, recentIntakeRate, phenotype.Persistence, Config.GiveUpSensitivity))
+                    {
+                        decision = new CreatureDecision(CreatureAction.SeekFood, -1, decision.Score);
+                    }
+                }
                 if (Config.CognitionEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
