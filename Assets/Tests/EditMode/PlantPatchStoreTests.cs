@@ -1,5 +1,6 @@
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Environment;
+using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
@@ -59,6 +60,67 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(registry.Count, Is.EqualTo(2));
             Assert.That(registry.GetResourceIndexAt(0), Is.EqualTo(5));
             Assert.That(registry.GetResourceIndexAt(1), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void FreshPlantSiteRegistryHasZeroCount()
+        {
+            var registry = new PlantSiteRegistry(4);
+
+            Assert.That(registry.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void PlantSiteRegistryGrowsBeyondInitialCapacityWithoutLosingData()
+        {
+            var registry = new PlantSiteRegistry(1);
+            registry.Register(11);
+            registry.Register(22);
+            registry.Register(33);
+            registry.Register(44);
+
+            Assert.That(registry.Count, Is.EqualTo(4));
+            Assert.That(registry.GetResourceIndexAt(0), Is.EqualTo(11));
+            Assert.That(registry.GetResourceIndexAt(1), Is.EqualTo(22));
+            Assert.That(registry.GetResourceIndexAt(2), Is.EqualTo(33));
+            Assert.That(registry.GetResourceIndexAt(3), Is.EqualTo(44));
+        }
+
+        [Test]
+        public void ScenarioApplyToRegistersOnlyInactiveFoodSitesWhenPlantCohortsEnabled()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            var world = new SimulationWorld(config);
+            var scenario = new SimulationScenario("plant-site-registration", new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, .75f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, .75f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(4f, 4f), 1.5f, 0f, 12f, 0f, isActive: false),
+            });
+
+            scenario.ApplyTo(world);
+
+            Assert.That(world.PlantSites.Count, Is.EqualTo(1));
+            int registeredIndex = world.PlantSites.GetResourceIndexAt(0);
+            Assert.That(world.Resources.GetAt(registeredIndex).Kind, Is.EqualTo(ResourceKind.Food));
+            Assert.That(world.Resources.GetAt(registeredIndex).IsActive, Is.False);
+        }
+
+        [Test]
+        public void ScenarioApplyToSkipsPlantSiteRegistrationWhenPlantCohortsDisabled()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 4);
+            var world = new SimulationWorld(config);
+            var scenario = new SimulationScenario("plant-site-registration-disabled", new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 12f, 12f, .75f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-7f, -8f), 1.5f, 12f, 12f, .75f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(4f, 4f), 1.5f, 0f, 12f, 0f, isActive: false),
+            });
+
+            scenario.ApplyTo(world);
+
+            Assert.That(world.PlantSites.Count, Is.EqualTo(0));
         }
     }
 }
