@@ -16,6 +16,18 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureObservation otherObservation,
             CreatureDecision survivalDecision)
         {
+            DecisionDiagnostics ignoredDiagnostics = default;
+            return Decide(needs, self, other, otherObservation, survivalDecision, ref ignoredDiagnostics);
+        }
+
+        public static CreatureDecision Decide(
+            CreatureNeeds needs,
+            Phenotype self,
+            Phenotype other,
+            CreatureObservation otherObservation,
+            CreatureDecision survivalDecision,
+            ref DecisionDiagnostics diagnostics)
+        {
             if (!otherObservation.IsValid)
             {
                 return survivalDecision;
@@ -25,6 +37,7 @@ namespace LifeSimulation.Simulation.Behavior
             float hunger = 1f - (needs.Energy / self.EnergyCapacity);
             float threat = Threat(other, self) * self.FearResponse * distanceAvailability;
             float hunt = HuntCapability(self, other) * hunger * distanceAvailability;
+            diagnostics = diagnostics.WithPredationScores(threat, hunt);
 
             if (threat > Math.Max(0.10f, hunt) && threat > survivalDecision.Score)
             {

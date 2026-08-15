@@ -41,5 +41,26 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(diagnostics.WinningAction, Is.EqualTo(CreatureAction.Flee));
         }
+
+        [Test]
+        public void DecidingAgainstAThreatRecordsBothPredationScores()
+        {
+            Phenotype prey = Phenotype.FromGenome(new Genome(0.2f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 1f));
+            Phenotype predator = Phenotype.FromGenome(new Genome(0.9f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, attack: 1f, aggression: 1f, dietSpecialization: 1f));
+            CreatureNeeds needs = CreatureNeeds.Full(prey);
+            var observation = new CreatureObservation(new CreatureId(2), 1, 1f);
+            var diagnostics = new DecisionDiagnostics(0f, 0f, foodVisible: false, waterVisible: false);
+
+            PredationSystem.Decide(
+                needs,
+                prey,
+                predator,
+                observation,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f),
+                ref diagnostics);
+
+            Assert.That(diagnostics.FleeScore, Is.GreaterThan(0f));
+            Assert.That(diagnostics.HuntScore, Is.EqualTo(0f));
+        }
     }
 }
