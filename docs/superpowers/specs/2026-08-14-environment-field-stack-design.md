@@ -15,7 +15,7 @@ The environment work decomposes as follows. Each row is its own spec, plan, and 
 | **A3** | layered world model and position representation | — (kernel change, independently schedulable) |
 | B | biome derivation, creature adaptation to fields | A1, A2 |
 | C | sphere topology, region partitioning | A1 |
-| D | terrain mesh and visual style | A1, A2, C |
+| D | terrain mesh, visual style, **chunk streaming and geometry level of detail** | A1, A2, C |
 | E | organism-to-planet camera zoom | D |
 
 A1 is first because it is the only piece that pays off immediately: the P4 producer kernel requires moisture and fertility fields by name (`p0-p7-program-plan.md`, P4 coevolution phase), and every later sub-project reads from it.
@@ -28,11 +28,11 @@ Can a small set of seeded scalar fields produce spatially varied, temporally shi
 
 Success is not visual. Success is that two runs with different world seeds present measurably different environmental conditions at the same simulation coordinates, and that the same seed reproduces bit-identically.
 
-**Sampling cost is an open question, not an assumption.** A first-order estimate is discouraging: `SampleAll` evaluates the elevation fBm three times (rain shadow needs two extra probes for its finite difference), plus moisture and cave octaves. Each octave visits eight lattice corners, and each corner costs a full six-round `DeterministicRandom` mix. That lands somewhere around 7,000–9,000 operations per sample, plausibly 1–3 microseconds.
+**Sampling cost is an open question, not an assumption.** A naive construction is unaffordable. Evaluating the elevation fBm three times (finite-differenced rain shadow) with a six-round hash at every one of eight lattice corners per octave lands around 7,000–9,000 operations per sample, plausibly 1–3 microseconds.
 
-For scale, the recorded P0 baseline is 0.245 ms per simulation step at 1,000 founders. One field sample per creature per tick would cost roughly 2 ms — several times the entire current simulation step. Sampling at needs frequency rather than movement frequency removes an order of magnitude, but the headroom is not obviously there.
+For scale, the recorded P0 baseline is 0.245 ms per simulation step at 1,000 founders. One naive field sample per creature per tick would cost roughly 2 ms — several times the entire current simulation step.
 
-This drives the implementation ordering below: the benchmark is built first and its result determines octave counts, hash choice, and whether the tier-1 cache is optional or mandatory.
+Two design changes documented below attack this directly: permutation-table gradient lookup instead of the six-round mixer, and analytic derivatives instead of finite differencing. Together they are expected to reduce sampling cost by more than an order of magnitude. **Expected is not measured**, which is why the benchmark is built first and its result determines octave counts and whether a tier-1 cache is needed at all.
 
 ## Permanent constraints this design inherits
 
@@ -118,6 +118,31 @@ Callers use accessors rather than touching the fields directly, so the storage s
 
 A3 sits behind a configuration flag defaulting to single-layer, so existing scenarios and frozen fixtures reproduce unchanged.
 
+## Recorded decisions for streaming and presentation (sub-project D)
+
+These are captured here because they constrain how fields are sampled in bulk, and because the reasoning is fresh. **The detailed design belongs to D's own cycle** — specifying a chunk system before a mesh format or camera exists produces one that fights the renderer.
+
+**The performance target is streaming, not generation.** Whole-world generation time is not a concern; a few seconds at startup is acceptable. The requirement is that terrain entering view is ready before it is visible, with no frame stalls.
+
+A small planet is a friendlier case than an infinite world: the far side is self-occluding, so the maximum terrain ever in view is bounded and known in advance. At 2 km radius, a visible hemisphere at uniform 64 m tiles would be roughly 6,000 chunks, which is far too many — level of detail is mandatory, not optional, and reduces that to a few hundred rendered tiles at any altitude.
+
+Decisions:
+
+- **Spatial subdivision:** cubed-sphere quadtree — six cube faces projected onto the sphere, each subdivided by camera distance. Squares cannot tile a sphere directly; this is the standard resolution and it yields orbit-to-ground zoom (sub-project E) as a consequence rather than a separate feature.
+- **Alternative to prototype against it:** geometry clipmaps — fixed nested grids centred on the camera, displaced by a heightmap texture, with no per-chunk meshing at runtime. Competitive and possibly cheaper. D decides by prototype, not by argument.
+- **Generation runs on worker threads.** Tier-1 fields have no shared mutable state, so chunk generation parallelizes without locks. The main thread only receives completed results.
+- **GPU generates visuals; CPU remains authoritative for simulation.** A compute shader evaluates noise far faster than any CPU path, but GPU floats are not bit-identical across vendors and must never feed simulation. Visual-only divergence of a few centimetres is imperceptible and affects no experiment. This split is D's default direction.
+- **Hybrid cave meshing.** Surface terrain stays cheap heightmap tiles. Cave interiors need volumetric meshing, which is substantially more expensive per chunk; generate it only where something occupies or approaches the underground layer. The layered world model (A3) makes this natural, since that layer is usually unoccupied.
+
+Four rules that prevent frame hitches, to be honoured by D's implementation:
+
+1. Never generate on the main thread.
+2. Budget GPU uploads per frame; a ready mesh still costs main-thread time to hand over, and that is the usual source of stutter.
+3. Never block on a missing chunk — draw the coarser parent tile instead.
+4. Prefetch along camera velocity, not merely current position.
+
+**Consequence for A1:** bulk sampling for mesh generation is a first-class use case, not an afterthought. The benchmark must measure batched sampling throughput, not only single-sample latency.
+
 ## Components (A1)
 
 All types live in `LifeSimulation.Simulation.Environment` unless noted.
@@ -154,21 +179,29 @@ SimVector3 Direction(SimVector2 planarPosition, in RegionAnchor anchor, in World
 
 Deterministic 3D gradient noise plus fractal Brownian motion.
 
-**`DeterministicRandom` is not modified.** Its existing signature exposes four independent integer slots — `(tickOrOrdinal, entityA, entityB, purpose)`. Lattice coordinates map to the first three; `purpose` selects the gradient component:
+**Gradient selection uses a permutation table, not the `DeterministicRandom` mixer.**
 
-```text
-DeterministicRandom.Float01(seed, RandomDomain.EnvironmentField, latticeX, latticeY, latticeZ, componentPurpose)
-```
+An earlier draft of this design routed every lattice corner through `DeterministicRandom.Float01`, on the reasoning that it reuses an already-tested primitive. That reasoning was sound for correctness and wrong on cost: `Float01` runs six mixing rounds, and gradient noise touches eight corners per octave, making the mixer the dominant expense in the entire environment system.
 
-Gradients come from the classic 12-edge gradient table, indexed by the hashed value, avoiding trigonometry in the inner loop. A new enum member `RandomDomain.EnvironmentField = 9` is added; existing members keep their values so prior fixtures are unaffected.
+Instead, a 256-entry permutation table is built once per world from `WorldSeed` — itself using `DeterministicRandom`, so the seeding path stays tested — and gradient lookup becomes a single array index. This is the standard construction and is expected to be roughly one to two orders of magnitude cheaper per corner. The early benchmark confirms or refutes that.
+
+The table is 256 bytes of derived, deterministic, rebuilt-at-startup state. This is a deliberate and bounded relaxation of tier 1's statelessness: the property being protected is "no megabytes of baked world data," not "not one byte of anything."
+
+A new enum member `RandomDomain.EnvironmentField = 9` is added for table construction; existing members keep their values so prior fixtures are unaffected. `DeterministicRandom` itself is not modified.
 
 Provided:
 
 - `Value(SimVector3 point, int seed)` — single octave, range approximately `[-1, 1]`
+- `ValueWithDerivative(SimVector3 point, int seed, out SimVector3 derivative)`
 - `Fbm(SimVector3 point, int seed, int octaves, float lacunarity, float gain)`
+- `FbmWithDerivative(SimVector3 point, int seed, int octaves, float lacunarity, float gain, out SimVector3 derivative)`
 - `Ridged(SimVector3 point, int seed, int octaves, float lacunarity, float gain)` — for mountain ranges
 
-Lattice interpolation uses the quintic smoothstep `6t^5 - 15t^4 + 10t^3`. Intermediate math uses `double`, narrowing to `float` only at the public boundary, to reduce platform drift.
+**Analytic derivatives replace finite differencing.** Rain shadow needs the terrain slope. Obtaining it by sampling elevation at two offset points evaluates the elevation fBm three times per sample — the single largest avoidable cost in the design. Gradient noise can return its own derivative analytically for roughly 30% overhead instead of 200%.
+
+The saving compounds: that same derivative is the surface normal, which terrain meshing (sub-project D) needs regardless. One change removes two-thirds of the rain-shadow cost and deletes a separate normal-generation pass later.
+
+Lattice interpolation uses the quintic smoothstep `6t^5 - 15t^4 + 10t^3`, whose derivative `30t^4 - 60t^3 + 30t^2` is required for the analytic path. Intermediate math uses `double`, narrowing to `float` only at the public boundary, to reduce platform drift.
 
 ### `EnvironmentFields`
 
@@ -191,7 +224,7 @@ Field derivations:
 
   **Ocean proximity is a local proxy, not a real distance query.** True distance-to-nearest-ocean is a non-local search and belongs to tier 2. Until A2 exists, the term is driven by how far local elevation sits below a threshold above `SeaLevel` — low ground reads as wetter, high ground as drier. This is an approximation, chosen deliberately, and it means narrow inland basins read as moist. **A2 supersedes it** using the coastline structure produced by the flow pass, where a genuine distance query is affordable.
 
-  Rain shadow is likewise approximated from the local elevation gradient — a two-sample finite difference along a fixed prevailing-wind direction — not a simulated atmosphere. It costs two extra elevation evaluations per sample, which is the single largest cost in `SampleAll` and the first thing to measure in the benchmark.
+  Rain shadow is likewise approximated from the local elevation slope along a fixed prevailing-wind direction, not a simulated atmosphere. The slope comes from the **analytic derivative** returned alongside the elevation fBm, not from extra offset samples.
 - **Fertility** — product of a moisture suitability curve, a temperature suitability curve, and an elevation penalty. Zero over ocean.
 - **CaveDensity** — 3D `Fbm` evaluated at the sample direction scaled inward by depth, thresholded by `CaveThreshold` and attenuated by `CaveDepthFalloff`. Returns a continuous openness value; A3 interprets values above threshold as traversable cave space. In A1 it is generated and tested but read by nothing.
 
@@ -226,7 +259,7 @@ creature planar position
 
 ## Determinism and state
 
-Tier-1 fields hold no mutable state. Every value is a pure function of `(direction, tick, worldSeed, geography)`. Consequences:
+Tier-1 fields hold no mutable state beyond the 256-byte permutation table, which is rebuilt deterministically from `WorldSeed` at startup and never mutated afterwards. Every value is a pure function of `(direction, tick, worldSeed, geography)`. Consequences:
 
 - Nothing is added to `ComputeStateHash`, and the hash is unchanged while the flag is off — asserted by test.
 - No serialization is ever required. Seed plus configuration reproduces any world.
@@ -266,10 +299,11 @@ Order:
 
 1. `SimVector3`, `WorldGeography`, and `GradientNoise3D` — the minimum needed to evaluate one octave.
 2. **Benchmark harness and first measurement**, recorded to `docs/benchmarks/`.
-3. The measurement then decides three open parameters:
+3. The measurement then decides two open parameters:
    - **octave counts** for elevation, moisture, and caves
-   - **hash choice** — reuse the six-round `DeterministicRandom` mixer, or introduce a cheaper dedicated noise hash and accept that it is a second primitive to test
    - **whether the tier-1 cache is optional or mandatory**, which the exclusions list currently assumes is optional
+
+   Gradient lookup is no longer open — the permutation table is the specified default. The benchmark's job there is to confirm the expected improvement, not to choose.
 4. `SphereMapping`, `EnvironmentFields`, and the remaining derivations, built against the chosen parameters.
 5. Remaining fixtures and the frozen-fixture regression run.
 
@@ -294,7 +328,9 @@ Deterministic fixtures are written before implementation, per the standard deliv
 11. **Frozen-fixture regression** — all existing P0 through P3 fixtures produce unchanged results and unchanged state hashes.
 12. **Golden-value pin** — a fixed set of `(seed, direction, tick, geography)` inputs reproduces recorded output values, guarding the field mathematics against silent drift as described above.
 
-A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/`, following the project's benchmark discipline (commit SHA, hardware, build type). Per the ordering section, this benchmark is built early rather than last.
+13. **Derivative agreement** — the analytic derivative matches a finite-difference approximation of the same field within a documented tolerance, over a sampled set of directions. This guards the optimization that replaces finite differencing.
+
+A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/`, following the project's benchmark discipline (commit SHA, hardware, build type). It measures **both** single-sample latency and batched throughput, since bulk sampling for mesh generation is a first-class use case. Per the ordering section, this benchmark is built early rather than last.
 
 ## Explicit exclusions
 
@@ -318,9 +354,9 @@ Deferred deliberately; none of these are in A1:
 
 A1 is complete when:
 
-- all twelve test fixtures pass, sphere continuity and the golden-value pin included
+- all thirteen test fixtures pass, sphere continuity and the golden-value pin included
 - `SampleAll` allocates zero bytes and its cost is recorded in `docs/benchmarks/`
-- the three benchmark-gated parameters — octave counts, hash choice, and cache necessity — are decided by measurement and their chosen values recorded with the benchmark
+- the two benchmark-gated parameters — octave counts and cache necessity — are decided by measurement and their chosen values recorded with the benchmark, alongside both single-sample and batched throughput figures
 - `EnvironmentFields.SchemaVersion` exists and is written into experiment manifests
 - frozen P0 through P3 fixtures reproduce with unchanged state hashes
 - two different world seeds are shown to produce measurably different environmental conditions at identical simulation coordinates
