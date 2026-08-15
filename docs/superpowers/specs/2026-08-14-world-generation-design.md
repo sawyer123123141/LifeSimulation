@@ -22,6 +22,10 @@ Each row is its own spec, plan, and implementation cycle.
 
 **T3 is not world-generation work.** It changes creature position representation, the spatial grid, perception, and the state hash. It is recorded here because caves motivated it, but it schedules independently and must not be bundled into a generation implementation plan.
 
+**T5 is not optional, and the numbering is misleading about when it is needed.** A planet holds far more creatures than the kernel can simulate, so regions and fidelity tiers are what make a populated planet possible at all. They must land with terrain rather than after it. See `2026-08-14-system-integration-design.md`.
+
+**The two halves of the project join at plants, not here.** World generation produces a fertility field; plants turn that field into food; creatures eat food. Until the P4 plant work exists, terrain and behaviour are independent systems that do not interact. That join, and the scale numbers both sides assume, are specified in `2026-08-14-system-integration-design.md`.
+
 ## Core principle: structure comes from process, not from better noise
 
 Noise cannot produce continents. Every feature in a noise field is independent of every other, so there are no causes and nothing explains anything else — the result reads as splatter regardless of how it is tuned.
@@ -325,7 +329,16 @@ The table is data carried by the recipe, so a world can define its own biome set
 
 **The performance target is streaming, not generation.** Whole-world generation time is not a concern; a few seconds at startup is acceptable. The requirement is that terrain entering view is ready before it is visible, with no frame stalls.
 
-A small planet is friendlier than an infinite world: the far side self-occludes, so terrain ever in view is bounded. At 2 km radius a visible hemisphere at uniform 64 m tiles is roughly 6,000 chunks — far too many, making level of detail mandatory and reducing that to a few hundred rendered tiles at any altitude.
+A small planet is friendlier than an infinite world: the far side self-occludes, so terrain ever in view is bounded.
+
+`2026-08-14-system-integration-design.md` fixes the scale: one simulation unit is one metre, and the recommended planet radius is **500 m**. At that size a visible hemisphere at uniform 64 m tiles is roughly 380 chunks; at 2 km it would be roughly 6,000.
+
+**Two different level-of-detail requirements follow, for different reasons, and they should not be conflated:**
+
+- **Geometry level of detail** is a rendering optimisation. At 500 m it is worthwhile but not urgent — a few hundred tiles is tractable without it.
+- **Simulation level of detail is a correctness requirement.** A 500 m planet holds roughly 40,000 creatures at current densities, against a benchmark that handles about 1,000. Without fidelity tiers, a planet is an empty arena with scenery.
+
+Consequently **T5 (regions) and the P6 fidelity tiers must land with terrain, not after it.** The numbering obscures this, because T6 (meshes) reads as though visuals come first. They do not.
 
 - **Spatial subdivision:** cubed-sphere quadtree — six cube faces projected onto the sphere, subdivided by camera distance. Squares cannot tile a sphere directly; this is the standard resolution and yields orbit-to-ground zoom (T7) as a consequence rather than a separate feature.
 - **Alternative to prototype against it:** geometry clipmaps — nested grids centred on the camera displaced by a heightmap texture, with no runtime meshing. Competitive and possibly cheaper. D decides by prototype, not argument.

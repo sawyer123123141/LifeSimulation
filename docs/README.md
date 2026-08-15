@@ -57,15 +57,19 @@ They are unrelated. This trips people up, so:
 3. `ROADMAP.md` — the phases, briefly
 4. `superpowers/specs/2026-08-12-product-architecture.md` — the phases in full, plus the permanent rules
 
+**To understand how the parts fit together:**
+
+5. `superpowers/specs/2026-08-14-system-integration-design.md` — the single loop from planet to creature decision, and the scale numbers everything else assumes
+
 **To understand the current state:**
 
-5. `superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md` — every known defect, with the code that proves it
-6. `benchmarks/` and `experiments/` — what has actually been measured
+6. `superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md` — every known defect, with the code that proves it
+7. `benchmarks/` and `experiments/` — what has actually been measured
 
 **Before writing code:**
 
-7. `../AGENTS.md` — rules for AI agents. Determinism, allocation, scope.
-8. `PERFORMANCE.md` — what to measure and when to optimise
+8. `../AGENTS.md` — rules for AI agents. Determinism, allocation, scope.
+9. `PERFORMANCE.md` — what to measure and when to optimise
 
 ## Every document
 
