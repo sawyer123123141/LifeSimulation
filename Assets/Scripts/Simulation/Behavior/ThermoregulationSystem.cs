@@ -15,7 +15,20 @@ namespace LifeSimulation.Simulation.Behavior
             long tick,
             CreatureDecision currentDecision)
         {
-            float score = ScoreThermalComfort(phenotype, position, tick);
+            DecisionDiagnostics ignoredDiagnostics = default;
+            return PreferThermalComfort(phenotype, position, tick, currentDecision, ref ignoredDiagnostics);
+        }
+
+        public static CreatureDecision PreferThermalComfort(
+            Phenotype phenotype,
+            SimVector2 position,
+            long tick,
+            CreatureDecision currentDecision,
+            ref DecisionDiagnostics diagnostics)
+        {
+            float discomfort = Math.Max(0f, Math.Abs(TemperatureField.Sample(position, tick) - ComfortableTemperature) - phenotype.TemperatureTolerance);
+            float score = discomfort / 8f;
+            diagnostics = diagnostics.WithThermalScore(score);
             return score > currentDecision.Score && score >= 0.15f
                 ? new CreatureDecision(CreatureAction.SeekThermalComfort, -1, score)
                 : currentDecision;

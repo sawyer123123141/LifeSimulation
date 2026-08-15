@@ -81,5 +81,21 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(diagnostics.CarcassScore, Is.GreaterThan(0f));
         }
+
+        [Test]
+        public void ConsideringThermalComfortRecordsItsScore()
+        {
+            Phenotype intolerant = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, temperatureTolerance: 0f));
+            var diagnostics = new DecisionDiagnostics(0f, 0f, foodVisible: false, waterVisible: false);
+
+            ThermoregulationSystem.PreferThermalComfort(
+                intolerant,
+                new SimVector2(20f, 20f),
+                0L,
+                new CreatureDecision(CreatureAction.Wander, -1, 0f),
+                ref diagnostics);
+
+            Assert.That(diagnostics.ThermalScore, Is.GreaterThanOrEqualTo(0f));
+        }
     }
 }
