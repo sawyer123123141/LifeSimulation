@@ -10,6 +10,11 @@ namespace LifeSimulation.Presentation
 {
     public sealed class Prototype1Presenter : MonoBehaviour
     {
+        private const int HeatmapResolution = 128;
+        private const float HeatmapUpdateInterval = 2f;
+        private const float ColdTemperature = 12f;
+        private const float HotTemperature = 28f;
+
         private static readonly SimVector2[] DemoFounderPositions =
         {
             new SimVector2(-12.4f, -8.4f),
@@ -30,9 +35,17 @@ namespace LifeSimulation.Presentation
         private readonly List<Transform> _resourceViews = new List<Transform>();
         private SimulationWorld _world;
         private Camera _simulationCamera;
+        private Renderer _terrainRenderer;
+        private Texture2D _temperatureHeatmap;
+        private Color[] _temperaturePixels;
+        private Color _terrainColor;
         private float _accumulator;
+        private float _heatmapUpdateAccumulator;
         private float _speedMultiplier = 4f;
         private bool _isPaused;
+        private bool _showTemperatureHeatmap = true;
+        private ResourceId _draggedResourceId;
+        private bool _isDraggingResource;
         private string _scenarioId;
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
@@ -65,9 +78,11 @@ namespace LifeSimulation.Presentation
                 {
                     _world.Step(_world.Config.FixedDeltaTime);
                     _accumulator -= _world.Config.FixedDeltaTime;
+                    _heatmapUpdateAccumulator += _world.Config.FixedDeltaTime;
                 }
             }
 
+            UpdateTemperatureHeatmapIfNeeded();
             SynchronizePresentation();
             CaptureRecentEvent();
             _world.Events.Clear();
@@ -94,8 +109,8 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · E starter habitat");
-            GUI.Label(new Rect(24f, 194f, 400f, 22f), "Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · E starter habitat · H heatmap");
+            GUI.Label(new Rect(24f, 194f, 400f, 22f), "Drag food/water · Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
         private void DrawPopulationCondition(SimulationStatistics stats)
@@ -152,7 +167,10 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.T)) ResetPhysiologySimulation();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
-            if (Input.GetMouseButtonDown(0)) TrySelectCreature();
+            if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
+            if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
+            if (Input.GetMouseButton(0)) UpdateResourceDrag();
+            if (Input.GetMouseButtonUp(0)) _isDraggingResource = false;
         }
 
         private void CreateEnvironment()
@@ -160,7 +178,13 @@ namespace LifeSimulation.Presentation
             var terrain = GameObject.CreatePrimitive(PrimitiveType.Plane);
             terrain.name = "Prototype Terrain";
             terrain.transform.localScale = new Vector3(5f, 1f, 5f);
-            terrain.GetComponent<Renderer>().material.color = new Color(0.16f, 0.28f, 0.16f);
+            _terrainRenderer = terrain.GetComponent<Renderer>();
+            _terrainColor = new Color(0.16f, 0.28f, 0.16f);
+            _terrainRenderer.material.color = _terrainColor;
+            _temperatureHeatmap = new Texture2D(HeatmapResolution, HeatmapResolution, TextureFormat.RGBA32, false);
+            _temperatureHeatmap.wrapMode = TextureWrapMode.Clamp;
+            _temperatureHeatmap.filterMode = FilterMode.Bilinear;
+            _temperaturePixels = new Color[HeatmapResolution * HeatmapResolution];
 
             var directionalLight = new GameObject("Sun").AddComponent<Light>();
             directionalLight.type = LightType.Directional;
@@ -194,6 +218,7 @@ namespace LifeSimulation.Presentation
             scenario.ApplyTo(_world);
             _scenarioId = scenario.Id;
             _accumulator = 0f;
+            _heatmapUpdateAccumulator = HeatmapUpdateInterval;
             _hasSelectedCreature = false;
             _hasRecentEvent = false;
             for (int index = 0; index < _world.Resources.Count; index++)
@@ -202,7 +227,71 @@ namespace LifeSimulation.Presentation
             }
 
             ArrangeDemoFounders();
+            UpdateTemperatureHeatmapIfNeeded();
             SynchronizePresentation();
+        }
+
+        private void UpdateTemperatureHeatmapIfNeeded()
+        {
+            if (_world == null || _heatmapUpdateAccumulator < HeatmapUpdateInterval)
+            {
+                return;
+            }
+
+            Bounds terrainBounds = _terrainRenderer.bounds;
+            float minX = terrainBounds.min.x;
+            float maxX = terrainBounds.max.x;
+            float minZ = terrainBounds.min.z;
+            float maxZ = terrainBounds.max.z;
+            for (int y = 0; y < HeatmapResolution; y++)
+            {
+                float z = Mathf.Lerp(minZ, maxZ, (y + 0.5f) / HeatmapResolution);
+                int rowStart = y * HeatmapResolution;
+                for (int x = 0; x < HeatmapResolution; x++)
+                {
+                    float worldX = Mathf.Lerp(minX, maxX, (x + 0.5f) / HeatmapResolution);
+                    float temperature = TemperatureField.Sample(new SimVector2(worldX, z), _world.CurrentTick);
+                    float temperatureFraction = Mathf.InverseLerp(ColdTemperature, HotTemperature, temperature);
+                    _temperaturePixels[rowStart + x] = Color.Lerp(Color.blue, Color.red, temperatureFraction);
+                }
+            }
+
+            _temperatureHeatmap.SetPixels(_temperaturePixels);
+            _temperatureHeatmap.Apply();
+            _heatmapUpdateAccumulator = 0f;
+            if (_showTemperatureHeatmap)
+            {
+                ApplyTemperatureHeatmap();
+            }
+        }
+
+        private void ToggleTemperatureHeatmap()
+        {
+            _showTemperatureHeatmap = !_showTemperatureHeatmap;
+            if (_showTemperatureHeatmap)
+            {
+                _heatmapUpdateAccumulator = HeatmapUpdateInterval;
+                UpdateTemperatureHeatmapIfNeeded();
+                ApplyTemperatureHeatmap();
+                return;
+            }
+
+            _terrainRenderer.material.mainTexture = null;
+            _terrainRenderer.material.color = _terrainColor;
+        }
+
+        private void ApplyTemperatureHeatmap()
+        {
+            _terrainRenderer.material.mainTexture = _temperatureHeatmap;
+            _terrainRenderer.material.color = Color.white;
+        }
+
+        private void OnDestroy()
+        {
+            if (_temperatureHeatmap != null)
+            {
+                Destroy(_temperatureHeatmap);
+            }
         }
 
         private void ResetPredationSimulation()
@@ -252,7 +341,7 @@ namespace LifeSimulation.Presentation
                 defaults.WorldSeed,
                 defaults.InitialPopulation,
                 defaults.Schedule,
-                maximumPopulation: 16,
+                maximumPopulation: 40,
                 defaults.FounderProfile,
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
@@ -429,6 +518,55 @@ namespace LifeSimulation.Presentation
                     return;
                 }
             }
+        }
+
+        private bool TryBeginResourceDrag()
+        {
+            Ray ray = _simulationCamera.ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out RaycastHit hit))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _resourceViews.Count; index++)
+            {
+                if (_resourceViews[index] != hit.transform)
+                {
+                    continue;
+                }
+
+                ResourceState resource = _world.Resources.GetAt(index);
+                if (resource.Kind != ResourceKind.Food && resource.Kind != ResourceKind.Water)
+                {
+                    return false;
+                }
+
+                _draggedResourceId = resource.Id;
+                _isDraggingResource = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void UpdateResourceDrag()
+        {
+            if (!_isDraggingResource)
+            {
+                return;
+            }
+
+            Ray ray = _simulationCamera.ScreenPointToRay(Input.mousePosition);
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            if (!ground.Raycast(ray, out float distance))
+            {
+                return;
+            }
+
+            Vector3 worldPosition = ray.GetPoint(distance);
+            _world.Resources.SetPosition(
+                _draggedResourceId,
+                _world.Arena.Clamp(new SimVector2(worldPosition.x, worldPosition.z)));
         }
 
         private void DrawSelectedCreatureInspector()
