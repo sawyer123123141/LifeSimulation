@@ -1,6 +1,6 @@
 # World Generation Design
 
-**Status:** design approved. A0 and A1 are specified for implementation here. A2, A3, and B have their load-bearing architectural decisions recorded but need their own specs before implementation.
+**Status:** design approved. T0 and T1 are specified for implementation here. T2, T3, and T4 have their load-bearing architectural decisions recorded but need their own specs before implementation.
 
 **Scope:** how a world is generated — global structure, continuous fields, and derived networks — plus the recipe mechanism that lets different kinds of worlds exist without changing code. It does not specify terrain meshes, region partitioning, or camera work beyond recording decisions those cycles must honour.
 
@@ -10,17 +10,17 @@ Each row is its own spec, plan, and implementation cycle.
 
 | Sub-project | Contents | Depends on |
 |---|---|---|
-| **A0** (specified here) | global structure: plates, boundaries, drift | — |
-| **A1** (specified here) | continuous fields: elevation, temperature, moisture, fertility, cave density | A0 |
-| **A2** | derived networks: rivers, lakes, coastlines, shorelines | A1 |
-| **A3** | layered world model and position representation | — (kernel change, independently schedulable) |
-| B | biome classification and creature adaptation | A1, A2 |
-| C | sphere topology, region partitioning | A1 |
-| D | terrain mesh, visual style, chunk streaming, geometry level of detail | A1, A2, C |
-| E | organism-to-planet camera zoom | D |
-| *(later)* | erosion pass | A2 |
+| **T0** (specified here) | global structure: plates, boundaries, drift | — |
+| **T1** (specified here) | continuous fields: elevation, temperature, moisture, fertility, cave density | T0 |
+| **T2** | derived networks: rivers, lakes, coastlines, shorelines | T1 |
+| **T3** | layered world model and position representation | — (kernel change, independently schedulable) |
+| T4 | biome classification and creature adaptation | T1, T2 |
+| T5 | sphere topology, region partitioning | T1 |
+| T6 | terrain mesh, visual style, chunk streaming, geometry level of detail | T1, T2, T5 |
+| T7 | organism-to-planet camera zoom | T6 |
+| *(later)* | erosion pass | T2 |
 
-**A3 is not world-generation work.** It changes creature position representation, the spatial grid, perception, and the state hash. It is recorded here because caves motivated it, but it schedules independently and must not be bundled into a generation implementation plan.
+**T3 is not world-generation work.** It changes creature position representation, the spatial grid, perception, and the state hash. It is recorded here because caves motivated it, but it schedules independently and must not be bundled into a generation implementation plan.
 
 ## Core principle: structure comes from process, not from better noise
 
@@ -82,9 +82,9 @@ All tiers are **derived, never authored**. Seed plus recipe regenerates every ti
 
 A river exists at a point because water from an entire upstream catchment funnels through it. Answering "is there a river here?" requires knowing what lies uphill, which is a non-local query. Pure-function approaches produce river-shaped noise that does not connect, does not flow consistently downhill, and does not reach the sea — the failure is immediately visible.
 
-A2 builds a global node network, samples elevation at each node, routes flow downhill, and accumulates catchment area. A river segment exists where accumulated flow exceeds a threshold. Lakes are basins with no downhill exit. Coastlines and shoreline bands fall out of the elevation/sea-level boundary.
+T2 builds a global node network, samples elevation at each node, routes flow downhill, and accumulates catchment area. A river segment exists where accumulated flow exceeds a threshold. Lakes are basins with no downhill exit. Coastlines and shoreline bands fall out of the elevation/sea-level boundary.
 
-**River resolution must be hierarchical.** A single global network cannot carry rivers at both planet and walking scale: kilometre-scale streams across a planet-sized world imply node counts in the hundreds of millions. A2 therefore uses a coarse global network for major rivers, lakes, and coastlines, plus per-region refinement generated on demand, seeded by region identity and constrained to connect to whichever coarse river passes through. Refinement must be deterministic given `(regionId, seed, coarse network)` so that a region refined, discarded, and refined again produces identical rivers. A2's spec defines node budgets and tests refinement idempotence.
+**River resolution must be hierarchical.** A single global network cannot carry rivers at both planet and walking scale: kilometre-scale streams across a planet-sized world imply node counts in the hundreds of millions. T2 therefore uses a coarse global network for major rivers, lakes, and coastlines, plus per-region refinement generated on demand, seeded by region identity and constrained to connect to whichever coarse river passes through. Refinement must be deterministic given `(regionId, seed, coarse network)` so that a region refined, discarded, and refined again produces identical rivers. T2's spec defines node budgets and tests refinement idempotence.
 
 ## Scientific and product question
 
@@ -123,7 +123,7 @@ For 1,000 creatures against the recorded P0 baseline of 0.245 ms per step:
 
 **Simulation systems sample environment fields at needs frequency or slower. Never at movement frequency.** This is a design constraint, not a tuning preference; the budget does not exist at 20 Hz. Systems needing environment data more often must cache the last sample per creature rather than resampling.
 
-Mesh generation (D) is exempt: it samples in bulk on worker threads, off the simulation budget entirely.
+Mesh generation (T6) is exempt: it samples in bulk on worker threads, off the simulation budget entirely.
 
 ## Permanent constraints inherited
 
@@ -132,7 +132,7 @@ From `product-architecture.md`:
 1. Simulation truth stays independent of Unity rendering truth. Nothing here references `UnityEngine`.
 2. Hot state stays explicit, compact, and blittable.
 3. Randomness is keyed by stable identity and purpose, never mutable draw order.
-4. Ecological roles and labels are derived, never authoritative flags. Generation produces numbers and structures; biome names are analysis output (B), never simulation state.
+4. Ecological roles and labels are derived, never authoritative flags. Generation produces numbers and structures; biome names are analysis output (T4), never simulation state.
 5. Every optimization requires a recorded before/after benchmark.
 6. Earlier prototypes' frozen evidence must keep reproducing or receive an explicit versioned migration.
 
@@ -154,7 +154,7 @@ On the surface, height is not free: a ground animal at planar position `(X, Y)` 
 
 Caves add exactly one degree of freedom: at a given `(X, Y)` there may be more than one legal place to be. A **layer index** encodes that and no more.
 
-**Decision:** A3 adds a layer index, not continuous height. The world becomes a small stack of surfaces. Each layer keeps planar coordinates and its own spatial grid. Cave entrances are transitions between layers. Perception does not cross layers, which is what makes hiding underground meaningful. A3 sits behind a flag defaulting to single-layer so frozen fixtures reproduce unchanged.
+**Decision:** T3 adds a layer index, not continuous height. The world becomes a small stack of surfaces. Each layer keeps planar coordinates and its own spatial grid. Cave entrances are transitions between layers. Perception does not cross layers, which is what makes hiding underground meaningful. T3 sits behind a flag defaulting to single-layer so frozen fixtures reproduce unchanged.
 
 **Deferred, not foreclosed:** flying and swimming are wanted eventually and genuinely need continuous height, because there the value is free rather than derived. Position is shaped for substitution:
 
@@ -162,13 +162,13 @@ Caves add exactly one degree of freedom: at a given `(X, Y)` there may be more t
 readonly struct SimPosition
 {
     SimVector2 Planar;   // unchanged planar coordinates
-    byte Layer;          // A3: discrete layer; later superseded by continuous height
+    byte Layer;          // T3: discrete layer; later superseded by continuous height
 }
 ```
 
-**The type change is contained; the semantic change is not.** Logic branching on a discrete layer does not translate mechanically to continuous height, because "underground" stops being a category and becomes a comparison against local surface elevation. Accessors hide storage, not meaning. A3's spec must enumerate the branch sites it creates and state how each becomes a height comparison later.
+**The type change is contained; the semantic change is not.** Logic branching on a discrete layer does not translate mechanically to continuous height, because "underground" stops being a category and becomes a comparison against local surface elevation. Accessors hide storage, not meaning. T3's spec must enumerate the branch sites it creates and state how each becomes a height comparison later.
 
-## A0 — global structure
+## T0 — global structure
 
 ### Plates
 
@@ -195,17 +195,17 @@ For each pair of adjacent plates, relative motion at the shared boundary classif
 
 Each boundary stores its type and an intensity from the magnitude of relative motion.
 
-### What A0 exposes
+### What T0 exposes
 
 ```text
 PlateSample SamplePlate(SimVector3 direction, in WorldStructure structure)
 ```
 
-returning the containing plate, the distance to the nearest boundary, and that boundary's type and intensity. This is the only interface A1 consumes.
+returning the containing plate, the distance to the nearest boundary, and that boundary's type and intensity. This is the only interface T1 consumes.
 
 **Cost note:** this query runs inside every elevation sample. Plate influence varies slowly across space, so it is a candidate for coarse evaluation with interpolation rather than exact per-sample nearest-boundary search. The benchmark decides.
 
-## A1 — continuous fields
+## T1 — continuous fields
 
 All types live in `LifeSimulation.Simulation.Environment` unless noted.
 
@@ -235,7 +235,7 @@ The parameter block for the field stages — parameterized rather than asset-aut
 SimVector3 Direction(SimVector2 planarPosition, in RegionAnchor anchor, in WorldGeography geography)
 ```
 
-`RegionAnchor` holds an anchor direction plus two orthonormal tangent basis vectors. A1 has exactly one anchor from configuration; multiple anchors are sub-project C. Local units are treated as arc length along the tangent basis, then re-normalized — accurate for patches small relative to `PlanetRadius`, degrading gracefully beyond.
+`RegionAnchor` holds an anchor direction plus two orthonormal tangent basis vectors. T1 has exactly one anchor from configuration; multiple anchors are sub-project T5. Local units are treated as arc length along the tangent basis, then re-normalized — accurate for patches small relative to `PlanetRadius`, degrading gracefully beyond.
 
 ### `GradientNoise3D`
 
@@ -275,7 +275,7 @@ EnvironmentSample SampleAll(SimVector3 direction, long tick, int worldSeed,
 
 Single-call sampling is required, not stylistic: temperature depends on elevation through lapse rate, moisture depends on elevation through rain shadow, fertility depends on both, and all three depend on plate structure. Separate accessors would repeat the most expensive work several times over.
 
-`EnvironmentChannels` is a flags enum letting a caller skip work it does not need. Channels not requested are left at documented defaults, and requesting a channel implicitly requests its dependencies. `Default` excludes `CaveDensity`, which nothing reads until A3 and which is meaningful only underground — roughly 10% of the budget otherwise spent unconditionally.
+`EnvironmentChannels` is a flags enum letting a caller skip work it does not need. Channels not requested are left at documented defaults, and requesting a channel implicitly requests its dependencies. `Default` excludes `CaveDensity`, which nothing reads until T3 and which is meaningful only underground — roughly 10% of the budget otherwise spent unconditionally.
 
 ### Planned optimizations
 
@@ -294,9 +294,9 @@ Derivations:
 - **Temperature** — latitude term interpolating `EquatorTemperature` to `PoleTemperature` by `|direction.Y|`, minus `LapseRatePerUnitElevation × max(0, Elevation - SeaLevel)`, plus a seasonal term of period `SeasonalPeriodTicks` scaled by `SeasonalAmplitude`, with `AxialTiltInfluence` scaling how strongly that term opposes between hemispheres, plus a slow climate-drift term.
 - **Moisture** — `Fbm` octaves, reduced downwind of high elevation by `RainShadowStrength` along `PrevailingWindDirection`, using the **analytic derivative** for slope rather than offset samples, then raised by an `OceanProximityInfluence` term.
 
-  Ocean proximity in A1 is a local proxy: how far local elevation sits below a threshold above `SeaLevel`. True distance-to-ocean is non-local and belongs to tier 2. **A2 supersedes this** using its coastline structure. Until then, narrow inland basins read as moist.
+  Ocean proximity in T1 is a local proxy: how far local elevation sits below a threshold above `SeaLevel`. True distance-to-ocean is non-local and belongs to tier 2. **T2 supersedes this** using its coastline structure. Until then, narrow inland basins read as moist.
 - **Fertility** — product of moisture suitability, temperature suitability, and an elevation penalty. Zero over ocean.
-- **CaveDensity** — 3D `Fbm` at the direction scaled inward by depth, thresholded by `CaveThreshold`, attenuated by `CaveDepthFalloff`. Generated and tested in A1; read by nothing until A3.
+- **CaveDensity** — 3D `Fbm` at the direction scaled inward by depth, thresholded by `CaveThreshold`, attenuated by `CaveDepthFalloff`. Generated and tested in T1; read by nothing until T3.
 
 ### Configuration integration
 
@@ -307,7 +307,7 @@ Derivations:
 
 This follows the established pattern of `CognitionEnabled` and `PhysiologyEnabled`: an optional world capability resolved at configuration time, not a per-creature polymorphic object.
 
-**The existing `TemperatureField` is not modified.** It remains the temperature source for `PhysiologyEnabled` scenarios so frozen P3 fixtures reproduce byte-identically. Migration onto `EnvironmentFields.Temperature` is sub-project B work under a versioned migration. Two temperature implementations coexist for one prototype cycle; the alternative silently invalidates recorded P3 evidence.
+**The existing `TemperatureField` is not modified.** It remains the temperature source for `PhysiologyEnabled` scenarios so frozen P3 fixtures reproduce byte-identically. Migration onto `EnvironmentFields.Temperature` is sub-project T4 work under a versioned migration. Two temperature implementations coexist for one prototype cycle; the alternative silently invalidates recorded P3 evidence.
 
 `TemperatureField` currently ignores `WorldSeed`, so every world shares one climate. `EnvironmentFields` resolves that on the new path rather than by editing the old one.
 
@@ -315,19 +315,19 @@ This follows the established pattern of `CognitionEnabled` and `PhysiologyEnable
 
 Captured because they constrain earlier work or because the reasoning is fresh. Detailed design belongs to each cycle.
 
-### Biomes are a lookup, not noise (B)
+### Biomes are a lookup, not noise (T4)
 
-Biome classification uses a **Whittaker-style table**: temperature on one axis, precipitation on the other, the pair selecting a biome. Tundra, taiga, temperate forest, grassland, desert, savanna, and rainforest fall out deterministically from fields A1 already produces. No noise is involved.
+Biome classification uses a **Whittaker-style table**: temperature on one axis, precipitation on the other, the pair selecting a biome. Tundra, taiga, temperate forest, grassland, desert, savanna, and rainforest fall out deterministically from fields T1 already produces. No noise is involved.
 
 The table is data carried by the recipe, so a world can define its own biome set without code changes. Biome identity remains analysis output and never enters simulation state, per constraint 4.
 
-### Streaming and presentation (D)
+### Streaming and presentation (T6)
 
 **The performance target is streaming, not generation.** Whole-world generation time is not a concern; a few seconds at startup is acceptable. The requirement is that terrain entering view is ready before it is visible, with no frame stalls.
 
 A small planet is friendlier than an infinite world: the far side self-occludes, so terrain ever in view is bounded. At 2 km radius a visible hemisphere at uniform 64 m tiles is roughly 6,000 chunks — far too many, making level of detail mandatory and reducing that to a few hundred rendered tiles at any altitude.
 
-- **Spatial subdivision:** cubed-sphere quadtree — six cube faces projected onto the sphere, subdivided by camera distance. Squares cannot tile a sphere directly; this is the standard resolution and yields orbit-to-ground zoom (E) as a consequence rather than a separate feature.
+- **Spatial subdivision:** cubed-sphere quadtree — six cube faces projected onto the sphere, subdivided by camera distance. Squares cannot tile a sphere directly; this is the standard resolution and yields orbit-to-ground zoom (T7) as a consequence rather than a separate feature.
 - **Alternative to prototype against it:** geometry clipmaps — nested grids centred on the camera displaced by a heightmap texture, with no runtime meshing. Competitive and possibly cheaper. D decides by prototype, not argument.
 - **Generation runs on worker threads.** Tier-1 fields have no shared mutable state, so chunk generation parallelizes without locks.
 - **GPU generates visuals; CPU remains authoritative for simulation.** GPU floats are not bit-identical across vendors and must never feed simulation. Visual-only divergence of a few centimetres is imperceptible and affects no experiment.
@@ -336,22 +336,22 @@ A small planet is friendlier than an infinite world: the far side self-occludes,
 
 Four rules against frame hitches: never generate on the main thread; budget GPU uploads per frame; never block on a missing chunk, draw the coarser parent instead; prefetch along camera velocity.
 
-**Consequence for A1:** bulk sampling for mesh generation is a first-class use case. The benchmark must measure batched throughput, not only single-sample latency.
+**Consequence for T1:** bulk sampling for mesh generation is a first-class use case. The benchmark must measure batched throughput, not only single-sample latency.
 
 ### Erosion (later)
 
 Previously excluded outright. That was reasonable when terrain was noise and wrong for terrain built by processes. Flow accumulation routes water over existing land without carving it, so rivers initially drape across slopes rather than running in valleys — visibly different from reference imagery.
 
-Erosion is therefore **planned but staged after A2**, with its own spec. It is the difference between terrain that looks generated and terrain that looks weathered.
+Erosion is therefore **planned but staged after T2**, with its own spec. It is the difference between terrain that looks generated and terrain that looks weathered.
 
-Plate tectonics beyond A0's static structure — genuine plate motion over geological time — remains out of scope.
+Plate tectonics beyond T0's static structure — genuine plate motion over geological time — remains out of scope.
 
 ## Data flow
 
 ```text
 seed + recipe
      |
-  A0: plates, boundaries, drift            [tier 0, generated once]
+  T0: plates, boundaries, drift            [tier 0, generated once]
      |
 creature planar position
      |
@@ -359,12 +359,12 @@ creature planar position
      |
   SimVector3 direction + tick + seed + structure + geography
      |
-  A1: EnvironmentFields.SampleAll          [tier 1, pure]
+  T1: EnvironmentFields.SampleAll          [tier 1, pure]
      |
   EnvironmentSample { Elevation, SurfaceType, Temperature, Moisture,
                       Fertility, CaveDensity, SurfaceNormal }
      |
-  A2: flow accumulation                    [tier 2, generated once]
+  T2: flow accumulation                    [tier 2, generated once]
      |
   B: biome lookup                          [analysis only]
      |
@@ -386,13 +386,13 @@ Tier 0 and tier 2 hold generated data; tier 1 holds nothing beyond the 256-byte 
 
 Configuration and genome layouts already carry schema versions. The generation *mathematics* needs one too, and this is the failure mode most likely to go unnoticed.
 
-Today generation is inert, so changing a constant harms nothing. Once biology reads fields (B), every experiment outcome depends on the exact derivations. Adjusting any of them silently moves results in previously frozen evidence — precisely the drift the gate system exists to prevent.
+Today generation is inert, so changing a constant harms nothing. Once biology reads fields (T4), every experiment outcome depends on the exact derivations. Adjusting any of them silently moves results in previously frozen evidence — precisely the drift the gate system exists to prevent.
 
 - `WorldGeneration.SchemaVersion` is incremented whenever any derivation changes output.
 - Experiment manifests record it alongside config and genome schema versions.
 - A test pins sampled output for a fixed input set against recorded golden values. That test failing is the intended signal: increment the version and re-run or explicitly migrate dependent evidence.
 
-The golden-value test is introduced in A1, while nothing depends on the fields and establishing the baseline is free.
+The golden-value test is introduced in T1, while nothing depends on the fields and establishing the baseline is free.
 
 ## Error handling
 
@@ -403,7 +403,7 @@ The golden-value test is introduced in A1, while nothing depends on the fields a
 
 ## Implementation ordering: benchmark first
 
-The standard delivery cycle puts the performance gate at phase 7. **A0/A1 invert that deliberately.** The sampling-cost estimate is close enough to unaffordable that several parameters cannot be chosen honestly without measurement, and discovering that after the fields are built means rebuilding them.
+The standard delivery cycle puts the performance gate at phase 7. **T0/T1 invert that deliberately.** The sampling-cost estimate is close enough to unaffordable that several parameters cannot be chosen honestly without measurement, and discovering that after the fields are built means rebuilding them.
 
 1. `SimVector3`, `WorldGeography`, `WorldRecipe`, and `GradientNoise3D` — the minimum to evaluate one octave.
 2. **Benchmark harness and first measurement**, recorded to `docs/benchmarks/`, covering single-sample latency and batched throughput.
@@ -414,7 +414,7 @@ The standard delivery cycle puts the performance gate at phase 7. **A0/A1 invert
    - whether a tier-1 cache is optional or mandatory
 
    Each is a documented reduction with a cost in simplicity. None is adopted without a measurement showing it is needed.
-4. A0 plate structure, then `SphereMapping`, `EnvironmentFields`, and the remaining derivations against the chosen parameters.
+4. T0 plate structure, then `SphereMapping`, `EnvironmentFields`, and the remaining derivations against the chosen parameters.
 5. Remaining fixtures and the frozen-fixture regression run.
 
 Gradient lookup is no longer open — the permutation table is specified. The benchmark confirms the expected improvement rather than choosing.
@@ -448,24 +448,24 @@ A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/` wi
 
 ## Explicit exclusions
 
-- rivers, lakes, coastlines, and flow accumulation (A2)
-- layered positions, cave traversal, spatial-grid changes (A3)
-- biome tables and any biology reading any field (B)
-- terrain meshes, streaming, geometry level of detail (D)
-- region partitioning or multiple anchors (C)
-- camera or zoom work (E)
-- erosion — planned, staged after A2, own spec
-- plate motion over geological time; A0 structure is static once generated
+- rivers, lakes, coastlines, and flow accumulation (T2)
+- layered positions, cave traversal, spatial-grid changes (T3)
+- biome tables and any biology reading any field (T4)
+- terrain meshes, streaming, geometry level of detail (T6)
+- region partitioning or multiple anchors (T5)
+- camera or zoom work (T7)
+- erosion — planned, staged after T2, own spec
+- plate motion over geological time; T0 structure is static once generated
 - changes to food or water resource placement
 - navigation, obstacles, pathfinding
 - scripting languages, plugin systems, string-keyed field bags
-- caching of tier-1 fields is presumed excluded, but the early benchmark may overturn this — the one exclusion measurement may reverse within A1
+- caching of tier-1 fields is presumed excluded, but the early benchmark may overturn this — the one exclusion measurement may reverse within T1
 
 ## Exit gates
 
-**A0** is complete when plate partition and boundary classification tests pass, plate structure regenerates identically from seed, and `SamplePlate` cost is recorded.
+**T0** is complete when plate partition and boundary classification tests pass, plate structure regenerates identically from seed, and `SamplePlate` cost is recorded.
 
-**A1** is complete when:
+**T1** is complete when:
 
 - all eighteen fixtures pass, sphere continuity and the golden-value pin included
 - `SampleAll` allocates zero bytes, with single-sample and batched figures recorded in `docs/benchmarks/`
@@ -476,4 +476,4 @@ A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/` wi
 - a recipe omitting tectonic stages produces a valid world, demonstrating the flexibility mechanism
 - `TemperatureField` remains unmodified and P3 physiology evidence remains valid
 - `WorldGeneration.SchemaVersion` exists and is written into experiment manifests
-- the `EnvironmentSample` surface is documented well enough for A2 and B to consume without reading internals
+- the `EnvironmentSample` surface is documented well enough for T2 and B to consume without reading internals

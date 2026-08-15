@@ -8,7 +8,7 @@
 
 **Tech Stack:** C# 9, Unity 6 (6000.2.14f1), Unity Test Framework, NUnit.
 
-**Related:** defect A-1 in `docs/superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md`. Sibling plan: `2026-08-14-a2-decision-diagnostics.md` (independent — either may be done first).
+**Related:** defect A-1 in `docs/superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md`. Sibling plan: `2026-08-14-decision-diagnostics.md` (independent — either may be done first).
 
 ## Global Constraints
 

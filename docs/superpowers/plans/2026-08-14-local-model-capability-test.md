@@ -2,7 +2,7 @@
 
 **Purpose:** measure whether a local coding model can be trusted with the implementation plans in this directory, before pointing it at anything that could damage recorded evidence.
 
-**Method:** give it one real task from `2026-08-14-a1-death-causes.md` with the implementation removed, so the result measures capability rather than transcription. If it succeeds, the work is done and Task 2 follows. If it fails, nothing is lost.
+**Method:** give it one real task from `2026-08-14-death-causes.md` with the implementation removed, so the result measures capability rather than transcription. If it succeeds, the work is done and Task 2 follows. If it fails, nothing is lost.
 
 **Do not show the model the plan file.** The plan contains the answer. Paste only the prompt below.
 
@@ -125,7 +125,7 @@ Score each item. Anything not scored is not a fault.
 
 **All of 1–5, one or two discipline faults among 8–12:** usable with the plans, since the plans supply the code it got wrong here. Review diffs carefully for scope creep.
 
-**Any failure on 6, 7, or 13:** do not give it tasks that touch existing behaviour. Scope violations and false completion claims are the two failures that damage a repository, and neither is caught by a compiler. Restrict it to greenfield work — terrain sub-projects A0 and A1 create new files and read nothing, so a scope violation there is recoverable.
+**Any failure on 6, 7, or 13:** do not give it tasks that touch existing behaviour. Scope violations and false completion claims are the two failures that damage a repository, and neither is caught by a compiler. Restrict it to greenfield work — terrain sub-projects T0 and T1 create new files and read nothing, so a scope violation there is recoverable.
 
 **Failures among 1–5:** it cannot hold a three-branch rule with a stated priority. Do not give it logic tasks. It may still be usable for mechanical transcription from the plans, where every branch is written out.
 
@@ -133,7 +133,7 @@ Score each item. Anything not scored is not a fault.
 
 ## After the test
 
-Whatever the outcome, the four tests from this task are real and worth keeping if they are correct. If the model produced a correct method and correct tests, Task 1 of `2026-08-14-a1-death-causes.md` is complete — continue from Task 2.
+Whatever the outcome, the four tests from this task are real and worth keeping if they are correct. If the model produced a correct method and correct tests, Task 1 of `2026-08-14-death-causes.md` is complete — continue from Task 2.
 
 Record the result here so the next session knows what the model can be trusted with.
 
