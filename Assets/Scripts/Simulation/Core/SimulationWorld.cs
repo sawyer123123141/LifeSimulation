@@ -10,6 +10,9 @@ namespace LifeSimulation.Simulation.Core
 {
     public sealed class SimulationWorld
     {
+        /// <summary>Smoothing window for the recent-intake-rate exponential moving average.</summary>
+        private const float ForagingIntakeRateWindowSeconds = 5f;
+
         private CreatureId[] _pendingDeaths;
         private DeathCause[] _pendingDeathCauses;
         private SimVector2[] _pendingDeathPositions;
@@ -18,6 +21,7 @@ namespace LifeSimulation.Simulation.Core
         private SimVector2[] _resourcePositions;
         private SimVector2[] _creaturePositions;
         private float[] _combatDamage;
+        private float[] _foragingEnergyGained;
         private ResourceRequest[] _resourceRequests;
         private float[] _resourceAllocations;
         private readonly ReproductionSystem _reproduction;
@@ -58,6 +62,7 @@ namespace LifeSimulation.Simulation.Core
             _resourcePositions = new SimVector2[8];
             _creaturePositions = new SimVector2[Math.Max(Config.InitialPopulation, 1)];
             _combatDamage = new float[Math.Max(Config.InitialPopulation, 1)];
+            _foragingEnergyGained = new float[Math.Max(Config.InitialPopulation, 1)];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
             _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation, Config.PhysiologyEnabled);
@@ -250,6 +255,11 @@ namespace LifeSimulation.Simulation.Core
                 RebuildCombatGrid();
             }
 
+            if (Config.ForagingEconomicsEnabled)
+            {
+                AdvanceForagingActionTime(Config.FixedDeltaTime);
+            }
+
             if (IsDue(nextTick, Config.Schedule.DecisionsHz))
             {
                 TickDecisions(nextTick);
@@ -263,6 +273,11 @@ namespace LifeSimulation.Simulation.Core
             }
 
             ResolveResourceInteractions();
+
+            if (Config.ForagingEconomicsEnabled)
+            {
+                UpdateForagingIntakeRate(Config.FixedDeltaTime);
+            }
 
             if (IsDue(nextTick, Config.Schedule.ReproductionHz))
             {
@@ -829,6 +844,10 @@ namespace LifeSimulation.Simulation.Core
                     decision.Score,
                     tick,
                     decision.TargetCreatureId));
+                if (Config.ForagingEconomicsEnabled && previousDecision.Action != decision.Action)
+                {
+                    Creatures.GetForagingRefAt(index).SecondsInCurrentAction = 0f;
+                }
                 Creatures.SetDecisionDiagnosticsAt(index, diagnostics.WithWinningAction(decision.Action));
                 if (DecisionTrace != null)
                 {
@@ -904,6 +923,12 @@ namespace LifeSimulation.Simulation.Core
 
         private void ResolveResourceInteractions()
         {
+            if (Config.ForagingEconomicsEnabled)
+            {
+                EnsureForagingEnergyGainedCapacity(Creatures.Count);
+                Array.Clear(_foragingEnergyGained, 0, Creatures.Count);
+            }
+
             _resourceRequestCount = 0;
             for (int creatureIndex = 0; creatureIndex < Creatures.Count; creatureIndex++)
             {
@@ -974,6 +999,10 @@ namespace LifeSimulation.Simulation.Core
                         : allocatedAmount * phenotype.PlantFoodYieldMultiplier * resource.NutritionMultiplier * (1f - (resource.PlantDefense * (1f - genome.FoodEfficiency)));
                     NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
                     _cumulativeFoodConsumed += nutrition;
+                    if (Config.ForagingEconomicsEnabled)
+                    {
+                        _foragingEnergyGained[request.CreatureIndex] += nutrition;
+                    }
                     if (resource.Kind == ResourceKind.Carcass)
                     {
                         _cumulativeCarcassConsumed += nutrition;
@@ -1093,6 +1122,33 @@ namespace LifeSimulation.Simulation.Core
             if (required > _combatDamage.Length)
             {
                 Array.Resize(ref _combatDamage, Math.Max(required, _combatDamage.Length * 2));
+            }
+        }
+
+        private void AdvanceForagingActionTime(float deltaTime)
+        {
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                Creatures.GetForagingRefAt(index).SecondsInCurrentAction += deltaTime;
+            }
+        }
+
+        private void UpdateForagingIntakeRate(float deltaTime)
+        {
+            float smoothing = Math.Min(1f, deltaTime / ForagingIntakeRateWindowSeconds);
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                ref ForagingState foraging = ref Creatures.GetForagingRefAt(index);
+                float sampleRate = _foragingEnergyGained[index] / deltaTime;
+                foraging.RecentIntakeRate += (sampleRate - foraging.RecentIntakeRate) * smoothing;
+            }
+        }
+
+        private void EnsureForagingEnergyGainedCapacity(int required)
+        {
+            if (required > _foragingEnergyGained.Length)
+            {
+                Array.Resize(ref _foragingEnergyGained, Math.Max(required, _foragingEnergyGained.Length * 2));
             }
         }
 

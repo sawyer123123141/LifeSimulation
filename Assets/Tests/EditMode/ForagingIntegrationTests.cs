@@ -1,5 +1,8 @@
+using System;
+using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -127,6 +130,138 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(store.TryGetIndex(fourth, out int fourthIndex), Is.True);
             Assert.That(store.GetForagingRefAt(fourthIndex).SecondsInCurrentAction, Is.EqualTo(0f));
             Assert.That(store.GetForagingRefAt(fourthIndex).RecentIntakeRate, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void SecondsInCurrentActionGrowsByTheElapsedTimeWhileTheActionIsUnchanged()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var config = new SimulationConfig(42, 1, defaults.Schedule, foragingEconomicsEnabled: true);
+            var world = new SimulationWorld(config);
+
+            for (int tick = 0; tick < 10; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Creatures.GetDecisionAt(0).Action, Is.EqualTo(CreatureAction.Wander));
+            ForagingState state = world.Creatures.GetForagingRefAt(0);
+            Assert.That(state.SecondsInCurrentAction, Is.EqualTo(10 * config.FixedDeltaTime).Within(0.0001f));
+        }
+
+        [Test]
+        public void SecondsInCurrentActionResetsToZeroOnTheTickTheActionChanges()
+        {
+            var schedule = new SimulationSchedule(20, 20, 4, 2, 20, 1, 1, 1);
+            var config = new SimulationConfig(42, 1, schedule, foragingEconomicsEnabled: true);
+            var world = new SimulationWorld(config);
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 10f, 0f);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+
+            // PerceptionHz is 4 (interval 5 ticks at base 20Hz), so the resource
+            // grid only sees the food once that perception tick lands.
+            for (int tick = 0; tick < 5; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.Creatures.GetDecisionAt(0).Action, Is.Not.EqualTo(CreatureAction.Wander));
+            ForagingState state = world.Creatures.GetForagingRefAt(0);
+            Assert.That(state.SecondsInCurrentAction, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void RecentIntakeRateRisesWhileACreatureEats()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var config = new SimulationConfig(42, 1, defaults.Schedule, foragingEconomicsEnabled: true);
+            var world = new SimulationWorld(config);
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 1000f, 1000f, 0f);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+
+            for (int tick = 0; tick < 40; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            ForagingState state = world.Creatures.GetForagingRefAt(0);
+            Assert.That(state.RecentIntakeRate, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void RecentIntakeRateDecaysTowardZeroAfterACreatureStopsEating()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var config = new SimulationConfig(42, 1, defaults.Schedule, foragingEconomicsEnabled: true);
+            var world = new SimulationWorld(config);
+            ResourceId foodId = world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 1000f, 1000f, 0f);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+
+            for (int tick = 0; tick < 20; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            float rateWhileEating = world.Creatures.GetForagingRefAt(0).RecentIntakeRate;
+            Assert.That(rateWhileEating, Is.GreaterThan(0f));
+
+            // Take the food away so ResolveResourceInteractions can no longer grant it,
+            // regardless of what the creature's stale decision still targets.
+            world.Resources.SetActive(foodId, false);
+
+            for (int tick = 0; tick < 20; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            float rateAfterStopping = world.Creatures.GetForagingRefAt(0).RecentIntakeRate;
+            Assert.That(rateAfterStopping, Is.LessThan(rateWhileEating));
+        }
+
+        [Test]
+        public void ValidateRejectsAnyOfTheFiveForagingConstantsAtZeroOrBelow()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            SimulationSchedule schedule = defaults.Schedule;
+
+            Assert.That(() => new SimulationConfig(42, 1, schedule, handlingSeconds: 0f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, handlingSeconds: -1f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, referenceGain: 0f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, referenceGain: -1f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, commitmentStrength: 0f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, commitmentStrength: -1f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, commitmentHalfLifeSeconds: 0f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, commitmentHalfLifeSeconds: -1f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, giveUpSensitivity: 0f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => new SimulationConfig(42, 1, schedule, giveUpSensitivity: -1f).Validate(), Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void ForagingStateStaysAtZeroWhenTheFlagIsOff()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
+            var world = new SimulationWorld(config);
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 1000f, 1000f, 0f);
+            world.SetCreaturePosition(world.GetCreatureIdAt(0), new SimVector2(0f, 0f));
+            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
+            needs.Energy = 0f;
+
+            Assert.That(config.ForagingEconomicsEnabled, Is.False);
+
+            for (int tick = 0; tick < 40; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            ForagingState state = world.Creatures.GetForagingRefAt(0);
+            Assert.That(state.SecondsInCurrentAction, Is.EqualTo(0f));
+            Assert.That(state.RecentIntakeRate, Is.EqualTo(0f));
         }
     }
 }

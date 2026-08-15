@@ -50,6 +50,21 @@ namespace LifeSimulation.Simulation.Core
 
     public sealed class SimulationConfig
     {
+        /// <summary>Seconds of handling time assumed when estimating a patch's expected energy yield.</summary>
+        public const float DefaultHandlingSeconds = 2f;
+
+        /// <summary>Reference net energy gain used to normalize patch scores into [0, 1].</summary>
+        public const float DefaultReferenceGain = 5f;
+
+        /// <summary>Strength of the decaying bonus applied to the action already underway.</summary>
+        public const float DefaultCommitmentStrength = 0.3f;
+
+        /// <summary>Seconds for the commitment bonus to halve.</summary>
+        public const float DefaultCommitmentHalfLifeSeconds = 5f;
+
+        /// <summary>Sensitivity multiplier used when deciding whether to abandon a draining patch.</summary>
+        public const float DefaultGiveUpSensitivity = 0.5f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -59,7 +74,13 @@ namespace LifeSimulation.Simulation.Core
             bool cognitionEnabled = false,
             bool physiologyEnabled = false,
             DecisionPolicyVersion decisionPolicyVersion = DecisionPolicyVersion.Legacy,
-            bool plantCohortsEnabled = false)
+            bool plantCohortsEnabled = false,
+            bool foragingEconomicsEnabled = false,
+            float handlingSeconds = DefaultHandlingSeconds,
+            float referenceGain = DefaultReferenceGain,
+            float commitmentStrength = DefaultCommitmentStrength,
+            float commitmentHalfLifeSeconds = DefaultCommitmentHalfLifeSeconds,
+            float giveUpSensitivity = DefaultGiveUpSensitivity)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -70,6 +91,12 @@ namespace LifeSimulation.Simulation.Core
             PhysiologyEnabled = physiologyEnabled;
             DecisionPolicyVersion = decisionPolicyVersion;
             PlantCohortsEnabled = plantCohortsEnabled;
+            ForagingEconomicsEnabled = foragingEconomicsEnabled;
+            HandlingSeconds = handlingSeconds;
+            ReferenceGain = referenceGain;
+            CommitmentStrength = commitmentStrength;
+            CommitmentHalfLifeSeconds = commitmentHalfLifeSeconds;
+            GiveUpSensitivity = giveUpSensitivity;
         }
 
         public int WorldSeed { get; }
@@ -80,6 +107,12 @@ namespace LifeSimulation.Simulation.Core
         public bool PhysiologyEnabled { get; }
         public DecisionPolicyVersion DecisionPolicyVersion { get; }
         public bool PlantCohortsEnabled { get; }
+        public bool ForagingEconomicsEnabled { get; }
+        public float HandlingSeconds { get; }
+        public float ReferenceGain { get; }
+        public float CommitmentStrength { get; }
+        public float CommitmentHalfLifeSeconds { get; }
+        public float GiveUpSensitivity { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -150,6 +183,31 @@ namespace LifeSimulation.Simulation.Core
             ValidateScheduledFrequency(Schedule.ResourcesHz, nameof(Schedule.ResourcesHz));
             ValidateScheduledFrequency(Schedule.ReproductionHz, nameof(Schedule.ReproductionHz));
             ValidateScheduledFrequency(Schedule.StatisticsHz, nameof(Schedule.StatisticsHz));
+
+            if (HandlingSeconds <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(HandlingSeconds), "Handling seconds must be positive.");
+            }
+
+            if (ReferenceGain <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ReferenceGain), "Reference gain must be positive.");
+            }
+
+            if (CommitmentStrength <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(CommitmentStrength), "Commitment strength must be positive.");
+            }
+
+            if (CommitmentHalfLifeSeconds <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(CommitmentHalfLifeSeconds), "Commitment half-life seconds must be positive.");
+            }
+
+            if (GiveUpSensitivity <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(GiveUpSensitivity), "Give-up sensitivity must be positive.");
+            }
         }
 
         private void ValidateScheduledFrequency(int frequencyHz, string name)
