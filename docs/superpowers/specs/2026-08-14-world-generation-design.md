@@ -92,9 +92,38 @@ Can a pipeline of seeded generative processes produce worlds that are structural
 
 Success is not visual alone. Success is that two seeds produce structurally different worlds — different continents, not merely different noise — that the same seed reproduces bit-identically, and that sampling cost fits the simulation budget.
 
-**Sampling cost is an open question, not an assumption.** A naive construction is unaffordable: evaluating the elevation fBm three times with a six-round hash at each of eight lattice corners per octave lands around 7,000–9,000 operations per sample, plausibly 1–3 microseconds. For scale, the recorded P0 baseline is 0.245 ms per simulation step at 1,000 founders, so one naive sample per creature per tick would cost several times the entire simulation step.
+### Sampling budget
 
-Three design choices attack this: permutation-table gradient lookup, analytic derivatives instead of finite differencing, and coarse evaluation of slowly-varying plate influence. Together they are expected to reduce cost by more than an order of magnitude. **Expected is not measured**, which is why the benchmark is built first.
+**Sampling cost is an open question, not an assumption.** A naive construction — six-round hashing at each of eight lattice corners, with the elevation fBm evaluated three times for finite-differenced slope — costs roughly 12,600 operations per sample on the octave counts assumed here.
+
+The specified construction costs roughly:
+
+| Component | Operations |
+|---|---|
+| Elevation: fBm plus ridged, with analytic derivatives | ~1,550 |
+| Domain warp | ~720 |
+| Plate lookup, exact nearest boundary | ~500 |
+| Moisture, 3 octaves | ~360 |
+| Cave density, 3 octaves | ~360 |
+| Climate, fertility, surface-type arithmetic | ~50 |
+| **Total** | **~3,540** |
+
+That is roughly a **3.5x reduction**, plausibly 0.5–1.5 microseconds per full sample.
+
+**An earlier draft of this document claimed "more than an order of magnitude". That claim was wrong** and is corrected here. Permutation-table lookup improves the per-corner cost about sevenfold, but fixed interpolation cost per octave does not shrink, so the per-octave gain is nearer fivefold. Domain warping and plate lookup were then added, consuming part of the saving. The remaining optimizations below recover some of it.
+
+### Hard constraint: fields are sampled at needs frequency
+
+For 1,000 creatures against the recorded P0 baseline of 0.245 ms per step:
+
+| Sampling frequency | Amortized cost per tick | Effect on baseline |
+|---|---|---|
+| Needs frequency (2 Hz against a 20 Hz base) | ~0.07 ms | +29%, acceptable |
+| Movement frequency (20 Hz) | ~0.7 ms | +285%, unacceptable |
+
+**Simulation systems sample environment fields at needs frequency or slower. Never at movement frequency.** This is a design constraint, not a tuning preference; the budget does not exist at 20 Hz. Systems needing environment data more often must cache the last sample per creature rather than resampling.
+
+Mesh generation (D) is exempt: it samples in bulk on worker threads, off the simulation budget entirely.
 
 ## Permanent constraints inherited
 
@@ -214,7 +243,7 @@ SimVector3 Direction(SimVector2 planarPosition, in RegionAnchor anchor, in World
 
 An earlier draft routed every lattice corner through `DeterministicRandom.Float01`, reasoning that it reuses an already-tested primitive. That was sound for correctness and wrong on cost: `Float01` runs six mixing rounds, and gradient noise touches eight corners per octave, making the mixer the dominant expense in the whole system.
 
-Instead a 256-entry permutation table is built once per world from `WorldSeed` — itself using `DeterministicRandom`, so the seeding path stays tested — and gradient lookup becomes a single array index. Expected improvement is one to two orders of magnitude per corner; the benchmark confirms or refutes it.
+Instead a 256-entry permutation table is built once per world from `WorldSeed` — itself using `DeterministicRandom`, so the seeding path stays tested — and gradient lookup becomes a single array index. Expected improvement is roughly sevenfold per corner and roughly fivefold per octave, the difference being fixed interpolation cost that does not shrink. The benchmark confirms or refutes it.
 
 The table is 256 bytes of derived, deterministic, rebuilt-at-startup state. This is a deliberate, bounded relaxation of tier-1 statelessness: the property protected is "no baked world data", not "not one byte of anything".
 
@@ -238,12 +267,25 @@ Lattice interpolation uses the quintic smoothstep `6t^5 - 15t^4 + 10t^3`, whose 
 
 ```text
 EnvironmentSample SampleAll(SimVector3 direction, long tick, int worldSeed,
-                            in WorldStructure structure, in WorldGeography geography)
+                            in WorldStructure structure, in WorldGeography geography,
+                            EnvironmentChannels channels = EnvironmentChannels.Default)
 ```
 
 `EnvironmentSample` is a readonly struct carrying `Elevation`, `SurfaceType`, `Temperature`, `Moisture`, `Fertility`, `CaveDensity`, and `SurfaceNormal`.
 
 Single-call sampling is required, not stylistic: temperature depends on elevation through lapse rate, moisture depends on elevation through rain shadow, fertility depends on both, and all three depend on plate structure. Separate accessors would repeat the most expensive work several times over.
+
+`EnvironmentChannels` is a flags enum letting a caller skip work it does not need. Channels not requested are left at documented defaults, and requesting a channel implicitly requests its dependencies. `Default` excludes `CaveDensity`, which nothing reads until A3 and which is meaningful only underground — roughly 10% of the budget otherwise spent unconditionally.
+
+### Planned optimizations
+
+Three reductions are specified but gated on the benchmark, since each trades simplicity for speed and none should be adopted without evidence:
+
+1. **Skip ridged noise away from boundaries.** Ridged evaluation only contributes near plate boundaries, and most of a planet is not mountainous. When boundary intensity times falloff drops below a documented threshold, skip it — saving roughly 775 operations on the majority of samples. Requires care that the threshold does not produce a visible discontinuity; a short blend band is specified rather than a hard cutoff.
+2. **Coarse plate lookup with interpolation.** Plate influence varies slowly across space. Exact nearest-boundary search costs roughly 500 operations; evaluating on a coarse lattice and interpolating costs roughly 50.
+3. **Cached sampling for static consumers.** Plants do not move, so their fertility changes only with season and climate drift. A per-consumer cached sample refreshed on a slow schedule removes nearly all plant-related sampling. This is a consumer-side pattern for B and P4 rather than a change to `EnvironmentFields`, and is recorded here so those cycles do not resample per tick.
+
+Together the first two are worth roughly a further 1.5–2x, landing near 2,000 operations per sample.
 
 Derivations:
 
@@ -365,10 +407,13 @@ The standard delivery cycle puts the performance gate at phase 7. **A0/A1 invert
 
 1. `SimVector3`, `WorldGeography`, `WorldRecipe`, and `GradientNoise3D` — the minimum to evaluate one octave.
 2. **Benchmark harness and first measurement**, recorded to `docs/benchmarks/`, covering single-sample latency and batched throughput.
-3. The measurement decides three open parameters:
+3. The measurement decides four open parameters:
    - octave counts for elevation, moisture, and caves
    - whether plate lookup is exact per-sample or coarse-plus-interpolated
+   - whether the ridged early-out is adopted, and its threshold and blend width
    - whether a tier-1 cache is optional or mandatory
+
+   Each is a documented reduction with a cost in simplicity. None is adopted without a measurement showing it is needed.
 4. A0 plate structure, then `SphereMapping`, `EnvironmentFields`, and the remaining derivations against the chosen parameters.
 5. Remaining fixtures and the frozen-fixture regression run.
 
@@ -396,6 +441,8 @@ Deterministic fixtures are written before implementation.
 14. **Allocation guard** — 100,000 `SampleAll` calls allocate zero managed bytes.
 15. **Frozen-fixture regression** — all existing P0 through P3 fixtures produce unchanged results and unchanged state hashes.
 16. **Golden-value pin** — a fixed input set reproduces recorded output values, guarding the generation mathematics against silent drift.
+17. **Channel independence** — a channel's value is identical whether sampled alone or as part of a full sample, so `EnvironmentChannels` changes cost without changing results.
+18. **Optimization equivalence** — if the ridged early-out or coarse plate lookup is adopted, its output stays within a documented tolerance of the exact path across sampled directions, with no discontinuity exceeding the blend-band bound.
 
 A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/` with commit SHA, hardware, and build type, measuring both single-sample latency and batched throughput.
 
@@ -420,9 +467,10 @@ A micro-benchmark records nanoseconds per `SampleAll` into `docs/benchmarks/` wi
 
 **A1** is complete when:
 
-- all sixteen fixtures pass, sphere continuity and the golden-value pin included
+- all eighteen fixtures pass, sphere continuity and the golden-value pin included
 - `SampleAll` allocates zero bytes, with single-sample and batched figures recorded in `docs/benchmarks/`
-- the three benchmark-gated parameters are decided by measurement and their values recorded
+- the four benchmark-gated parameters are decided by measurement and their values recorded
+- measured cost confirms the needs-frequency sampling budget holds at 1,000 creatures
 - frozen P0 through P3 fixtures reproduce with unchanged state hashes
 - two seeds demonstrably produce structurally different worlds, not merely different noise
 - a recipe omitting tectonic stages produces a valid world, demonstrating the flexibility mechanism
