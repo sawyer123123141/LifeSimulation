@@ -95,6 +95,37 @@ namespace LifeSimulation.Simulation.Behavior
             return commitmentStrength * persistence * decay;
         }
 
+        public static bool ShouldAbandon(
+            float currentPatchIntakeRate,
+            float recentIntakeRate,
+            float persistence,
+            float giveUpSensitivity)
+        {
+            if (currentPatchIntakeRate < 0f || float.IsNaN(currentPatchIntakeRate) || float.IsInfinity(currentPatchIntakeRate))
+            {
+                throw new ArgumentOutOfRangeException(nameof(currentPatchIntakeRate));
+            }
+
+            if (recentIntakeRate < 0f || float.IsNaN(recentIntakeRate) || float.IsInfinity(recentIntakeRate))
+            {
+                throw new ArgumentOutOfRangeException(nameof(recentIntakeRate));
+            }
+
+            if (persistence < 0f || persistence > 1f || float.IsNaN(persistence) || float.IsInfinity(persistence))
+            {
+                throw new ArgumentOutOfRangeException(nameof(persistence));
+            }
+
+            if (giveUpSensitivity < 0f || float.IsNaN(giveUpSensitivity) || float.IsInfinity(giveUpSensitivity))
+            {
+                throw new ArgumentOutOfRangeException(nameof(giveUpSensitivity));
+            }
+
+            float giveUpThreshold = recentIntakeRate * (1f - persistence) * giveUpSensitivity;
+
+            return currentPatchIntakeRate < giveUpThreshold;
+        }
+
         private static float Clamp01(float value)
         {
             return Math.Max(0f, Math.Min(1f, value));

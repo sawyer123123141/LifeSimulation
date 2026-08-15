@@ -646,5 +646,164 @@ namespace LifeSimulation.Tests.EditMode
                 ForagingEconomics.CommitmentBonus(
                     secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: float.PositiveInfinity));
         }
+
+        [Test]
+        public void CurrentRateWellAboveRecentAverageDoesNotAbandon()
+        {
+            bool shouldAbandon = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate: 10f,
+                recentIntakeRate: 5f,
+                persistence: 0.5f,
+                giveUpSensitivity: 1f);
+
+            Assert.That(shouldAbandon, Is.False);
+        }
+
+        [Test]
+        public void CurrentRateFarBelowRecentAverageAbandons()
+        {
+            bool shouldAbandon = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate: 0.1f,
+                recentIntakeRate: 5f,
+                persistence: 0.5f,
+                giveUpSensitivity: 1f);
+
+            Assert.That(shouldAbandon, Is.True);
+        }
+
+        [Test]
+        public void HigherPersistenceCreatureAbandonsAtALowerCurrentRateThanLowerPersistenceCreature()
+        {
+            float recentIntakeRate = 10f;
+            float giveUpSensitivity = 1f;
+            float currentPatchIntakeRate = 3f;
+
+            bool lowPersistenceAbandons = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate,
+                recentIntakeRate,
+                persistence: 0.3f,
+                giveUpSensitivity);
+
+            bool highPersistenceAbandons = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate,
+                recentIntakeRate,
+                persistence: 0.9f,
+                giveUpSensitivity);
+
+            Assert.That(lowPersistenceAbandons, Is.True);
+            Assert.That(highPersistenceAbandons, Is.False);
+        }
+
+        [Test]
+        public void PersistenceOfOneNeverAbandons()
+        {
+            bool shouldAbandon = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate: 0.001f,
+                recentIntakeRate: 100f,
+                persistence: 1f,
+                giveUpSensitivity: 5f);
+
+            Assert.That(shouldAbandon, Is.False);
+        }
+
+        [Test]
+        public void ZeroRecentIntakeRateDoesNotAbandon()
+        {
+            bool shouldAbandon = ForagingEconomics.ShouldAbandon(
+                currentPatchIntakeRate: 0f,
+                recentIntakeRate: 0f,
+                persistence: 0.5f,
+                giveUpSensitivity: 1f);
+
+            Assert.That(shouldAbandon, Is.False);
+        }
+
+        [Test]
+        public void NegativeCurrentPatchIntakeRateThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: -1f, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void NonFiniteCurrentPatchIntakeRateThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: float.NaN, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: 1f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: float.PositiveInfinity, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void NegativeRecentIntakeRateThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: -1f, persistence: 0.5f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void NonFiniteRecentIntakeRateThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: float.NaN, persistence: 0.5f, giveUpSensitivity: 1f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: float.PositiveInfinity, persistence: 0.5f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void PersistenceBelowZeroThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: -0.1f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void PersistenceAboveOneThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: 1.1f, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void NonFinitePersistenceInShouldAbandonThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: float.NaN, giveUpSensitivity: 1f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: float.PositiveInfinity, giveUpSensitivity: 1f));
+        }
+
+        [Test]
+        public void NegativeGiveUpSensitivityThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: -1f));
+        }
+
+        [Test]
+        public void NonFiniteGiveUpSensitivityThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: float.NaN));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ShouldAbandon(
+                    currentPatchIntakeRate: 5f, recentIntakeRate: 5f, persistence: 0.5f, giveUpSensitivity: float.PositiveInfinity));
+        }
     }
 }
