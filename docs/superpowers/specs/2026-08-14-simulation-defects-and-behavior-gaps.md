@@ -18,6 +18,8 @@ The organizing question is **does fixing it change simulation results?**
 
 ### A-1. Starvation and dehydration deaths are never recorded
 
+**2026-08-15 update: fixed.** This was written against `main`'s snapshot of `Assets/Scripts/Simulation/`, before it was known that `codex/decision-policy-foundation` had continued past the same fork point independently. That branch now emits `DeathCause.Starvation` and `DeathCause.Dehydration` and counts them separately (`SimulationWorld.cs`). Left below for the historical record.
+
 `SimulationTypes.cs` declares `DeathCause.Starvation = 2` and `DeathCause.Dehydration = 3`. Neither is ever emitted. `SimulationWorld.cs:394` passes `DeathCause.Health` for every metabolic death, and `:398` passes `Age`. A repository-wide search finds no other emission site.
 
 `NeedsSystem.Tick` already distinguishes the causes internally — energy exhaustion drains health at `4f * deltaTime` (`NeedsSystem.cs:56-59`), dehydration at `5f * deltaTime` (`:61-64`) — then discards which one applied.
@@ -67,6 +69,8 @@ This voids the P2 exit gate as currently measured. That gate requires cognition 
 **Fix:** move learned value into per-place memory entries; see C-1.
 
 ### B-3. Resource quality is absent from decision scoring
+
+**2026-08-15 update: partly fixed.** Same fork-point caveat as A-1. On `codex/decision-policy-foundation`, the non-cognition decision path (`DecisionSystem.ResourceUtility`) now weighs `resource.Amount` against the creature's missing need. The cognition-mode path (`DecideFromLearnedOutcomes`) still doesn't — it's still pure distance-based `Availability`, exactly as described below. So this defect still applies whenever `CognitionEnabled` is on.
 
 `DecisionSystem.Availability` is `1f / (1f + distance)` (`DecisionSystem.cs:175-178`). `ResourceState.Amount` never enters any score.
 
@@ -129,6 +133,8 @@ P2's data phase specifies "a fixed-capacity aligned memory sidecar for resource,
 This is the largest gap between written and built scope in the project.
 
 ### C-2. Mating is proximity, not behavior
+
+**2026-08-15 update: partly stale.** Same fork-point caveat as A-1. On `codex/decision-policy-foundation`, `CreatureAction.SeekMate` is now a real scored candidate (`DecisionSystem`, gated by `ReproductionSystem.CanSeekMate`) — a creature can now choose to seek and approach a mate. But `ReproductionSystem.Step`, the actual birth mechanism, still independently pairs the nearest two ready creatures within `MateDistance` every tick, with no reference to who was sought or chosen. So "a creature never approaches a mate" is no longer true; "reproduction is spatial coincidence with no choice between candidates" still is — seeking and pairing are two disconnected systems today.
 
 `CreatureAction.SeekMate` is declared and never produced. `ReproductionSystem.Step` scans the spatial grid, pairs any two ready creatures within `MateDistance = 2f`, and then writes `CreatureAction.Reproduce` onto both retroactively (`ReproductionSystem.cs:170-171`).
 
