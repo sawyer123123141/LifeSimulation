@@ -470,5 +470,181 @@ namespace LifeSimulation.Tests.EditMode
                     urgency: 1f, remainingAmount: 10f, distance: 1f, phenotype,
                     nutritionMultiplier: 1f, handlingSeconds: 2f, referenceGain: float.PositiveInfinity));
         }
+
+        [Test]
+        public void ZeroSecondsElapsedProducesTheStartingBonus()
+        {
+            float bonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 0f,
+                persistence: 0.6f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds: 3f);
+
+            Assert.That(bonus, Is.EqualTo(0.4f * 0.6f).Within(0.0001f));
+        }
+
+        [Test]
+        public void OneHalfLifeElapsedHalvesTheBonus()
+        {
+            float commitmentHalfLifeSeconds = 3f;
+            float startingBonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 0f,
+                persistence: 0.6f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds);
+
+            float bonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: commitmentHalfLifeSeconds,
+                persistence: 0.6f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds);
+
+            Assert.That(bonus, Is.EqualTo(startingBonus * 0.5f).Within(0.0001f));
+        }
+
+        [Test]
+        public void TwoHalfLivesElapsedQuartersTheBonus()
+        {
+            float commitmentHalfLifeSeconds = 3f;
+            float startingBonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 0f,
+                persistence: 0.6f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds);
+
+            float bonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: commitmentHalfLifeSeconds * 2f,
+                persistence: 0.6f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds);
+
+            Assert.That(bonus, Is.EqualTo(startingBonus * 0.25f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ZeroPersistenceProducesZeroBonusAtAnyElapsedTime()
+        {
+            float bonusAtStart = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 0f,
+                persistence: 0f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds: 3f);
+
+            float bonusLater = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 10f,
+                persistence: 0f,
+                commitmentStrength: 0.4f,
+                commitmentHalfLifeSeconds: 3f);
+
+            Assert.That(bonusAtStart, Is.EqualTo(0f));
+            Assert.That(bonusLater, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void IncreasingElapsedTimeStrictlyDecreasesTheBonusAndNeverGoesNegative()
+        {
+            float commitmentHalfLifeSeconds = 3f;
+            float persistence = 0.6f;
+            float commitmentStrength = 0.4f;
+
+            float earlierBonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 1f, persistence, commitmentStrength, commitmentHalfLifeSeconds);
+            float laterBonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 2f, persistence, commitmentStrength, commitmentHalfLifeSeconds);
+            float muchLaterBonus = ForagingEconomics.CommitmentBonus(
+                secondsInCurrentAction: 100f, persistence, commitmentStrength, commitmentHalfLifeSeconds);
+
+            Assert.That(laterBonus, Is.LessThan(earlierBonus));
+            Assert.That(muchLaterBonus, Is.LessThan(laterBonus));
+            Assert.That(muchLaterBonus, Is.GreaterThanOrEqualTo(0f));
+        }
+
+        [Test]
+        public void NegativeSecondsInCurrentActionThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: -1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void NonFiniteSecondsInCurrentActionThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: float.NaN, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: float.PositiveInfinity, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void NegativePersistenceThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: -0.1f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void NonFinitePersistenceThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: float.NaN, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: float.PositiveInfinity, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void NegativeCommitmentStrengthThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: -0.1f, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void NonFiniteCommitmentStrengthThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: float.NaN, commitmentHalfLifeSeconds: 3f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: float.PositiveInfinity, commitmentHalfLifeSeconds: 3f));
+        }
+
+        [Test]
+        public void CommitmentHalfLifeSecondsAtZeroThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: 0f));
+        }
+
+        [Test]
+        public void CommitmentHalfLifeSecondsBelowZeroThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: -3f));
+        }
+
+        [Test]
+        public void NonFiniteCommitmentHalfLifeSecondsThrows()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: float.NaN));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.CommitmentBonus(
+                    secondsInCurrentAction: 1f, persistence: 0.6f, commitmentStrength: 0.4f, commitmentHalfLifeSeconds: float.PositiveInfinity));
+        }
     }
 }

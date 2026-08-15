@@ -64,6 +64,37 @@ namespace LifeSimulation.Simulation.Behavior
             return Clamp01(urgency * netGain / referenceGain);
         }
 
+        public static float CommitmentBonus(
+            float secondsInCurrentAction,
+            float persistence,
+            float commitmentStrength,
+            float commitmentHalfLifeSeconds)
+        {
+            if (secondsInCurrentAction < 0f || float.IsNaN(secondsInCurrentAction) || float.IsInfinity(secondsInCurrentAction))
+            {
+                throw new ArgumentOutOfRangeException(nameof(secondsInCurrentAction));
+            }
+
+            if (persistence < 0f || float.IsNaN(persistence) || float.IsInfinity(persistence))
+            {
+                throw new ArgumentOutOfRangeException(nameof(persistence));
+            }
+
+            if (commitmentStrength < 0f || float.IsNaN(commitmentStrength) || float.IsInfinity(commitmentStrength))
+            {
+                throw new ArgumentOutOfRangeException(nameof(commitmentStrength));
+            }
+
+            if (commitmentHalfLifeSeconds <= 0f || float.IsNaN(commitmentHalfLifeSeconds) || float.IsInfinity(commitmentHalfLifeSeconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(commitmentHalfLifeSeconds));
+            }
+
+            float decay = (float)Math.Pow(0.5, secondsInCurrentAction / commitmentHalfLifeSeconds);
+
+            return commitmentStrength * persistence * decay;
+        }
+
         private static float Clamp01(float value)
         {
             return Math.Max(0f, Math.Min(1f, value));
