@@ -80,8 +80,13 @@ namespace LifeSimulation.Tests.EditMode
         [Test]
         public void StepProducesNoBirthsWhenTheRegistryHasNoSites()
         {
+            // A valid inactive Food resource exists in the store, but it is never registered in
+            // the PlantSiteRegistry. This distinguishes "FindSite searches only the registry"
+            // (0 births, correct) from a whole-store scan (which would find this resource and
+            // produce 1 birth), pinning the Task 3 registry-scoped search behaviour.
             var resources = new ResourceStore(1);
-            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 0f, 12f, 0f);
+            ResourceId unregisteredSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 0f, 12f, 0f);
+            resources.SetActive(unregisteredSite, false);
             var sites = new PlantSiteRegistry(1);
             var patches = new PlantPatchStore(2);
             patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
@@ -91,6 +96,36 @@ namespace LifeSimulation.Tests.EditMode
             int births = PlantReproductionSystem.Step(patches, resources, sites, 42, 20, 1f, ref ordinal);
 
             Assert.That(births, Is.EqualTo(0));
+            Assert.That(patches.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SiteJustInsideDispersalRangeWithNearZeroEstablishmentProbabilityUsuallyFailsTheRoll()
+        {
+            // A patch created via PlantPatchStore.Add starts with PlantGenome.Neutral
+            // (Dispersal=.5), giving DispersalRange = 4 + 20*.5 = 14 (see
+            // PlantPhenotype.FromGenome). Placing the site at 0.99 * range means
+            // EstablishmentSuccessProbability is ~0.01, so the establishment roll fails on
+            // every attempt for this seed/tick (verified by brute-force replay of
+            // DeterministicRandom's output), producing 0 births. If the roll-against-probability
+            // check in FindSite were deleted, this site (in range and inactive Food) would
+            // always be accepted and this test would go red (0 -> 1 births), so it pins the
+            // establishment roll to actually gating FindSite.
+            const float range = 14f;
+            const float distance = 0.99f * range;
+            var resources = new ResourceStore(1);
+            ResourceId site = resources.Add(ResourceKind.Food, new SimVector2(distance, 0f), 1f, 0f, 12f, 0f);
+            resources.SetActive(site, false);
+            var sites = new PlantSiteRegistry(1);
+            sites.Register(0);
+            var patches = new PlantPatchStore(2);
+            patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
+            long ordinal = 0;
+
+            int births = PlantReproductionSystem.Step(patches, resources, sites, 1, 1, 1f, ref ordinal);
+
+            Assert.That(births, Is.EqualTo(0));
+            Assert.That(resources.GetAt(0).IsActive, Is.False);
             Assert.That(patches.Count, Is.EqualTo(1));
         }
 
@@ -204,10 +239,12 @@ namespace LifeSimulation.Tests.EditMode
         [Test]
         public void CooldownDecaysToZeroAfterEnoughCumulativeDeltaTimeAndParentBecomesEligibleAgain()
         {
-            // No sites are registered, so the parent can never successfully reproduce again in
-            // this test; that isolates the assertion to the cooldown's decay-to-zero mechanics
-            // (and the fact that a cooldown of exactly 0 no longer causes Step to skip the
-            // parent) without depending on the RNG-driven site-establishment outcome.
+            // The resource at index 0 is never deactivated, so PlantSiteRegistry's candidate is
+            // always rejected by the IsActive check in FindSite and the parent can never
+            // successfully reproduce again in this test; that isolates the assertion to the
+            // cooldown's decay-to-zero mechanics (and the fact that a cooldown of exactly 0 no
+            // longer causes Step to skip the parent) without depending on the RNG-driven
+            // site-establishment outcome.
             var resources = new ResourceStore(1);
             resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 0f, 12f, 0f);
             var sites = new PlantSiteRegistry(1);

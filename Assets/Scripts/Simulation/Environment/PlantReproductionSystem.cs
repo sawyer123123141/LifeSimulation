@@ -23,7 +23,6 @@ namespace LifeSimulation.Simulation.Environment
                     float remaining = Math.Max(0f, parent.ReproductionCooldownRemaining - deltaTime);
                     patches.SetReproductionCooldown(parentIndex, remaining);
                     if (remaining > 0f) continue;
-                    parent = patches.GetAt(parentIndex);
                 }
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome);
