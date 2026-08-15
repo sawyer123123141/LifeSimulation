@@ -603,6 +603,77 @@ namespace LifeSimulation.Simulation.Behavior
         public static CreatureDecision Decide(
             CreatureNeeds needs,
             Phenotype phenotype,
+            ResourceCandidateBuffer foodCandidates,
+            ResourceCandidateBuffer waterCandidates,
+            CreatureAction currentAction,
+            float secondsInCurrentAction,
+            float handlingSeconds,
+            float referenceGain,
+            float commitmentStrength,
+            float commitmentHalfLifeSeconds,
+            out DecisionDiagnostics diagnostics)
+        {
+            float foodScore = BestPatchScore(needs.Energy, phenotype.EnergyCapacity, phenotype, foodCandidates, handlingSeconds, referenceGain, out int foodResourceIndex);
+            float waterScore = BestPatchScore(needs.Hydration, phenotype.HydrationCapacity, phenotype, waterCandidates, handlingSeconds, referenceGain, out int waterResourceIndex);
+
+            if (foodResourceIndex >= 0 && (currentAction == CreatureAction.SeekFood || currentAction == CreatureAction.Eat))
+            {
+                foodScore += ForagingEconomics.CommitmentBonus(secondsInCurrentAction, phenotype.Persistence, commitmentStrength, commitmentHalfLifeSeconds);
+            }
+            else if (waterResourceIndex >= 0 && (currentAction == CreatureAction.SeekWater || currentAction == CreatureAction.Drink))
+            {
+                waterScore += ForagingEconomics.CommitmentBonus(secondsInCurrentAction, phenotype.Persistence, commitmentStrength, commitmentHalfLifeSeconds);
+            }
+
+            diagnostics = new DecisionDiagnostics(foodScore, waterScore, foodCandidates.Count > 0, waterCandidates.Count > 0);
+
+            if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
+            {
+                return new CreatureDecision(CreatureAction.Wander, -1, 0f);
+            }
+
+            if (waterScore > foodScore && waterScore >= MinimumUrgencyToSeekResource)
+            {
+                return new CreatureDecision(CreatureAction.SeekWater, waterResourceIndex, waterScore);
+            }
+
+            if (foodScore >= MinimumUrgencyToSeekResource)
+            {
+                return new CreatureDecision(CreatureAction.SeekFood, foodResourceIndex, foodScore);
+            }
+
+            return new CreatureDecision(CreatureAction.Wander, -1, 0f);
+        }
+
+        private static float BestPatchScore(
+            float current,
+            float capacity,
+            Phenotype phenotype,
+            ResourceCandidateBuffer candidates,
+            float handlingSeconds,
+            float referenceGain,
+            out int bestResourceIndex)
+        {
+            float urgency = Urgency(current, capacity);
+            float bestScore = -1f;
+            bestResourceIndex = -1;
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                ResourceObservation candidate = candidates.GetAt(index);
+                float score = ForagingEconomics.PatchScore(urgency, candidate.RemainingAmount, candidate.Distance, phenotype, 1f, handlingSeconds, referenceGain);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestResourceIndex = candidate.ResourceIndex;
+                }
+            }
+
+            return bestScore;
+        }
+
+        public static CreatureDecision Decide(
+            CreatureNeeds needs,
+            Phenotype phenotype,
             ResourceObservation food,
             ResourceObservation water,
             out DecisionDiagnostics diagnostics)

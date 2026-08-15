@@ -321,6 +321,147 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ForagingEconomicsChoosesTheRicherFarPatchOverTheDepletedNearPatchWhenEnabled()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var foodCandidates = new ResourceCandidateBuffer();
+            foodCandidates.Consider(new ResourceObservation(new ResourceId(1), 0, distance: 0.5f, remainingAmount: 0.05f));
+            foodCandidates.Consider(new ResourceObservation(new ResourceId(2), 1, distance: 2f, remainingAmount: 3f));
+            var waterCandidates = new ResourceCandidateBuffer();
+
+            CreatureDecision decision = DecisionSystem.Decide(
+                needs,
+                phenotype,
+                foodCandidates,
+                waterCandidates,
+                CreatureAction.Wander,
+                secondsInCurrentAction: 0f,
+                SimulationConfig.DefaultHandlingSeconds,
+                SimulationConfig.DefaultReferenceGain,
+                SimulationConfig.DefaultCommitmentStrength,
+                SimulationConfig.DefaultCommitmentHalfLifeSeconds,
+                out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void WithForagingEconomicsDisabledOnlyTheNearestPatchIsEverConsideredRegardlessOfRichness()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            // Same near patch as the enabled scenario above; the legacy path never
+            // even receives the richer far patch, since perception hands it only
+            // the nearest observation regardless of remaining amount.
+            var food = new ResourceObservation(new ResourceId(1), 0, distance: 0.5f, remainingAmount: 0.05f);
+            var water = default(ResourceObservation);
+
+            CreatureDecision decision = DecisionSystem.Decide(needs, phenotype, food, water);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(decision.TargetResourceIndex, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void CommitmentBonusPreventsAlternatingBetweenNearTiedFoodAndWaterAcrossTicks()
+        {
+            Genome genome = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, persistence: 1f);
+            Phenotype phenotype = Phenotype.FromGenome(genome);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            needs.Hydration = 0f;
+
+            var tiedFood = new ResourceCandidateBuffer();
+            tiedFood.Consider(new ResourceObservation(new ResourceId(1), 0, distance: 1f, remainingAmount: 3f));
+            var tiedWater = new ResourceCandidateBuffer();
+            tiedWater.Consider(new ResourceObservation(new ResourceId(2), 1, distance: 1f, remainingAmount: 3f));
+
+            CreatureDecision firstDecision = DecisionSystem.Decide(
+                needs, phenotype, tiedFood, tiedWater,
+                CreatureAction.Wander, secondsInCurrentAction: 0f,
+                SimulationConfig.DefaultHandlingSeconds, SimulationConfig.DefaultReferenceGain,
+                SimulationConfig.DefaultCommitmentStrength, SimulationConfig.DefaultCommitmentHalfLifeSeconds,
+                out _);
+            Assert.That(firstDecision.Action, Is.EqualTo(CreatureAction.SeekFood));
+
+            // Next decision tick: water edges ahead marginally on raw score, but the
+            // creature is already committed to eating.
+            var slightlyBetterWater = new ResourceCandidateBuffer();
+            slightlyBetterWater.Consider(new ResourceObservation(new ResourceId(2), 1, distance: 0.9f, remainingAmount: 3f));
+
+            CreatureDecision secondDecision = DecisionSystem.Decide(
+                needs, phenotype, tiedFood, slightlyBetterWater,
+                firstDecision.Action, secondsInCurrentAction: 0.1f,
+                SimulationConfig.DefaultHandlingSeconds, SimulationConfig.DefaultReferenceGain,
+                SimulationConfig.DefaultCommitmentStrength, SimulationConfig.DefaultCommitmentHalfLifeSeconds,
+                out _);
+            Assert.That(secondDecision.Action, Is.EqualTo(CreatureAction.SeekFood));
+
+            // Without commitment (as if freshly deciding from Wander), the same
+            // marginal water advantage flips the decision -- proving the bonus,
+            // not something else, is what keeps the creature on food.
+            CreatureDecision uncommittedDecision = DecisionSystem.Decide(
+                needs, phenotype, tiedFood, slightlyBetterWater,
+                CreatureAction.Wander, secondsInCurrentAction: 0f,
+                SimulationConfig.DefaultHandlingSeconds, SimulationConfig.DefaultReferenceGain,
+                SimulationConfig.DefaultCommitmentStrength, SimulationConfig.DefaultCommitmentHalfLifeSeconds,
+                out _);
+            Assert.That(uncommittedDecision.Action, Is.EqualTo(CreatureAction.SeekWater));
+        }
+
+        [Test]
+        public void PatchCostingMoreEnergyThanItYieldsIsNeverSelectedWhenForagingEconomicsIsEnabled()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var foodCandidates = new ResourceCandidateBuffer();
+            // Travel energy at this distance dwarfs anything the patch can yield.
+            foodCandidates.Consider(new ResourceObservation(new ResourceId(1), 0, distance: 50f, remainingAmount: 0.1f));
+            var waterCandidates = new ResourceCandidateBuffer();
+
+            CreatureDecision decision = DecisionSystem.Decide(
+                needs,
+                phenotype,
+                foodCandidates,
+                waterCandidates,
+                CreatureAction.Wander,
+                secondsInCurrentAction: 0f,
+                SimulationConfig.DefaultHandlingSeconds,
+                SimulationConfig.DefaultReferenceGain,
+                SimulationConfig.DefaultCommitmentStrength,
+                SimulationConfig.DefaultCommitmentHalfLifeSeconds,
+                out _);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
+        }
+
+        [Test]
+        public void FlagOffDecisionMatchesTheOriginalUrgencyTimesAvailabilityFormulaAndIgnoresRemainingAmount()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = phenotype.EnergyCapacity * 0.25f;
+            needs.Hydration = phenotype.HydrationCapacity * 0.05f;
+            // A tiny remaining amount would tank a PatchScore-based evaluation;
+            // the legacy formula must not notice it at all.
+            var food = new ResourceObservation(new ResourceId(1), 0, distance: 1f, remainingAmount: 0.01f);
+            var water = new ResourceObservation(new ResourceId(2), 1, distance: 1f);
+
+            CreatureDecision decision = DecisionSystem.Decide(needs, phenotype, food, water, out DecisionDiagnostics diagnostics);
+
+            float expectedFoodScore = (1f - (needs.Energy / phenotype.EnergyCapacity)) * (1f / (1f + food.Distance));
+            float expectedWaterScore = (1f - (needs.Hydration / phenotype.HydrationCapacity)) * (1f / (1f + water.Distance));
+            Assert.That(diagnostics.FoodScore, Is.EqualTo(expectedFoodScore).Within(0.0001f));
+            Assert.That(diagnostics.WaterScore, Is.EqualTo(expectedWaterScore).Within(0.0001f));
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekWater));
+        }
+
+        [Test]
         public void DecisionCandidateBufferSelectsHighestScoreAndUsesStableTieBreak()
         {
             var candidates = new DecisionCandidateBuffer();

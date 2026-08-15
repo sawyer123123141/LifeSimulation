@@ -7,17 +7,19 @@ namespace LifeSimulation.Simulation.Behavior
 {
     public readonly struct ResourceObservation
     {
-        public ResourceObservation(ResourceId resourceId, int resourceIndex, float distance)
+        public ResourceObservation(ResourceId resourceId, int resourceIndex, float distance, float remainingAmount = 0f)
         {
             ResourceId = resourceId;
             ResourceIndex = resourceIndex;
             Distance = distance;
+            RemainingAmount = remainingAmount;
             IsValid = true;
         }
 
         public ResourceId ResourceId { get; }
         public int ResourceIndex { get; }
         public float Distance { get; }
+        public float RemainingAmount { get; }
         public bool IsValid { get; }
     }
 
@@ -140,7 +142,7 @@ namespace LifeSimulation.Simulation.Behavior
                         float distance = SimVector2.Distance(origin, candidate.Position);
                         if (distance <= visionRange)
                         {
-                            candidates.Consider(new ResourceObservation(candidate.Id, resourceIndex, distance));
+                            candidates.Consider(new ResourceObservation(candidate.Id, resourceIndex, distance, candidate.Amount));
                         }
                     }
                 }

@@ -646,6 +646,11 @@ namespace LifeSimulation.Simulation.Core
                 var waterCandidates = new ResourceCandidateBuffer();
                 CreatureObservation other = default;
                 float threatIntensity = 0f;
+                if (Config.ForagingEconomicsEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy && !Config.CognitionEnabled)
+                {
+                    PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Food, ref foodCandidates);
+                    PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Water, ref waterCandidates);
+                }
                 if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
                 {
                     PerceptionSystem.FindAvailableResources(Resources, ResourceGrid, movement.Position, phenotype.VisionRange, ResourceKind.Food, ref foodCandidates);
@@ -727,6 +732,21 @@ namespace LifeSimulation.Simulation.Core
                 else if (Config.CognitionEnabled)
                 {
                     decision = DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, out diagnostics);
+                }
+                else if (Config.ForagingEconomicsEnabled)
+                {
+                    decision = DecisionSystem.Decide(
+                        Creatures.GetNeedsAt(index),
+                        phenotype,
+                        foodCandidates,
+                        waterCandidates,
+                        previousDecision.Action,
+                        Creatures.GetForagingRefAt(index).SecondsInCurrentAction,
+                        Config.HandlingSeconds,
+                        Config.ReferenceGain,
+                        Config.CommitmentStrength,
+                        Config.CommitmentHalfLifeSeconds,
+                        out diagnostics);
                 }
                 else
                 {
