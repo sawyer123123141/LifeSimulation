@@ -88,6 +88,7 @@ They are unrelated. This trips people up, so:
 
 | File | What |
 |---|---|
+| `superpowers/specs/2026-08-14-system-integration-design.md` | **Read this first.** How world generation and creature behaviour form one simulation, plus the scale numbers |
 | `superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md` | The bug list. Everything wrong with the code today, grouped by how dangerous the fix is |
 | `superpowers/specs/2026-08-14-world-generation-design.md` | T0–T7. Plates, fields, rivers, caves, world recipes |
 | `superpowers/specs/2026-08-14-foraging-economics-design.md` | How an animal values food and decides to leave a patch |
