@@ -18,6 +18,7 @@ namespace LifeSimulation.Simulation.Core
         private ReproductionState[] _reproduction;
         private CombatState[] _combat;
         private MemoryState[] _memory;
+        private ForagingState[] _foraging;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
@@ -39,6 +40,7 @@ namespace LifeSimulation.Simulation.Core
             _reproduction = new ReproductionState[_identities.Length];
             _combat = new CombatState[_identities.Length];
             _memory = new MemoryState[_identities.Length];
+            _foraging = new ForagingState[_identities.Length];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
@@ -96,6 +98,12 @@ namespace LifeSimulation.Simulation.Core
             return ref _memory[index];
         }
 
+        public ref ForagingState GetForagingRefAt(int index)
+        {
+            ValidateIndex(index);
+            return ref _foraging[index];
+        }
+
         private CreatureId AddInternal(
             Genome genome,
             SimVector2 position,
@@ -117,6 +125,7 @@ namespace LifeSimulation.Simulation.Core
             _reproduction[Count] = default;
             _combat[Count] = default;
             _memory[Count] = default;
+            _foraging[Count] = default;
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -221,6 +230,7 @@ namespace LifeSimulation.Simulation.Core
                 _reproduction[removedIndex] = _reproduction[lastIndex];
                 _combat[removedIndex] = _combat[lastIndex];
                 _memory[removedIndex] = _memory[lastIndex];
+                _foraging[removedIndex] = _foraging[lastIndex];
                 _indexById[movedId] = removedIndex;
             }
 
@@ -247,6 +257,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _reproduction, nextCapacity);
             Array.Resize(ref _combat, nextCapacity);
             Array.Resize(ref _memory, nextCapacity);
+            Array.Resize(ref _foraging, nextCapacity);
         }
 
         private void ValidateIndex(int index)

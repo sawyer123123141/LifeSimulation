@@ -255,6 +255,12 @@ namespace LifeSimulation.Simulation.Core
         public int WaterExperienceCount;
     }
 
+    public struct ForagingState
+    {
+        public float SecondsInCurrentAction;
+        public float RecentIntakeRate;
+    }
+
     public enum RandomDomain : ulong
     {
         Wander = 1,
