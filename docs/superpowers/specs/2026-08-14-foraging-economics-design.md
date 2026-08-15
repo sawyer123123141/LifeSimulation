@@ -81,6 +81,10 @@ This is the standard optimal-foraging departure rule: leave when here is worse t
 
 `Persistence` scales both the commitment bonus and the give-up threshold. One gene, two effects, so the genome does not bloat.
 
+**Why this is not just `Exploration` under another name.** The existing `Exploration` gene covers the explore–exploit tradeoff: how readily a creature samples unknown options. Persistence covers patch residence: how long it stays with a choice already made. Behavioural ecology treats these as separate personality axes, and they genuinely dissociate — an animal can range widely to find patches yet stay put once it finds one, or barely explore yet abandon patches instantly. Modelling them as one gene would model something that does not exist.
+
+Two practical consequences follow. The falsifiable experiments stay separable: with one gene you could not distinguish "persistence rose" from "exploration fell". And foraging stays independent of cognition — `Exploration` is only active when `CognitionEnabled`, and deciding when to leave a patch should not require a brain upgrade.
+
 Per the project rule that every heritable trait needs an explicit cost, benefit, and falsifiable experiment:
 
 - **Benefit:** avoids oscillation, avoids abandoning good patches prematurely, completes long journeys.
