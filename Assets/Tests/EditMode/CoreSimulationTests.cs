@@ -824,6 +824,62 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void WorldsWithIdenticalSeedsAndConfigsProduceIdenticalStateHashes()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            first.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, persistence: 0.75f));
+            second.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, persistence: 0.75f));
+
+            Assert.That(second.ComputeStateHash(), Is.EqualTo(first.ComputeStateHash()));
+        }
+
+        [Test]
+        public void StateHashChangesWhenCreaturePersistenceGeneDiffers()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+            first.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, persistence: 0f));
+            second.Spawn(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, persistence: 1f));
+
+            Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
+        }
+
+        [Test]
+        public void FixedScenarioProducesIdenticalCreatureCountPositionsAndNeedsAcrossRuns()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 6);
+            var first = new SimulationWorld(config);
+            var second = new SimulationWorld(config);
+
+            for (int index = 0; index < 40; index++)
+            {
+                first.Step(config.FixedDeltaTime);
+                second.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(second.CreatureCount, Is.EqualTo(first.CreatureCount));
+
+            for (int index = 0; index < first.CreatureCount; index++)
+            {
+                MovementState firstMovement = first.Creatures.GetMovementAt(index);
+                MovementState secondMovement = second.Creatures.GetMovementAt(index);
+                Assert.That(secondMovement.Position.X, Is.EqualTo(firstMovement.Position.X));
+                Assert.That(secondMovement.Position.Y, Is.EqualTo(firstMovement.Position.Y));
+
+                CreatureNeeds firstNeeds = first.Creatures.GetNeedsAt(index);
+                CreatureNeeds secondNeeds = second.Creatures.GetNeedsAt(index);
+                Assert.That(secondNeeds.Energy, Is.EqualTo(firstNeeds.Energy));
+                Assert.That(secondNeeds.Hydration, Is.EqualTo(firstNeeds.Hydration));
+                Assert.That(secondNeeds.Rest, Is.EqualTo(firstNeeds.Rest));
+                Assert.That(secondNeeds.Health, Is.EqualTo(firstNeeds.Health));
+                Assert.That(secondNeeds.Age, Is.EqualTo(firstNeeds.Age));
+            }
+        }
+
+        [Test]
         public void EventBufferRetainsEventsInOrderAndReportsOverflow()
         {
             var events = new SimulationEventBuffer(capacity: 1);
