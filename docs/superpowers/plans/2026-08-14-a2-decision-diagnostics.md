@@ -1,12 +1,14 @@
-# A-1 and A-2 Diagnostic Fixes Implementation Plan
+# A-2 Decision Diagnostics Implementation Plan
 
-> **For agentic workers:** Implement this plan one task at a time, in order. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md` in the repository root before starting.
+> **For agentic workers:** Implement this plan one task at a time, in order. Steps use checkbox (`- [ ]`) syntax. Read `AGENTS.md` in the repository root before starting.
 
-**Goal:** Make deaths and decisions explainable — record *which* need killed a creature, and record the scores behind flee, hunt, carcass, and thermal decisions.
+**Goal:** Make every decision explainable. `DecisionDiagnostics` currently carries only food and water scores, so the inspector can explain a foraging choice and nothing else — not fleeing, hunting, scavenging, or seeking warmth.
 
-**Architecture:** Both fixes are additive and hash-safe. Death causes, decision diagnostics, and statistics are not covered by `SimulationWorld.ComputeStateHash()`, so no simulation behavior changes and no recorded experiment results shift. New public methods are added as overloads so every existing call site keeps compiling unchanged.
+**Architecture:** Additive and hash-safe. Diagnostics are stored via `SetDecisionDiagnosticsAt` and never hashed or read by simulation logic, so no recorded results shift. Every new capability is an **overload** that delegates to the existing signature, so all current call sites and tests compile unchanged.
 
 **Tech Stack:** C# 9, Unity 6 (6000.2.14f1), Unity Test Framework, NUnit.
+
+**Related:** defect A-2 in `docs/superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md`. Sibling plan: `2026-08-14-a1-death-causes.md` (independent — either may be done first).
 
 ## Global Constraints
 
@@ -17,365 +19,28 @@ Copied from `AGENTS.md`. These apply to **every** task in this plan.
 - No allocation (`new` on arrays, lists, or classes) inside anything called from `SimulationWorld.Step`.
 - No LINQ in `Assets/Scripts/Simulation/`.
 - Do not modify `DeterministicRandom.cs` or `TemperatureField.cs`.
-- Do not change existing values in the `RandomDomain` enum.
 - Do not modify, weaken, delete, or `[Ignore]` any existing test.
 - Full words in names. `movementDistance`, not `moveDist`.
 - Edit only the files each task lists. Do not refactor anything else.
 
 **Stop and report instead of proceeding if:** an existing test fails, a file you need to edit is not listed in your task, or the code does not match what this plan shows.
 
-**Expected test outcome for the entire plan:** every existing test continues to pass, unchanged. If an existing test fails, you have broken something — stop.
-
----
+**Expected outcome for the whole plan:** every existing test continues to pass, unchanged. An existing test failing means you broke something.
 
 ## File Structure
 
 | File | Responsibility | Tasks |
 |---|---|---|
-| `Assets/Scripts/Simulation/Biology/NeedsSystem.cs` | Add pure death-cause classification | 1 |
-| `Assets/Tests/EditMode/DeathCauseTests.cs` | New. Tests for classification and death reporting | 1, 2, 3 |
-| `Assets/Scripts/Simulation/Core/SimulationWorld.cs` | Use classification; count deaths by cause; thread diagnostics | 2, 3, 8 |
-| `Assets/Scripts/Simulation/Behavior/DecisionSystem.cs` | Extend `DecisionDiagnostics` | 4 |
-| `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs` | New. Tests for diagnostics fields and scores | 4, 5, 6, 7 |
-| `Assets/Scripts/Simulation/Behavior/PredationSystem.cs` | Report flee, hunt, carcass scores | 5, 6 |
-| `Assets/Scripts/Simulation/Behavior/ThermoregulationSystem.cs` | Report thermal score | 7 |
-| `Assets/Scripts/Presentation/Prototype1Presenter.cs` | Display death causes and decision scores | 9 |
+| `Assets/Scripts/Simulation/Behavior/DecisionSystem.cs` | Extend the `DecisionDiagnostics` record | 1 |
+| `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs` | New. All tests for this plan | 1, 2, 3, 4, 5 |
+| `Assets/Scripts/Simulation/Behavior/PredationSystem.cs` | Report flee, hunt, carcass scores | 2, 3 |
+| `Assets/Scripts/Simulation/Behavior/ThermoregulationSystem.cs` | Report thermal score | 4 |
+| `Assets/Scripts/Simulation/Core/SimulationWorld.cs` | Thread diagnostics through the decision tick | 5 |
+| `Assets/Scripts/Presentation/Prototype1Presenter.cs` | Display the scores | 6 |
 
 ---
 
-# Part 1 — A-1: Record which need caused each death
-
-## Task 1: Classify metabolic death causes
-
-`DeathCause.Starvation` and `DeathCause.Dehydration` are declared in `SimulationTypes.cs` but never emitted. This task adds a pure function that decides which one applies. Nothing calls it yet.
-
-**Files:**
-- Modify: `Assets/Scripts/Simulation/Biology/NeedsSystem.cs`
-- Create: `Assets/Tests/EditMode/DeathCauseTests.cs`
-
-**Interfaces:**
-- Consumes: `CreatureNeeds` (already in `NeedsSystem.cs`), `DeathCause` (in `LifeSimulation.Simulation.Core`)
-- Produces: `NeedsSystem.ClassifyMetabolicDeath(in CreatureNeeds needs)` returning `DeathCause`
-
-- [ ] **Step 1: Create the test file with the first failing test**
-
-Create `Assets/Tests/EditMode/DeathCauseTests.cs` with exactly this content:
-
-```csharp
-using LifeSimulation.Simulation.Biology;
-using LifeSimulation.Simulation.Core;
-using NUnit.Framework;
-
-namespace LifeSimulation.Tests.EditMode
-{
-    public sealed class DeathCauseTests
-    {
-        [Test]
-        public void EmptyEnergyIsReportedAsStarvation()
-        {
-            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
-            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
-            needs.Energy = 0f;
-
-            Assert.That(NeedsSystem.ClassifyMetabolicDeath(needs), Is.EqualTo(DeathCause.Starvation));
-        }
-    }
-}
-```
-
-- [ ] **Step 2: Run the test and verify it fails to compile**
-
-Open Unity, then run the EditMode tests from `Window > General > Test Runner`.
-
-Expected: compile error, `'NeedsSystem' does not contain a definition for 'ClassifyMetabolicDeath'`.
-
-If you see a different error, stop and report it.
-
-- [ ] **Step 3: Add the classification method**
-
-In `Assets/Scripts/Simulation/Biology/NeedsSystem.cs`, add this using directive below the existing `using System;` line:
-
-```csharp
-using LifeSimulation.Simulation.Core;
-```
-
-Then add this method inside `public static class NeedsSystem`, immediately after the `Tick` method and before `ApplyTemperatureStress`:
-
-```csharp
-        /// <summary>
-        /// Reports which exhausted need is responsible for a creature's health reaching zero.
-        /// Dehydration outranks starvation because it drains health faster, so when both needs
-        /// are empty the faster cause is the one reported.
-        /// </summary>
-        public static DeathCause ClassifyMetabolicDeath(in CreatureNeeds needs)
-        {
-            if (needs.Hydration <= 0f)
-            {
-                return DeathCause.Dehydration;
-            }
-
-            if (needs.Energy <= 0f)
-            {
-                return DeathCause.Starvation;
-            }
-
-            return DeathCause.Health;
-        }
-```
-
-- [ ] **Step 4: Run the test and verify it passes**
-
-Run the EditMode tests again.
-
-Expected: `EmptyEnergyIsReportedAsStarvation` PASSES. Every other test still passes.
-
-- [ ] **Step 5: Add the remaining classification tests**
-
-Add these three tests inside the `DeathCauseTests` class, after `EmptyEnergyIsReportedAsStarvation`:
-
-```csharp
-        [Test]
-        public void EmptyHydrationIsReportedAsDehydration()
-        {
-            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
-            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
-            needs.Hydration = 0f;
-
-            Assert.That(NeedsSystem.ClassifyMetabolicDeath(needs), Is.EqualTo(DeathCause.Dehydration));
-        }
-
-        [Test]
-        public void BothNeedsEmptyReportsTheFasterCause()
-        {
-            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
-            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
-            needs.Energy = 0f;
-            needs.Hydration = 0f;
-
-            Assert.That(NeedsSystem.ClassifyMetabolicDeath(needs), Is.EqualTo(DeathCause.Dehydration));
-        }
-
-        [Test]
-        public void IntactNeedsReportGenericHealthLoss()
-        {
-            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
-            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
-
-            Assert.That(NeedsSystem.ClassifyMetabolicDeath(needs), Is.EqualTo(DeathCause.Health));
-        }
-```
-
-- [ ] **Step 6: Run the tests and verify all four pass**
-
-Expected: all four `DeathCauseTests` tests PASS. Every other test still passes.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add Assets/Scripts/Simulation/Biology/NeedsSystem.cs Assets/Tests/EditMode/DeathCauseTests.cs
-git commit -m "feat: classify metabolic death as starvation or dehydration"
-```
-
----
-
-## Task 2: Report the classified cause when a creature dies
-
-`SimulationWorld` currently passes `DeathCause.Health` for every metabolic death. This task makes it use the classification from Task 1.
-
-**Files:**
-- Modify: `Assets/Scripts/Simulation/Core/SimulationWorld.cs` (one line, at line 394)
-- Modify: `Assets/Tests/EditMode/DeathCauseTests.cs`
-
-**Interfaces:**
-- Consumes: `NeedsSystem.ClassifyMetabolicDeath(in CreatureNeeds)` from Task 1
-- Produces: death events carrying `Starvation` or `Dehydration` instead of `Health`
-
-- [ ] **Step 1: Write the failing integration test**
-
-Add this test inside `DeathCauseTests`, and add these using directives to the top of the file if they are not already present:
-
-```csharp
-using LifeSimulation.Simulation.Behavior;
-```
-
-The test:
-
-```csharp
-        [Test]
-        public void AThirstyCreatureDiesOfDehydrationRatherThanGenericHealthLoss()
-        {
-            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
-            var world = new SimulationWorld(config);
-            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
-            needs.Hydration = 0f;
-            needs.Health = 0.01f;
-
-            for (int step = 0; step < 40 && world.CreatureCount > 0; step++)
-            {
-                world.Step(config.FixedDeltaTime);
-            }
-
-            Assert.That(world.CreatureCount, Is.EqualTo(0));
-            bool foundDehydrationDeath = false;
-            for (int index = 0; index < world.Events.Count; index++)
-            {
-                SimulationEvent simulationEvent = world.Events.GetAt(index);
-                if (simulationEvent.Kind == SimulationEventKind.Death
-                    && simulationEvent.DeathCause == DeathCause.Dehydration)
-                {
-                    foundDehydrationDeath = true;
-                }
-            }
-
-            Assert.That(foundDehydrationDeath, Is.True, "Expected a death event with cause Dehydration.");
-        }
-```
-
-- [ ] **Step 2: Run the test and verify it fails**
-
-Expected: FAIL with `Expected a death event with cause Dehydration.` — because the death is currently reported as `Health`.
-
-If the test fails for any other reason, stop and report it.
-
-- [ ] **Step 3: Use the classification**
-
-In `Assets/Scripts/Simulation/Core/SimulationWorld.cs`, find this line inside `TickNeeds` (near line 394):
-
-```csharp
-                    RequestDeath(Creatures.GetIdAt(index), DeathCause.Health);
-```
-
-Replace that single line with:
-
-```csharp
-                    RequestDeath(Creatures.GetIdAt(index), NeedsSystem.ClassifyMetabolicDeath(needs));
-```
-
-Change nothing else in this file.
-
-- [ ] **Step 4: Run the tests and verify they pass**
-
-Expected: `AThirstyCreatureDiesOfDehydrationRatherThanGenericHealthLoss` PASSES. All existing tests still pass, including every determinism and state-hash test.
-
-**If any existing test now fails, stop immediately and report it.** This change is supposed to be behaviour-neutral; a failure means something is wrong.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add Assets/Scripts/Simulation/Core/SimulationWorld.cs Assets/Tests/EditMode/DeathCauseTests.cs
-git commit -m "feat: report starvation and dehydration as distinct death causes"
-```
-
----
-
-## Task 3: Count deaths by cause
-
-Recording the cause is only useful if you can read the totals. This task adds counters and an accessor.
-
-**Files:**
-- Modify: `Assets/Scripts/Simulation/Core/SimulationWorld.cs`
-- Modify: `Assets/Tests/EditMode/DeathCauseTests.cs`
-
-**Interfaces:**
-- Produces: `SimulationWorld.GetDeathCount(DeathCause cause)` returning `int`
-
-- [ ] **Step 1: Write the failing test**
-
-Add this test inside `DeathCauseTests`:
-
-```csharp
-        [Test]
-        public void DeathsAreCountedByCause()
-        {
-            SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 1);
-            var world = new SimulationWorld(config);
-            ref CreatureNeeds needs = ref world.Creatures.GetNeedsRefAt(0);
-            needs.Hydration = 0f;
-            needs.Health = 0.01f;
-
-            for (int step = 0; step < 40 && world.CreatureCount > 0; step++)
-            {
-                world.Step(config.FixedDeltaTime);
-            }
-
-            Assert.That(world.GetDeathCount(DeathCause.Dehydration), Is.EqualTo(1));
-            Assert.That(world.GetDeathCount(DeathCause.Starvation), Is.EqualTo(0));
-            Assert.That(world.GetDeathCount(DeathCause.Predation), Is.EqualTo(0));
-        }
-```
-
-- [ ] **Step 2: Run the test and verify it fails to compile**
-
-Expected: compile error, `'SimulationWorld' does not contain a definition for 'GetDeathCount'`.
-
-- [ ] **Step 3: Add the counter field**
-
-In `Assets/Scripts/Simulation/Core/SimulationWorld.cs`, find this field declaration near the top of the class (near line 30):
-
-```csharp
-        private int _predationDeathCount;
-```
-
-Add this line immediately after it:
-
-```csharp
-        private readonly int[] _deathCountsByCause = new int[7];
-```
-
-The array has seven entries because `DeathCause` has seven members: `None`, `Debug`, `Starvation`, `Dehydration`, `Age`, `Health`, `Predation`.
-
-- [ ] **Step 4: Increment the counter when a death is applied**
-
-In the same file, inside `Step`, find this block (near line 249):
-
-```csharp
-                    _deathCount++;
-                    if (_pendingDeathCauses[index] == DeathCause.Predation)
-                    {
-                        _predationDeathCount++;
-                    }
-```
-
-Replace it with:
-
-```csharp
-                    _deathCount++;
-                    _deathCountsByCause[(int)_pendingDeathCauses[index]]++;
-                    if (_pendingDeathCauses[index] == DeathCause.Predation)
-                    {
-                        _predationDeathCount++;
-                    }
-```
-
-- [ ] **Step 5: Add the accessor**
-
-In the same file, add this method immediately after the existing `GetCreatureIdAt` method (near line 72):
-
-```csharp
-        public int GetDeathCount(DeathCause cause)
-        {
-            return _deathCountsByCause[(int)cause];
-        }
-```
-
-- [ ] **Step 6: Run the tests and verify they pass**
-
-Expected: `DeathsAreCountedByCause` PASSES. All existing tests still pass.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add Assets/Scripts/Simulation/Core/SimulationWorld.cs Assets/Tests/EditMode/DeathCauseTests.cs
-git commit -m "feat: count deaths by cause"
-```
-
----
-
-# Part 2 — A-2: Explain flee, hunt, carcass, and thermal decisions
-
-`DecisionDiagnostics` currently carries only food and water scores, so the inspector can explain a foraging choice and nothing else.
-
-## Task 4: Extend the diagnostics record
+## Task 1: Extend the diagnostics record
 
 **Files:**
 - Modify: `Assets/Scripts/Simulation/Behavior/DecisionSystem.cs`
@@ -384,12 +49,15 @@ git commit -m "feat: count deaths by cause"
 **Interfaces:**
 - Produces: `DecisionDiagnostics.FleeScore`, `.HuntScore`, `.CarcassScore`, `.ThermalScore`, `.WinningAction`, and the methods `WithPredationScores(float, float)`, `WithCarcassScore(float)`, `WithThermalScore(float)`, `WithWinningAction(CreatureAction)`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing tests**
 
 Create `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs` with exactly this content:
 
 ```csharp
 using LifeSimulation.Simulation.Behavior;
+using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -434,6 +102,8 @@ namespace LifeSimulation.Tests.EditMode
 ```
 
 - [ ] **Step 2: Run the tests and verify they fail to compile**
+
+Open Unity, then run EditMode tests from `Window > General > Test Runner`.
 
 Expected: compile error, `'DecisionDiagnostics' does not contain a definition for 'FleeScore'`.
 
@@ -531,11 +201,11 @@ Replace it entirely with:
     }
 ```
 
-The four-argument constructor is kept so every existing call site compiles unchanged. `DecisionDiagnostics` remains a `readonly struct`, so the `With...` methods return copies on the stack and allocate nothing.
+The four-argument constructor is kept so every existing call site compiles unchanged. `DecisionDiagnostics` stays a `readonly struct`, so the `With...` methods return stack copies and allocate nothing.
 
 - [ ] **Step 4: Run the tests and verify they pass**
 
-Expected: all three `DecisionDiagnosticsTests` tests PASS. All existing tests still pass.
+Expected: all three `DecisionDiagnosticsTests` PASS. All existing tests still pass.
 
 - [ ] **Step 5: Commit**
 
@@ -546,24 +216,17 @@ git commit -m "feat: extend decision diagnostics with predation, carcass, and th
 
 ---
 
-## Task 5: Report flee and hunt scores from PredationSystem
+## Task 2: Report flee and hunt scores
 
 **Files:**
 - Modify: `Assets/Scripts/Simulation/Behavior/PredationSystem.cs`
 - Modify: `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs`
 
 **Interfaces:**
-- Consumes: `DecisionDiagnostics.WithPredationScores(float, float)` from Task 4
+- Consumes: `DecisionDiagnostics.WithPredationScores(float, float)` from Task 1
 - Produces: overload `PredationSystem.Decide(CreatureNeeds, Phenotype, Phenotype, CreatureObservation, CreatureDecision, ref DecisionDiagnostics)`
 
 - [ ] **Step 1: Write the failing test**
-
-Add these using directives to the top of `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs`:
-
-```csharp
-using LifeSimulation.Simulation.Biology;
-using LifeSimulation.Simulation.Core;
-```
 
 Add this test inside `DecisionDiagnosticsTests`:
 
@@ -632,7 +295,7 @@ In `Assets/Scripts/Simulation/Behavior/PredationSystem.cs`, find the existing `D
 
 - [ ] **Step 4: Run the tests and verify they pass**
 
-Expected: `DecidingAgainstAThreatRecordsBothPredationScores` PASSES. The two existing `PredationSystem.Decide` tests in `SpatialBehaviorTests.cs` still pass unchanged, because the five-argument overload still exists.
+Expected: the new test PASSES. The two existing `PredationSystem.Decide` tests in `SpatialBehaviorTests.cs` still pass unchanged, because the five-argument overload still exists.
 
 - [ ] **Step 5: Commit**
 
@@ -643,23 +306,17 @@ git commit -m "feat: report flee and hunt scores from predation decisions"
 
 ---
 
-## Task 6: Report the carcass score
+## Task 3: Report the carcass score
 
 **Files:**
 - Modify: `Assets/Scripts/Simulation/Behavior/PredationSystem.cs`
 - Modify: `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs`
 
 **Interfaces:**
-- Consumes: `DecisionDiagnostics.WithCarcassScore(float)` from Task 4
+- Consumes: `DecisionDiagnostics.WithCarcassScore(float)` from Task 1
 - Produces: overload `PredationSystem.PreferCarcassWhenUseful(CreatureNeeds, Phenotype, ResourceObservation, CreatureDecision, ref DecisionDiagnostics)`
 
 - [ ] **Step 1: Write the failing test**
-
-Add this using directive to the top of `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs` if not already present:
-
-```csharp
-using LifeSimulation.Simulation.Resources;
-```
 
 Add this test inside `DecisionDiagnosticsTests`:
 
@@ -726,7 +383,7 @@ In `Assets/Scripts/Simulation/Behavior/PredationSystem.cs`, find the entire exis
 
 - [ ] **Step 4: Run the tests and verify they pass**
 
-Expected: `ConsideringACarcassRecordsItsScore` PASSES. All existing tests still pass.
+Expected: the new test PASSES. All existing tests still pass.
 
 - [ ] **Step 5: Commit**
 
@@ -737,14 +394,14 @@ git commit -m "feat: report carcass score from scavenging decisions"
 
 ---
 
-## Task 7: Report the thermal comfort score
+## Task 4: Report the thermal comfort score
 
 **Files:**
 - Modify: `Assets/Scripts/Simulation/Behavior/ThermoregulationSystem.cs`
 - Modify: `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs`
 
 **Interfaces:**
-- Consumes: `DecisionDiagnostics.WithThermalScore(float)` from Task 4
+- Consumes: `DecisionDiagnostics.WithThermalScore(float)` from Task 1
 - Produces: overload `ThermoregulationSystem.PreferThermalComfort(Phenotype, SimVector2, long, CreatureDecision, ref DecisionDiagnostics)`
 
 - [ ] **Step 1: Write the failing test**
@@ -804,11 +461,11 @@ In `Assets/Scripts/Simulation/Behavior/ThermoregulationSystem.cs`, find the enti
         }
 ```
 
-You are calling `TemperatureField.Sample`. You are **not** modifying `TemperatureField.cs`. Do not open it.
+You are **calling** `TemperatureField.Sample`. You are **not** modifying `TemperatureField.cs`. Do not open it.
 
 - [ ] **Step 4: Run the tests and verify they pass**
 
-Expected: `ConsideringThermalComfortRecordsItsScore` PASSES. The existing `PreferThermalComfort` test in `SpatialBehaviorTests.cs` still passes unchanged.
+Expected: the new test PASSES. The existing `PreferThermalComfort` test in `SpatialBehaviorTests.cs` still passes unchanged.
 
 - [ ] **Step 5: Commit**
 
@@ -819,7 +476,7 @@ git commit -m "feat: report thermal comfort score from thermoregulation decision
 
 ---
 
-## Task 8: Thread diagnostics through the decision tick
+## Task 5: Thread diagnostics through the decision tick
 
 The overloads exist but `SimulationWorld` still calls the old ones, so the new scores are never stored.
 
@@ -828,8 +485,8 @@ The overloads exist but `SimulationWorld` still calls the old ones, so the new s
 - Modify: `Assets/Tests/EditMode/DecisionDiagnosticsTests.cs`
 
 **Interfaces:**
-- Consumes: the `ref DecisionDiagnostics` overloads from Tasks 5, 6, and 7
-- Produces: stored diagnostics containing predation, carcass, thermal scores, and the winning action
+- Consumes: the `ref DecisionDiagnostics` overloads from Tasks 2, 3, and 4
+- Produces: stored diagnostics containing all scores and the winning action
 
 - [ ] **Step 1: Write the failing test**
 
@@ -858,9 +515,9 @@ Add this test inside `DecisionDiagnosticsTests`:
 
 Expected: FAIL, because `WinningAction` is always `CreatureAction.Wander` while the creature's decision may differ.
 
-If the creature happens to be wandering, this test would pass by accident. If it passes at this step, stop and report it — the test needs a different scenario.
+**If it passes at this step, stop and report it.** The creature happened to be wandering and the test proved nothing; the scenario needs changing.
 
-- [ ] **Step 3: Pass diagnostics into the predation calls**
+- [ ] **Step 3: Pass diagnostics into the predation call**
 
 In `Assets/Scripts/Simulation/Core/SimulationWorld.cs`, inside `TickDecisions`, find this call (near line 565):
 
@@ -938,9 +595,9 @@ Replace it with:
 
 - [ ] **Step 7: Run the tests and verify they pass**
 
-Expected: `StoredDiagnosticsRecordTheWinningAction` PASSES. All existing tests still pass, including every determinism and state-hash test.
+Expected: the new test PASSES. All existing tests still pass, including every determinism and state-hash test.
 
-**If any existing test fails, stop immediately and report it.** Diagnostics are not part of the state hash, so this change must not alter simulation results.
+**If any existing test fails, stop immediately and report it.** Diagnostics are not part of the state hash, so this must not alter simulation results.
 
 - [ ] **Step 8: Commit**
 
@@ -951,17 +608,17 @@ git commit -m "feat: store predation, carcass, thermal scores and winning action
 
 ---
 
-## Task 9: Display death causes and decision scores in the inspector
+## Task 6: Display the scores in the inspector
 
-This task edits Unity presentation code. It cannot be covered by EditMode tests; verify it by entering Play mode and reading the on-screen overlay.
+Unity presentation code. Not covered by EditMode tests; verify by entering Play mode.
 
 **Files:**
 - Modify: `Assets/Scripts/Presentation/Prototype1Presenter.cs`
 
 **Interfaces:**
-- Consumes: `SimulationWorld.GetDeathCount(DeathCause)` from Task 3, and the diagnostics fields from Task 4
+- Consumes: the diagnostics fields from Task 1
 
-- [ ] **Step 1: Extend the decision explanation line**
+- [ ] **Step 1: Add the second explanation line**
 
 In `Assets/Scripts/Presentation/Prototype1Presenter.cs`, inside `DrawSelectedCreatureInspector`, find this line (near line 363):
 
@@ -969,10 +626,9 @@ In `Assets/Scripts/Presentation/Prototype1Presenter.cs`, inside `DrawSelectedCre
             GUI.Label(new Rect(24f, 346f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
 ```
 
-Replace that single line with these two lines:
+Add this line immediately after it:
 
 ```csharp
-            GUI.Label(new Rect(24f, 346f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
             GUI.Label(new Rect(24f, 456f, 420f, 22f), $"Also: flee {diagnostics.FleeScore:0.00} | hunt {diagnostics.HuntScore:0.00} | carcass {diagnostics.CarcassScore:0.00} | warmth {diagnostics.ThermalScore:0.00}");
 ```
 
@@ -990,62 +646,36 @@ Replace it with:
             GUI.Box(new Rect(12f, 232f, 440f, 250f), "Creature Inspector");
 ```
 
-- [ ] **Step 3: Add a death-cause breakdown**
-
-Add this method to the same class, immediately after `DrawSelectedCreatureInspector`:
-
-```csharp
-        private void DrawDeathCauseBreakdown()
-        {
-            GUI.Box(new Rect(464f, 232f, 260f, 140f), "Deaths By Cause");
-            GUI.Label(new Rect(476f, 258f, 240f, 22f), $"Starvation: {_world.GetDeathCount(DeathCause.Starvation)}");
-            GUI.Label(new Rect(476f, 280f, 240f, 22f), $"Dehydration: {_world.GetDeathCount(DeathCause.Dehydration)}");
-            GUI.Label(new Rect(476f, 302f, 240f, 22f), $"Predation: {_world.GetDeathCount(DeathCause.Predation)}");
-            GUI.Label(new Rect(476f, 324f, 240f, 22f), $"Old age: {_world.GetDeathCount(DeathCause.Age)}");
-            GUI.Label(new Rect(476f, 346f, 240f, 22f), $"Other: {_world.GetDeathCount(DeathCause.Health)}");
-        }
-```
-
-- [ ] **Step 4: Call the new method**
-
-Find the line that calls `DrawSelectedCreatureInspector();` and add a call immediately after it:
-
-```csharp
-            DrawSelectedCreatureInspector();
-            DrawDeathCauseBreakdown();
-```
-
-- [ ] **Step 5: Verify in Play mode**
+- [ ] **Step 3: Verify in Play mode**
 
 Enter Play mode. Confirm:
 
-- The "Deaths By Cause" panel appears and its numbers increase over time.
 - Clicking a creature shows the "Also:" line with four scores.
-- Pressing `P` (predator mode) then selecting a creature shows non-zero flee or hunt scores.
-- Pressing `T` (physiology mode) then selecting a creature shows a non-zero warmth score.
+- Pressing `P` (predator mode), then selecting a creature, shows a non-zero flee or hunt score.
+- Pressing `T` (physiology mode), then selecting a creature, shows a non-zero warmth score.
 
-If any panel is missing or overlaps another, adjust only the `Rect` coordinates.
+If panels overlap, adjust only the `Rect` coordinates.
 
-- [ ] **Step 6: Run the EditMode tests one final time**
+- [ ] **Step 4: Run the EditMode tests one final time**
 
 Expected: every test passes.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add Assets/Scripts/Presentation/Prototype1Presenter.cs
-git commit -m "feat: display death causes and full decision scores in the inspector"
+git commit -m "feat: display full decision scores in the creature inspector"
 ```
 
 ---
 
 ## Completion checklist
 
-- [ ] All nine tasks committed
+- [ ] All six tasks committed
 - [ ] Every existing test still passes, unmodified
-- [ ] No file outside the eight listed in the File Structure table was edited
+- [ ] Only the six files in the File Structure table were edited
 - [ ] `DeterministicRandom.cs` and `TemperatureField.cs` were not modified
-- [ ] No allocation was added to per-tick code
-- [ ] `docs/superpowers/specs/2026-08-14-simulation-defects-and-behavior-gaps.md` items A-1 and A-2 are now resolved
+- [ ] No allocation added to per-tick code
+- [ ] Defect A-2 is resolved
 
 If you could not run the Unity tests, say so explicitly rather than describing the work as verified.
