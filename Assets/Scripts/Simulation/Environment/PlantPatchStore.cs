@@ -18,6 +18,7 @@ namespace LifeSimulation.Simulation.Environment
         private PlantLineage[] _lineages;
         private float[] _ages;
         private float[] _seedReserves;
+        private float[] _reproductionCooldowns;
         private int _nextId = 1;
 
         public PlantPatchStore(int initialCapacity)
@@ -35,6 +36,7 @@ namespace LifeSimulation.Simulation.Environment
             _lineages = new PlantLineage[capacity];
             _ages = new float[capacity];
             _seedReserves = new float[capacity];
+            _reproductionCooldowns = new float[capacity];
         }
 
         public int Count { get; private set; }
@@ -63,7 +65,13 @@ namespace LifeSimulation.Simulation.Environment
 
         public PlantPatchState GetAt(int index)
         {
-            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index]);
+            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index], _reproductionCooldowns[index]);
+        }
+
+        public void SetReproductionCooldown(int index, float value)
+        {
+            if ((uint)index >= (uint)Count) return;
+            _reproductionCooldowns[index] = Math.Max(0f, value);
         }
 
         public void SetGenomeAndLineage(int index, PlantGenome genome, PlantLineage lineage)
@@ -113,6 +121,7 @@ namespace LifeSimulation.Simulation.Environment
             Array.Resize(ref _lineages, capacity);
             Array.Resize(ref _ages, capacity);
             Array.Resize(ref _seedReserves, capacity);
+            Array.Resize(ref _reproductionCooldowns, capacity);
         }
     }
 }

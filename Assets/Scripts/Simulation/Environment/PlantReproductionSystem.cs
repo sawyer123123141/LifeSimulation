@@ -9,14 +9,22 @@ namespace LifeSimulation.Simulation.Environment
         private const float MaturityFraction = .75f;
         private const float MutationStandardDeviation = .03f;
         private const int SiteAttempts = 4;
+        private const float ReproductionCooldownSeconds = 20f;
 
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, ref long seedOrdinal)
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal)
         {
             int parentCount = patches.Count;
             int births = 0;
             for (int parentIndex = 0; parentIndex < parentCount; parentIndex++)
             {
                 PlantPatchState parent = patches.GetAt(parentIndex);
+                if (parent.ReproductionCooldownRemaining > 0f)
+                {
+                    float remaining = Math.Max(0f, parent.ReproductionCooldownRemaining - deltaTime);
+                    patches.SetReproductionCooldown(parentIndex, remaining);
+                    if (remaining > 0f) continue;
+                    parent = patches.GetAt(parentIndex);
+                }
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
@@ -31,6 +39,7 @@ namespace LifeSimulation.Simulation.Environment
                 PlantPatchState child = patches.GetAt(childIndex);
                 patches.SetGenomeAndLineage(childIndex, childGenome, new PlantLineage(child.Id, parent.Id, parent.Lineage.Generation + 1));
                 resources.SetActiveAt(siteIndex, true);
+                patches.SetReproductionCooldown(parentIndex, ReproductionCooldownSeconds);
                 births++;
             }
 
