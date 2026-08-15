@@ -32,5 +32,41 @@ namespace LifeSimulation.Simulation.Behavior
 
             return distance * phenotype.BodyMass * 0.5f;
         }
+
+        public static float PatchScore(
+            float urgency,
+            float remainingAmount,
+            float distance,
+            Phenotype phenotype,
+            float nutritionMultiplier,
+            float handlingSeconds,
+            float referenceGain)
+        {
+            if (urgency < 0f || urgency > 1f || float.IsNaN(urgency) || float.IsInfinity(urgency))
+            {
+                throw new ArgumentOutOfRangeException(nameof(urgency));
+            }
+
+            if (float.IsNaN(nutritionMultiplier) || float.IsInfinity(nutritionMultiplier))
+            {
+                throw new ArgumentOutOfRangeException(nameof(nutritionMultiplier));
+            }
+
+            if (referenceGain <= 0f || float.IsNaN(referenceGain) || float.IsInfinity(referenceGain))
+            {
+                throw new ArgumentOutOfRangeException(nameof(referenceGain));
+            }
+
+            float expectedGain = ExpectedGain(remainingAmount, phenotype, nutritionMultiplier, handlingSeconds);
+            float travelEnergy = TravelEnergy(distance, phenotype);
+            float netGain = expectedGain - travelEnergy;
+
+            return Clamp01(urgency * netGain / referenceGain);
+        }
+
+        private static float Clamp01(float value)
+        {
+            return Math.Max(0f, Math.Min(1f, value));
+        }
     }
 }
