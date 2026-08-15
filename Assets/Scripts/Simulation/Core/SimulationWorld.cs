@@ -751,7 +751,8 @@ namespace LifeSimulation.Simulation.Core
                             phenotype,
                             Creatures.GetPhenotypeAt(other.CreatureIndex),
                             other,
-                            decision);
+                            decision,
+                            ref diagnostics);
                         if (Config.CognitionEnabled && decision.Action == CreatureAction.Flee)
                         {
                             MemorySystem.RememberThreat(ref Creatures.GetMemoryRefAt(index), Creatures.GetMovementAt(other.CreatureIndex).Position);
@@ -762,11 +763,12 @@ namespace LifeSimulation.Simulation.Core
                         Creatures.GetNeedsAt(index),
                         phenotype,
                         carcass,
-                        decision);
+                        decision,
+                        ref diagnostics);
                 }
                 if (Config.PhysiologyEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
-                    decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision);
+                    decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision, ref diagnostics);
                 }
                 CreatureDecision selectedIntent = decision;
                 if (Config.CognitionEnabled
@@ -826,7 +828,7 @@ namespace LifeSimulation.Simulation.Core
                     decision.Score,
                     tick,
                     decision.TargetCreatureId));
-                Creatures.SetDecisionDiagnosticsAt(index, diagnostics);
+                Creatures.SetDecisionDiagnosticsAt(index, diagnostics.WithWinningAction(decision.Action));
                 if (DecisionTrace != null)
                 {
                     DecisionInvalidationReason invalidationReason = DetermineDecisionInvalidation(previousDecision, selectedIntent, decision);
