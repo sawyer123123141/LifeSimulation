@@ -1,3 +1,4 @@
+using System;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 
@@ -9,7 +10,12 @@ namespace LifeSimulation.Simulation.Environment
         private const float MutationStandardDeviation = .03f;
         private const int SiteAttempts = 4;
 
-        public static int Step(PlantPatchStore patches, ResourceStore resources, int worldSeed, long tick, ref long seedOrdinal)
+        // Mirrors PlantPhenotype.FromGenome's DispersalRange formula (4 .. 24 world units),
+        // recomputed here from the raw genome value so FindSite stays independently testable.
+        private const float BaseDispersalRange = 4f;
+        private const float DispersalRangeSpan = 20f;
+
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, ref long seedOrdinal)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -19,7 +25,7 @@ namespace LifeSimulation.Simulation.Environment
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
-                int siteIndex = FindSite(resources, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange);
+                int siteIndex = FindSite(resources, sites, parent, worldSeed, tick, seedOrdinal, parent.Genome.Dispersal);
                 if (siteIndex < 0) continue;
 
                 ResourceState site = resources.GetAt(siteIndex);
@@ -36,13 +42,31 @@ namespace LifeSimulation.Simulation.Environment
             return births;
         }
 
-        private static int FindSite(ResourceStore resources, PlantPatchState parent, int seed, long tick, long ordinal, float range)
+        public static float EstablishmentSuccessProbability(float distance, float dispersalRange)
         {
+            float range = Math.Max(.01f, dispersalRange);
+            float normalizedDistance = Math.Min(1f, Math.Max(0f, distance / range));
+            return 1f - normalizedDistance;
+        }
+
+        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchState parent, int seed, long tick, long ordinal, float dispersal)
+        {
+            if (sites.Count == 0) return -1;
+
+            float range = BaseDispersalRange + (DispersalRangeSpan * dispersal);
             for (int attempt = 0; attempt < SiteAttempts; attempt++)
             {
-                int index = (int)(DeterministicRandom.Float01(seed, RandomDomain.PlantDispersal, tick, parent.Id.Value, ordinal, attempt) * resources.Count);
+                int slot = (int)(DeterministicRandom.Float01(seed, RandomDomain.PlantDispersal, tick, parent.Id.Value, ordinal, attempt) * sites.Count);
+                int index = sites.GetResourceIndexAt(slot);
                 ResourceState candidate = resources.GetAt(index);
-                if (candidate.Kind != ResourceKind.Food || candidate.IsActive || SimVector2.Distance(parent.Position, candidate.Position) > range) continue;
+                if (candidate.Kind != ResourceKind.Food || candidate.IsActive) continue;
+
+                float distance = SimVector2.Distance(parent.Position, candidate.Position);
+                if (distance > range) continue;
+
+                float establishmentRoll = DeterministicRandom.Float01(seed, RandomDomain.PlantEstablishment, tick, parent.Id.Value, ordinal, attempt);
+                if (establishmentRoll > EstablishmentSuccessProbability(distance, range)) continue;
+
                 return index;
             }
             return -1;
