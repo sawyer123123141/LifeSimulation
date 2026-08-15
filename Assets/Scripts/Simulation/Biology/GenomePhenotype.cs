@@ -27,7 +27,8 @@ namespace LifeSimulation.Simulation.Biology
             float urgencyExponent = 0.5f,
             float travelSensitivity = 0.5f,
             float riskAversion = 0.5f,
-            float commitment = 0.5f)
+            float commitment = 0.5f,
+            float persistence = 0f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);
@@ -52,6 +53,7 @@ namespace LifeSimulation.Simulation.Biology
             TravelSensitivity = Clamp01(travelSensitivity);
             RiskAversion = Clamp01(riskAversion);
             Commitment = Clamp01(commitment);
+            Persistence = Clamp01(persistence);
         }
 
         public static Genome Neutral => new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
@@ -79,6 +81,7 @@ namespace LifeSimulation.Simulation.Biology
         public float TravelSensitivity { get; }
         public float RiskAversion { get; }
         public float Commitment { get; }
+        public float Persistence { get; }
 
         public Genome WithBodySize(float value)
         {
@@ -105,7 +108,8 @@ namespace LifeSimulation.Simulation.Biology
                 UrgencyExponent,
                 TravelSensitivity,
                 RiskAversion,
-                Commitment);
+                Commitment,
+                Persistence);
         }
 
         private static float Clamp01(float value)
@@ -142,7 +146,8 @@ namespace LifeSimulation.Simulation.Biology
             float exploration,
             float reproductionCooldownSeconds,
             float reproductionEnergyCostFraction,
-            float maximumAgeSeconds)
+            float maximumAgeSeconds,
+            float persistence)
         {
             BodyMass = bodyMass;
             EnergyCapacity = energyCapacity;
@@ -170,6 +175,7 @@ namespace LifeSimulation.Simulation.Biology
             ReproductionCooldownSeconds = reproductionCooldownSeconds;
             ReproductionEnergyCostFraction = reproductionEnergyCostFraction;
             MaximumAgeSeconds = maximumAgeSeconds;
+            Persistence = persistence;
         }
 
         public float BodyMass { get; }
@@ -198,6 +204,7 @@ namespace LifeSimulation.Simulation.Biology
         public float ReproductionCooldownSeconds { get; }
         public float ReproductionEnergyCostFraction { get; }
         public float MaximumAgeSeconds { get; }
+        public float Persistence { get; }
 
         public static Phenotype FromGenome(Genome genome)
         {
@@ -219,7 +226,8 @@ namespace LifeSimulation.Simulation.Biology
                 + (0.02f * genome.Exploration)
                 + (0.06f * genome.TemperatureTolerance)
                 + (0.08f * genome.FertilityInvestment)
-                + (0.07f * genome.LifespanTendency);
+                + (0.07f * genome.LifespanTendency)
+                + (0.05f * genome.Persistence);
 
             return new Phenotype(
                 bodyMass,
@@ -247,7 +255,8 @@ namespace LifeSimulation.Simulation.Biology
                 genome.Exploration,
                 16f - (8f * genome.FertilityInvestment),
                 0.15f + (0.20f * genome.FertilityInvestment),
-                90f + (180f * genome.LifespanTendency));
+                90f + (180f * genome.LifespanTendency),
+                genome.Persistence);
         }
     }
 }
