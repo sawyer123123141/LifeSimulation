@@ -95,6 +95,7 @@ namespace LifeSimulation.Simulation.Core
             DecisionPolicyVersion decisionPolicyVersion = DecisionPolicyVersion.Legacy,
             bool plantCohortsEnabled = false,
             bool foragingEconomicsEnabled = false,
+            bool predationEconomicsEnabled = false,
             float handlingSeconds = DefaultHandlingSeconds,
             float referenceGain = DefaultReferenceGain,
             float commitmentStrength = DefaultCommitmentStrength,
@@ -116,6 +117,7 @@ namespace LifeSimulation.Simulation.Core
             DecisionPolicyVersion = decisionPolicyVersion;
             PlantCohortsEnabled = plantCohortsEnabled;
             ForagingEconomicsEnabled = foragingEconomicsEnabled;
+            PredationEconomicsEnabled = predationEconomicsEnabled;
             HandlingSeconds = handlingSeconds;
             ReferenceGain = referenceGain;
             CommitmentStrength = commitmentStrength;
@@ -137,6 +139,7 @@ namespace LifeSimulation.Simulation.Core
         public DecisionPolicyVersion DecisionPolicyVersion { get; }
         public bool PlantCohortsEnabled { get; }
         public bool ForagingEconomicsEnabled { get; }
+        public bool PredationEconomicsEnabled { get; }
         public float HandlingSeconds { get; }
         public float ReferenceGain { get; }
         public float CommitmentStrength { get; }
