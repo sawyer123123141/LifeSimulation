@@ -520,7 +520,7 @@ namespace LifeSimulation.Simulation.Core
                 MovementSystem.MoveToward(
                     ref movement,
                     target,
-                    Creatures.GetPhenotypeAt(index).MaximumSpeed,
+                    GetEffectivePhenotype(index).MaximumSpeed,
                     Config.FixedDeltaTime,
                     Arena);
             }
@@ -626,6 +626,18 @@ namespace LifeSimulation.Simulation.Core
                 position.Y + (float)Math.Sin(angle));
         }
 
+        private Phenotype GetEffectivePhenotype(int index)
+        {
+            Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+            if (!Config.JuvenileCapabilityEnabled)
+            {
+                return phenotype;
+            }
+
+            float multiplier = JuvenileSystem.CapabilityMultiplier(Creatures.GetNeedsAt(index).Age, ReproductionSystem.AdultAgeSeconds);
+            return phenotype.WithJuvenileScaling(multiplier);
+        }
+
         private void TickDecisions(long tick)
         {
             int interval = Config.Schedule.BaseFrequencyHz / Config.Schedule.DecisionsHz;
@@ -637,7 +649,7 @@ namespace LifeSimulation.Simulation.Core
                 }
 
                 MovementState movement = Creatures.GetMovementAt(index);
-                Phenotype phenotype = Creatures.GetPhenotypeAt(index);
+                Phenotype phenotype = GetEffectivePhenotype(index);
                 CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
                 ResourceObservation food = PerceptionSystem.FindNearestAvailableResource(
                     Resources,
@@ -1183,8 +1195,8 @@ namespace LifeSimulation.Simulation.Core
                     continue;
                 }
 
-                Phenotype attacker = Creatures.GetPhenotypeAt(index);
-                Phenotype defender = Creatures.GetPhenotypeAt(targetIndex);
+                Phenotype attacker = GetEffectivePhenotype(index);
+                Phenotype defender = GetEffectivePhenotype(targetIndex);
                 float hitChance = 0.20f + (0.70f * PredationSystem.Threat(attacker, defender, engagementDistance, Config.PredationEconomicsEnabled));
                 float roll = DeterministicRandom.Float01(
                     Config.WorldSeed,
@@ -1212,7 +1224,7 @@ namespace LifeSimulation.Simulation.Core
                     continue;
                 }
 
-                Phenotype defender = Creatures.GetPhenotypeAt(index);
+                Phenotype defender = GetEffectivePhenotype(index);
                 ref CreatureNeeds targetNeeds = ref Creatures.GetNeedsRefAt(index);
                 ref CombatState targetCombat = ref Creatures.GetCombatRefAt(index);
                 targetNeeds.Health -= damage;

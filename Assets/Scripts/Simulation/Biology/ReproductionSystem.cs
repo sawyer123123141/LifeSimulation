@@ -8,7 +8,7 @@ namespace LifeSimulation.Simulation.Biology
 {
     public sealed class ReproductionSystem
     {
-        private const float AdultAgeSeconds = 20f;
+        public const float AdultAgeSeconds = 20f;
         private const float LegacyReproductionCooldownSeconds = 15f;
         private const float LegacyReproductionEnergyCostFraction = 0.2f;
         private const float MateDistance = 2f;

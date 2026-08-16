@@ -258,5 +258,32 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(needs.Health, Is.EqualTo(healthBefore - 3f).Within(0.0001f));
         }
+
+        [Test]
+        public void JuvenileCapabilityMultiplierRampsLinearlyFromFloorToFull()
+        {
+            Assert.That(JuvenileSystem.CapabilityMultiplier(age: 0f, adultAgeSeconds: 20f), Is.EqualTo(0.3f).Within(0.0001f));
+            Assert.That(JuvenileSystem.CapabilityMultiplier(age: 20f, adultAgeSeconds: 20f), Is.EqualTo(1.0f).Within(0.0001f));
+            Assert.That(JuvenileSystem.CapabilityMultiplier(age: 40f, adultAgeSeconds: 20f), Is.EqualTo(1.0f).Within(0.0001f));
+            Assert.That(JuvenileSystem.CapabilityMultiplier(age: 10f, adultAgeSeconds: 20f), Is.EqualTo(0.65f).Within(0.0001f));
+        }
+
+        [Test]
+        public void WithJuvenileScalingScalesOnlySpeedVisionAndCombatFields()
+        {
+            Phenotype adult = Phenotype.FromGenome(new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                attack: 0.6f, defense: 0.4f, maneuverability: 0.5f));
+
+            Phenotype scaled = adult.WithJuvenileScaling(0.3f);
+
+            Assert.That(scaled.MaximumSpeed, Is.EqualTo(adult.MaximumSpeed * 0.3f).Within(0.0001f));
+            Assert.That(scaled.VisionRange, Is.EqualTo(adult.VisionRange * 0.3f).Within(0.0001f));
+            Assert.That(scaled.AttackPower, Is.EqualTo(adult.AttackPower * 0.3f).Within(0.0001f));
+            Assert.That(scaled.Defense, Is.EqualTo(adult.Defense * 0.3f).Within(0.0001f));
+            Assert.That(scaled.Maneuverability, Is.EqualTo(adult.Maneuverability * 0.3f).Within(0.0001f));
+            Assert.That(scaled.EnergyCapacity, Is.EqualTo(adult.EnergyCapacity).Within(0.0001f));
+            Assert.That(scaled.HealthCapacity, Is.EqualTo(adult.HealthCapacity).Within(0.0001f));
+        }
     }
 }

@@ -108,7 +108,8 @@ namespace LifeSimulation.Simulation.Core
             float threatFalloffDistance = DefaultThreatFalloffDistance,
             bool decisionStaggerEnabled = false,
             bool multiThreatPerceptionEnabled = false,
-            bool restBehaviorEnabled = false)
+            bool restBehaviorEnabled = false,
+            bool juvenileCapabilityEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -134,6 +135,7 @@ namespace LifeSimulation.Simulation.Core
             DecisionStaggerEnabled = decisionStaggerEnabled;
             MultiThreatPerceptionEnabled = multiThreatPerceptionEnabled;
             RestBehaviorEnabled = restBehaviorEnabled;
+            JuvenileCapabilityEnabled = juvenileCapabilityEnabled;
         }
 
         public int WorldSeed { get; }
@@ -159,6 +161,7 @@ namespace LifeSimulation.Simulation.Core
         public bool DecisionStaggerEnabled { get; }
         public bool MultiThreatPerceptionEnabled { get; }
         public bool RestBehaviorEnabled { get; }
+        public bool JuvenileCapabilityEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 

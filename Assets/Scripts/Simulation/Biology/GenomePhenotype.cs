@@ -206,6 +206,38 @@ namespace LifeSimulation.Simulation.Biology
         public float MaximumAgeSeconds { get; }
         public float Persistence { get; }
 
+        public Phenotype WithJuvenileScaling(float multiplier)
+        {
+            return new Phenotype(
+                BodyMass,
+                EnergyCapacity,
+                HydrationCapacity,
+                HealthCapacity,
+                MaximumSpeed * multiplier,
+                VisionRange * multiplier,
+                FoodYield,
+                IngestionRate,
+                DigestionRate,
+                WaterLossMultiplier,
+                BasalEnergyCostMultiplier,
+                AttackPower * multiplier,
+                Defense * multiplier,
+                Maneuverability * multiplier,
+                FearResponse,
+                Aggression,
+                PlantFoodYieldMultiplier,
+                MeatYieldMultiplier,
+                MemoryConfidenceDecayPerSecond,
+                CognitionRestCostMultiplier,
+                TemperatureTolerance,
+                LearningRate,
+                Exploration,
+                ReproductionCooldownSeconds,
+                ReproductionEnergyCostFraction,
+                MaximumAgeSeconds,
+                Persistence);
+        }
+
         public static Phenotype FromGenome(Genome genome)
         {
             float bodyMass = 0.6f * (float)Math.Pow(4d, genome.BodySize);
