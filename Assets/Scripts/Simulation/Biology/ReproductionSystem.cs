@@ -15,15 +15,17 @@ namespace LifeSimulation.Simulation.Biology
 
         private readonly CreatureStore _creatures;
         private readonly bool _physiologyEnabled;
+        private readonly bool _mateSelectionEnabled;
         private readonly CreatureIndexComparer _creatureIndexComparer;
         private SimVector2[] _creaturePositions;
         private int[] _candidates;
         private bool[] _matched;
 
-        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled)
+        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false)
         {
             _creatures = creatures ?? throw new ArgumentNullException(nameof(creatures));
             _physiologyEnabled = physiologyEnabled;
+            _mateSelectionEnabled = mateSelectionEnabled;
             if (initialCapacity < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(initialCapacity));
@@ -72,7 +74,9 @@ namespace LifeSimulation.Simulation.Biology
                     continue;
                 }
 
-                int secondIndex = FindNearestReadyMate(firstIndex, candidateCount);
+                int secondIndex = _mateSelectionEnabled
+                    ? FindSeekMateTarget(firstIndex, candidateCount)
+                    : FindNearestReadyMate(firstIndex, candidateCount);
                 if (secondIndex < 0)
                 {
                     continue;
@@ -144,6 +148,33 @@ namespace LifeSimulation.Simulation.Biology
             }
 
             return bestIndex;
+        }
+
+        private int FindSeekMateTarget(int firstIndex, int candidateCount)
+        {
+            CreatureDecision decision = _creatures.GetDecisionAt(firstIndex);
+            if (decision.Action != CreatureAction.SeekMate
+                || !_creatures.TryGetIndex(decision.TargetCreatureId, out int secondIndex))
+            {
+                return -1;
+            }
+
+            if (secondIndex < 0 || secondIndex >= candidateCount || secondIndex == firstIndex
+                || _matched[secondIndex] || !IsReady(secondIndex))
+            {
+                return -1;
+            }
+
+            float distance = SimVector2.Distance(
+                _creatures.GetMovementAt(firstIndex).Position,
+                _creatures.GetMovementAt(secondIndex).Position);
+            return distance <= MateDistance ? secondIndex : -1;
+        }
+
+        /// <summary>Test-only forwarder — Assets/Tests/EditMode has no InternalsVisibleTo, so private logic is exercised through a public passthrough, matching this session's established pattern.</summary>
+        public int FindSeekMateTargetForTest(int firstIndex, int candidateCount)
+        {
+            return FindSeekMateTarget(firstIndex, candidateCount);
         }
 
         private CreatureId CreateChild(int firstIndex, int secondIndex, int worldSeed, ref long birthOrdinal, long tick)

@@ -112,7 +112,8 @@ namespace LifeSimulation.Simulation.Core
             bool juvenileCapabilityEnabled = false,
             bool parentalFollowingEnabled = false,
             bool kinRecognitionEnabled = false,
-            bool learnedResourceQualityEnabled = false)
+            bool learnedResourceQualityEnabled = false,
+            bool mateSelectionEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -142,6 +143,7 @@ namespace LifeSimulation.Simulation.Core
             ParentalFollowingEnabled = parentalFollowingEnabled;
             KinRecognitionEnabled = kinRecognitionEnabled;
             LearnedResourceQualityEnabled = learnedResourceQualityEnabled;
+            MateSelectionEnabled = mateSelectionEnabled;
         }
 
         public int WorldSeed { get; }
@@ -171,6 +173,7 @@ namespace LifeSimulation.Simulation.Core
         public bool ParentalFollowingEnabled { get; }
         public bool KinRecognitionEnabled { get; }
         public bool LearnedResourceQualityEnabled { get; }
+        public bool MateSelectionEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
