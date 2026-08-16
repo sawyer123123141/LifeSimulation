@@ -13,6 +13,9 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Smoothing window for the recent-intake-rate exponential moving average.</summary>
         private const float ForagingIntakeRateWindowSeconds = 5f;
 
+        /// <summary>Minimum confidence-discounted <see cref="ForagingEconomics.PatchScore"/> a remembered place needs to be worth traveling to, matching <c>DecisionSystem.MinimumUrgencyToSeekResource</c>.</summary>
+        private const float RememberedPlaceMinimumScore = 0.05f;
+
         private CreatureId[] _pendingDeaths;
         private DeathCause[] _pendingDeathCauses;
         private SimVector2[] _pendingDeathPositions;
@@ -48,7 +51,7 @@ namespace LifeSimulation.Simulation.Core
         {
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Config.Validate();
-            Creatures = new CreatureStore(Config.InitialPopulation);
+            Creatures = new CreatureStore(Config.InitialPopulation, Config.MaximumMemorySlots);
             Resources = new ResourceStore(initialCapacity: 8);
             Plants = new PlantPatchStore(initialCapacity: 8);
             PlantSites = new PlantSiteRegistry(initialCapacity: 8);
@@ -681,6 +684,24 @@ namespace LifeSimulation.Simulation.Core
                     if (food.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Food, Resources.GetAt(food.ResourceIndex).Position);
                     if (water.IsValid) MemorySystem.RememberResource(ref memory, ResourceKind.Water, Resources.GetAt(water.ResourceIndex).Position);
                 }
+                if (Config.CognitionEnabled
+                    && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy
+                    && previousDecision.TargetResourceIndex < 0
+                    && (previousDecision.Action == CreatureAction.SeekFood || previousDecision.Action == CreatureAction.SeekWater))
+                {
+                    // TargetResourceIndex < 0 with a Seek action, under the Legacy policy, only ever
+                    // comes from the remembered-place override below - a real visible target always
+                    // carries its resource index. Arriving there and still seeing nothing of that kind
+                    // means the remembered place was wrong; RecordFailedPlaceSearch itself is a no-op
+                    // until the creature is actually within SamePlaceRadius of a matching slot.
+                    ResourceKind previousKind = previousDecision.Action == CreatureAction.SeekFood ? ResourceKind.Food : ResourceKind.Water;
+                    bool nothingOfThatKindVisible = previousKind == ResourceKind.Food ? !food.IsValid : !water.IsValid;
+                    if (nothingOfThatKindVisible)
+                    {
+                        int usableSlotCount = GetUsableMemorySlotCount(Creatures.GetGenomeAt(index));
+                        MemorySystem.RecordFailedPlaceSearch(Creatures, index, usableSlotCount, movement.Position, previousKind, Config.SamePlaceRadius);
+                    }
+                }
                 DecisionDiagnostics diagnostics;
                 CreatureDecision decision;
                 if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)
@@ -768,19 +789,34 @@ namespace LifeSimulation.Simulation.Core
                 }
                 if (Config.CognitionEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
+                    // Remembered places only compete once nothing visible was suitable: a visible
+                    // patch already won the primary decision above, and confidence (<=1) discounting
+                    // an identical remembered PatchScore means a real, currently-seen option always
+                    // beats an equally good memory of one - it never needs to be scored to lose.
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
                     memory.HasActiveRememberedTarget = false;
-                    decision = DecisionSystem.PreferRememberedResource(
-                        Creatures.GetNeedsAt(index),
-                        phenotype,
-                        memory,
-                        decision,
-                        out SimVector2 rememberedTarget);
-                    if ((decision.Action == CreatureAction.SeekFood || decision.Action == CreatureAction.SeekWater)
-                        && decision.TargetResourceIndex < 0)
+                    if (decision.Action == CreatureAction.Wander)
                     {
-                        memory.ActiveRememberedTarget = rememberedTarget;
-                        memory.HasActiveRememberedTarget = true;
+                        Genome genome = Creatures.GetGenomeAt(index);
+                        int usableSlotCount = GetUsableMemorySlotCount(genome);
+                        bool foundRememberedPlace = TryScoreBestRememberedPlace(
+                            index,
+                            usableSlotCount,
+                            phenotype,
+                            Creatures.GetNeedsAt(index),
+                            movement.Position,
+                            out SimVector2 bestPosition,
+                            out ResourceKind bestKind,
+                            out float bestScore);
+                        if (foundRememberedPlace && bestScore >= RememberedPlaceMinimumScore)
+                        {
+                            decision = new CreatureDecision(
+                                bestKind == ResourceKind.Water ? CreatureAction.SeekWater : CreatureAction.SeekFood,
+                                -1,
+                                bestScore);
+                            memory.ActiveRememberedTarget = bestPosition;
+                            memory.HasActiveRememberedTarget = true;
+                        }
                     }
                 }
                 if (Config.FounderProfile == FounderProfile.PredationVariation && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
@@ -1178,6 +1214,59 @@ namespace LifeSimulation.Simulation.Core
                 float sampleRate = _foragingEnergyGained[index] / deltaTime;
                 foraging.RecentIntakeRate += (sampleRate - foraging.RecentIntakeRate) * smoothing;
             }
+        }
+
+        private int GetUsableMemorySlotCount(Genome genome)
+        {
+            return SimulationConfig.ComputeMemorySlotCount(Config.MinimumMemorySlots, Config.AdditionalMemorySlots, genome.MemoryCapacity);
+        }
+
+        /// <summary>
+        /// Scores every occupied, non-zero-confidence place-memory slot up to <paramref name="usableSlotCount"/>
+        /// with <see cref="ForagingEconomics.PatchScore"/> - substituting each place's <c>LastKnownAmount</c>
+        /// for the observed remaining amount - discounted by that place's <c>Confidence</c>. Returns the
+        /// highest-scoring place, if any occupied slot exists.
+        /// </summary>
+        private bool TryScoreBestRememberedPlace(
+            int creatureIndex,
+            int usableSlotCount,
+            Phenotype phenotype,
+            CreatureNeeds needs,
+            SimVector2 origin,
+            out SimVector2 bestPosition,
+            out ResourceKind bestKind,
+            out float bestScore)
+        {
+            bestPosition = default;
+            bestKind = default;
+            bestScore = 0f;
+            bool found = false;
+
+            for (int slot = 0; slot < usableSlotCount; slot++)
+            {
+                PlaceMemory place = Creatures.GetPlaceMemoryRefAt(creatureIndex, slot);
+                if (place.VisitCount <= 0 || place.Confidence <= 0f)
+                {
+                    continue;
+                }
+
+                bool seekingWater = place.Kind == ResourceKind.Water;
+                float capacity = seekingWater ? phenotype.HydrationCapacity : phenotype.EnergyCapacity;
+                float current = seekingWater ? needs.Hydration : needs.Energy;
+                float urgency = Math.Max(0f, Math.Min(1f, 1f - (current / capacity)));
+                float distance = SimVector2.Distance(origin, place.Position);
+                float score = ForagingEconomics.PatchScore(urgency, place.LastKnownAmount, distance, phenotype, 1f, Config.HandlingSeconds, Config.ReferenceGain) * place.Confidence;
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestPosition = place.Position;
+                    bestKind = place.Kind;
+                    found = true;
+                }
+            }
+
+            return found;
         }
 
         private void EnsureForagingEnergyGainedCapacity(int required)
