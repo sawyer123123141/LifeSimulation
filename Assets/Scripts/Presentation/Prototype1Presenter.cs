@@ -168,6 +168,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.G)) ResetForagingMemoryDemo();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
+            if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
             if (Input.GetMouseButton(0)) UpdateResourceDrag();
@@ -293,6 +294,27 @@ namespace LifeSimulation.Presentation
             {
                 Destroy(_temperatureHeatmap);
             }
+        }
+
+        private void ResetAllFlagsPlaytestSimulation()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length);
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                new SimulationConfig(
+                    defaults.WorldSeed,
+                    defaults.InitialPopulation,
+                    defaults.Schedule,
+                    maximumPopulation: 150,
+                    founderProfile: FounderProfile.PredationVariation,
+                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                    predationEconomicsEnabled: true,
+                    decisionStaggerEnabled: true,
+                    multiThreatPerceptionEnabled: true,
+                    restBehaviorEnabled: true,
+                    juvenileCapabilityEnabled: true,
+                    parentalFollowingEnabled: true));
+            _scenarioId = "all-flags-playtest";
         }
 
         private void ResetPredationSimulation()
