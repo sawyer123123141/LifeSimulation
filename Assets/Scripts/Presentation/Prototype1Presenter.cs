@@ -109,7 +109,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · E starter habitat · H heatmap");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · H heatmap");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Drag food/water · Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
@@ -165,6 +165,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.P)) ResetPredationSimulation();
             if (Input.GetKeyDown(KeyCode.C)) ResetCognitionSimulation();
             if (Input.GetKeyDown(KeyCode.T)) ResetPhysiologySimulation();
+            if (Input.GetKeyDown(KeyCode.G)) ResetForagingMemoryDemo();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
@@ -320,6 +321,25 @@ namespace LifeSimulation.Presentation
             ResetSimulation(
                 Prototype1Scenarios.Baseline,
                 CreatePlayableConfig(SimulationConfig.CreatePrototype3Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length)));
+        }
+
+        private void ResetForagingMemoryDemo()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length);
+            ResetSimulation(
+                Prototype1Scenarios.Baseline,
+                new SimulationConfig(
+                    defaults.WorldSeed,
+                    defaults.InitialPopulation,
+                    defaults.Schedule,
+                    defaults.MaximumPopulation,
+                    defaults.FounderProfile,
+                    cognitionEnabled: true,
+                    physiologyEnabled: false,
+                    decisionPolicyVersion: DecisionPolicyVersion.Legacy,
+                    plantCohortsEnabled: false,
+                    foragingEconomicsEnabled: true));
+            _scenarioId = "foraging-memory-demo";
         }
 
         private void ResetMatingDemo()
