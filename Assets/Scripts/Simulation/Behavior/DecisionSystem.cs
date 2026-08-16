@@ -286,12 +286,13 @@ namespace LifeSimulation.Simulation.Behavior
             bool predationEnabled,
             bool physiologyEnabled,
             long tick,
-            out DecisionDiagnostics diagnostics)
+            out DecisionDiagnostics diagnostics,
+            bool economicsEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
-                default, default, default, default, default, false, tick, out diagnostics);
+                default, default, default, default, default, false, tick, out diagnostics, economicsEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -317,7 +318,8 @@ namespace LifeSimulation.Simulation.Behavior
             ReproductionState mateReproduction,
             bool reproductionEnabled,
             long tick,
-            out DecisionDiagnostics diagnostics)
+            out DecisionDiagnostics diagnostics,
+            bool economicsEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -333,7 +335,7 @@ namespace LifeSimulation.Simulation.Behavior
             if (predationEnabled)
             {
                 ScoreCarcass(needs, phenotype, resources, carcass, ref candidates);
-                ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates);
+                ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled);
             }
             if (physiologyEnabled)
             {
@@ -421,17 +423,18 @@ namespace LifeSimulation.Simulation.Behavior
             Phenotype other,
             CreatureObservation observation,
             float threatIntensity,
-            ref DecisionCandidateBuffer candidates)
+            ref DecisionCandidateBuffer candidates,
+            bool economicsEnabled)
         {
             if (!observation.IsValid)
             {
                 return;
             }
 
-            float distanceAvailability = 1f / (1f + observation.Distance);
+            float distanceAvailability = economicsEnabled ? 1f : 1f / (1f + observation.Distance);
             float hunger = Urgency(needs.Energy, self.EnergyCapacity);
             float fleeScore = Math.Max(0f, threatIntensity * genome.RiskAversion * distanceAvailability);
-            float huntScore = PredationSystem.HuntCapability(self, other) * hunger * distanceAvailability;
+            float huntScore = PredationSystem.HuntCapability(self, other, observation.Distance, economicsEnabled) * hunger * distanceAvailability;
             if (fleeScore >= 0.10f)
             {
                 candidates.TryAdd(new DecisionCandidate(CreatureIntent.Flee, -1, observation.CreatureId, fleeScore));

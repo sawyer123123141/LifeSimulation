@@ -729,7 +729,8 @@ namespace LifeSimulation.Simulation.Core
                         other.IsValid ? Creatures.GetReproductionRefAt(other.CreatureIndex) : default,
                         true,
                         tick,
-                        out diagnostics);
+                        out diagnostics,
+                        Config.PredationEconomicsEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
