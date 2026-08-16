@@ -27,8 +27,11 @@ namespace LifeSimulation.Simulation.Biology
     {
         private const float FoodEnergyPerUnit = 20f;
         private const float WaterHydrationPerUnit = 20f;
+        public const float RestCapacity = 100f;
+        private const float RestRecoveryPerSecond = 5f;
+        private const float RestExhaustionHealthCostPerSecond = 3f;
 
-        public static void Tick(ref CreatureNeeds needs, Phenotype phenotype, float deltaTime, float movementDistance)
+        public static void Tick(ref CreatureNeeds needs, Phenotype phenotype, float deltaTime, float movementDistance, bool restBehaviorEnabled = false, bool isResting = false)
         {
             if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
             {
@@ -50,7 +53,14 @@ namespace LifeSimulation.Simulation.Biology
 
             needs.Energy = Math.Max(0f, needs.Energy - energyCost);
             needs.Hydration = Math.Max(0f, needs.Hydration - hydrationCost);
-            needs.Rest = Math.Max(0f, needs.Rest - (0.1f * phenotype.CognitionRestCostMultiplier * deltaTime));
+            if (restBehaviorEnabled && isResting)
+            {
+                needs.Rest = Math.Min(RestCapacity, needs.Rest + (RestRecoveryPerSecond * deltaTime));
+            }
+            else
+            {
+                needs.Rest = Math.Max(0f, needs.Rest - (0.1f * phenotype.CognitionRestCostMultiplier * deltaTime));
+            }
             needs.Age += deltaTime;
 
             if (needs.Energy <= 0f)
@@ -61,6 +71,11 @@ namespace LifeSimulation.Simulation.Biology
             if (needs.Hydration <= 0f)
             {
                 needs.Health = Math.Max(0f, needs.Health - (5f * deltaTime));
+            }
+
+            if (restBehaviorEnabled && needs.Rest <= 0f)
+            {
+                needs.Health = Math.Max(0f, needs.Health - (RestExhaustionHealthCostPerSecond * deltaTime));
             }
         }
 

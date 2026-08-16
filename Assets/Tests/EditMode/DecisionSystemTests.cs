@@ -242,5 +242,24 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekPrey));
             Assert.That(decision.TargetCreatureId, Is.EqualTo(weakObservation.CreatureId));
         }
+
+        [Test]
+        public void IntentUtilitySelectsRestWhenRestNeedIsLowAndNothingElseIsUrgent()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 1f, defense: 1f, maneuverability: 1f);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Rest = 10f;
+            var resources = new ResourceStore(initialCapacity: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, tick: 0,
+                diagnostics: out _, restBehaviorEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Rest));
+        }
     }
 }

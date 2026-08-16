@@ -481,7 +481,8 @@ namespace LifeSimulation.Simulation.Core
             {
                 ref CreatureNeeds needs = ref Creatures.GetNeedsRefAt(index);
                 ref MovementState movement = ref Creatures.GetMovementRefAt(index);
-                NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, movement.DistanceSinceLastNeeds);
+                bool isResting = Config.RestBehaviorEnabled && Creatures.GetDecisionAt(index).Action == CreatureAction.Rest;
+                NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, movement.DistanceSinceLastNeeds, Config.RestBehaviorEnabled, isResting);
                 if (Config.PhysiologyEnabled)
                 {
                     NeedsSystem.ApplyTemperatureStress(ref needs, Creatures.GetPhenotypeAt(index), TemperatureField.Sample(movement.Position, CurrentTick + 1), deltaTime);
@@ -577,6 +578,11 @@ namespace LifeSimulation.Simulation.Core
             if (Config.PhysiologyEnabled && decision.Action == CreatureAction.SeekThermalComfort)
             {
                 return ThermoregulationSystem.FindNearbyComfortTarget(position, tick, Arena);
+            }
+
+            if (decision.Action == CreatureAction.Rest)
+            {
+                return position;
             }
 
             if (Config.CognitionEnabled && decision.Action == CreatureAction.Wander)
@@ -750,7 +756,8 @@ namespace LifeSimulation.Simulation.Core
                         Config.PredationEconomicsEnabled,
                         Config.ThreatFalloffDistance,
                         otherCandidates,
-                        Config.MultiThreatPerceptionEnabled);
+                        Config.MultiThreatPerceptionEnabled,
+                        Config.RestBehaviorEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);

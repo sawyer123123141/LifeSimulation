@@ -233,5 +233,30 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(first.FertilityInvestment, Is.InRange(0f, 1f));
             Assert.That(first.LifespanTendency, Is.InRange(0f, 1f));
         }
+
+        [Test]
+        public void RestingRecoversTheRestNeedInsteadOfDrainingIt()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Rest = 50f;
+
+            NeedsSystem.Tick(ref needs, phenotype, deltaTime: 1f, movementDistance: 0f, restBehaviorEnabled: true, isResting: true);
+
+            Assert.That(needs.Rest, Is.EqualTo(55f).Within(0.0001f));
+        }
+
+        [Test]
+        public void RestNeedAtZeroDamagesHealthWhenRestBehaviorIsEnabled()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Rest = 0f;
+            float healthBefore = needs.Health;
+
+            NeedsSystem.Tick(ref needs, phenotype, deltaTime: 1f, movementDistance: 0f, restBehaviorEnabled: true, isResting: false);
+
+            Assert.That(needs.Health, Is.EqualTo(healthBefore - 3f).Within(0.0001f));
+        }
     }
 }
