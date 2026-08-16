@@ -7,6 +7,98 @@ namespace LifeSimulation.Tests.EditMode
 {
     public sealed class PlaceMemoryStorageTests
     {
+        private static void FillAllSlotsWithMemories(CreatureStore store, int index)
+        {
+            for (int slot = 0; slot < store.MaximumMemorySlots; slot++)
+            {
+                ref PlaceMemory memory = ref store.GetPlaceMemoryRefAt(index, slot);
+                memory.Position = new SimVector2(slot + 1f, slot + 2f);
+                memory.Kind = ResourceKind.Food;
+                memory.LastKnownAmount = 10f;
+                memory.OutcomeValue = 0.8f;
+                memory.VisitCount = 4;
+                memory.Confidence = 0.9f;
+                memory.LastSeenTick = 100 + slot;
+            }
+        }
+
+        [Test]
+        public void ANewbornFromTwoParentsWithRichMemoriesHasZeroRememberedPlaces()
+        {
+            var store = new CreatureStore(initialCapacity: 2, maximumMemorySlots: 3);
+            Genome parentGenome = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                memoryCapacity: 1f, memoryRetention: 1f, learningRate: 1f, exploration: 1f);
+            CreatureId firstParent = store.Add(parentGenome);
+            CreatureId secondParent = store.Add(parentGenome);
+            store.TryGetIndex(firstParent, out int firstIndex);
+            store.TryGetIndex(secondParent, out int secondIndex);
+            FillAllSlotsWithMemories(store, firstIndex);
+            FillAllSlotsWithMemories(store, secondIndex);
+
+            Genome childGenome = GenomeInheritance.CreateChild(parentGenome, parentGenome, worldSeed: 42, birthOrdinal: 0, mutationStandardDeviation: 0f);
+            CreatureId child = store.AddChild(childGenome, new SimVector2(0f, 0f), firstParent, secondParent);
+
+            Assert.That(store.TryGetIndex(child, out int childIndex), Is.True);
+            for (int slot = 0; slot < store.MaximumMemorySlots; slot++)
+            {
+                PlaceMemory memory = store.GetPlaceMemoryRefAt(childIndex, slot);
+                Assert.That(memory.VisitCount, Is.EqualTo(0), $"slot {slot} should be empty for a newborn");
+                Assert.That(memory.Confidence, Is.EqualTo(0f), $"slot {slot} should be empty for a newborn");
+                Assert.That(memory.LastSeenTick, Is.EqualTo(0L), $"slot {slot} should be empty for a newborn");
+            }
+        }
+
+        [Test]
+        public void ANewbornInheritsCognitionGenesFromCrossoverButNotItsParentsMemories()
+        {
+            var firstParent = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                memoryCapacity: 0f, memoryRetention: 0f, learningRate: 0f, exploration: 0f);
+            var secondParent = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                memoryCapacity: 1f, memoryRetention: 1f, learningRate: 1f, exploration: 1f);
+
+            Genome expectedChild = GenomeInheritance.CreateChild(firstParent, secondParent, worldSeed: 7, birthOrdinal: 3, mutationStandardDeviation: 0f);
+            Genome actualChild = GenomeInheritance.CreateChild(firstParent, secondParent, worldSeed: 7, birthOrdinal: 3, mutationStandardDeviation: 0f);
+
+            Assert.That(actualChild.MemoryCapacity, Is.EqualTo(expectedChild.MemoryCapacity));
+            Assert.That(actualChild.MemoryRetention, Is.EqualTo(expectedChild.MemoryRetention));
+            Assert.That(actualChild.LearningRate, Is.EqualTo(expectedChild.LearningRate));
+            Assert.That(actualChild.Exploration, Is.EqualTo(expectedChild.Exploration));
+            Assert.That(actualChild.MemoryCapacity, Is.AnyOf(firstParent.MemoryCapacity, secondParent.MemoryCapacity));
+            Assert.That(actualChild.MemoryRetention, Is.AnyOf(firstParent.MemoryRetention, secondParent.MemoryRetention));
+            Assert.That(actualChild.LearningRate, Is.AnyOf(firstParent.LearningRate, secondParent.LearningRate));
+            Assert.That(actualChild.Exploration, Is.AnyOf(firstParent.Exploration, secondParent.Exploration));
+        }
+
+        [Test]
+        public void ACreatureReusingADeadCreaturesStoreSlotCarriesOverNoRememberedPlaces()
+        {
+            var store = new CreatureStore(initialCapacity: 2, maximumMemorySlots: 3);
+            Genome genome = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                memoryCapacity: 1f, memoryRetention: 1f, learningRate: 1f, exploration: 1f);
+            CreatureId doomed = store.Add(genome);
+            CreatureId survivor = store.Add(genome);
+            store.TryGetIndex(doomed, out int doomedIndex);
+            FillAllSlotsWithMemories(store, doomedIndex);
+
+            Assert.That(store.Remove(doomed), Is.True);
+            store.TryGetIndex(survivor, out int survivorIndex);
+            Genome childGenome = GenomeInheritance.CreateChild(genome, genome, worldSeed: 11, birthOrdinal: 1, mutationStandardDeviation: 0f);
+            CreatureId replacement = store.AddChild(childGenome, new SimVector2(0f, 0f), survivor, survivor);
+
+            Assert.That(store.TryGetIndex(replacement, out int replacementIndex), Is.True);
+            for (int slot = 0; slot < store.MaximumMemorySlots; slot++)
+            {
+                PlaceMemory memory = store.GetPlaceMemoryRefAt(replacementIndex, slot);
+                Assert.That(memory.VisitCount, Is.EqualTo(0), $"slot {slot} should not carry over the dead creature's memories");
+                Assert.That(memory.Confidence, Is.EqualTo(0f), $"slot {slot} should not carry over the dead creature's memories");
+                Assert.That(memory.LastSeenTick, Is.EqualTo(0L), $"slot {slot} should not carry over the dead creature's memories");
+            }
+        }
+
         [Test]
         public void NewlySpawnedCreatureSlotsAreClearedNotInheritedFromAPreviousOccupant()
         {
