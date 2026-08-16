@@ -71,6 +71,9 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Extra place-memory slots available to a creature with the maximum <c>MemoryCapacity</c> gene.</summary>
         public const int DefaultAdditionalMemorySlots = 5;
 
+        /// <summary>Maximum distance between two observations of the same kind for them to be treated as the same remembered place.</summary>
+        public const float DefaultSamePlaceRadius = 2f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -88,7 +91,8 @@ namespace LifeSimulation.Simulation.Core
             float commitmentHalfLifeSeconds = DefaultCommitmentHalfLifeSeconds,
             float giveUpSensitivity = DefaultGiveUpSensitivity,
             int minimumMemorySlots = DefaultMinimumMemorySlots,
-            int additionalMemorySlots = DefaultAdditionalMemorySlots)
+            int additionalMemorySlots = DefaultAdditionalMemorySlots,
+            float samePlaceRadius = DefaultSamePlaceRadius)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -107,6 +111,7 @@ namespace LifeSimulation.Simulation.Core
             GiveUpSensitivity = giveUpSensitivity;
             MinimumMemorySlots = minimumMemorySlots;
             AdditionalMemorySlots = additionalMemorySlots;
+            SamePlaceRadius = samePlaceRadius;
         }
 
         public int WorldSeed { get; }
@@ -125,6 +130,7 @@ namespace LifeSimulation.Simulation.Core
         public float GiveUpSensitivity { get; }
         public int MinimumMemorySlots { get; }
         public int AdditionalMemorySlots { get; }
+        public float SamePlaceRadius { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -243,6 +249,11 @@ namespace LifeSimulation.Simulation.Core
             if (AdditionalMemorySlots < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(AdditionalMemorySlots), "Additional memory slots cannot be negative.");
+            }
+
+            if (SamePlaceRadius <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(SamePlaceRadius), "Same-place radius must be positive.");
             }
         }
 
