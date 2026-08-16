@@ -228,6 +228,7 @@ namespace LifeSimulation.Tests.EditMode
                 memory,
                 new ResourceObservation(new ResourceId(1), 0, 1f),
                 new ResourceObservation(new ResourceId(2), 1, 1f),
+                new ResourceStore(initialCapacity: 0),
                 out _);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekFood));

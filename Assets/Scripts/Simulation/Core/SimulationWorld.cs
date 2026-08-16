@@ -859,7 +859,7 @@ namespace LifeSimulation.Simulation.Core
                 }
                 else if (Config.CognitionEnabled)
                 {
-                    decision = DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, out diagnostics);
+                    decision = DecisionSystem.DecideFromLearnedOutcomes(Creatures.GetNeedsAt(index), phenotype, Creatures.GetMemoryRefAt(index), food, water, Resources, out diagnostics, Config.LearnedResourceQualityEnabled);
                 }
                 else if (Config.ForagingEconomicsEnabled)
                 {

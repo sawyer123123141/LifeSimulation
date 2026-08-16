@@ -734,6 +734,15 @@ namespace LifeSimulation.Simulation.Behavior
             candidates.TryAdd(new DecisionCandidate(intent, -1, default, score));
         }
 
+        private static float ComputeNeedGain(bool seekingWater, CreatureNeeds needs, Phenotype phenotype, ResourceState resource)
+        {
+            float capacity = seekingWater ? phenotype.HydrationCapacity : phenotype.EnergyCapacity;
+            float current = seekingWater ? needs.Hydration : needs.Energy;
+            float missing = Math.Max(0.0001f, capacity - current);
+            float perUnitGain = seekingWater ? 20f : 20f * phenotype.FoodYield * resource.NutritionMultiplier;
+            return Math.Min(1f, (resource.Amount * perUnitGain) / missing);
+        }
+
         private static float ResourceUtility(
             CreatureIntent intent,
             CreatureNeeds needs,
@@ -747,10 +756,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool seekingWater = intent == CreatureIntent.SeekWater;
             float capacity = seekingWater ? phenotype.HydrationCapacity : phenotype.EnergyCapacity;
             float current = seekingWater ? needs.Hydration : needs.Energy;
-            float missing = Math.Max(0.0001f, capacity - current);
             float urgency = (float)Math.Pow(Urgency(current, capacity), 0.5f + (2.5f * genome.UrgencyExponent));
-            float perUnitGain = seekingWater ? 20f : 20f * phenotype.FoodYield * resource.NutritionMultiplier;
-            float needGain = Math.Min(1f, (resource.Amount * perUnitGain) / missing);
+            float needGain = ComputeNeedGain(seekingWater, needs, phenotype, resource);
             float travelBurden = (0.5f + (1.5f * genome.TravelSensitivity)) * EstimateTravelBurden(distance, phenotype);
             float dangerPenalty = threat.IsValid ? Math.Max(0f, threatIntensity) * genome.RiskAversion * (distance / Math.Max(0.01f, phenotype.MaximumSpeed)) : 0f;
             return Math.Max(0f, (urgency * needGain) - travelBurden - dangerPenalty);
@@ -812,12 +819,20 @@ namespace LifeSimulation.Simulation.Behavior
             MemoryState memory,
             ResourceObservation food,
             ResourceObservation water,
-            out DecisionDiagnostics diagnostics)
+            ResourceStore resources,
+            out DecisionDiagnostics diagnostics,
+            bool learnedResourceQualityEnabled = false)
         {
             float foodValue = KnownOutcomeOrCuriosity(memory.FoodOutcomeValue, memory.FoodExperienceCount, phenotype.Exploration);
             float waterValue = KnownOutcomeOrCuriosity(memory.WaterOutcomeValue, memory.WaterExperienceCount, phenotype.Exploration);
-            float foodScore = food.IsValid ? Urgency(needs.Energy, phenotype.EnergyCapacity) * Availability(food.Distance) * foodValue : -1f;
-            float waterScore = water.IsValid ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance) * waterValue : -1f;
+            float foodNeedGain = learnedResourceQualityEnabled && food.IsValid
+                ? ComputeNeedGain(false, needs, phenotype, resources.GetAt(food.ResourceIndex))
+                : 1f;
+            float waterNeedGain = learnedResourceQualityEnabled && water.IsValid
+                ? ComputeNeedGain(true, needs, phenotype, resources.GetAt(water.ResourceIndex))
+                : 1f;
+            float foodScore = food.IsValid ? Urgency(needs.Energy, phenotype.EnergyCapacity) * Availability(food.Distance) * foodValue * foodNeedGain : -1f;
+            float waterScore = water.IsValid ? Urgency(needs.Hydration, phenotype.HydrationCapacity) * Availability(water.Distance) * waterValue * waterNeedGain : -1f;
             diagnostics = new DecisionDiagnostics(foodScore, waterScore, food.IsValid, water.IsValid);
             if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
             {
@@ -953,6 +968,11 @@ namespace LifeSimulation.Simulation.Behavior
             return experienceCount > 0 && learnedValue >= 0.05f
                 ? learnedValue
                 : 0.5f + (0.5f * exploration);
+        }
+
+        public static float ComputeNeedGainForTest(bool seekingWater, CreatureNeeds needs, Phenotype phenotype, ResourceState resource)
+        {
+            return ComputeNeedGain(seekingWater, needs, phenotype, resource);
         }
     }
 }

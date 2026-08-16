@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using LifeSimulation.Simulation.Behavior;
@@ -364,6 +365,88 @@ namespace LifeSimulation.Tests.EditMode
                 selfId: selfId, selfLineage: selfLineage, kinRecognitionEnabled: false);
 
             Assert.That(kinEnabledDiagnostics.FleeScore, Is.LessThan(kinDisabledDiagnostics.FleeScore));
+        }
+
+        [Test]
+        public void ComputeNeedGainMatchesTheOriginalResourceUtilityInlineFormulaForFood()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 0.5f, defense: 0.5f, maneuverability: 0.5f, energyCapacity: 100f);
+            var needs = new CreatureNeeds { Energy = 20f, Hydration = 100f };
+            var resource = new ResourceState(new ResourceId(1), ResourceKind.Food, new SimVector2(0f, 0f), interactionRadius: 1f, amount: 5f, capacity: 10f, regenerationPerSecond: 0f, isActive: true, nutritionMultiplier: 1f);
+
+            float needGain = DecisionSystem.ComputeNeedGainForTest(seekingWater: false, needs, phenotype, resource);
+
+            // Manually reproduces ResourceUtility's original inline formula (pre-refactor):
+            // missing = 100 - 20 = 80; perUnitGain = 20 * FoodYield * 1; needGain = min(1, (5 * perUnitGain) / 80)
+            float missing = 100f - 20f;
+            float perUnitGain = 20f * phenotype.FoodYield * resource.NutritionMultiplier;
+            float expected = Math.Min(1f, (resource.Amount * perUnitGain) / missing);
+            Assert.That(needGain, Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        [Test]
+        public void ComputeNeedGainMatchesTheOriginalResourceUtilityInlineFormulaForWater()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 0.5f, defense: 0.5f, maneuverability: 0.5f, energyCapacity: 100f);
+            var needs = new CreatureNeeds { Energy = 100f, Hydration = 30f };
+            var resource = new ResourceState(new ResourceId(2), ResourceKind.Water, new SimVector2(0f, 0f), interactionRadius: 1f, amount: 8f, capacity: 10f, regenerationPerSecond: 0f, isActive: true, nutritionMultiplier: 1f);
+
+            float needGain = DecisionSystem.ComputeNeedGainForTest(seekingWater: true, needs, phenotype, resource);
+
+            // Water's perUnitGain is a flat 20f (not FoodYield/NutritionMultiplier-scaled) per the
+            // original ResourceUtility formula.
+            float missing = 100f - 30f;
+            float expected = Math.Min(1f, (resource.Amount * 20f) / missing);
+            Assert.That(needGain, Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        [Test]
+        public void LearnedOutcomesPrefersWellStockedPatchOverNearlyDepletedPatchWhenQualityEnabled()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 0.5f, defense: 0.5f, maneuverability: 0.5f, energyCapacity: 100f);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var memory = new MemoryState { FoodOutcomeValue = 0.5f, WaterOutcomeValue = 0f, FoodExperienceCount = 1, WaterExperienceCount = 0 };
+            var richResources = new ResourceStore(initialCapacity: 2);
+            richResources.Add(ResourceKind.Food, new SimVector2(1f, 0f), interactionRadius: 1f, initialAmount: 10f, capacity: 10f, regenerationPerSecond: 0f);
+            var richFood = new ResourceObservation(new ResourceId(1), 0, distance: 1f);
+            var noWater = new ResourceObservation(new ResourceId(2), -1, distance: 1f);
+
+            CreatureDecision richDecision = DecisionSystem.DecideFromLearnedOutcomes(
+                needs, phenotype, memory, richFood, default, richResources, out DecisionDiagnostics richDiagnostics, learnedResourceQualityEnabled: true);
+
+            var poorResources = new ResourceStore(initialCapacity: 2);
+            poorResources.Add(ResourceKind.Food, new SimVector2(1f, 0f), interactionRadius: 1f, initialAmount: 0.1f, capacity: 10f, regenerationPerSecond: 0f);
+            var poorFood = new ResourceObservation(new ResourceId(1), 0, distance: 1f);
+
+            CreatureDecision poorDecision = DecisionSystem.DecideFromLearnedOutcomes(
+                needs, phenotype, memory, poorFood, default, poorResources, out DecisionDiagnostics poorDiagnostics, learnedResourceQualityEnabled: true);
+
+            Assert.That(richDiagnostics.FoodScore, Is.GreaterThan(poorDiagnostics.FoodScore));
+        }
+
+        [Test]
+        public void LearnedOutcomesStillWeighsRememberedValueAlongsideAmountWhenQualityEnabled()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 0.5f, defense: 0.5f, maneuverability: 0.5f, energyCapacity: 100f);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 2);
+            resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), interactionRadius: 1f, initialAmount: 5f, capacity: 10f, regenerationPerSecond: 0f);
+            var food = new ResourceObservation(new ResourceId(1), 0, distance: 1f);
+
+            var goodHistoryMemory = new MemoryState { FoodOutcomeValue = 1f, FoodExperienceCount = 5 };
+            CreatureDecision goodHistoryDecision = DecisionSystem.DecideFromLearnedOutcomes(
+                needs, phenotype, goodHistoryMemory, food, default, resources, out DecisionDiagnostics goodHistoryDiagnostics, learnedResourceQualityEnabled: true);
+
+            var noHistoryMemory = new MemoryState { FoodOutcomeValue = 0f, FoodExperienceCount = 0 };
+            CreatureDecision noHistoryDecision = DecisionSystem.DecideFromLearnedOutcomes(
+                needs, phenotype, noHistoryMemory, food, default, resources, out DecisionDiagnostics noHistoryDiagnostics, learnedResourceQualityEnabled: true);
+
+            // Same Amount in both runs, so if remembered value still matters (multiplied
+            // alongside, not replaced by the new Amount term), the good-history run must
+            // score strictly higher than the no-history run.
+            Assert.That(goodHistoryDiagnostics.FoodScore, Is.GreaterThan(noHistoryDiagnostics.FoodScore));
         }
     }
 }

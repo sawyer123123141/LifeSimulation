@@ -1493,5 +1493,69 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedKinRecognitionDisabledHash));
         }
+
+        [Test]
+        public void CognitiveCreatureSeeksWellStockedPatchButWandersFromNearlyDepletedOneAtSameDistanceWhenQualityEnabled()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+
+            var richConfig = new SimulationConfig(
+                worldSeed: 41,
+                initialPopulation: 0,
+                schedule: schedule,
+                cognitionEnabled: true,
+                learnedResourceQualityEnabled: true);
+            var richWorld = new SimulationWorld(richConfig);
+            richWorld.Resources.Add(ResourceKind.Food, new SimVector2(3f, 0f), interactionRadius: 1f, initialAmount: 10f, capacity: 10f, regenerationPerSecond: 0f);
+            CreatureId richCreature = richWorld.Spawn(Genome.Neutral);
+            richWorld.Creatures.TryGetIndex(richCreature, out int richIndex);
+            richWorld.Creatures.GetMovementRefAt(richIndex).Position = new SimVector2(0f, 0f);
+            richWorld.Creatures.GetNeedsRefAt(richIndex).Energy = 0f;
+            richWorld.Step(richConfig.FixedDeltaTime);
+            CreatureDecision richDecision = richWorld.Creatures.GetDecisionAt(richIndex);
+
+            var poorConfig = new SimulationConfig(
+                worldSeed: 41,
+                initialPopulation: 0,
+                schedule: schedule,
+                cognitionEnabled: true,
+                learnedResourceQualityEnabled: true);
+            var poorWorld = new SimulationWorld(poorConfig);
+            poorWorld.Resources.Add(ResourceKind.Food, new SimVector2(3f, 0f), interactionRadius: 1f, initialAmount: 0.1f, capacity: 10f, regenerationPerSecond: 0f);
+            CreatureId poorCreature = poorWorld.Spawn(Genome.Neutral);
+            poorWorld.Creatures.TryGetIndex(poorCreature, out int poorIndex);
+            poorWorld.Creatures.GetMovementRefAt(poorIndex).Position = new SimVector2(0f, 0f);
+            poorWorld.Creatures.GetNeedsRefAt(poorIndex).Energy = 0f;
+            poorWorld.Step(poorConfig.FixedDeltaTime);
+            CreatureDecision poorDecision = poorWorld.Creatures.GetDecisionAt(poorIndex);
+
+            Assert.That(richDecision.Action, Is.EqualTo(CreatureAction.SeekFood));
+            Assert.That(poorDecision.Action, Is.Not.EqualTo(CreatureAction.SeekFood));
+        }
+
+        // Captured from the pre-Task-1 commit 1884433 (the commit this task's changes
+        // were built on top of), by running this exact setup (with learnedResourceQualityEnabled
+        // omitted, since that constructor parameter did not exist yet) for 50 ticks and reading
+        // world.ComputeStateHash(). This scenario uses default DecisionPolicyVersion.Legacy with
+        // CognitionEnabled left false, so it never reaches DecideFromLearnedOutcomes or
+        // ResourceUtility/ComputeNeedGain at all - it proves the untouched default path stays
+        // untouched, not that this task's new code was exercised (see Steps 1/8/14 for that).
+        private const ulong ExpectedLearnedResourceQualityDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void LearnedResourceQualityDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99,
+                initialPopulation: 2,
+                schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedLearnedResourceQualityDisabledHash));
+        }
     }
 }
