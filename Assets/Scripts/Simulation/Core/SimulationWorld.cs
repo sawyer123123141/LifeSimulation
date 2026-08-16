@@ -805,6 +805,8 @@ namespace LifeSimulation.Simulation.Core
                             phenotype,
                             Creatures.GetNeedsAt(index),
                             movement.Position,
+                            memory.ThreatPosition,
+                            memory.ThreatConfidence,
                             out SimVector2 bestPosition,
                             out ResourceKind bestKind,
                             out float bestScore);
@@ -1224,8 +1226,10 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>
         /// Scores every occupied, non-zero-confidence place-memory slot up to <paramref name="usableSlotCount"/>
         /// with <see cref="ForagingEconomics.PatchScore"/> - substituting each place's <c>LastKnownAmount</c>
-        /// for the observed remaining amount - discounted by that place's <c>Confidence</c>. Returns the
-        /// highest-scoring place, if any occupied slot exists.
+        /// for the observed remaining amount - discounted by that place's <c>Confidence</c>, and reduced by
+        /// <see cref="ForagingEconomics.ThreatAvoidance"/> for the creature's remembered threat (if any, from
+        /// <paramref name="threatPosition"/>/<paramref name="threatConfidence"/>). Returns the highest-scoring
+        /// place, if any occupied slot exists and its net score is positive.
         /// </summary>
         private bool TryScoreBestRememberedPlace(
             int creatureIndex,
@@ -1233,6 +1237,8 @@ namespace LifeSimulation.Simulation.Core
             Phenotype phenotype,
             CreatureNeeds needs,
             SimVector2 origin,
+            SimVector2 threatPosition,
+            float threatConfidence,
             out SimVector2 bestPosition,
             out ResourceKind bestKind,
             out float bestScore)
@@ -1241,6 +1247,14 @@ namespace LifeSimulation.Simulation.Core
             bestKind = default;
             bestScore = 0f;
             bool found = false;
+
+            Span<PlaceMemory> threatPlaces = stackalloc PlaceMemory[1];
+            int threatPlaceCount = 0;
+            if (threatConfidence > 0f)
+            {
+                threatPlaces[0] = new PlaceMemory { Position = threatPosition, Confidence = threatConfidence };
+                threatPlaceCount = 1;
+            }
 
             for (int slot = 0; slot < usableSlotCount; slot++)
             {
@@ -1255,7 +1269,9 @@ namespace LifeSimulation.Simulation.Core
                 float current = seekingWater ? needs.Hydration : needs.Energy;
                 float urgency = Math.Max(0f, Math.Min(1f, 1f - (current / capacity)));
                 float distance = SimVector2.Distance(origin, place.Position);
-                float score = ForagingEconomics.PatchScore(urgency, place.LastKnownAmount, distance, phenotype, 1f, Config.HandlingSeconds, Config.ReferenceGain) * place.Confidence;
+                float rawScore = ForagingEconomics.PatchScore(urgency, place.LastKnownAmount, distance, phenotype, 1f, Config.HandlingSeconds, Config.ReferenceGain) * place.Confidence;
+                float avoidance = ForagingEconomics.ThreatAvoidance(place.Position, threatPlaces.Slice(0, threatPlaceCount), phenotype, Config.ThreatFalloffDistance);
+                float score = rawScore - avoidance;
 
                 if (score > bestScore)
                 {

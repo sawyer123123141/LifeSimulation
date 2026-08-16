@@ -1,5 +1,6 @@
 using System;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
 
 namespace LifeSimulation.Simulation.Behavior
 {
@@ -124,6 +125,36 @@ namespace LifeSimulation.Simulation.Behavior
             float giveUpThreshold = recentIntakeRate * (1f - persistence) * giveUpSensitivity;
 
             return currentPatchIntakeRate < giveUpThreshold;
+        }
+
+        /// <summary>
+        /// Avoidance penalty for a candidate destination, summed over a creature's remembered threat
+        /// places. Each remembered threat contributes <c>FearResponse x Confidence x falloff(distance)</c>,
+        /// where <c>falloff</c> is 1 at zero distance and reaches exactly 0 at
+        /// <paramref name="falloffDistance"/> or beyond. The caller subtracts the total from the
+        /// destination's score.
+        /// </summary>
+        public static float ThreatAvoidance(
+            SimVector2 candidate,
+            ReadOnlySpan<PlaceMemory> places,
+            Phenotype phenotype,
+            float falloffDistance)
+        {
+            if (falloffDistance <= 0f || float.IsNaN(falloffDistance) || float.IsInfinity(falloffDistance))
+            {
+                throw new ArgumentOutOfRangeException(nameof(falloffDistance));
+            }
+
+            float totalPenalty = 0f;
+            for (int index = 0; index < places.Length; index++)
+            {
+                PlaceMemory place = places[index];
+                float distance = SimVector2.Distance(candidate, place.Position);
+                float falloff = Clamp01(1f - (distance / falloffDistance));
+                totalPenalty += phenotype.FearResponse * place.Confidence * falloff;
+            }
+
+            return totalPenalty;
         }
 
         private static float Clamp01(float value)

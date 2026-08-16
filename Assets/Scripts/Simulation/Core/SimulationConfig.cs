@@ -81,6 +81,9 @@ namespace LifeSimulation.Simulation.Core
         /// </summary>
         public const float DefaultExpectedIntakeRate = 2.5f;
 
+        /// <summary>Distance at which a remembered threat's avoidance penalty falls to exactly zero.</summary>
+        public const float DefaultThreatFalloffDistance = 10f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -100,7 +103,8 @@ namespace LifeSimulation.Simulation.Core
             int minimumMemorySlots = DefaultMinimumMemorySlots,
             int additionalMemorySlots = DefaultAdditionalMemorySlots,
             float samePlaceRadius = DefaultSamePlaceRadius,
-            float expectedIntakeRate = DefaultExpectedIntakeRate)
+            float expectedIntakeRate = DefaultExpectedIntakeRate,
+            float threatFalloffDistance = DefaultThreatFalloffDistance)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -121,6 +125,7 @@ namespace LifeSimulation.Simulation.Core
             AdditionalMemorySlots = additionalMemorySlots;
             SamePlaceRadius = samePlaceRadius;
             ExpectedIntakeRate = expectedIntakeRate;
+            ThreatFalloffDistance = threatFalloffDistance;
         }
 
         public int WorldSeed { get; }
@@ -141,6 +146,7 @@ namespace LifeSimulation.Simulation.Core
         public int AdditionalMemorySlots { get; }
         public float SamePlaceRadius { get; }
         public float ExpectedIntakeRate { get; }
+        public float ThreatFalloffDistance { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -269,6 +275,11 @@ namespace LifeSimulation.Simulation.Core
             if (ExpectedIntakeRate <= 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(ExpectedIntakeRate), "Expected intake rate must be positive.");
+            }
+
+            if (ThreatFalloffDistance <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ThreatFalloffDistance), "Threat falloff distance must be positive.");
             }
         }
 

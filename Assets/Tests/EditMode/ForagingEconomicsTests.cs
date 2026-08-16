@@ -1,6 +1,7 @@
 using System;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -847,6 +848,133 @@ namespace LifeSimulation.Tests.EditMode
 
             const long toleranceBytes = 4096;
             Assert.That(allocatedAfter - allocatedBefore, Is.LessThanOrEqualTo(toleranceBytes));
+        }
+
+        [Test]
+        public void ACandidateFarFromEveryRememberedThreatHasZeroPenalty()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            Span<PlaceMemory> threats = stackalloc PlaceMemory[1];
+            threats[0] = new PlaceMemory { Position = new SimVector2(0f, 0f), Confidence = 1f };
+
+            float penalty = ForagingEconomics.ThreatAvoidance(
+                candidate: new SimVector2(1000f, 0f), threats, phenotype, falloffDistance: 5f);
+
+            Assert.That(penalty, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void ACandidateNearARememberedThreatHasPenaltyAboveZero()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 0.5f));
+            Span<PlaceMemory> threats = stackalloc PlaceMemory[1];
+            threats[0] = new PlaceMemory { Position = new SimVector2(0f, 0f), Confidence = 1f };
+
+            float penalty = ForagingEconomics.ThreatAvoidance(
+                candidate: new SimVector2(1f, 0f), threats, phenotype, falloffDistance: 5f);
+
+            Assert.That(penalty, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void TwoCreaturesDifferingOnlyInFearTheMoreFearfulOneGetsTheLargerPenalty()
+        {
+            Genome lowFearGenome = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 0.1f);
+            Genome highFearGenome = new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 0.9f);
+            Phenotype lowFear = Phenotype.FromGenome(lowFearGenome);
+            Phenotype highFear = Phenotype.FromGenome(highFearGenome);
+            Span<PlaceMemory> threats = stackalloc PlaceMemory[1];
+            threats[0] = new PlaceMemory { Position = new SimVector2(0f, 0f), Confidence = 1f };
+            SimVector2 candidate = new SimVector2(1f, 0f);
+
+            float lowFearPenalty = ForagingEconomics.ThreatAvoidance(candidate, threats, lowFear, falloffDistance: 5f);
+            float highFearPenalty = ForagingEconomics.ThreatAvoidance(candidate, threats, highFear, falloffDistance: 5f);
+
+            Assert.That(highFearPenalty, Is.GreaterThan(lowFearPenalty));
+        }
+
+        [Test]
+        public void AThreatWhoseConfidenceHasDecayedGivesASmallerPenaltyThanAFreshOne()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 0.5f));
+            SimVector2 candidate = new SimVector2(1f, 0f);
+            Span<PlaceMemory> freshThreat = stackalloc PlaceMemory[1];
+            freshThreat[0] = new PlaceMemory { Position = new SimVector2(0f, 0f), Confidence = 1f };
+            Span<PlaceMemory> decayedThreat = stackalloc PlaceMemory[1];
+            decayedThreat[0] = new PlaceMemory { Position = new SimVector2(0f, 0f), Confidence = 0.1f };
+
+            float freshPenalty = ForagingEconomics.ThreatAvoidance(candidate, freshThreat, phenotype, falloffDistance: 5f);
+            float decayedPenalty = ForagingEconomics.ThreatAvoidance(candidate, decayedThreat, phenotype, falloffDistance: 5f);
+
+            Assert.That(decayedPenalty, Is.LessThan(freshPenalty));
+        }
+
+        [Test]
+        public void TwoRememberedThreatsNearTheCandidateGiveALargerPenaltyThanEitherAlone()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(new Genome(0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, fear: 0.5f));
+            SimVector2 candidate = new SimVector2(0f, 0f);
+            PlaceMemory firstThreat = new PlaceMemory { Position = new SimVector2(1f, 0f), Confidence = 1f };
+            PlaceMemory secondThreat = new PlaceMemory { Position = new SimVector2(0f, 1f), Confidence = 1f };
+
+            Span<PlaceMemory> onlyFirst = stackalloc PlaceMemory[1];
+            onlyFirst[0] = firstThreat;
+            Span<PlaceMemory> onlySecond = stackalloc PlaceMemory[1];
+            onlySecond[0] = secondThreat;
+            Span<PlaceMemory> both = stackalloc PlaceMemory[2];
+            both[0] = firstThreat;
+            both[1] = secondThreat;
+
+            float firstAlone = ForagingEconomics.ThreatAvoidance(candidate, onlyFirst, phenotype, falloffDistance: 5f);
+            float secondAlone = ForagingEconomics.ThreatAvoidance(candidate, onlySecond, phenotype, falloffDistance: 5f);
+            float combined = ForagingEconomics.ThreatAvoidance(candidate, both, phenotype, falloffDistance: 5f);
+
+            Assert.That(combined, Is.GreaterThan(firstAlone));
+            Assert.That(combined, Is.GreaterThan(secondAlone));
+        }
+
+        [Test]
+        public void NoRememberedThreatsGivesZeroPenaltyAndDoesNotAllocate()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            SimVector2 candidate = new SimVector2(0f, 0f);
+
+            float penalty = ForagingEconomics.ThreatAvoidance(candidate, ReadOnlySpan<PlaceMemory>.Empty, phenotype, falloffDistance: 5f);
+
+            Assert.That(penalty, Is.EqualTo(0f));
+
+            // Warm up so JIT/type initialization allocations do not pollute the measurement.
+            for (int i = 0; i < 1000; i++)
+            {
+                ForagingEconomics.ThreatAvoidance(candidate, ReadOnlySpan<PlaceMemory>.Empty, phenotype, falloffDistance: 5f);
+            }
+
+            GC.Collect();
+            GC.Collect();
+
+            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+            for (int i = 0; i < 100000; i++)
+            {
+                ForagingEconomics.ThreatAvoidance(candidate, ReadOnlySpan<PlaceMemory>.Empty, phenotype, falloffDistance: 5f);
+            }
+
+            long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
+
+            const long toleranceBytes = 4096;
+            Assert.That(allocatedAfter - allocatedBefore, Is.LessThanOrEqualTo(toleranceBytes));
+        }
+
+        [Test]
+        public void NonPositiveFalloffDistanceThrows()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ThreatAvoidance(default, ReadOnlySpan<PlaceMemory>.Empty, phenotype, falloffDistance: 0f));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ForagingEconomics.ThreatAvoidance(default, ReadOnlySpan<PlaceMemory>.Empty, phenotype, falloffDistance: -1f));
         }
     }
 }
