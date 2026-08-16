@@ -87,16 +87,29 @@ as `PredationEconomicsEnabled`/`DecisionStaggerEnabled` before it.
 
 ### 4. `SimulationWorld.cs` - call site
 
-Inside `TickDecisions`'s `IntentUtilityV1` branch (`SimulationWorld.cs:657-670`),
-branch on `Config.MultiThreatPerceptionEnabled`:
-- `false` (default): keep today's exact `FindNearestOtherCreature` +
-  single `other`/`threatIntensity` computation, completely unchanged.
-- `true`: call `PerceptionSystem.FindOtherCreatures` into a
-  `CreatureCandidateBuffer`, then build a `PredationCandidateBuffer` by
-  resolving each candidate's `Phenotype` via `Creatures.GetPhenotypeAt`,
-  and pass that (plus `multiThreatPerceptionEnabled: true`) into
-  `DecideIntentUtilityV1` instead of the single `other`/`threatIntensity`
-  arguments.
+**Important:** the single nearest-creature `other`/`threatIntensity` values
+computed today are NOT only consumed by predation scoring —
+`ScoreResourceCandidates` (`DecisionSystem.cs:328-329`) also reads them to
+apply a danger penalty to food/water candidates
+(`ResourceUtility`'s `dangerPenalty`, `DecisionSystem.cs:542`). This
+consumer is out of scope for this task (C-3's chosen concrete consumer is
+predation flee/hunt scoring specifically), so `other`/`threatIntensity`
+must keep being computed exactly as today regardless of the new flag —
+only the *additional* multi-candidate buffer is new.
+
+Inside `TickDecisions`'s `IntentUtilityV1` branch (`SimulationWorld.cs:657-670`):
+- `Config.MultiThreatPerceptionEnabled` is `false` (default): no change at
+  all — today's exact `FindNearestOtherCreature` + single
+  `other`/`threatIntensity` computation, unchanged.
+- `true`: keep the exact same `FindNearestOtherCreature` +
+  `other`/`threatIntensity` computation (unchanged, still feeds
+  `ScoreResourceCandidates`'s danger penalty and is still passed to
+  `DecideIntentUtilityV1` as today), and *additionally* call
+  `PerceptionSystem.FindOtherCreatures` into a `CreatureCandidateBuffer`,
+  then build a `PredationCandidateBuffer` by resolving each candidate's
+  `Phenotype` via `Creatures.GetPhenotypeAt`, and pass that (plus
+  `multiThreatPerceptionEnabled: true`) into `DecideIntentUtilityV1` as
+  the new trailing arguments, alongside the unchanged `other`/`threatIntensity`.
 
 ## Hash safety
 
