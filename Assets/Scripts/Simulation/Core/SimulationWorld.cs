@@ -585,6 +585,34 @@ namespace LifeSimulation.Simulation.Core
                 return position;
             }
 
+            if (Config.ParentalFollowingEnabled
+                && decision.Action == CreatureAction.Wander
+                && Creatures.GetNeedsAt(creatureIndex).Age < ReproductionSystem.AdultAgeSeconds)
+            {
+                CreatureLineage lineage = Creatures.GetLineageAt(creatureIndex);
+                SimVector2? parentPosition = FindNearestAliveParent(lineage, position);
+                if (parentPosition.HasValue)
+                {
+                    const float followRadius = 2f;
+                    if (SimVector2.Distance(position, parentPosition.Value) > followRadius)
+                    {
+                        return parentPosition.Value;
+                    }
+
+                    long followEpoch = tick / (Config.Schedule.BaseFrequencyHz * 5L);
+                    float followAngle = DeterministicRandom.Float01(
+                        Config.WorldSeed,
+                        RandomDomain.Exploration,
+                        followEpoch,
+                        creatureId.Value,
+                        0,
+                        3) * ((float)Math.PI * 2f);
+                    return new SimVector2(
+                        parentPosition.Value.X + ((float)Math.Cos(followAngle) * followRadius),
+                        parentPosition.Value.Y + ((float)Math.Sin(followAngle) * followRadius));
+                }
+            }
+
             if (Config.CognitionEnabled && decision.Action == CreatureAction.Wander)
             {
                 MemoryState memory = Creatures.GetMemoryRefAt(creatureIndex);
@@ -624,6 +652,40 @@ namespace LifeSimulation.Simulation.Core
             return new SimVector2(
                 position.X + (float)Math.Cos(angle),
                 position.Y + (float)Math.Sin(angle));
+        }
+
+        private SimVector2? FindNearestAliveParent(CreatureLineage lineage, SimVector2 position)
+        {
+            SimVector2? firstPosition = null;
+            if (Creatures.TryGetIndex(lineage.FirstParent, out int firstIndex))
+            {
+                firstPosition = Creatures.GetMovementAt(firstIndex).Position;
+            }
+
+            SimVector2? secondPosition = null;
+            if (Creatures.TryGetIndex(lineage.SecondParent, out int secondIndex))
+            {
+                secondPosition = Creatures.GetMovementAt(secondIndex).Position;
+            }
+
+            if (!firstPosition.HasValue)
+            {
+                return secondPosition;
+            }
+
+            if (!secondPosition.HasValue)
+            {
+                return firstPosition;
+            }
+
+            float firstDistance = SimVector2.Distance(position, firstPosition.Value);
+            float secondDistance = SimVector2.Distance(position, secondPosition.Value);
+            return firstDistance <= secondDistance ? firstPosition : secondPosition;
+        }
+
+        public SimVector2? FindNearestAliveParentForTest(CreatureLineage lineage, SimVector2 position)
+        {
+            return FindNearestAliveParent(lineage, position);
         }
 
         private Phenotype GetEffectivePhenotype(int index)

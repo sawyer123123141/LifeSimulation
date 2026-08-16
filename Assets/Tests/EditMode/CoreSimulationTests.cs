@@ -1192,6 +1192,179 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(youngDistance, Is.LessThan(adultDistance));
         }
 
+        [Test]
+        public void FindNearestAliveParentReturnsCloserOfTwoAliveParents()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(worldSeed: 11, initialPopulation: 0, schedule: schedule);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.Creatures.TryGetIndex(secondParent, out int secondIndex);
+            world.Creatures.GetMovementRefAt(firstIndex).Position = new SimVector2(0f, 0f);
+            world.Creatures.GetMovementRefAt(secondIndex).Position = new SimVector2(10f, 0f);
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(1f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            CreatureLineage lineage = world.Creatures.GetLineageAt(childIndex);
+
+            SimVector2? nearest = world.FindNearestAliveParentForTest(lineage, new SimVector2(1f, 0f));
+
+            Assert.That(nearest.HasValue, Is.True);
+            Assert.That(nearest.Value.X, Is.EqualTo(0f).Within(0.0001f));
+        }
+
+        [Test]
+        public void FindNearestAliveParentReturnsLoneAliveParentWhenOtherIsDead()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(worldSeed: 12, initialPopulation: 0, schedule: schedule);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.Creatures.GetMovementRefAt(firstIndex).Position = new SimVector2(5f, 5f);
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            CreatureLineage lineage = world.Creatures.GetLineageAt(childIndex);
+            world.Creatures.Remove(secondParent);
+
+            SimVector2? nearest = world.FindNearestAliveParentForTest(lineage, new SimVector2(0f, 0f));
+
+            Assert.That(nearest.HasValue, Is.True);
+            Assert.That(nearest.Value.X, Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(nearest.Value.Y, Is.EqualTo(5f).Within(0.0001f));
+        }
+
+        [Test]
+        public void FindNearestAliveParentReturnsNullWhenBothParentsDead()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(worldSeed: 13, initialPopulation: 0, schedule: schedule);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            CreatureLineage lineage = world.Creatures.GetLineageAt(childIndex);
+            world.Creatures.Remove(firstParent);
+            world.Creatures.Remove(secondParent);
+
+            SimVector2? nearest = world.FindNearestAliveParentForTest(lineage, new SimVector2(0f, 0f));
+
+            Assert.That(nearest.HasValue, Is.False);
+        }
+
+        [Test]
+        public void FindNearestAliveParentReturnsNullForCreatureWithNoLineage()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(worldSeed: 14, initialPopulation: 0, schedule: schedule);
+            var world = new SimulationWorld(config);
+            CreatureId solo = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(solo, out int soloIndex);
+            CreatureLineage lineage = world.Creatures.GetLineageAt(soloIndex);
+
+            SimVector2? nearest = world.FindNearestAliveParentForTest(lineage, new SimVector2(0f, 0f));
+
+            Assert.That(nearest.HasValue, Is.False);
+        }
+
+        [Test]
+        public void JuvenileMovesTowardParentWhenWanderingAndFlagEnabled()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 21,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                parentalFollowingEnabled: true);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.Creatures.GetMovementRefAt(firstIndex).Position = new SimVector2(50f, 0f);
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            world.Creatures.GetNeedsRefAt(childIndex).Age = 0f;
+            SimVector2 childBefore = world.Creatures.GetMovementAt(childIndex).Position;
+
+            world.Step(config.FixedDeltaTime);
+
+            SimVector2 childAfter = world.Creatures.GetMovementAt(childIndex).Position;
+            float distanceToParentBefore = SimVector2.Distance(childBefore, new SimVector2(50f, 0f));
+            float distanceToParentAfter = SimVector2.Distance(childAfter, new SimVector2(50f, 0f));
+            Assert.That(distanceToParentAfter, Is.LessThan(distanceToParentBefore));
+        }
+
+        [Test]
+        public void JuvenileWithUrgentNeedIgnoresParentEvenWithFlagEnabled()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 22,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                parentalFollowingEnabled: true);
+            var world = new SimulationWorld(config);
+            world.Resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 10f, 0f);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.Creatures.GetMovementRefAt(firstIndex).Position = new SimVector2(50f, 50f);
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(5f, 0f), firstParent, secondParent);
+            world.SetCreaturePosition(child, new SimVector2(5f, 0f));
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            world.Creatures.GetNeedsRefAt(childIndex).Age = 0f;
+            world.Creatures.GetNeedsRefAt(childIndex).Energy = 0f;
+            SimVector2 childBefore = world.Creatures.GetMovementAt(childIndex).Position;
+
+            world.Step(config.FixedDeltaTime);
+
+            SimVector2 childAfter = world.Creatures.GetMovementAt(childIndex).Position;
+            float distanceToFoodBefore = SimVector2.Distance(childBefore, new SimVector2(0f, 0f));
+            float distanceToFoodAfter = SimVector2.Distance(childAfter, new SimVector2(0f, 0f));
+            Assert.That(distanceToFoodAfter, Is.LessThan(distanceToFoodBefore));
+        }
+
+        [Test]
+        public void AdultWanderIsUnaffectedByParentalFollowingFlag()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var configFlagOff = new SimulationConfig(
+                worldSeed: 23,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                parentalFollowingEnabled: false);
+            var worldFlagOff = new SimulationWorld(configFlagOff);
+            CreatureId adultOff = worldFlagOff.Spawn(Genome.Neutral);
+            worldFlagOff.Creatures.TryGetIndex(adultOff, out int adultOffIndex);
+            worldFlagOff.Creatures.GetNeedsRefAt(adultOffIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            SimVector2 beforeOff = worldFlagOff.Creatures.GetMovementAt(adultOffIndex).Position;
+            worldFlagOff.Step(configFlagOff.FixedDeltaTime);
+            SimVector2 afterOff = worldFlagOff.Creatures.GetMovementAt(adultOffIndex).Position;
+
+            var configFlagOn = new SimulationConfig(
+                worldSeed: 23,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                parentalFollowingEnabled: true);
+            var worldFlagOn = new SimulationWorld(configFlagOn);
+            CreatureId adultOn = worldFlagOn.Spawn(Genome.Neutral);
+            worldFlagOn.Creatures.TryGetIndex(adultOn, out int adultOnIndex);
+            worldFlagOn.Creatures.GetNeedsRefAt(adultOnIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            SimVector2 beforeOn = worldFlagOn.Creatures.GetMovementAt(adultOnIndex).Position;
+            worldFlagOn.Step(configFlagOn.FixedDeltaTime);
+            SimVector2 afterOn = worldFlagOn.Creatures.GetMovementAt(adultOnIndex).Position;
+
+            Assert.That(afterOn.X, Is.EqualTo(afterOff.X).Within(0.0001f));
+            Assert.That(afterOn.Y, Is.EqualTo(afterOff.Y).Within(0.0001f));
+        }
+
         // Captured from the pre-Task-1 commit e4ca1eb (the commit this task's changes were built on
         // top of), by running this exact setup (with juvenileCapabilityEnabled omitted, since that
         // constructor parameter did not exist yet) for 50 ticks and reading world.ComputeStateHash().
@@ -1213,6 +1386,30 @@ namespace LifeSimulation.Tests.EditMode
             for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedJuvenileCapabilityDisabledHash));
+        }
+
+        // Captured from the pre-Task-1 commit a3c6efc (the commit this task's changes
+        // were built on top of), by running this exact setup (with parentalFollowingEnabled
+        // omitted, since that constructor parameter did not exist yet) for 50 ticks and reading
+        // world.ComputeStateHash(). Pinning this value confirms that adding
+        // Config.ParentalFollowingEnabled and its call-site wiring in SimulationWorld.cs is
+        // byte-identical to prior behavior when the flag is left at its default (false).
+        private const ulong ExpectedParentalFollowingDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void ParentalFollowingDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99,
+                initialPopulation: 2,
+                schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedParentalFollowingDisabledHash));
         }
     }
 }
