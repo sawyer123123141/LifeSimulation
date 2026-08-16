@@ -143,6 +143,21 @@ namespace LifeSimulation.Simulation.Experiments
             "food-scarcity",
             CreateResources(foodAmount: 12f, foodRegeneration: 0.25f, waterAmount: 12f, waterRegeneration: 0.75f));
 
+        public static SimulationScenario ForagingMemoryDemo { get; } = new SimulationScenario(
+            "foraging-memory-demo",
+            CreateForagingMemoryDemoResources());
+
+        private static ResourceDefinition[] CreateForagingMemoryDemoResources()
+        {
+            return new[]
+            {
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-10f, -10f), 1.5f, 15f, 15f, 0.8f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-8f, -5f), 1.5f, 3f, 3f, 0.15f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-2f, -9f), 1.5f, 30f, 30f, 1.2f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(8f, -6f), 1.5f, 50f, 50f, 2f),
+            };
+        }
+
         private static ResourceDefinition[] CreateResources(
             float foodAmount,
             float foodRegeneration,

@@ -327,7 +327,7 @@ namespace LifeSimulation.Presentation
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype2Defaults(worldSeed: 42, initialPopulation: PredationFounderPositions.Length);
             ResetSimulation(
-                Prototype1Scenarios.Baseline,
+                Prototype1Scenarios.ForagingMemoryDemo,
                 new SimulationConfig(
                     defaults.WorldSeed,
                     defaults.InitialPopulation,
