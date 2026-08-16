@@ -864,11 +864,11 @@ namespace LifeSimulation.Tests.EditMode
                 attack: 0f, defense: 0.1f, maneuverability: 0.1f, fear: 1f, aggression: 0f, dietSpecialization: 0f));
             Assert.That(world.TryGetCreatureIndex(predatorId, out int predatorIndex), Is.True);
             Assert.That(world.TryGetCreatureIndex(preyId, out int preyIndex), Is.True);
-            // Distance chosen so the legacy 1 / (1 + distance) attenuation (still in effect at every
-            // call site until this task wires Config.PredationEconomicsEnabled through) pulls the
-            // threat score below the 0.10 decision threshold, while the economics-enabled path (no
-            // distance attenuation) keeps it well above threshold -- this makes the test a genuine
-            // regression check for the wiring itself, not just for legacy predation math still working.
+            // Distance chosen so the legacy 1 / (1 + distance) attenuation -- which applies only
+            // when Config.PredationEconomicsEnabled is false -- would pull the threat score below
+            // the 0.10 decision threshold, while the economics-enabled path (no distance attenuation)
+            // keeps it well above threshold -- this makes the test a genuine regression check for
+            // the wiring itself, not just for legacy predation math still working.
             world.Creatures.GetMovementRefAt(predatorIndex).Position = new SimVector2(0f, 0f);
             world.Creatures.GetMovementRefAt(preyIndex).Position = new SimVector2(9f, 0f);
 

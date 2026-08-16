@@ -57,11 +57,9 @@ namespace LifeSimulation.Simulation.Behavior
             return survivalDecision;
         }
 
-        // Compatibility shim: several existing call sites (DecisionSystem.ScorePredation,
-        // SimulationWorld.cs, and pre-existing tests in SpatialBehaviorTests.cs) were not
-        // in this task's declared scope to update, and were not accounted for by the plan's
-        // "Task 3/4 update the only remaining callers" claim. Keeping this overload preserves
-        // byte-identical legacy behavior for those callers without pre-empting Task 3/4's work.
+        // Legacy-only entry point retained for DecisionSystem.ScorePredation, SimulationWorld.cs,
+        // and pre-existing tests in SpatialBehaviorTests.cs. Distance is ignored by the legacy
+        // (non-economics) branch, so passing 0f here preserves byte-identical legacy behavior.
         public static float Threat(Phenotype attacker, Phenotype defender)
         {
             return Threat(attacker, defender, distance: 0f, economicsEnabled: false);

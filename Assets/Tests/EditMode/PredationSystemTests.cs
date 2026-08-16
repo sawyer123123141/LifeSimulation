@@ -23,36 +23,55 @@ namespace LifeSimulation.Tests.EditMode
             float attackPower, float defense, float maneuverability, float aggression = 0.5f,
             float meatYieldMultiplier = 1f, float energyCapacity = 100f)
         {
-            object[] args =
+            // Named per constructor parameter (not positional) so a future reordering of
+            // Phenotype's private constructor cannot silently shuffle values into the wrong
+            // fields. Any parameter this helper doesn't recognize by name throws immediately.
+            var namedValues = new System.Collections.Generic.Dictionary<string, float>
             {
-                1f,                   // bodyMass
-                energyCapacity,       // energyCapacity
-                100f,                 // hydrationCapacity
-                100f,                 // healthCapacity
-                2f,                   // maximumSpeed
-                8f,                   // visionRange
-                1f,                   // foodYield
-                1f,                   // ingestionRate
-                1f,                   // digestionRate
-                1f,                   // waterLossMultiplier
-                1f,                   // basalEnergyCostMultiplier
-                attackPower,          // attackPower
-                defense,              // defense
-                maneuverability,      // maneuverability
-                0.5f,                 // fearResponse
-                aggression,           // aggression
-                1f,                   // plantFoodYieldMultiplier
-                meatYieldMultiplier,  // meatYieldMultiplier
-                0.05f,                // memoryConfidenceDecayPerSecond
-                1f,                   // cognitionRestCostMultiplier
-                5f,                   // temperatureTolerance
-                0.5f,                 // learningRate
-                0.5f,                 // exploration
-                10f,                  // reproductionCooldownSeconds
-                0.2f,                 // reproductionEnergyCostFraction
-                180f,                 // maximumAgeSeconds
-                0.5f                  // persistence
+                ["bodyMass"] = 1f,
+                ["energyCapacity"] = energyCapacity,
+                ["hydrationCapacity"] = 100f,
+                ["healthCapacity"] = 100f,
+                ["maximumSpeed"] = 2f,
+                ["visionRange"] = 8f,
+                ["foodYield"] = 1f,
+                ["ingestionRate"] = 1f,
+                ["digestionRate"] = 1f,
+                ["waterLossMultiplier"] = 1f,
+                ["basalEnergyCostMultiplier"] = 1f,
+                ["attackPower"] = attackPower,
+                ["defense"] = defense,
+                ["maneuverability"] = maneuverability,
+                ["fearResponse"] = 0.5f,
+                ["aggression"] = aggression,
+                ["plantFoodYieldMultiplier"] = 1f,
+                ["meatYieldMultiplier"] = meatYieldMultiplier,
+                ["memoryConfidenceDecayPerSecond"] = 0.05f,
+                ["cognitionRestCostMultiplier"] = 1f,
+                ["temperatureTolerance"] = 5f,
+                ["learningRate"] = 0.5f,
+                ["exploration"] = 0.5f,
+                ["reproductionCooldownSeconds"] = 10f,
+                ["reproductionEnergyCostFraction"] = 0.2f,
+                ["maximumAgeSeconds"] = 180f,
+                ["persistence"] = 0.5f,
             };
+
+            ParameterInfo[] parameters = PhenotypeConstructor.GetParameters();
+            object[] args = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                string parameterName = parameters[i].Name;
+                if (!namedValues.TryGetValue(parameterName, out float value))
+                {
+                    throw new System.InvalidOperationException(
+                        $"MakePhenotype has no known value for Phenotype constructor parameter " +
+                        $"'{parameterName}'. Add it to the namedValues map in MakePhenotype " +
+                        "instead of relying on positional argument order.");
+                }
+
+                args[i] = value;
+            }
 
             return (Phenotype)PhenotypeConstructor.Invoke(args);
         }
@@ -87,7 +106,7 @@ namespace LifeSimulation.Tests.EditMode
 
         // Row 3: economics-enabled, strongly favorable matchup (big weak close prey).
         [Test]
-        public void EconomicsHuntCapabilityIsStronglyFavorableForBigWeakCloseProey()
+        public void EconomicsHuntCapabilityIsStronglyFavorableForBigWeakClosePrey()
         {
             Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
             Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
