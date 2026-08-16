@@ -210,5 +210,37 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(diagnostics.FoodScore, Is.EqualTo(0.1640625f).Within(0.0001f));
         }
+
+        // Proves best-of-K selection: with two visible creatures, the winning SeekPrey candidate
+        // targets the favorable-to-hunt one even though it is farther away than the dangerous one,
+        // and the Flee candidate (if present) targets the dangerous one - not just "the nearest".
+        [Test]
+        public void MultiThreatPerceptionSelectsBestHuntTargetAcrossMultipleVisibleCreatures()
+        {
+            Phenotype self = MakePhenotype(attackPower: 1f, defense: 0.5f, maneuverability: 1f, aggression: 0.8f);
+            Phenotype weakFavorableTarget = MakePhenotype(attackPower: 0.1f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
+            Phenotype strongDangerousTarget = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f);
+            CreatureNeeds needs = CreatureNeeds.Full(self);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var otherCandidates = new PredationCandidateBuffer();
+            var weakObservation = new CreatureObservation(new CreatureId(2), 1, 5f);
+            var strongObservation = new CreatureObservation(new CreatureId(3), 2, 1f);
+            otherCandidates.Add(strongObservation, strongDangerousTarget);
+            otherCandidates.Add(weakObservation, weakFavorableTarget);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, self, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, tick: 0,
+                diagnostics: out _, economicsEnabled: true,
+                threatFalloffDistance: SimulationConfig.DefaultThreatFalloffDistance,
+                otherCandidates: otherCandidates, multiThreatPerceptionEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekPrey));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(weakObservation.CreatureId));
+        }
     }
 }

@@ -674,6 +674,17 @@ namespace LifeSimulation.Simulation.Core
                         }
                     }
                 }
+                var otherCandidates = new PredationCandidateBuffer();
+                if (Config.MultiThreatPerceptionEnabled)
+                {
+                    var creatureCandidates = new CreatureCandidateBuffer();
+                    PerceptionSystem.FindOtherCreatures(Creatures, CombatGrid, movement.Position, phenotype.VisionRange, Creatures.GetIdAt(index), ref creatureCandidates);
+                    for (int candidateIndex = 0; candidateIndex < creatureCandidates.Count; candidateIndex++)
+                    {
+                        CreatureObservation candidateObservation = creatureCandidates.GetAt(candidateIndex);
+                        otherCandidates.Add(candidateObservation, Creatures.GetPhenotypeAt(candidateObservation.CreatureIndex));
+                    }
+                }
                 if (Config.CognitionEnabled)
                 {
                     ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
@@ -737,7 +748,9 @@ namespace LifeSimulation.Simulation.Core
                         tick,
                         out diagnostics,
                         Config.PredationEconomicsEnabled,
-                        Config.ThreatFalloffDistance);
+                        Config.ThreatFalloffDistance,
+                        otherCandidates,
+                        Config.MultiThreatPerceptionEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);

@@ -1093,5 +1093,28 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedDecisionStaggerDisabledHash));
         }
+
+        // Captured from the pre-Task-2 commit 59d4449 (the commit this task's changes were built on
+        // top of), by running this exact setup (with multiThreatPerceptionEnabled omitted, since that
+        // constructor parameter did not exist yet) for 50 ticks and reading world.ComputeStateHash().
+        // Pinning this value confirms that adding Config.MultiThreatPerceptionEnabled and its call-site
+        // wiring in SimulationWorld.cs/DecisionSystem.cs is byte-identical to prior behavior when the
+        // flag is left at its default (false).
+        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void MultiThreatPerceptionDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                multiThreatPerceptionEnabled: false);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedMultiThreatPerceptionDisabledHash));
+        }
     }
 }

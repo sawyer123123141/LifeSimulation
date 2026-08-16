@@ -265,6 +265,63 @@ namespace LifeSimulation.Simulation.Behavior
         }
     }
 
+    public struct PredationCandidateBuffer
+    {
+        public const int Capacity = 4;
+
+        private CreatureObservation _observation0;
+        private Phenotype _phenotype0;
+        private CreatureObservation _observation1;
+        private Phenotype _phenotype1;
+        private CreatureObservation _observation2;
+        private Phenotype _phenotype2;
+        private CreatureObservation _observation3;
+        private Phenotype _phenotype3;
+        private int _count;
+
+        public int Count => _count;
+
+        public CreatureObservation GetObservationAt(int index)
+        {
+            switch (index)
+            {
+                case 0: return _observation0;
+                case 1: return _observation1;
+                case 2: return _observation2;
+                default: return _observation3;
+            }
+        }
+
+        public Phenotype GetPhenotypeAt(int index)
+        {
+            switch (index)
+            {
+                case 0: return _phenotype0;
+                case 1: return _phenotype1;
+                case 2: return _phenotype2;
+                default: return _phenotype3;
+            }
+        }
+
+        public void Add(CreatureObservation observation, Phenotype phenotype)
+        {
+            if (_count >= Capacity)
+            {
+                return;
+            }
+
+            switch (_count)
+            {
+                case 0: _observation0 = observation; _phenotype0 = phenotype; break;
+                case 1: _observation1 = observation; _phenotype1 = phenotype; break;
+                case 2: _observation2 = observation; _phenotype2 = phenotype; break;
+                default: _observation3 = observation; _phenotype3 = phenotype; break;
+            }
+
+            _count++;
+        }
+    }
+
     public static class DecisionSystem
     {
         private const float MinimumUrgencyToSeekResource = 0.05f;
@@ -288,13 +345,15 @@ namespace LifeSimulation.Simulation.Behavior
             long tick,
             out DecisionDiagnostics diagnostics,
             bool economicsEnabled = false,
-            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance)
+            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
+            PredationCandidateBuffer otherCandidates = default,
+            bool multiThreatPerceptionEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
-                threatFalloffDistance);
+                threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -322,7 +381,9 @@ namespace LifeSimulation.Simulation.Behavior
             long tick,
             out DecisionDiagnostics diagnostics,
             bool economicsEnabled = false,
-            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance)
+            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
+            PredationCandidateBuffer otherCandidates = default,
+            bool multiThreatPerceptionEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -341,7 +402,14 @@ namespace LifeSimulation.Simulation.Behavior
             if (predationEnabled)
             {
                 ScoreCarcass(needs, phenotype, resources, carcass, ref candidates, out carcassScore);
-                ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, out fleeScore, out huntScore);
+                if (multiThreatPerceptionEnabled)
+                {
+                    ScorePredationMulti(needs, genome, phenotype, otherCandidates, ref candidates, economicsEnabled, out fleeScore, out huntScore);
+                }
+                else
+                {
+                    ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, out fleeScore, out huntScore);
+                }
             }
             float thermalScore = 0f;
             if (physiologyEnabled)
@@ -459,6 +527,58 @@ namespace LifeSimulation.Simulation.Behavior
             if (huntScore >= 0.10f)
             {
                 candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekPrey, -1, observation.CreatureId, huntScore));
+            }
+        }
+
+        private static void ScorePredationMulti(
+            CreatureNeeds needs,
+            Genome genome,
+            Phenotype self,
+            PredationCandidateBuffer others,
+            ref DecisionCandidateBuffer candidates,
+            bool economicsEnabled,
+            out float fleeScore,
+            out float huntScore)
+        {
+            fleeScore = 0f;
+            huntScore = 0f;
+            if (others.Count == 0)
+            {
+                return;
+            }
+
+            float hunger = Urgency(needs.Energy, self.EnergyCapacity);
+            CreatureId bestFleeTarget = default;
+            CreatureId bestHuntTarget = default;
+            for (int i = 0; i < others.Count; i++)
+            {
+                CreatureObservation observation = others.GetObservationAt(i);
+                Phenotype otherPhenotype = others.GetPhenotypeAt(i);
+                float distanceAvailability = economicsEnabled ? 1f : 1f / (1f + observation.Distance);
+                float candidateThreatIntensity = PredationSystem.Threat(otherPhenotype, self, observation.Distance, economicsEnabled);
+                float candidateFleeScore = Math.Max(0f, candidateThreatIntensity * genome.RiskAversion * distanceAvailability);
+                float candidateHuntScore = PredationSystem.HuntCapability(self, otherPhenotype, observation.Distance, economicsEnabled) * hunger * distanceAvailability;
+                if (candidateFleeScore > fleeScore)
+                {
+                    fleeScore = candidateFleeScore;
+                    bestFleeTarget = observation.CreatureId;
+                }
+
+                if (candidateHuntScore > huntScore)
+                {
+                    huntScore = candidateHuntScore;
+                    bestHuntTarget = observation.CreatureId;
+                }
+            }
+
+            if (fleeScore >= 0.10f)
+            {
+                candidates.TryAdd(new DecisionCandidate(CreatureIntent.Flee, -1, bestFleeTarget, fleeScore));
+            }
+
+            if (huntScore >= 0.10f)
+            {
+                candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekPrey, -1, bestHuntTarget, huntScore));
             }
         }
 
