@@ -110,7 +110,8 @@ namespace LifeSimulation.Simulation.Core
             bool multiThreatPerceptionEnabled = false,
             bool restBehaviorEnabled = false,
             bool juvenileCapabilityEnabled = false,
-            bool parentalFollowingEnabled = false)
+            bool parentalFollowingEnabled = false,
+            bool kinRecognitionEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -138,6 +139,7 @@ namespace LifeSimulation.Simulation.Core
             RestBehaviorEnabled = restBehaviorEnabled;
             JuvenileCapabilityEnabled = juvenileCapabilityEnabled;
             ParentalFollowingEnabled = parentalFollowingEnabled;
+            KinRecognitionEnabled = kinRecognitionEnabled;
         }
 
         public int WorldSeed { get; }
@@ -165,6 +167,7 @@ namespace LifeSimulation.Simulation.Core
         public bool RestBehaviorEnabled { get; }
         public bool JuvenileCapabilityEnabled { get; }
         public bool ParentalFollowingEnabled { get; }
+        public bool KinRecognitionEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
