@@ -287,12 +287,14 @@ namespace LifeSimulation.Simulation.Behavior
             bool physiologyEnabled,
             long tick,
             out DecisionDiagnostics diagnostics,
-            bool economicsEnabled = false)
+            bool economicsEnabled = false,
+            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
-                default, default, default, default, default, false, tick, out diagnostics, economicsEnabled);
+                default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
+                threatFalloffDistance);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -319,7 +321,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool reproductionEnabled,
             long tick,
             out DecisionDiagnostics diagnostics,
-            bool economicsEnabled = false)
+            bool economicsEnabled = false,
+            float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -329,8 +332,8 @@ namespace LifeSimulation.Simulation.Behavior
             ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, ref candidates, ref bestWaterScore);
             if (cognitionEnabled)
             {
-                ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, ref candidates, ref bestFoodScore);
-                ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, ref candidates, ref bestWaterScore);
+                ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestFoodScore);
+                ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestWaterScore);
             }
             float carcassScore = 0f;
             float fleeScore = 0f;
@@ -496,6 +499,9 @@ namespace LifeSimulation.Simulation.Behavior
             float age,
             float learnedValue,
             int experienceCount,
+            SimVector2 threatPosition,
+            float threatConfidence,
+            float threatFalloffDistance,
             ref DecisionCandidateBuffer candidates,
             ref float bestScore)
         {
@@ -512,7 +518,14 @@ namespace LifeSimulation.Simulation.Behavior
             float expectedValue = KnownOutcomeOrCuriosity(learnedValue, experienceCount, phenotype.Exploration);
             float staleness = 1f / (1f + Math.Max(0f, age));
             float travelBurden = (0.5f + (1.5f * genome.TravelSensitivity)) * EstimateTravelBurden(distance, phenotype);
-            float score = Math.Max(0f, (urgency * confidence * staleness * expectedValue) - travelBurden);
+            float avoidance = 0f;
+            if (threatConfidence > 0f)
+            {
+                Span<PlaceMemory> threatPlaces = stackalloc PlaceMemory[1];
+                threatPlaces[0] = new PlaceMemory { Position = threatPosition, Confidence = threatConfidence };
+                avoidance = ForagingEconomics.ThreatAvoidance(location, threatPlaces, phenotype, threatFalloffDistance);
+            }
+            float score = Math.Max(0f, (urgency * confidence * staleness * expectedValue) - travelBurden - avoidance);
             if (score > bestScore)
             {
                 bestScore = score;

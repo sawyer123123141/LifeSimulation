@@ -147,5 +147,68 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(diagnostics.HuntScore, Is.GreaterThan(0f));
         }
+
+        // Behavior table row 1: no remembered threat -> remembered-food score is
+        // exactly today's pre-existing formula (avoidance term is 0).
+        [Test]
+        public void RememberedFoodScoreIsUnaffectedWhenNoThreatIsRemembered()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 1f, defense: 1f, maneuverability: 1f);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var memory = new MemoryState
+            {
+                FoodPosition = new SimVector2(10f, 0f),
+                FoodConfidence = 1f,
+                FoodAge = 0f,
+                FoodOutcomeValue = 0f,
+                FoodExperienceCount = 0,
+            };
+
+            DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: memory, cognitionEnabled: true, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, tick: 0,
+                diagnostics: out DecisionDiagnostics diagnostics);
+
+            Assert.That(diagnostics.FoodScore, Is.EqualTo(0.6640625f).Within(0.0001f));
+        }
+
+        // Behavior table row 2: a remembered threat sitting at the remembered food's
+        // exact location applies the same avoidance penalty
+        // TryScoreBestRememberedPlace already applies under Legacy, lowering the
+        // remembered-food score.
+        [Test]
+        public void RememberedFoodScoreIsLoweredByARememberedThreatAtTheSameLocation()
+        {
+            Phenotype phenotype = MakePhenotype(attackPower: 1f, defense: 1f, maneuverability: 1f);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var memory = new MemoryState
+            {
+                FoodPosition = new SimVector2(10f, 0f),
+                FoodConfidence = 1f,
+                FoodAge = 0f,
+                FoodOutcomeValue = 0f,
+                FoodExperienceCount = 0,
+                ThreatPosition = new SimVector2(10f, 0f),
+                ThreatConfidence = 1f,
+            };
+
+            DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: memory, cognitionEnabled: true, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: false, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, tick: 0,
+                diagnostics: out DecisionDiagnostics diagnostics,
+                threatFalloffDistance: SimulationConfig.DefaultThreatFalloffDistance);
+
+            Assert.That(diagnostics.FoodScore, Is.EqualTo(0.1640625f).Within(0.0001f));
+        }
     }
 }

@@ -730,7 +730,8 @@ namespace LifeSimulation.Simulation.Core
                         true,
                         tick,
                         out diagnostics,
-                        Config.PredationEconomicsEnabled);
+                        Config.PredationEconomicsEnabled,
+                        Config.ThreatFalloffDistance);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
