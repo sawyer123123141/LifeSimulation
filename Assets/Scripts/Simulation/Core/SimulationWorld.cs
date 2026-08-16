@@ -664,7 +664,7 @@ namespace LifeSimulation.Simulation.Core
                         other = PerceptionSystem.FindNearestOtherCreature(Creatures, CombatGrid, movement.Position, phenotype.VisionRange, Creatures.GetIdAt(index));
                         if (other.IsValid)
                         {
-                            threatIntensity = PredationSystem.Threat(Creatures.GetPhenotypeAt(other.CreatureIndex), phenotype);
+                            threatIntensity = PredationSystem.Threat(Creatures.GetPhenotypeAt(other.CreatureIndex), phenotype, other.Distance, Config.PredationEconomicsEnabled);
                         }
                     }
                 }
@@ -840,7 +840,8 @@ namespace LifeSimulation.Simulation.Core
                             Creatures.GetPhenotypeAt(other.CreatureIndex),
                             other,
                             decision,
-                            ref diagnostics);
+                            ref diagnostics,
+                            Config.PredationEconomicsEnabled);
                         if (Config.CognitionEnabled && decision.Action == CreatureAction.Flee)
                         {
                             MemorySystem.RememberThreat(ref Creatures.GetMemoryRefAt(index), Creatures.GetMovementAt(other.CreatureIndex).Position);
@@ -1148,14 +1149,15 @@ namespace LifeSimulation.Simulation.Core
 
                 MovementState attackerMovement = Creatures.GetMovementAt(index);
                 MovementState defenderMovement = Creatures.GetMovementAt(targetIndex);
-                if (SimVector2.Distance(attackerMovement.Position, defenderMovement.Position) > 1.1f)
+                float engagementDistance = SimVector2.Distance(attackerMovement.Position, defenderMovement.Position);
+                if (engagementDistance > 1.1f)
                 {
                     continue;
                 }
 
                 Phenotype attacker = Creatures.GetPhenotypeAt(index);
                 Phenotype defender = Creatures.GetPhenotypeAt(targetIndex);
-                float hitChance = 0.20f + (0.70f * PredationSystem.Threat(attacker, defender));
+                float hitChance = 0.20f + (0.70f * PredationSystem.Threat(attacker, defender, engagementDistance, Config.PredationEconomicsEnabled));
                 float roll = DeterministicRandom.Float01(
                     Config.WorldSeed,
                     RandomDomain.AttackResolution,

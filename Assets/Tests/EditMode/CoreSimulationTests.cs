@@ -823,6 +823,84 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(second.ComputeStateHash(), Is.Not.EqualTo(first.ComputeStateHash()));
         }
 
+        // Captured from the pre-Task-4 (and pre-Task-1) commit 92a2e54c4d56acd774fcabf51ed0702abd6b13f0,
+        // the commit predation-economics-b5 branched from, by running this exact setup (with
+        // predationEconomicsEnabled omitted, since that constructor parameter did not exist yet)
+        // for 50 ticks and reading world.ComputeStateHash(). Pinning this value confirms that
+        // wiring Config.PredationEconomicsEnabled through the three SimulationWorld.cs call sites
+        // is byte-identical to the legacy behavior when the flag is left at its default (false).
+        private const ulong ExpectedLegacyHash = 12050501592762519865UL;
+
+        [Test]
+        public void PredationEconomicsDisabledProducesIdenticalHashToPreExistingLegacyBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                predationEconomicsEnabled: false);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedLegacyHash));
+        }
+
+        [Test]
+        public void PredationEconomicsEnabledRunsWithoutExceptionsAndProducesAPredationDecision()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                predationEconomicsEnabled: true);
+            var world = new SimulationWorld(config);
+
+            CreatureId predatorId = world.Spawn(new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                attack: 1f, defense: 0.1f, maneuverability: 0.1f, fear: 0f, aggression: 1f, dietSpecialization: 1f));
+            CreatureId preyId = world.Spawn(new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                attack: 0f, defense: 0.1f, maneuverability: 0.1f, fear: 1f, aggression: 0f, dietSpecialization: 0f));
+            Assert.That(world.TryGetCreatureIndex(predatorId, out int predatorIndex), Is.True);
+            Assert.That(world.TryGetCreatureIndex(preyId, out int preyIndex), Is.True);
+            // Distance chosen so the legacy 1 / (1 + distance) attenuation (still in effect at every
+            // call site until this task wires Config.PredationEconomicsEnabled through) pulls the
+            // threat score below the 0.10 decision threshold, while the economics-enabled path (no
+            // distance attenuation) keeps it well above threshold -- this makes the test a genuine
+            // regression check for the wiring itself, not just for legacy predation math still working.
+            world.Creatures.GetMovementRefAt(predatorIndex).Position = new SimVector2(0f, 0f);
+            world.Creatures.GetMovementRefAt(preyIndex).Position = new SimVector2(9f, 0f);
+
+            bool sawPredationDecision = false;
+            Assert.DoesNotThrow(() =>
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    world.Step(config.FixedDeltaTime);
+                    if (world.TryGetCreatureIndex(predatorId, out int liveIndex))
+                    {
+                        CreatureAction action = world.Creatures.GetDecisionAt(liveIndex).Action;
+                        if (action == CreatureAction.SeekPrey || action == CreatureAction.Flee)
+                        {
+                            sawPredationDecision = true;
+                        }
+                    }
+                    if (world.TryGetCreatureIndex(preyId, out int livePreyIndex))
+                    {
+                        CreatureAction preyAction = world.Creatures.GetDecisionAt(livePreyIndex).Action;
+                        if (preyAction == CreatureAction.SeekPrey || preyAction == CreatureAction.Flee)
+                        {
+                            sawPredationDecision = true;
+                        }
+                    }
+                }
+            });
+
+            Assert.That(world.Creatures.Count, Is.GreaterThanOrEqualTo(0));
+            Assert.That(sawPredationDecision, Is.True);
+        }
+
         [Test]
         public void WorldsWithIdenticalSeedsAndConfigsProduceIdenticalStateHashes()
         {
