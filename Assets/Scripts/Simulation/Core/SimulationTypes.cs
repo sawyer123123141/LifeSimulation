@@ -1,4 +1,5 @@
 using System;
+using LifeSimulation.Simulation.Resources;
 
 namespace LifeSimulation.Simulation.Core
 {
@@ -259,6 +260,17 @@ namespace LifeSimulation.Simulation.Core
     {
         public float SecondsInCurrentAction;
         public float RecentIntakeRate;
+    }
+
+    public struct PlaceMemory
+    {
+        public SimVector2 Position;
+        public ResourceKind Kind;
+        public float LastKnownAmount;
+        public float OutcomeValue;
+        public int VisitCount;
+        public float Confidence;
+        public long LastSeenTick;
     }
 
     public enum RandomDomain : ulong

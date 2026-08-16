@@ -65,6 +65,12 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Sensitivity multiplier used when deciding whether to abandon a draining patch.</summary>
         public const float DefaultGiveUpSensitivity = 0.5f;
 
+        /// <summary>Place-memory slot count every creature has regardless of genome.</summary>
+        public const int DefaultMinimumMemorySlots = 3;
+
+        /// <summary>Extra place-memory slots available to a creature with the maximum <c>MemoryCapacity</c> gene.</summary>
+        public const int DefaultAdditionalMemorySlots = 5;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -80,7 +86,9 @@ namespace LifeSimulation.Simulation.Core
             float referenceGain = DefaultReferenceGain,
             float commitmentStrength = DefaultCommitmentStrength,
             float commitmentHalfLifeSeconds = DefaultCommitmentHalfLifeSeconds,
-            float giveUpSensitivity = DefaultGiveUpSensitivity)
+            float giveUpSensitivity = DefaultGiveUpSensitivity,
+            int minimumMemorySlots = DefaultMinimumMemorySlots,
+            int additionalMemorySlots = DefaultAdditionalMemorySlots)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -97,6 +105,8 @@ namespace LifeSimulation.Simulation.Core
             CommitmentStrength = commitmentStrength;
             CommitmentHalfLifeSeconds = commitmentHalfLifeSeconds;
             GiveUpSensitivity = giveUpSensitivity;
+            MinimumMemorySlots = minimumMemorySlots;
+            AdditionalMemorySlots = additionalMemorySlots;
         }
 
         public int WorldSeed { get; }
@@ -113,8 +123,24 @@ namespace LifeSimulation.Simulation.Core
         public float CommitmentStrength { get; }
         public float CommitmentHalfLifeSeconds { get; }
         public float GiveUpSensitivity { get; }
+        public int MinimumMemorySlots { get; }
+        public int AdditionalMemorySlots { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
+
+        /// <summary>Widest place-memory row any creature can have; the value used to size dense per-creature storage.</summary>
+        public int MaximumMemorySlots => MinimumMemorySlots + AdditionalMemorySlots;
+
+        /// <summary>
+        /// Usable place-memory slot count for a creature with the given <c>MemoryCapacity</c> gene (expected in [0, 1]).
+        /// Always between <see cref="MinimumMemorySlots"/> and <see cref="MaximumMemorySlots"/> inclusive.
+        /// </summary>
+        public static int ComputeMemorySlotCount(int minimumMemorySlots, int additionalMemorySlots, float memoryCapacityGene)
+        {
+            float clampedGene = Math.Min(1f, Math.Max(0f, memoryCapacityGene));
+            int bonusSlots = (int)Math.Round(clampedGene * additionalMemorySlots, MidpointRounding.AwayFromZero);
+            return minimumMemorySlots + bonusSlots;
+        }
 
         public static SimulationConfig CreatePrototype1Defaults(int worldSeed, int initialPopulation)
         {
@@ -207,6 +233,16 @@ namespace LifeSimulation.Simulation.Core
             if (GiveUpSensitivity <= 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(GiveUpSensitivity), "Give-up sensitivity must be positive.");
+            }
+
+            if (MinimumMemorySlots < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(MinimumMemorySlots), "Minimum memory slots cannot be negative.");
+            }
+
+            if (AdditionalMemorySlots < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(AdditionalMemorySlots), "Additional memory slots cannot be negative.");
             }
         }
 

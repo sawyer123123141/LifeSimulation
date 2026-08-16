@@ -19,14 +19,21 @@ namespace LifeSimulation.Simulation.Core
         private CombatState[] _combat;
         private MemoryState[] _memory;
         private ForagingState[] _foraging;
+        private PlaceMemory[] _placeMemories;
+        private readonly int _maximumMemorySlots;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
-        public CreatureStore(int initialCapacity)
+        public CreatureStore(int initialCapacity, int maximumMemorySlots = 0)
         {
             if (initialCapacity < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(initialCapacity));
+            }
+
+            if (maximumMemorySlots < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maximumMemorySlots));
             }
 
             _identities = new CreatureId[Math.Max(initialCapacity, 1)];
@@ -41,9 +48,14 @@ namespace LifeSimulation.Simulation.Core
             _combat = new CombatState[_identities.Length];
             _memory = new MemoryState[_identities.Length];
             _foraging = new ForagingState[_identities.Length];
+            _maximumMemorySlots = maximumMemorySlots;
+            _placeMemories = new PlaceMemory[_identities.Length * _maximumMemorySlots];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
             _nextId = 1;
         }
+
+        /// <summary>Fixed row width of the place-memory sidecar; every creature's slots span this many entries.</summary>
+        public int MaximumMemorySlots => _maximumMemorySlots;
 
         public int Count { get; private set; }
 
@@ -104,6 +116,17 @@ namespace LifeSimulation.Simulation.Core
             return ref _foraging[index];
         }
 
+        public ref PlaceMemory GetPlaceMemoryRefAt(int index, int slot)
+        {
+            ValidateIndex(index);
+            if ((uint)slot >= (uint)_maximumMemorySlots)
+            {
+                throw new ArgumentOutOfRangeException(nameof(slot));
+            }
+
+            return ref _placeMemories[(index * _maximumMemorySlots) + slot];
+        }
+
         private CreatureId AddInternal(
             Genome genome,
             SimVector2 position,
@@ -126,6 +149,11 @@ namespace LifeSimulation.Simulation.Core
             _combat[Count] = default;
             _memory[Count] = default;
             _foraging[Count] = default;
+            if (_maximumMemorySlots > 0)
+            {
+                Array.Clear(_placeMemories, Count * _maximumMemorySlots, _maximumMemorySlots);
+            }
+
             _indexById.Add(id, Count);
             Count++;
             return id;
@@ -231,6 +259,11 @@ namespace LifeSimulation.Simulation.Core
                 _combat[removedIndex] = _combat[lastIndex];
                 _memory[removedIndex] = _memory[lastIndex];
                 _foraging[removedIndex] = _foraging[lastIndex];
+                if (_maximumMemorySlots > 0)
+                {
+                    Array.Copy(_placeMemories, lastIndex * _maximumMemorySlots, _placeMemories, removedIndex * _maximumMemorySlots, _maximumMemorySlots);
+                }
+
                 _indexById[movedId] = removedIndex;
             }
 
@@ -258,6 +291,10 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _combat, nextCapacity);
             Array.Resize(ref _memory, nextCapacity);
             Array.Resize(ref _foraging, nextCapacity);
+            if (_maximumMemorySlots > 0)
+            {
+                Array.Resize(ref _placeMemories, nextCapacity * _maximumMemorySlots);
+            }
         }
 
         private void ValidateIndex(int index)
