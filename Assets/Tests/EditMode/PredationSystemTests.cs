@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
+using LifeSimulation.Simulation.Core;
 using NUnit.Framework;
 
 namespace LifeSimulation.Tests.EditMode
@@ -177,6 +178,46 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(result, Is.GreaterThan(0f));
             Assert.That(result, Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        // Decide row 2: economics-enabled, favorable matchup (Task 2 row 3) -> SeekPrey chosen.
+        [Test]
+        public void EconomicsEnabledDecideChoosesSeekPreyForAFavorableMatchup()
+        {
+            Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
+            CreatureNeeds needs = new CreatureNeeds { Energy = 10f, Hydration = 100f };
+            CreatureObservation observation = new CreatureObservation(new CreatureId(2), 1, 1f);
+            CreatureDecision survival = new CreatureDecision(CreatureAction.Wander, -1, 0.05f);
+
+            CreatureDecision decision = PredationSystem.Decide(needs, attacker, defender, observation, survival, economicsEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekPrey));
+            Assert.That(decision.TargetCreatureId, Is.EqualTo(observation.CreatureId));
+        }
+
+        // Decide row 3: economics-enabled, unfavorable matchup -> unchanged.
+        // NOTE: Decide's threat term is Threat(other, self, ...), which swaps the attacker/defender
+        // roles relative to hunt's HuntCapability(self, other, ...). Task 2's row-4 phenotypes only
+        // guarantee HuntCapability(attacker, defender) == 0 in that fixed order; the swapped-role
+        // Threat(other, self) call is a *different* attacker/defender pairing and is not guaranteed
+        // zero by that row. To keep both hunt and threat at zero regardless of role order, this test
+        // instead zeroes aggression on both phenotypes: HuntCapability's economics formula always
+        // multiplies by attacker.Aggression, so a zero aggression on either phenotype zeroes
+        // HuntCapability (and therefore Threat, which gates on huntScore <= 0) in both directions.
+        [Test]
+        public void EconomicsEnabledDecideReturnsSurvivalDecisionForAnUnfavorableMatchup()
+        {
+            Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0f, meatYieldMultiplier: 1.3f);
+            Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, aggression: 0f, energyCapacity: 200f);
+            CreatureNeeds needs = new CreatureNeeds { Energy = 10f, Hydration = 100f };
+            CreatureObservation observation = new CreatureObservation(new CreatureId(2), 1, 1f);
+            CreatureDecision survival = new CreatureDecision(CreatureAction.Wander, -1, 0.05f);
+
+            CreatureDecision decision = PredationSystem.Decide(needs, attacker, defender, observation, survival, economicsEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(survival.Action));
+            Assert.That(decision.Score, Is.EqualTo(survival.Score));
         }
     }
 }
