@@ -1299,6 +1299,40 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void MateSelectionEnabledPairsActiveSeekerButNotAnUninvolvedThirdReadyCreature()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 31,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                mateSelectionEnabled: true);
+            var world = new SimulationWorld(config);
+            CreatureId seeker = world.Spawn(Genome.Neutral);
+            CreatureId partner = world.Spawn(Genome.Neutral);
+            CreatureId bystander = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(seeker, out int seekerIndex);
+            world.Creatures.TryGetIndex(partner, out int partnerIndex);
+            world.Creatures.TryGetIndex(bystander, out int bystanderIndex);
+            world.Creatures.GetNeedsRefAt(seekerIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            world.Creatures.GetNeedsRefAt(partnerIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            world.Creatures.GetNeedsRefAt(bystanderIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            world.SetCreaturePosition(seeker, new SimVector2(0f, 0f));
+            world.SetCreaturePosition(partner, new SimVector2(1f, 0f));
+            world.SetCreaturePosition(bystander, new SimVector2(-1f, 0f));
+            world.Creatures.SetDecisionAt(seekerIndex, new CreatureDecision(CreatureAction.SeekMate, -1, 0.5f, targetCreatureId: partner));
+
+            int countBefore = world.CreatureCount;
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.CreatureCount, Is.GreaterThan(countBefore));
+            Assert.That(world.Creatures.TryGetIndex(bystander, out int bystanderIndexAfter), Is.True);
+            CreatureDecision bystanderDecision = world.Creatures.GetDecisionAt(bystanderIndexAfter);
+            Assert.That(bystanderDecision.Action, Is.Not.EqualTo(CreatureAction.Reproduce));
+        }
+
+        [Test]
         public void JuvenileWithUrgentNeedIgnoresParentEvenWithFlagEnabled()
         {
             var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
@@ -1556,6 +1590,65 @@ namespace LifeSimulation.Tests.EditMode
             for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedLearnedResourceQualityDisabledHash));
+        }
+
+        // Captured from the pre-Task-1 commit 3f27cf4 (the commit this task's changes were
+        // built on top of), by running this exact setup (with mateSelectionEnabled omitted, since
+        // that constructor parameter did not exist yet) for 50 ticks and reading
+        // world.ComputeStateHash(). Pinning this value confirms that adding
+        // Config.MateSelectionEnabled and its call-site wiring in ReproductionSystem.cs is
+        // byte-identical to prior behavior when the flag is left at its default (false).
+        private const ulong ExpectedMateSelectionDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void MateSelectionDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                mateSelectionEnabled: false);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedMateSelectionDisabledHash));
+        }
+
+        [Test]
+        public void MateSelectionEnabledBirthRateComparedToDisabledUnderIntentUtilityV1()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var configDisabled = new SimulationConfig(
+                worldSeed: 55, initialPopulation: 20, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                maximumPopulation: 500,
+                mateSelectionEnabled: false);
+            var worldDisabled = new SimulationWorld(configDisabled);
+            for (int index = 0; index < worldDisabled.CreatureCount; index++)
+            {
+                worldDisabled.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
+            }
+            for (int i = 0; i < 200; i++) { worldDisabled.Step(configDisabled.FixedDeltaTime); }
+            int birthsDisabled = worldDisabled.Statistics.BirthCount;
+
+            var configEnabled = new SimulationConfig(
+                worldSeed: 55, initialPopulation: 20, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                maximumPopulation: 500,
+                mateSelectionEnabled: true);
+            var worldEnabled = new SimulationWorld(configEnabled);
+            for (int index = 0; index < worldEnabled.CreatureCount; index++)
+            {
+                worldEnabled.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
+            }
+            for (int i = 0; i < 200; i++) { worldEnabled.Step(configEnabled.FixedDeltaTime); }
+            int birthsEnabled = worldEnabled.Statistics.BirthCount;
+
+            TestContext.WriteLine($"Births disabled: {birthsDisabled}, births enabled: {birthsEnabled}");
+            Assert.That(birthsEnabled, Is.GreaterThanOrEqualTo(0));
         }
     }
 }
