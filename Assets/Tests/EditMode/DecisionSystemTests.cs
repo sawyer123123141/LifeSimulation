@@ -120,5 +120,32 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.SeekPrey));
         }
+
+        // Bug report: the inspector's "Also:" line (flee/hunt/carcass/warmth) always reads 0 under
+        // IntentUtilityV1 because DecideIntentUtilityV1 built its DecisionDiagnostics from only
+        // bestFoodScore/bestWaterScore and never called .WithPredationScores/.WithCarcassScore/
+        // .WithThermalScore, even though ScorePredation/ScoreCarcass/the thermal block all compute
+        // real values. Reuses row 2's exact favorable-matchup setup, but checks the diagnostics
+        // output instead of ignoring it.
+        [Test]
+        public void IntentUtilityDiagnosticsReportsNonZeroHuntScoreForAFavorableMatchup()
+        {
+            Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
+            CreatureNeeds needs = CreatureNeeds.Full(attacker);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var threatObservation = new CreatureObservation(new CreatureId(2), 1, 1f);
+
+            DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, attacker, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: threatObservation,
+                threatIntensity: 0f, otherPhenotype: defender, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, economicsEnabled: true, tick: 0,
+                diagnostics: out DecisionDiagnostics diagnostics);
+
+            Assert.That(diagnostics.HuntScore, Is.GreaterThan(0f));
+        }
     }
 }
