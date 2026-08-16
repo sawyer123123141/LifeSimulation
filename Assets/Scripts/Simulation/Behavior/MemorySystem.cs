@@ -157,6 +157,80 @@ namespace LifeSimulation.Simulation.Behavior
             memory.LastSeenTick = tick;
         }
 
+        /// <summary>
+        /// Reduces every place-memory slot's <c>Confidence</c> by <paramref name="deltaTime"/> multiplied by
+        /// <paramref name="confidenceDecayPerSecond"/>, clamped at zero. A creature's decay rate already
+        /// reflects its <c>MemoryRetention</c> - a higher-retention creature is passed a smaller rate, so its
+        /// confidences fall more slowly.
+        /// </summary>
+        public static void TickPlaceMemoryDecay(
+            CreatureStore store,
+            int creatureIndex,
+            int usableSlotCount,
+            float deltaTime,
+            float confidenceDecayPerSecond)
+        {
+            if (usableSlotCount < 0 || usableSlotCount > store.MaximumMemorySlots)
+            {
+                throw new ArgumentOutOfRangeException(nameof(usableSlotCount));
+            }
+
+            if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+            {
+                throw new ArgumentOutOfRangeException(nameof(deltaTime));
+            }
+
+            if (confidenceDecayPerSecond < 0f || float.IsNaN(confidenceDecayPerSecond) || float.IsInfinity(confidenceDecayPerSecond))
+            {
+                throw new ArgumentOutOfRangeException(nameof(confidenceDecayPerSecond));
+            }
+
+            float confidenceLoss = deltaTime * confidenceDecayPerSecond;
+
+            for (int slot = 0; slot < usableSlotCount; slot++)
+            {
+                ref PlaceMemory memory = ref store.GetPlaceMemoryRefAt(creatureIndex, slot);
+                memory.Confidence = Math.Max(0f, memory.Confidence - confidenceLoss);
+            }
+        }
+
+        /// <summary>
+        /// Sharply cuts the <c>Confidence</c> of the single occupied place-memory slot matching
+        /// <paramref name="kind"/> within <paramref name="samePlaceRadius"/> of <paramref name="position"/> -
+        /// the specific place a creature travelled to and found empty. Other slots, including ones for the
+        /// same resource kind at other places, are left untouched. If no matching slot is found, this is a no-op.
+        /// </summary>
+        public static void RecordFailedPlaceSearch(
+            CreatureStore store,
+            int creatureIndex,
+            int usableSlotCount,
+            SimVector2 position,
+            ResourceKind kind,
+            float samePlaceRadius)
+        {
+            if (usableSlotCount < 0 || usableSlotCount > store.MaximumMemorySlots)
+            {
+                throw new ArgumentOutOfRangeException(nameof(usableSlotCount));
+            }
+
+            if (samePlaceRadius < 0f || float.IsNaN(samePlaceRadius) || float.IsInfinity(samePlaceRadius))
+            {
+                throw new ArgumentOutOfRangeException(nameof(samePlaceRadius));
+            }
+
+            for (int slot = 0; slot < usableSlotCount; slot++)
+            {
+                ref PlaceMemory candidate = ref store.GetPlaceMemoryRefAt(creatureIndex, slot);
+                if (candidate.VisitCount > 0
+                    && candidate.Kind == kind
+                    && SimVector2.Distance(candidate.Position, position) <= samePlaceRadius)
+                {
+                    candidate.Confidence *= 0.35f;
+                    return;
+                }
+            }
+        }
+
         private static int FindEvictionSlot(CreatureStore store, int creatureIndex, int usableSlotCount)
         {
             int bestSlot = 0;
