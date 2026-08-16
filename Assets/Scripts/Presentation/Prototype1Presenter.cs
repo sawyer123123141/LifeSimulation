@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LifeSimulation.Simulation.Behavior;
+using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Environment;
@@ -314,6 +315,10 @@ namespace LifeSimulation.Presentation
                     restBehaviorEnabled: true,
                     juvenileCapabilityEnabled: true,
                     parentalFollowingEnabled: true));
+            for (int index = 0; index < _world.CreatureCount; index++)
+            {
+                _world.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
+            }
             _scenarioId = "all-flags-playtest";
         }
 
