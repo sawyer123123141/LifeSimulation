@@ -402,10 +402,15 @@ namespace LifeSimulation.Presentation
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
                 DecisionPolicyVersion.IntentUtilityV1,
-                defaults.PlantCohortsEnabled);
+                defaults.PlantCohortsEnabled,
+                mateSelectionEnabled: true);
             ResetSimulation(
                 Prototype4Scenarios.WatchableStarterHabitat,
                 config);
+            for (int index = 0; index < _world.CreatureCount; index++)
+            {
+                _world.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
+            }
         }
 
         private static SimulationConfig CreatePlayableConfig(SimulationConfig defaults)
