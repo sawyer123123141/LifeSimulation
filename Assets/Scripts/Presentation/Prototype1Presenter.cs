@@ -309,12 +309,20 @@ namespace LifeSimulation.Presentation
                     maximumPopulation: 150,
                     founderProfile: FounderProfile.PredationVariation,
                     decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                    plantCohortsEnabled: true,
                     predationEconomicsEnabled: true,
                     decisionStaggerEnabled: true,
                     multiThreatPerceptionEnabled: true,
                     restBehaviorEnabled: true,
                     juvenileCapabilityEnabled: true,
-                    parentalFollowingEnabled: true));
+                    parentalFollowingEnabled: true,
+                    kinRecognitionEnabled: true,
+                    // LearnedResourceQualityEnabled only affects the Legacy+CognitionEnabled decision
+                    // path (see DecisionSystem.DecideFromLearnedOutcomes) - this scenario runs
+                    // IntentUtilityV1, so the flag is inert here. Included for completeness/future-proofing
+                    // in case the policy ever changes, not because it does anything right now.
+                    learnedResourceQualityEnabled: true,
+                    mateSelectionEnabled: true));
             for (int index = 0; index < _world.CreatureCount; index++)
             {
                 _world.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
