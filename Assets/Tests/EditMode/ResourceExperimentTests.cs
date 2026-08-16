@@ -45,7 +45,7 @@ namespace LifeSimulation.Tests.EditMode
 
             float populationScale = Math.Max(1f, config.InitialPopulation / 4f);
             float expectedCapacity = 24f * populationScale;
-            float expectedGrowthRate = (4f * 1.5f) / expectedCapacity;
+            float expectedGrowthRate = (4f * 12f) / expectedCapacity;
             Assert.That(world.Plants.GetAt(0).GrowthRate, Is.EqualTo(expectedGrowthRate).Within(0.0001f));
         }
 
@@ -396,6 +396,28 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(options.FounderPopulation, Is.EqualTo(80));
             Assert.That(options.MaximumPopulation, Is.EqualTo(1500));
             Assert.That(options.Ticks, Is.EqualTo(50000));
+        }
+
+        [Test]
+        public void ConsumerDefenseCalibrationControlSustainsNonzeroPopulationAcrossAllSeeds()
+        {
+            int[] seeds = { 42, 43, 44, 45, 46 };
+            foreach (int seed in seeds)
+            {
+                SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(seed, 12);
+                var config = new SimulationConfig(
+                    seed,
+                    initialPopulation: 12,
+                    defaults.Schedule,
+                    maximumPopulation: 48,
+                    defaults.FounderProfile,
+                    cognitionEnabled: true,
+                    physiologyEnabled: true,
+                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                    plantCohortsEnabled: true);
+                ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.ConsumerDefenseCalibrationControl, ticks: 12000);
+                Assert.That(result.FinalStatistics.Population, Is.GreaterThan(0), $"Seed {seed} went extinct.");
+            }
         }
 
         private static float TotalAvailable(SimulationWorld world, ResourceKind kind)

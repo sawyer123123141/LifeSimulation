@@ -248,15 +248,26 @@ namespace LifeSimulation.Simulation.Experiments
             });
         }
 
+        // RegenerationPerSecond retuned from 1.5f to 12f after the growth-rate
+        // conversion fix (docs/superpowers/plans/2026-08-16-plant-growth-rate-fix.md, Task 1):
+        // 12 is the smallest doubling-search candidate starting at 1.5f that
+        // produces a nonzero final population in all 5 seeds (42-46) of
+        // ConsumerDefenseCalibrationControl at 12 founders / 48 population cap / 12,000 ticks.
         private static SimulationScenario CreateConsumerDefenseCalibrationScenario(string id, float defense)
         {
             PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);
             return new SimulationScenario(id, new[]
             {
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 1.5f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 1.5f),
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 1.5f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-20f, -8f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -20f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-4f, -8f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 12f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 22f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(2f, 12f), 1.5f, 0f, 24f, 0f, isActive: false),
             }, founderPlacement: new SimVector2(-12f, -8f));
         }
     }
