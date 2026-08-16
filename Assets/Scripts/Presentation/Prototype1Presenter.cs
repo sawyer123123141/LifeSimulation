@@ -403,6 +403,14 @@ namespace LifeSimulation.Presentation
                 defaults.PhysiologyEnabled,
                 DecisionPolicyVersion.IntentUtilityV1,
                 defaults.PlantCohortsEnabled,
+                predationEconomicsEnabled: true,
+                decisionStaggerEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                restBehaviorEnabled: true,
+                juvenileCapabilityEnabled: true,
+                parentalFollowingEnabled: true,
+                kinRecognitionEnabled: true,
+                learnedResourceQualityEnabled: true,
                 mateSelectionEnabled: true);
             ResetSimulation(
                 Prototype4Scenarios.WatchableStarterHabitat,
