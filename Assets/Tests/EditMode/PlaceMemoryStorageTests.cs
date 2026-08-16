@@ -66,10 +66,10 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(actualChild.MemoryRetention, Is.EqualTo(expectedChild.MemoryRetention));
             Assert.That(actualChild.LearningRate, Is.EqualTo(expectedChild.LearningRate));
             Assert.That(actualChild.Exploration, Is.EqualTo(expectedChild.Exploration));
-            Assert.That(actualChild.MemoryCapacity, Is.AnyOf(firstParent.MemoryCapacity, secondParent.MemoryCapacity));
-            Assert.That(actualChild.MemoryRetention, Is.AnyOf(firstParent.MemoryRetention, secondParent.MemoryRetention));
-            Assert.That(actualChild.LearningRate, Is.AnyOf(firstParent.LearningRate, secondParent.LearningRate));
-            Assert.That(actualChild.Exploration, Is.AnyOf(firstParent.Exploration, secondParent.Exploration));
+            Assert.That(actualChild.MemoryCapacity, Is.EqualTo(firstParent.MemoryCapacity).Or.EqualTo(secondParent.MemoryCapacity));
+            Assert.That(actualChild.MemoryRetention, Is.EqualTo(firstParent.MemoryRetention).Or.EqualTo(secondParent.MemoryRetention));
+            Assert.That(actualChild.LearningRate, Is.EqualTo(firstParent.LearningRate).Or.EqualTo(secondParent.LearningRate));
+            Assert.That(actualChild.Exploration, Is.EqualTo(firstParent.Exploration).Or.EqualTo(secondParent.Exploration));
         }
 
         [Test]
