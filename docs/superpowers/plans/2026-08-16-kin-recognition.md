@@ -124,8 +124,8 @@ Add to `Assets/Tests/EditMode/DecisionSystemTests.cs`:
             // FleeScore than considering the stranger alone. Compares the kin-enabled and
             // kin-disabled runs' reported diagnostics.FleeScore directly.
             Phenotype self = MakePhenotype(attackPower: 0.2f, defense: 1.9f, maneuverability: 1f, energyCapacity: 200f);
-            Phenotype siblingPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f);
-            Phenotype strangerPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f);
+            Phenotype siblingPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype strangerPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
             CreatureNeeds needs = CreatureNeeds.Full(self);
             var resources = new ResourceStore(initialCapacity: 0);
             var selfId = new CreatureId(3);
