@@ -71,5 +71,56 @@ namespace LifeSimulation.Tests.EditMode
                 Assert.That(candidates.GetAt(index).CreatureId, Is.Not.EqualTo(observer));
             }
         }
+
+        // Reproduces a real crash: a grid snapshot taken before a creature dies still
+        // contains that creature's slot. CreatureStore.Remove uses swap-remove, so the
+        // dead creature's old slot index can now be >= the shrunk Count (or, if it wasn't
+        // the last slot, now holds a different creature's data). Grids are rebuilt on a
+        // throttled cadence (PerceptionHz) while creature deaths happen every tick, so any
+        // consumer reading a grid between rebuilds must tolerate a stale occupant index
+        // instead of assuming population only ever grows.
+        [Test]
+        public void FindNearestOtherCreatureIgnoresOccupantIndexInvalidatedBySwapRemoveAfterGridWasBuilt()
+        {
+            var creatures = new CreatureStore(initialCapacity: 3);
+            CreatureId observer = creatures.Add(Genome.Neutral, new SimVector2(0f, 0f));
+            CreatureId toRemove = creatures.Add(Genome.Neutral, new SimVector2(1f, 0f));
+            var positions = new[]
+            {
+                creatures.GetMovementAt(0).Position,
+                creatures.GetMovementAt(1).Position,
+            };
+            var grid = new UniformGrid(new ArenaBounds(-6f, 6f, -6f, 6f), 2f, initialOccupantCapacity: 3);
+            grid.Rebuild(positions, positions.Length);
+
+            creatures.Remove(toRemove);
+
+            CreatureObservation result = PerceptionSystem.FindNearestOtherCreature(
+                creatures, grid, new SimVector2(0f, 0f), visionRange: 6f, observer);
+
+            Assert.That(result.IsValid, Is.False);
+        }
+
+        [Test]
+        public void FindOtherCreaturesIgnoresOccupantIndexInvalidatedBySwapRemoveAfterGridWasBuilt()
+        {
+            var creatures = new CreatureStore(initialCapacity: 3);
+            CreatureId observer = creatures.Add(Genome.Neutral, new SimVector2(0f, 0f));
+            CreatureId toRemove = creatures.Add(Genome.Neutral, new SimVector2(1f, 0f));
+            var positions = new[]
+            {
+                creatures.GetMovementAt(0).Position,
+                creatures.GetMovementAt(1).Position,
+            };
+            var grid = new UniformGrid(new ArenaBounds(-6f, 6f, -6f, 6f), 2f, initialOccupantCapacity: 3);
+            grid.Rebuild(positions, positions.Length);
+
+            creatures.Remove(toRemove);
+
+            var candidates = new CreatureCandidateBuffer();
+            PerceptionSystem.FindOtherCreatures(creatures, grid, new SimVector2(0f, 0f), visionRange: 6f, observer, ref candidates);
+
+            Assert.That(candidates.Count, Is.EqualTo(0));
+        }
     }
 }

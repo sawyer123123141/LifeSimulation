@@ -257,6 +257,17 @@ namespace LifeSimulation.Simulation.Behavior
                     for (int occupant = creatureGrid.GetCellStart(cellIndex); occupant < creatureGrid.GetCellEnd(cellIndex); occupant++)
                     {
                         int creatureIndex = creatureGrid.GetOccupantIndexAt(occupant);
+                        if ((uint)creatureIndex >= (uint)creatures.Count)
+                        {
+                            // The grid is rebuilt on a throttled cadence (PerceptionHz) while
+                            // creatures can die every tick; a death shrinks CreatureStore via
+                            // swap-remove, which can leave a stale occupant index from before
+                            // the grid's last rebuild pointing past the current population.
+                            // Skip it rather than fail - it will drop out of the grid on the
+                            // next rebuild.
+                            continue;
+                        }
+
                         CreatureId candidateId = creatures.GetIdAt(creatureIndex);
                         if (candidateId.Equals(excludedCreatureId))
                         {
@@ -319,6 +330,14 @@ namespace LifeSimulation.Simulation.Behavior
                     for (int occupant = creatureGrid.GetCellStart(cellIndex); occupant < creatureGrid.GetCellEnd(cellIndex); occupant++)
                     {
                         int creatureIndex = creatureGrid.GetOccupantIndexAt(occupant);
+                        if ((uint)creatureIndex >= (uint)creatures.Count)
+                        {
+                            // See the identical guard in FindNearestOtherCreature above: a
+                            // stale occupant index from before a swap-remove can point past
+                            // the current population between grid rebuilds.
+                            continue;
+                        }
+
                         CreatureId candidateId = creatures.GetIdAt(creatureIndex);
                         if (candidateId.Equals(excludedCreatureId))
                         {
