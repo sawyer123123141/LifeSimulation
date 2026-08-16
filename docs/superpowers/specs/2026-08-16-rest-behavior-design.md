@@ -54,8 +54,11 @@ if (restBehaviorEnabled && needs.Rest <= 0f)
 }
 ```
 
-`RestExhaustionHealthCostPerSecond` (new `private const float = 3f`,
-between `Energy`'s `4f` and `Hydration`'s `5f`).
+`RestExhaustionHealthCostPerSecond` (new `private const float = 3f` -
+deliberately below both `Energy`'s `4f` and `Hydration`'s `5f` cost-at-zero
+rates, since `Rest` is the softer, more passively recoverable need: it
+drains slowly and recovers just by standing still, unlike `Energy`/
+`Hydration` which require actively finding and consuming a resource).
 
 When `restBehaviorEnabled` is `false` (the default for every existing
 caller and test), both new parameters are `false`, so the `if

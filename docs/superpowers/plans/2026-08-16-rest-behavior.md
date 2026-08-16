@@ -12,7 +12,7 @@
 
 - `restBehaviorEnabled`/`isResting` parameters on `NeedsSystem.Tick` and `restBehaviorEnabled` on `DecideIntentUtilityV1` all default to `false`.
 - When `SimulationConfig.RestBehaviorEnabled` is `false` (the default), every existing scenario's output must be byte-identical to today's — proven by a hash-regression test.
-- `RestCapacity = 100f` (matches `CreatureNeeds.Full`'s existing hardcoded `Rest = 100f`), `RestRecoveryPerSecond = 5f`, `RestExhaustionHealthCostPerSecond = 3f` (between `Energy`'s `4f` and `Hydration`'s `5f` cost-at-zero rates in `NeedsSystem.Tick`) — exact values, do not substitute different numbers.
+- `RestCapacity = 100f` (matches `CreatureNeeds.Full`'s existing hardcoded `Rest = 100f`), `RestRecoveryPerSecond = 5f`, `RestExhaustionHealthCostPerSecond = 3f` (deliberately below both `Energy`'s `4f` and `Hydration`'s `5f` cost-at-zero rates in `NeedsSystem.Tick` - Rest is the softer, more passively recoverable need) — exact values, do not substitute different numbers.
 - `CreatureIntent.Rest` is appended as the LAST value in the `CreatureIntent` enum (`DecisionSystem.cs`) so no existing enum value's numeric ordinal changes.
 
 ---
