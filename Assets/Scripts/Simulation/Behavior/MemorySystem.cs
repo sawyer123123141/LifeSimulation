@@ -61,6 +61,28 @@ namespace LifeSimulation.Simulation.Behavior
             throw new ArgumentOutOfRangeException(nameof(kind));
         }
 
+        /// <summary>
+        /// Converts a raw intake rate into a [0, 1] learning-signal outcome by measuring it against
+        /// <paramref name="expectedIntakeRate"/> - the rate a fully-fed creature at an ideal place would
+        /// achieve - instead of clamping a raw nutrition amount to 1.0. A typical feeding rarely reaches
+        /// that ceiling, so the result lands strictly below 1.0 and carries real information about how
+        /// good the place was, rather than saturating on nearly every feeding event.
+        /// </summary>
+        public static float ComputeIntakeOutcome(float actualIntakeRate, float expectedIntakeRate)
+        {
+            if (actualIntakeRate < 0f || float.IsNaN(actualIntakeRate) || float.IsInfinity(actualIntakeRate))
+            {
+                throw new ArgumentOutOfRangeException(nameof(actualIntakeRate));
+            }
+
+            if (expectedIntakeRate <= 0f || float.IsNaN(expectedIntakeRate) || float.IsInfinity(expectedIntakeRate))
+            {
+                throw new ArgumentOutOfRangeException(nameof(expectedIntakeRate));
+            }
+
+            return Math.Min(1f, actualIntakeRate / expectedIntakeRate);
+        }
+
         public static void RecordFailedSearch(ref MemoryState memory, ResourceKind kind)
         {
             if (kind == ResourceKind.Food)

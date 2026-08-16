@@ -1043,10 +1043,11 @@ namespace LifeSimulation.Simulation.Core
                     }
                     else if (Config.CognitionEnabled)
                     {
+                        float actualFoodIntakeRate = nutrition * phenotype.FoodYield / Config.FixedDeltaTime;
                         MemorySystem.LearnResourceOutcome(
                             ref Creatures.GetMemoryRefAt(request.CreatureIndex),
                             ResourceKind.Food,
-                            Math.Min(1f, nutrition * phenotype.FoodYield * 20f),
+                            MemorySystem.ComputeIntakeOutcome(actualFoodIntakeRate, Config.ExpectedIntakeRate),
                             phenotype.LearningRate);
                     }
                 }
@@ -1056,10 +1057,11 @@ namespace LifeSimulation.Simulation.Core
                     _cumulativeWaterConsumed += allocatedAmount;
                     if (Config.CognitionEnabled)
                     {
+                        float actualWaterIntakeRate = allocatedAmount / Config.FixedDeltaTime;
                         MemorySystem.LearnResourceOutcome(
                             ref Creatures.GetMemoryRefAt(request.CreatureIndex),
                             ResourceKind.Water,
-                            Math.Min(1f, allocatedAmount * 20f),
+                            MemorySystem.ComputeIntakeOutcome(actualWaterIntakeRate, Config.ExpectedIntakeRate),
                             Creatures.GetPhenotypeAt(request.CreatureIndex).LearningRate);
                     }
                 }

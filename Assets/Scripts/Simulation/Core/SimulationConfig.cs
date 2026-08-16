@@ -74,6 +74,13 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Maximum distance between two observations of the same kind for them to be treated as the same remembered place.</summary>
         public const float DefaultSamePlaceRadius = 2f;
 
+        /// <summary>
+        /// Intake rate (resource units of energy-equivalent per second) a fully-fed creature at an
+        /// ideal place would achieve. Learned feeding outcomes are measured against this ceiling
+        /// instead of being clamped to 1.0 on nearly every feeding event.
+        /// </summary>
+        public const float DefaultExpectedIntakeRate = 2.5f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -92,7 +99,8 @@ namespace LifeSimulation.Simulation.Core
             float giveUpSensitivity = DefaultGiveUpSensitivity,
             int minimumMemorySlots = DefaultMinimumMemorySlots,
             int additionalMemorySlots = DefaultAdditionalMemorySlots,
-            float samePlaceRadius = DefaultSamePlaceRadius)
+            float samePlaceRadius = DefaultSamePlaceRadius,
+            float expectedIntakeRate = DefaultExpectedIntakeRate)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -112,6 +120,7 @@ namespace LifeSimulation.Simulation.Core
             MinimumMemorySlots = minimumMemorySlots;
             AdditionalMemorySlots = additionalMemorySlots;
             SamePlaceRadius = samePlaceRadius;
+            ExpectedIntakeRate = expectedIntakeRate;
         }
 
         public int WorldSeed { get; }
@@ -131,6 +140,7 @@ namespace LifeSimulation.Simulation.Core
         public int MinimumMemorySlots { get; }
         public int AdditionalMemorySlots { get; }
         public float SamePlaceRadius { get; }
+        public float ExpectedIntakeRate { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -254,6 +264,11 @@ namespace LifeSimulation.Simulation.Core
             if (SamePlaceRadius <= 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(SamePlaceRadius), "Same-place radius must be positive.");
+            }
+
+            if (ExpectedIntakeRate <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ExpectedIntakeRate), "Expected intake rate must be positive.");
             }
         }
 
