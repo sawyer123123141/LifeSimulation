@@ -110,6 +110,77 @@ namespace LifeSimulation.Simulation.Behavior
         }
     }
 
+    public struct CreatureCandidateBuffer
+    {
+        public const int Capacity = 4;
+
+        private CreatureObservation _candidate0;
+        private CreatureObservation _candidate1;
+        private CreatureObservation _candidate2;
+        private CreatureObservation _candidate3;
+        private int _count;
+
+        public int Count => _count;
+
+        public CreatureObservation GetAt(int index)
+        {
+            switch (index)
+            {
+                case 0: return _candidate0;
+                case 1: return _candidate1;
+                case 2: return _candidate2;
+                default: return _candidate3;
+            }
+        }
+
+        public void Consider(CreatureObservation candidate)
+        {
+            int insertionIndex = _count;
+            for (int index = 0; index < _count; index++)
+            {
+                if (IsBefore(candidate, GetAt(index)))
+                {
+                    insertionIndex = index;
+                    break;
+                }
+            }
+
+            if (insertionIndex >= Capacity)
+            {
+                return;
+            }
+
+            int lastIndex = _count < Capacity ? _count : Capacity - 1;
+            for (int index = lastIndex; index > insertionIndex; index--)
+            {
+                SetAt(index, GetAt(index - 1));
+            }
+
+            SetAt(insertionIndex, candidate);
+            if (_count < Capacity)
+            {
+                _count++;
+            }
+        }
+
+        private static bool IsBefore(CreatureObservation left, CreatureObservation right)
+        {
+            return left.Distance < right.Distance
+                || (Math.Abs(left.Distance - right.Distance) <= 0.00001f && left.CreatureId.Value < right.CreatureId.Value);
+        }
+
+        private void SetAt(int index, CreatureObservation candidate)
+        {
+            switch (index)
+            {
+                case 0: _candidate0 = candidate; break;
+                case 1: _candidate1 = candidate; break;
+                case 2: _candidate2 = candidate; break;
+                default: _candidate3 = candidate; break;
+            }
+        }
+    }
+
     public static class PerceptionSystem
     {
         public static void FindAvailableResources(
@@ -210,6 +281,60 @@ namespace LifeSimulation.Simulation.Behavior
             }
 
             return best;
+        }
+
+        public static void FindOtherCreatures(
+            CreatureStore creatures,
+            UniformGrid creatureGrid,
+            SimVector2 origin,
+            float visionRange,
+            CreatureId excludedCreatureId,
+            ref CreatureCandidateBuffer candidates)
+        {
+            if (creatures == null)
+            {
+                throw new ArgumentNullException(nameof(creatures));
+            }
+
+            if (creatureGrid == null)
+            {
+                throw new ArgumentNullException(nameof(creatureGrid));
+            }
+
+            if (visionRange < 0f || float.IsNaN(visionRange) || float.IsInfinity(visionRange))
+            {
+                throw new ArgumentOutOfRangeException(nameof(visionRange));
+            }
+
+            int minimumColumn = creatureGrid.GetColumn(origin.X - visionRange);
+            int maximumColumn = creatureGrid.GetColumn(origin.X + visionRange);
+            int minimumRow = creatureGrid.GetRow(origin.Y - visionRange);
+            int maximumRow = creatureGrid.GetRow(origin.Y + visionRange);
+
+            for (int row = minimumRow; row <= maximumRow; row++)
+            {
+                for (int column = minimumColumn; column <= maximumColumn; column++)
+                {
+                    int cellIndex = creatureGrid.GetCellIndex(column, row);
+                    for (int occupant = creatureGrid.GetCellStart(cellIndex); occupant < creatureGrid.GetCellEnd(cellIndex); occupant++)
+                    {
+                        int creatureIndex = creatureGrid.GetOccupantIndexAt(occupant);
+                        CreatureId candidateId = creatures.GetIdAt(creatureIndex);
+                        if (candidateId.Equals(excludedCreatureId))
+                        {
+                            continue;
+                        }
+
+                        float distance = SimVector2.Distance(origin, creatures.GetMovementAt(creatureIndex).Position);
+                        if (distance > visionRange)
+                        {
+                            continue;
+                        }
+
+                        candidates.Consider(new CreatureObservation(candidateId, creatureIndex, distance));
+                    }
+                }
+            }
         }
 
         public static ResourceObservation FindNearestAvailableResource(
