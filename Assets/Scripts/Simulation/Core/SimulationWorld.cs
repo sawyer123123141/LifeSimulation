@@ -263,7 +263,7 @@ namespace LifeSimulation.Simulation.Core
                 AdvanceForagingActionTime(Config.FixedDeltaTime);
             }
 
-            if (IsDue(nextTick, Config.Schedule.DecisionsHz))
+            if (Config.DecisionStaggerEnabled || IsDue(nextTick, Config.Schedule.DecisionsHz))
             {
                 TickDecisions(nextTick);
             }
@@ -622,8 +622,14 @@ namespace LifeSimulation.Simulation.Core
 
         private void TickDecisions(long tick)
         {
+            int interval = Config.Schedule.BaseFrequencyHz / Config.Schedule.DecisionsHz;
             for (int index = 0; index < Creatures.Count; index++)
             {
+                if (Config.DecisionStaggerEnabled && (tick + index) % interval != 0)
+                {
+                    continue;
+                }
+
                 MovementState movement = Creatures.GetMovementAt(index);
                 Phenotype phenotype = Creatures.GetPhenotypeAt(index);
                 CreatureDecision previousDecision = Creatures.GetDecisionAt(index);

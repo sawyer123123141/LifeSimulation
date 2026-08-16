@@ -1052,5 +1052,46 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(second.Creatures.GetGenomeAt(3).WaterEfficiency, Is.EqualTo(first.Creatures.GetGenomeAt(3).WaterEfficiency));
             Assert.That(first.Creatures.GetGenomeAt(0).BodySize, Is.Not.EqualTo(first.Creatures.GetGenomeAt(1).BodySize));
         }
+
+        [Test]
+        public void DecisionStaggerEnabledSpreadsDecisionsAcrossDistinctTicks()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 15, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 7, initialPopulation: 4, schedule: schedule,
+                decisionStaggerEnabled: true);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 4; i++) { world.Step(config.FixedDeltaTime); }
+
+            var decisionTicks = new System.Collections.Generic.HashSet<long>();
+            for (int index = 0; index < world.CreatureCount; index++)
+            {
+                decisionTicks.Add(world.Creatures.GetDecisionAt(index).DecisionTick);
+            }
+
+            Assert.That(decisionTicks.Count, Is.EqualTo(4));
+        }
+
+        // Captured from the pre-decision-staggering commit 635d9ed, by running this
+        // exact setup (with decisionStaggerEnabled omitted, since that constructor parameter did not
+        // exist yet) for 50 ticks and reading world.ComputeStateHash(). Pinning this value confirms
+        // that adding Config.DecisionStaggerEnabled and its call-site checks in SimulationWorld.cs is
+        // byte-identical to prior behavior when the flag is left at its default (false).
+        private const ulong ExpectedDecisionStaggerDisabledHash = 12400869477994959903UL;
+
+        [Test]
+        public void DecisionStaggerDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 15, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 7, initialPopulation: 4, schedule: schedule,
+                decisionStaggerEnabled: false);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedDecisionStaggerDisabledHash));
+        }
     }
 }

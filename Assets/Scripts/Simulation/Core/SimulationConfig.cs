@@ -105,7 +105,8 @@ namespace LifeSimulation.Simulation.Core
             int additionalMemorySlots = DefaultAdditionalMemorySlots,
             float samePlaceRadius = DefaultSamePlaceRadius,
             float expectedIntakeRate = DefaultExpectedIntakeRate,
-            float threatFalloffDistance = DefaultThreatFalloffDistance)
+            float threatFalloffDistance = DefaultThreatFalloffDistance,
+            bool decisionStaggerEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -128,6 +129,7 @@ namespace LifeSimulation.Simulation.Core
             SamePlaceRadius = samePlaceRadius;
             ExpectedIntakeRate = expectedIntakeRate;
             ThreatFalloffDistance = threatFalloffDistance;
+            DecisionStaggerEnabled = decisionStaggerEnabled;
         }
 
         public int WorldSeed { get; }
@@ -150,6 +152,7 @@ namespace LifeSimulation.Simulation.Core
         public float SamePlaceRadius { get; }
         public float ExpectedIntakeRate { get; }
         public float ThreatFalloffDistance { get; }
+        public bool DecisionStaggerEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
