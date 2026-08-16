@@ -15,7 +15,7 @@ namespace LifeSimulation.Tests.EditMode
 
             float added = PlantGrowthSystem.Step(patches, new EnvironmentField(), 1f);
 
-            float expectedGrowth = 1.6f * PlantPhenotype.FromGenome(PlantGenome.Neutral).GrowthRateMultiplier;
+            float expectedGrowth = 1.68f * PlantPhenotype.FromGenome(PlantGenome.Neutral).GrowthRateMultiplier;
             Assert.That(added, Is.EqualTo(expectedGrowth).Within(.0001f));
             Assert.That(patches.GetAt(0).Biomass, Is.EqualTo(2f + expectedGrowth).Within(.0001f));
         }
@@ -28,6 +28,33 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(PlantGrowthSystem.Step(patches, new EnvironmentField(moisture: 0f), 1f), Is.EqualTo(0f));
             Assert.That(patches.GetAt(0).Biomass, Is.EqualTo(2f));
+        }
+
+        [Test]
+        public void ZeroBiomassPatchStillProducesNonzeroGrowth()
+        {
+            var patches = new PlantPatchStore(1);
+            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 0f, 10f, 1f, 1f, 0f);
+
+            float added = PlantGrowthSystem.Step(patches, new EnvironmentField(), 1f);
+
+            Assert.That(added, Is.GreaterThan(0f));
+            Assert.That(patches.GetAt(0).Biomass, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void SproutFloorContributionIsSmallRelativeToNormalGrowthAtHalfCapacity()
+        {
+            var patches = new PlantPatchStore(1);
+            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 5f, 10f, 1f, 1f, 0f);
+
+            float addedWithFloor = PlantGrowthSystem.Step(patches, new EnvironmentField(), 1f);
+
+            float mult = PlantPhenotype.FromGenome(PlantGenome.Neutral).GrowthRateMultiplier;
+            float growthWithoutFloor = 1f * mult * 5f * (1f - (5f / 10f)) * 1f * 1f;
+
+            float relativeDifference = (addedWithFloor - growthWithoutFloor) / growthWithoutFloor;
+            Assert.That(relativeDifference, Is.LessThan(0.05f));
         }
 
         [Test]

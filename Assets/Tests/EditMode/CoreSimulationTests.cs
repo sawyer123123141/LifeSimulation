@@ -10,6 +10,28 @@ namespace LifeSimulation.Tests.EditMode
 {
     public sealed class CoreSimulationTests
     {
+        // Captured from the pre-Task-1 commit 5c5f828 (the commit this task's changes were
+        // built on top of), by running this exact setup for 50 ticks and reading
+        // world.ComputeStateHash(). Pinning this value confirms that correcting the plant
+        // growth-rate conversion in SimulationScenario.cs and adding the sprout floor in
+        // PlantGrowthSystem.cs is invisible to any scenario that never enables
+        // Config.PlantCohortsEnabled.
+        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 12050501592762519865UL;
+
+        [Test]
+        public void PlantGrowthRateFixDoesNotAffectNonPlantCohortScenarios()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedPlantGrowthRateFixUnaffectedHash));
+        }
+
         [Test]
         public void PrototypeDefaultsProduceAValidSchedule()
         {

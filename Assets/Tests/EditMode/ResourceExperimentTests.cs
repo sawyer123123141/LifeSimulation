@@ -1,3 +1,4 @@
+using System;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
@@ -32,6 +33,20 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(richWorld.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(poorWorld.GetCreatureNeedsAt(0).Energy));
             Assert.That(richWorld.Resources.GetAt(0).Amount, Is.EqualTo(poorWorld.Resources.GetAt(0).Amount).Within(0.0001f));
+        }
+
+        [Test]
+        public void PlantPatchGrowthRateMatchesCorrectedFourTimesConversion()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var world = new SimulationWorld(config);
+
+            Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(world);
+
+            float populationScale = Math.Max(1f, config.InitialPopulation / 4f);
+            float expectedCapacity = 24f * populationScale;
+            float expectedGrowthRate = (4f * 1.5f) / expectedCapacity;
+            Assert.That(world.Plants.GetAt(0).GrowthRate, Is.EqualTo(expectedGrowthRate).Within(0.0001f));
         }
 
         [Test]
