@@ -1116,5 +1116,51 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedMultiThreatPerceptionDisabledHash));
         }
+
+        [Test]
+        public void RestingCreatureStaysInPlaceAcrossAStep()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 42,
+                initialPopulation: 0,
+                schedule: schedule,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                restBehaviorEnabled: true);
+            var world = new SimulationWorld(config);
+            world.Spawn(Genome.Neutral);
+            world.Creatures.GetNeedsRefAt(0).Rest = 10f;
+            SimVector2 positionBefore = world.Creatures.GetMovementAt(0).Position;
+
+            world.Step(config.FixedDeltaTime);
+
+            Assert.That(world.Creatures.GetDecisionAt(0).Action, Is.EqualTo(CreatureAction.Rest));
+            SimVector2 positionAfter = world.Creatures.GetMovementAt(0).Position;
+            Assert.That(positionAfter.X, Is.EqualTo(positionBefore.X).Within(0.0001f));
+            Assert.That(positionAfter.Y, Is.EqualTo(positionBefore.Y).Within(0.0001f));
+        }
+
+        // Captured from the pre-Task-1 commit 7f72d1b (the commit this task's changes were built on
+        // top of), by running this exact setup (with restBehaviorEnabled omitted, since that
+        // constructor parameter did not exist yet) for 50 ticks and reading world.ComputeStateHash().
+        // Pinning this value confirms that adding Config.RestBehaviorEnabled and its call-site wiring
+        // in NeedsSystem.cs/DecisionSystem.cs/SimulationWorld.cs is byte-identical to prior behavior
+        // when the flag is left at its default (false).
+        private const ulong ExpectedRestBehaviorDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void RestBehaviorDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                restBehaviorEnabled: false);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedRestBehaviorDisabledHash));
+        }
     }
 }

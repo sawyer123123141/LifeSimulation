@@ -33,6 +33,7 @@ namespace LifeSimulation.Simulation.Behavior
         SeekCarcass = 5,
         SeekThermalComfort = 6,
         SeekMate = 7,
+        Rest = 8,
     }
 
     public readonly struct DecisionCandidate
@@ -347,13 +348,14 @@ namespace LifeSimulation.Simulation.Behavior
             bool economicsEnabled = false,
             float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
             PredationCandidateBuffer otherCandidates = default,
-            bool multiThreatPerceptionEnabled = false)
+            bool multiThreatPerceptionEnabled = false,
+            bool restBehaviorEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
-                threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled);
+                threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -383,7 +385,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool economicsEnabled = false,
             float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
             PredationCandidateBuffer otherCandidates = default,
-            bool multiThreatPerceptionEnabled = false)
+            bool multiThreatPerceptionEnabled = false,
+            bool restBehaviorEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -420,6 +423,14 @@ namespace LifeSimulation.Simulation.Behavior
                     candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekThermalComfort, -1, default, thermalScore));
                 }
             }
+            if (restBehaviorEnabled)
+            {
+                float restScore = Urgency(needs.Rest, NeedsSystem.RestCapacity);
+                if (restScore >= 0.15f)
+                {
+                    candidates.TryAdd(new DecisionCandidate(CreatureIntent.Rest, -1, default, restScore));
+                }
+            }
             if (reproductionEnabled)
             {
                 ScoreMate(needs, phenotype, reproduction, mate, mateNeeds, matePhenotype, mateReproduction, ref candidates);
@@ -447,6 +458,7 @@ namespace LifeSimulation.Simulation.Behavior
                 case CreatureIntent.SeekCarcass: action = CreatureAction.SeekCarcass; break;
                 case CreatureIntent.SeekThermalComfort: action = CreatureAction.SeekThermalComfort; break;
                 case CreatureIntent.SeekMate: action = CreatureAction.SeekMate; break;
+                case CreatureIntent.Rest: action = CreatureAction.Rest; break;
                 case CreatureIntent.Wander: action = CreatureAction.Wander; break;
                 default: action = CreatureAction.SeekFood; break;
             }
