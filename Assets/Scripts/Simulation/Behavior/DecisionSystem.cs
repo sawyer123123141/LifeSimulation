@@ -272,12 +272,16 @@ namespace LifeSimulation.Simulation.Behavior
 
         private CreatureObservation _observation0;
         private Phenotype _phenotype0;
+        private CreatureLineage _lineage0;
         private CreatureObservation _observation1;
         private Phenotype _phenotype1;
+        private CreatureLineage _lineage1;
         private CreatureObservation _observation2;
         private Phenotype _phenotype2;
+        private CreatureLineage _lineage2;
         private CreatureObservation _observation3;
         private Phenotype _phenotype3;
+        private CreatureLineage _lineage3;
         private int _count;
 
         public int Count => _count;
@@ -304,7 +308,18 @@ namespace LifeSimulation.Simulation.Behavior
             }
         }
 
-        public void Add(CreatureObservation observation, Phenotype phenotype)
+        public CreatureLineage GetLineageAt(int index)
+        {
+            switch (index)
+            {
+                case 0: return _lineage0;
+                case 1: return _lineage1;
+                case 2: return _lineage2;
+                default: return _lineage3;
+            }
+        }
+
+        public void Add(CreatureObservation observation, Phenotype phenotype, CreatureLineage lineage)
         {
             if (_count >= Capacity)
             {
@@ -313,10 +328,10 @@ namespace LifeSimulation.Simulation.Behavior
 
             switch (_count)
             {
-                case 0: _observation0 = observation; _phenotype0 = phenotype; break;
-                case 1: _observation1 = observation; _phenotype1 = phenotype; break;
-                case 2: _observation2 = observation; _phenotype2 = phenotype; break;
-                default: _observation3 = observation; _phenotype3 = phenotype; break;
+                case 0: _observation0 = observation; _phenotype0 = phenotype; _lineage0 = lineage; break;
+                case 1: _observation1 = observation; _phenotype1 = phenotype; _lineage1 = lineage; break;
+                case 2: _observation2 = observation; _phenotype2 = phenotype; _lineage2 = lineage; break;
+                default: _observation3 = observation; _phenotype3 = phenotype; _lineage3 = lineage; break;
             }
 
             _count++;
@@ -349,13 +364,18 @@ namespace LifeSimulation.Simulation.Behavior
             float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
             PredationCandidateBuffer otherCandidates = default,
             bool multiThreatPerceptionEnabled = false,
-            bool restBehaviorEnabled = false)
+            bool restBehaviorEnabled = false,
+            CreatureId selfId = default,
+            CreatureLineage selfLineage = default,
+            CreatureLineage otherLineage = default,
+            bool kinRecognitionEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
-                threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled);
+                threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled,
+                selfId, selfLineage, otherLineage, kinRecognitionEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -386,7 +406,11 @@ namespace LifeSimulation.Simulation.Behavior
             float threatFalloffDistance = SimulationConfig.DefaultThreatFalloffDistance,
             PredationCandidateBuffer otherCandidates = default,
             bool multiThreatPerceptionEnabled = false,
-            bool restBehaviorEnabled = false)
+            bool restBehaviorEnabled = false,
+            CreatureId selfId = default,
+            CreatureLineage selfLineage = default,
+            CreatureLineage otherLineage = default,
+            bool kinRecognitionEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -407,11 +431,11 @@ namespace LifeSimulation.Simulation.Behavior
                 ScoreCarcass(needs, phenotype, resources, carcass, ref candidates, out carcassScore);
                 if (multiThreatPerceptionEnabled)
                 {
-                    ScorePredationMulti(needs, genome, phenotype, otherCandidates, ref candidates, economicsEnabled, out fleeScore, out huntScore);
+                    ScorePredationMulti(needs, genome, phenotype, otherCandidates, ref candidates, economicsEnabled, selfId, selfLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
                 }
                 else
                 {
-                    ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, out fleeScore, out huntScore);
+                    ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, selfId, selfLineage, otherLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
                 }
             }
             float thermalScore = 0f;
@@ -508,6 +532,33 @@ namespace LifeSimulation.Simulation.Behavior
             }
         }
 
+        private static bool IsKin(CreatureId selfId, CreatureLineage selfLineage, CreatureId otherId, CreatureLineage otherLineage)
+        {
+            if (otherId.Equals(selfLineage.FirstParent) || otherId.Equals(selfLineage.SecondParent))
+            {
+                return true;
+            }
+
+            if (selfId.Equals(otherLineage.FirstParent) || selfId.Equals(otherLineage.SecondParent))
+            {
+                return true;
+            }
+
+            if (selfLineage.FirstParent.Value != 0
+                && (selfLineage.FirstParent.Equals(otherLineage.FirstParent) || selfLineage.FirstParent.Equals(otherLineage.SecondParent)))
+            {
+                return true;
+            }
+
+            if (selfLineage.SecondParent.Value != 0
+                && (selfLineage.SecondParent.Equals(otherLineage.FirstParent) || selfLineage.SecondParent.Equals(otherLineage.SecondParent)))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private static void ScorePredation(
             CreatureNeeds needs,
             Genome genome,
@@ -517,12 +568,21 @@ namespace LifeSimulation.Simulation.Behavior
             float threatIntensity,
             ref DecisionCandidateBuffer candidates,
             bool economicsEnabled,
+            CreatureId selfId,
+            CreatureLineage selfLineage,
+            CreatureLineage otherLineage,
+            bool kinRecognitionEnabled,
             out float fleeScore,
             out float huntScore)
         {
             fleeScore = 0f;
             huntScore = 0f;
             if (!observation.IsValid)
+            {
+                return;
+            }
+
+            if (kinRecognitionEnabled && IsKin(selfId, selfLineage, observation.CreatureId, otherLineage))
             {
                 return;
             }
@@ -549,6 +609,9 @@ namespace LifeSimulation.Simulation.Behavior
             PredationCandidateBuffer others,
             ref DecisionCandidateBuffer candidates,
             bool economicsEnabled,
+            CreatureId selfId,
+            CreatureLineage selfLineage,
+            bool kinRecognitionEnabled,
             out float fleeScore,
             out float huntScore)
         {
@@ -565,6 +628,11 @@ namespace LifeSimulation.Simulation.Behavior
             for (int i = 0; i < others.Count; i++)
             {
                 CreatureObservation observation = others.GetObservationAt(i);
+                if (kinRecognitionEnabled && IsKin(selfId, selfLineage, observation.CreatureId, others.GetLineageAt(i)))
+                {
+                    continue;
+                }
+
                 Phenotype otherPhenotype = others.GetPhenotypeAt(i);
                 float distanceAvailability = economicsEnabled ? 1f : 1f / (1f + observation.Distance);
                 float candidateThreatIntensity = PredationSystem.Threat(otherPhenotype, self, observation.Distance, economicsEnabled);

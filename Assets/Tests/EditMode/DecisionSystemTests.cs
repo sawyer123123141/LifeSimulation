@@ -226,8 +226,8 @@ namespace LifeSimulation.Tests.EditMode
             var otherCandidates = new PredationCandidateBuffer();
             var weakObservation = new CreatureObservation(new CreatureId(2), 1, 5f);
             var strongObservation = new CreatureObservation(new CreatureId(3), 2, 1f);
-            otherCandidates.Add(strongObservation, strongDangerousTarget);
-            otherCandidates.Add(weakObservation, weakFavorableTarget);
+            otherCandidates.Add(strongObservation, strongDangerousTarget, default);
+            otherCandidates.Add(weakObservation, weakFavorableTarget, default);
 
             CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
                 needs, Genome.Neutral, self, resources, new SimVector2(0f, 0f), default, default,
@@ -260,6 +260,110 @@ namespace LifeSimulation.Tests.EditMode
                 diagnostics: out _, restBehaviorEnabled: true);
 
             Assert.That(decision.Action, Is.EqualTo(CreatureAction.Rest));
+        }
+
+        [Test]
+        public void IntentUtilityDoesNotFleeOrHuntAParentWhenKinRecognitionEnabled()
+        {
+            Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
+            CreatureNeeds needs = CreatureNeeds.Full(attacker);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var parentId = new CreatureId(2);
+            var selfId = new CreatureId(3);
+            var threatObservation = new CreatureObservation(parentId, 1, 1f);
+            var selfLineage = new CreatureLineage(selfId, parentId, default, generation: 1);
+            var parentLineage = new CreatureLineage(parentId, default, default, generation: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, attacker, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: threatObservation,
+                threatIntensity: 5f, otherPhenotype: defender, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, economicsEnabled: true, tick: 0,
+                diagnostics: out DecisionDiagnostics diagnostics,
+                selfId: selfId, selfLineage: selfLineage, otherLineage: parentLineage, kinRecognitionEnabled: true);
+
+            Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.SeekPrey));
+            Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.Flee));
+            Assert.That(diagnostics.FleeScore, Is.EqualTo(0f));
+            Assert.That(diagnostics.HuntScore, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void IntentUtilityStillHuntsAnUnrelatedCreatureWhenKinRecognitionEnabled()
+        {
+            Phenotype attacker = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype defender = MakePhenotype(attackPower: 0.2f, defense: 0.1f, maneuverability: 1f, energyCapacity: 200f);
+            CreatureNeeds needs = CreatureNeeds.Full(attacker);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            var strangerId = new CreatureId(99);
+            var selfId = new CreatureId(3);
+            var threatObservation = new CreatureObservation(strangerId, 1, 1f);
+            var selfLineage = new CreatureLineage(selfId, new CreatureId(2), default, generation: 1);
+            var strangerLineage = new CreatureLineage(strangerId, default, default, generation: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, attacker, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: threatObservation,
+                threatIntensity: 0f, otherPhenotype: defender, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, economicsEnabled: true, tick: 0,
+                diagnostics: out _,
+                selfId: selfId, selfLineage: selfLineage, otherLineage: strangerLineage, kinRecognitionEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekPrey));
+        }
+
+        [Test]
+        public void IntentUtilityMultiThreatSkipsKinCandidateEvenWhenItScoresHigherThanNonKin()
+        {
+            // The sibling sits far closer (0.5) than the stranger (5), so if the kin skip did
+            // NOT work, the sibling would dominate flee scoring and produce a much higher
+            // FleeScore than considering the stranger alone. Compares the kin-enabled and
+            // kin-disabled runs' reported diagnostics.FleeScore directly.
+            Phenotype self = MakePhenotype(attackPower: 0.2f, defense: 1.9f, maneuverability: 1f, energyCapacity: 200f);
+            Phenotype siblingPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            Phenotype strangerPhenotype = MakePhenotype(attackPower: 1.9f, defense: 0.1f, maneuverability: 1f, aggression: 0.8f, meatYieldMultiplier: 1.3f);
+            CreatureNeeds needs = CreatureNeeds.Full(self);
+            var resources = new ResourceStore(initialCapacity: 0);
+            var selfId = new CreatureId(3);
+            var siblingId = new CreatureId(10);
+            var strangerId = new CreatureId(11);
+            var sharedParent = new CreatureId(1);
+            var selfLineage = new CreatureLineage(selfId, sharedParent, default, generation: 1);
+            var siblingLineage = new CreatureLineage(siblingId, sharedParent, default, generation: 1);
+            var strangerLineage = new CreatureLineage(strangerId, default, default, generation: 0);
+
+            var kinEnabledOthers = new PredationCandidateBuffer();
+            kinEnabledOthers.Add(new CreatureObservation(siblingId, creatureIndex: 0, distance: 0.5f), siblingPhenotype, siblingLineage);
+            kinEnabledOthers.Add(new CreatureObservation(strangerId, creatureIndex: 1, distance: 5f), strangerPhenotype, strangerLineage);
+            DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, self, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, economicsEnabled: false, tick: 0,
+                diagnostics: out DecisionDiagnostics kinEnabledDiagnostics,
+                otherCandidates: kinEnabledOthers, multiThreatPerceptionEnabled: true,
+                selfId: selfId, selfLineage: selfLineage, kinRecognitionEnabled: true);
+
+            var kinDisabledOthers = new PredationCandidateBuffer();
+            kinDisabledOthers.Add(new CreatureObservation(siblingId, creatureIndex: 0, distance: 0.5f), siblingPhenotype, siblingLineage);
+            kinDisabledOthers.Add(new CreatureObservation(strangerId, creatureIndex: 1, distance: 5f), strangerPhenotype, strangerLineage);
+            DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, self, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: default,
+                threatIntensity: 0f, otherPhenotype: default, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: default, mateNeeds: default, matePhenotype: default,
+                mateReproduction: default, reproductionEnabled: false, economicsEnabled: false, tick: 0,
+                diagnostics: out DecisionDiagnostics kinDisabledDiagnostics,
+                otherCandidates: kinDisabledOthers, multiThreatPerceptionEnabled: true,
+                selfId: selfId, selfLineage: selfLineage, kinRecognitionEnabled: false);
+
+            Assert.That(kinEnabledDiagnostics.FleeScore, Is.LessThan(kinDisabledDiagnostics.FleeScore));
         }
     }
 }

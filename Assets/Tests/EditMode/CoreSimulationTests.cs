@@ -1411,5 +1411,87 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedParentalFollowingDisabledHash));
         }
+
+        [Test]
+        public void CreatureDoesNotFleeFromKinWhenKinRecognitionEnabledAndMultiThreatPerceptionOff()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 31,
+                initialPopulation: 0,
+                schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                predationEconomicsEnabled: true,
+                kinRecognitionEnabled: true);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.SetCreaturePosition(firstParent, new SimVector2(1f, 0f));
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            world.Creatures.GetNeedsRefAt(childIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            world.Creatures.GetNeedsRefAt(childIndex).Energy = 1f;
+
+            world.Step(config.FixedDeltaTime);
+
+            CreatureDecision decision = world.Creatures.GetDecisionAt(childIndex);
+            Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.Flee));
+        }
+
+        [Test]
+        public void CreatureDoesNotFleeFromKinWhenKinRecognitionEnabledAndMultiThreatPerceptionOn()
+        {
+            var schedule = new SimulationSchedule(1, 1, 1, 1, 1, 1, 1, 1);
+            var config = new SimulationConfig(
+                worldSeed: 32,
+                initialPopulation: 0,
+                schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                predationEconomicsEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                kinRecognitionEnabled: true);
+            var world = new SimulationWorld(config);
+            CreatureId firstParent = world.Spawn(Genome.Neutral);
+            CreatureId secondParent = world.Spawn(Genome.Neutral);
+            world.Creatures.TryGetIndex(firstParent, out int firstIndex);
+            world.SetCreaturePosition(firstParent, new SimVector2(1f, 0f));
+            CreatureId child = world.Creatures.AddChild(Genome.Neutral, new SimVector2(0f, 0f), firstParent, secondParent);
+            world.Creatures.TryGetIndex(child, out int childIndex);
+            world.Creatures.GetNeedsRefAt(childIndex).Age = ReproductionSystem.AdultAgeSeconds;
+            world.Creatures.GetNeedsRefAt(childIndex).Energy = 1f;
+
+            world.Step(config.FixedDeltaTime);
+
+            CreatureDecision decision = world.Creatures.GetDecisionAt(childIndex);
+            Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.Flee));
+        }
+
+        // Captured from the pre-Task-1 commit 0cba45f (the commit this task's changes
+        // were built on top of), by running this exact setup (with kinRecognitionEnabled omitted,
+        // since that constructor parameter did not exist yet) for 50 ticks and reading
+        // world.ComputeStateHash(). Pinning this value confirms that adding
+        // Config.KinRecognitionEnabled and its call-site wiring in SimulationWorld.cs/
+        // DecisionSystem.cs is byte-identical to prior behavior when the flag is left at its
+        // default (false).
+        private const ulong ExpectedKinRecognitionDisabledHash = 12050501592762519865UL;
+
+        [Test]
+        public void KinRecognitionDisabledProducesIdenticalHashToPreExistingBehavior()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var config = new SimulationConfig(
+                worldSeed: 99,
+                initialPopulation: 2,
+                schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++) { world.Step(config.FixedDeltaTime); }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(ExpectedKinRecognitionDisabledHash));
+        }
     }
 }

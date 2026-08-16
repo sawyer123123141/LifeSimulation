@@ -712,6 +712,7 @@ namespace LifeSimulation.Simulation.Core
 
                 MovementState movement = Creatures.GetMovementAt(index);
                 Phenotype phenotype = GetEffectivePhenotype(index);
+                CreatureLineage selfLineage = Creatures.GetLineageAt(index);
                 CreatureDecision previousDecision = Creatures.GetDecisionAt(index);
                 ResourceObservation food = PerceptionSystem.FindNearestAvailableResource(
                     Resources,
@@ -762,7 +763,7 @@ namespace LifeSimulation.Simulation.Core
                     for (int candidateIndex = 0; candidateIndex < creatureCandidates.Count; candidateIndex++)
                     {
                         CreatureObservation candidateObservation = creatureCandidates.GetAt(candidateIndex);
-                        otherCandidates.Add(candidateObservation, Creatures.GetPhenotypeAt(candidateObservation.CreatureIndex));
+                        otherCandidates.Add(candidateObservation, Creatures.GetPhenotypeAt(candidateObservation.CreatureIndex), Creatures.GetLineageAt(candidateObservation.CreatureIndex));
                     }
                 }
                 if (Config.CognitionEnabled)
@@ -831,7 +832,11 @@ namespace LifeSimulation.Simulation.Core
                         Config.ThreatFalloffDistance,
                         otherCandidates,
                         Config.MultiThreatPerceptionEnabled,
-                        Config.RestBehaviorEnabled);
+                        Config.RestBehaviorEnabled,
+                        Creatures.GetIdAt(index),
+                        selfLineage,
+                        other.IsValid ? Creatures.GetLineageAt(other.CreatureIndex) : default,
+                        Config.KinRecognitionEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
