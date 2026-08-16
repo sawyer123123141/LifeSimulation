@@ -306,7 +306,8 @@ namespace LifeSimulation.Presentation
                     defaults.Schedule,
                     maximumPopulation: 150,
                     founderProfile: FounderProfile.PredationVariation,
-                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1));
+                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                    predationEconomicsEnabled: true));
         }
 
         private void ResetCognitionSimulation()
