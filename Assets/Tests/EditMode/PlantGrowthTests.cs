@@ -369,5 +369,73 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(patches.GetAt(index).Biomass, Is.EqualTo(10f));
         }
+
+        [Test]
+        public void CompetitionDisabledNeverConsidersAnOccupiedCandidateEvenIfVulnerable()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId occupiedSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 1f, 20f, 0f);
+            var sites = new PlantSiteRegistry(1);
+            sites.Register(0);
+            var patches = new PlantPatchStore(2);
+            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
+            int occupantIndex = patches.Add(occupiedSite, new SimVector2(1f, 0f), 1f, 20f, .2f, .8f, .1f);
+            long ordinal = 0;
+
+            int births = PlantReproductionSystem.Step(patches, resources, sites, 42, 20, 1f, ref ordinal, competitionEnabled: false);
+
+            Assert.That(births, Is.EqualTo(0));
+            Assert.That(patches.Count, Is.EqualTo(2));
+            Assert.That(patches.GetAt(occupantIndex).Biomass, Is.EqualTo(1f));
+            Assert.That(patches.GetAt(parentIndex).Biomass, Is.EqualTo(10f));
+        }
+
+        [Test]
+        public void CompetitionEnabledLetsAVulnerableOccupiedSiteBeTakenOverByADisperser()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId occupiedSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 1f, 20f, 0f);
+            var sites = new PlantSiteRegistry(1);
+            sites.Register(0);
+            var patches = new PlantPatchStore(2);
+            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
+            int occupantIndex = patches.Add(occupiedSite, new SimVector2(1f, 0f), 1f, 20f, .2f, .8f, .1f);
+            long ordinal = 0;
+
+            int births = PlantReproductionSystem.Step(patches, resources, sites, 42, 20, 1f, ref ordinal, competitionEnabled: true);
+
+            Assert.That(births, Is.EqualTo(1));
+            Assert.That(patches.Count, Is.EqualTo(2));
+            PlantPatchState takenOver = patches.GetAt(occupantIndex);
+            Assert.That(takenOver.GrowthRate, Is.EqualTo(.1f));
+            Assert.That(takenOver.Nutrition, Is.EqualTo(1f));
+            Assert.That(takenOver.Defense, Is.EqualTo(0f));
+            Assert.That(takenOver.Lineage.Generation, Is.EqualTo(patches.GetAt(parentIndex).Lineage.Generation + 1));
+            Assert.That(takenOver.ReproductionCooldownRemaining, Is.EqualTo(0f));
+            // Biomass conservation: nothing created or destroyed, only moved.
+            float totalAfter = patches.GetAt(parentIndex).Biomass + takenOver.Biomass;
+            Assert.That(totalAfter, Is.EqualTo(10f + 1f).Within(.0001f));
+        }
+
+        [Test]
+        public void CompetitionEnabledNeverDisplacesANonVulnerableOccupiedSite()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId occupiedSite = resources.Add(ResourceKind.Food, new SimVector2(1f, 0f), 1f, 5f, 20f, 0f);
+            var sites = new PlantSiteRegistry(1);
+            sites.Register(0);
+            var patches = new PlantPatchStore(2);
+            int parentIndex = patches.Add(new ResourceId(99), new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
+            int occupantIndex = patches.Add(occupiedSite, new SimVector2(1f, 0f), 5f, 20f, .2f, .8f, .1f);
+            long ordinal = 0;
+
+            int births = PlantReproductionSystem.Step(patches, resources, sites, 42, 20, 1f, ref ordinal, competitionEnabled: true);
+
+            Assert.That(births, Is.EqualTo(0));
+            Assert.That(patches.Count, Is.EqualTo(2));
+            Assert.That(patches.GetAt(occupantIndex).Biomass, Is.EqualTo(5f));
+            Assert.That(patches.GetAt(occupantIndex).GrowthRate, Is.EqualTo(.2f));
+            Assert.That(patches.GetAt(parentIndex).Biomass, Is.EqualTo(10f));
+        }
     }
 }

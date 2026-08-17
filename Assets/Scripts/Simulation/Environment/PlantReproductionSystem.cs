@@ -10,8 +10,9 @@ namespace LifeSimulation.Simulation.Environment
         private const float MutationStandardDeviation = .03f;
         private const int SiteAttempts = 4;
         private const float ReproductionCooldownSeconds = 20f;
+        private const float VulnerabilityFraction = .25f;
 
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal)
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -27,16 +28,30 @@ namespace LifeSimulation.Simulation.Environment
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
-                int siteIndex = FindSite(resources, sites, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange);
+                int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled);
                 if (siteIndex < 0) continue;
 
                 ResourceState site = resources.GetAt(siteIndex);
                 float transferred = patches.ConsumeAt(parentIndex, seedBiomass);
                 if (transferred <= 0f) continue;
                 PlantGenome childGenome = PlantGenome.CloneMutated(parent.Genome, worldSeed, seedOrdinal++, MutationStandardDeviation);
-                int childIndex = patches.Add(site.Id, site.Position, transferred, site.Capacity, parent.GrowthRate, parent.Nutrition, parent.Defense);
-                PlantPatchState child = patches.GetAt(childIndex);
-                patches.SetGenomeAndLineage(childIndex, childGenome, new PlantLineage(child.Id, parent.Id, parent.Lineage.Generation + 1));
+
+                if (site.IsActive)
+                {
+                    int occupantIndex = patches.FindIndex(site.Id);
+                    if (occupantIndex < 0) continue;
+                    PlantPatchState occupant = patches.GetAt(occupantIndex);
+                    float takenOverBiomass = Math.Min(site.Capacity, transferred + occupant.Biomass);
+                    var takeoverLineage = new PlantLineage(occupant.Id, parent.Id, parent.Lineage.Generation + 1);
+                    patches.ReplaceAt(occupantIndex, childGenome, takeoverLineage, takenOverBiomass, parent.GrowthRate, parent.Nutrition, parent.Defense);
+                }
+                else
+                {
+                    int childIndex = patches.Add(site.Id, site.Position, transferred, site.Capacity, parent.GrowthRate, parent.Nutrition, parent.Defense);
+                    PlantPatchState child = patches.GetAt(childIndex);
+                    patches.SetGenomeAndLineage(childIndex, childGenome, new PlantLineage(child.Id, parent.Id, parent.Lineage.Generation + 1));
+                }
+
                 resources.SetActiveAt(siteIndex, true);
                 patches.SetReproductionCooldown(parentIndex, ReproductionCooldownSeconds);
                 births++;
@@ -52,7 +67,7 @@ namespace LifeSimulation.Simulation.Environment
             return 1f - normalizedDistance;
         }
 
-        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchState parent, int seed, long tick, long ordinal, float range)
+        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchStore patches, PlantPatchState parent, int seed, long tick, long ordinal, float range, bool competitionEnabled)
         {
             if (sites.Count == 0) return -1;
 
@@ -61,7 +76,18 @@ namespace LifeSimulation.Simulation.Environment
                 int slot = (int)(DeterministicRandom.Float01(seed, RandomDomain.PlantDispersal, tick, parent.Id.Value, ordinal, attempt) * sites.Count);
                 int index = sites.GetResourceIndexAt(slot);
                 ResourceState candidate = resources.GetAt(index);
-                if (candidate.Kind != ResourceKind.Food || candidate.IsActive) continue;
+                if (candidate.Kind != ResourceKind.Food) continue;
+
+                if (candidate.IsActive)
+                {
+                    if (!competitionEnabled) continue;
+                    if (candidate.Id.Equals(parent.FoodResourceId)) continue;
+                    int occupantIndex = patches.FindIndex(candidate.Id);
+                    if (occupantIndex < 0) continue;
+                    PlantPatchState occupant = patches.GetAt(occupantIndex);
+                    if (occupant.Capacity <= 0f) continue;
+                    if (occupant.Biomass / occupant.Capacity >= VulnerabilityFraction) continue;
+                }
 
                 float distance = SimVector2.Distance(parent.Position, candidate.Position);
                 if (distance > range) continue;
