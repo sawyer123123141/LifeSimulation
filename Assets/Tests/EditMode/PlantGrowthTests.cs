@@ -307,5 +307,31 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(births, Is.EqualTo(0));
             Assert.That(patches.GetAt(parentIndex).ReproductionCooldownRemaining, Is.EqualTo(0f));
         }
+
+        [Test]
+        public void PlantSiteCompetitionEnabledDefaultsToFalse()
+        {
+            var config = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            Assert.That(config.PlantSiteCompetitionEnabled, Is.False);
+        }
+
+        [Test]
+        public void PlantSiteCompetitionEnabledCanBeSetTrue()
+        {
+            var defaults = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            var config = new SimulationConfig(
+                42,
+                4,
+                defaults.Schedule,
+                defaults.MaximumPopulation,
+                defaults.FounderProfile,
+                cognitionEnabled: true,
+                physiologyEnabled: true,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true,
+                plantSiteCompetitionEnabled: true);
+
+            Assert.That(config.PlantSiteCompetitionEnabled, Is.True);
+        }
     }
 }
