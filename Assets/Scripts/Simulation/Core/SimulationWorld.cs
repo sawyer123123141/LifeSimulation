@@ -243,7 +243,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
-                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal);
+                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled);
                     PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
                 }
                 else
