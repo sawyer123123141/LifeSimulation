@@ -42,7 +42,8 @@ namespace LifeSimulation.Simulation.Biology
                 InheritTrait(firstParent.UrgencyExponent, secondParent.UrgencyExponent, worldSeed, birthOrdinal, 19, mutationStandardDeviation),
                 InheritTrait(firstParent.TravelSensitivity, secondParent.TravelSensitivity, worldSeed, birthOrdinal, 20, mutationStandardDeviation),
                 InheritTrait(firstParent.RiskAversion, secondParent.RiskAversion, worldSeed, birthOrdinal, 21, mutationStandardDeviation),
-                InheritTrait(firstParent.Commitment, secondParent.Commitment, worldSeed, birthOrdinal, 22, mutationStandardDeviation));
+                InheritTrait(firstParent.Commitment, secondParent.Commitment, worldSeed, birthOrdinal, 22, mutationStandardDeviation),
+                InheritTrait(firstParent.Persistence, secondParent.Persistence, worldSeed, birthOrdinal, 23, mutationStandardDeviation));
         }
 
         private static float InheritTrait(

@@ -10,11 +10,15 @@ namespace LifeSimulation.Tests.EditMode
     public sealed class ForagingIntegrationTests
     {
         [Test]
-        public void ConstructingAGenomeWithoutSpecifyingPersistenceDefaultsToZero()
+        public void ConstructingAGenomeWithoutSpecifyingPersistenceDefaultsToOneHalf()
         {
+            // Persistence's default moved from 0f to 0.5f to match its sibling behavioral
+            // genes (urgencyExponent, travelSensitivity, riskAversion, commitment) and to
+            // avoid the clamp-boundary drift a gene pinned at exactly 0 would show under
+            // symmetric mutation.
             Genome genome = Genome.Neutral;
 
-            Assert.That(genome.Persistence, Is.EqualTo(0f));
+            Assert.That(genome.Persistence, Is.EqualTo(0.5f));
         }
 
         [Test]

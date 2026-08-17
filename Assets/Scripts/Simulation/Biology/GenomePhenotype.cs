@@ -28,7 +28,7 @@ namespace LifeSimulation.Simulation.Biology
             float travelSensitivity = 0.5f,
             float riskAversion = 0.5f,
             float commitment = 0.5f,
-            float persistence = 0f)
+            float persistence = 0.5f)
         {
             BodySize = Clamp01(bodySize);
             MovementSpeed = Clamp01(movementSpeed);

@@ -16,7 +16,9 @@ namespace LifeSimulation.Tests.EditMode
         // growth-rate conversion in SimulationScenario.cs and adding the sprout floor in
         // PlantGrowthSystem.cs is invisible to any scenario that never enables
         // Config.PlantCohortsEnabled.
-        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 13626802794646021369UL;
 
         [Test]
         public void PlantGrowthRateFixDoesNotAffectNonPlantCohortScenarios()
@@ -851,7 +853,9 @@ namespace LifeSimulation.Tests.EditMode
         // for 50 ticks and reading world.ComputeStateHash(). Pinning this value confirms that
         // wiring Config.PredationEconomicsEnabled through the three SimulationWorld.cs call sites
         // is byte-identical to the legacy behavior when the flag is left at its default (false).
-        private const ulong ExpectedLegacyHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedLegacyHash = 13626802794646021369UL;
 
         [Test]
         public void PredationEconomicsDisabledProducesIdenticalHashToPreExistingLegacyBehavior()
@@ -1100,7 +1104,9 @@ namespace LifeSimulation.Tests.EditMode
         // exist yet) for 50 ticks and reading world.ComputeStateHash(). Pinning this value confirms
         // that adding Config.DecisionStaggerEnabled and its call-site checks in SimulationWorld.cs is
         // byte-identical to prior behavior when the flag is left at its default (false).
-        private const ulong ExpectedDecisionStaggerDisabledHash = 12400869477994959903UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedDecisionStaggerDisabledHash = 7026480479570853087UL;
 
         [Test]
         public void DecisionStaggerDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1122,7 +1128,9 @@ namespace LifeSimulation.Tests.EditMode
         // Pinning this value confirms that adding Config.MultiThreatPerceptionEnabled and its call-site
         // wiring in SimulationWorld.cs/DecisionSystem.cs is byte-identical to prior behavior when the
         // flag is left at its default (false).
-        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void MultiThreatPerceptionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1168,7 +1176,9 @@ namespace LifeSimulation.Tests.EditMode
         // Pinning this value confirms that adding Config.RestBehaviorEnabled and its call-site wiring
         // in NeedsSystem.cs/DecisionSystem.cs/SimulationWorld.cs is byte-identical to prior behavior
         // when the flag is left at its default (false).
-        private const ulong ExpectedRestBehaviorDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedRestBehaviorDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void RestBehaviorDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1427,7 +1437,9 @@ namespace LifeSimulation.Tests.EditMode
         // Pinning this value confirms that adding Config.JuvenileCapabilityEnabled and its call-site
         // wiring in SimulationWorld.cs/GenomePhenotype.cs is byte-identical to prior behavior when the
         // flag is left at its default (false).
-        private const ulong ExpectedJuvenileCapabilityDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedJuvenileCapabilityDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void JuvenileCapabilityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1450,7 +1462,9 @@ namespace LifeSimulation.Tests.EditMode
         // world.ComputeStateHash(). Pinning this value confirms that adding
         // Config.ParentalFollowingEnabled and its call-site wiring in SimulationWorld.cs is
         // byte-identical to prior behavior when the flag is left at its default (false).
-        private const ulong ExpectedParentalFollowingDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedParentalFollowingDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void ParentalFollowingDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1532,7 +1546,9 @@ namespace LifeSimulation.Tests.EditMode
         // Config.KinRecognitionEnabled and its call-site wiring in SimulationWorld.cs/
         // DecisionSystem.cs is byte-identical to prior behavior when the flag is left at its
         // default (false).
-        private const ulong ExpectedKinRecognitionDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedKinRecognitionDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void KinRecognitionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1596,7 +1612,9 @@ namespace LifeSimulation.Tests.EditMode
         // CognitionEnabled left false, so it never reaches DecideFromLearnedOutcomes or
         // ResourceUtility/ComputeNeedGain at all - it proves the untouched default path stays
         // untouched, not that this task's new code was exercised (see Steps 1/8/14 for that).
-        private const ulong ExpectedLearnedResourceQualityDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedLearnedResourceQualityDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void LearnedResourceQualityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1620,7 +1638,9 @@ namespace LifeSimulation.Tests.EditMode
         // world.ComputeStateHash(). Pinning this value confirms that adding
         // Config.MateSelectionEnabled and its call-site wiring in ReproductionSystem.cs is
         // byte-identical to prior behavior when the flag is left at its default (false).
-        private const ulong ExpectedMateSelectionDisabledHash = 12050501592762519865UL;
+        // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
+        // an intentional, recorded shift, not an unexplained edit.
+        private const ulong ExpectedMateSelectionDisabledHash = 13626802794646021369UL;
 
         [Test]
         public void MateSelectionDisabledProducesIdenticalHashToPreExistingBehavior()

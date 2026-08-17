@@ -143,6 +143,57 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void EveryGeneTransmitsFromParentsToOffspring()
+        {
+            // Both parents share a distinctive non-default value in every gene. Any gene that
+            // CreateChild forgets to pass will fall back to its constructor default instead,
+            // which this test detects. Mutation sigma is 0 so inheritance is exact.
+            var parent = new Genome(
+                .81f, .82f, .83f, .84f, .85f, .86f, .87f, .88f, .89f, .90f, .91f, .92f,
+                .93f, .94f, .95f, .96f, .97f, .98f, .99f, .80f, .79f, .78f, .77f,
+                persistence: .76f);
+
+            Genome child = GenomeInheritance.CreateChild(parent, parent, worldSeed: 42, birthOrdinal: 0, mutationStandardDeviation: 0f);
+
+            Assert.That(child.BodySize, Is.EqualTo(.81f).Within(.0001f));
+            Assert.That(child.MovementSpeed, Is.EqualTo(.82f).Within(.0001f));
+            Assert.That(child.MetabolicPace, Is.EqualTo(.83f).Within(.0001f));
+            Assert.That(child.VisionRange, Is.EqualTo(.84f).Within(.0001f));
+            Assert.That(child.WaterEfficiency, Is.EqualTo(.85f).Within(.0001f));
+            Assert.That(child.FoodEfficiency, Is.EqualTo(.86f).Within(.0001f));
+            Assert.That(child.Attack, Is.EqualTo(.87f).Within(.0001f));
+            Assert.That(child.Defense, Is.EqualTo(.88f).Within(.0001f));
+            Assert.That(child.Maneuverability, Is.EqualTo(.89f).Within(.0001f));
+            Assert.That(child.Fear, Is.EqualTo(.90f).Within(.0001f));
+            Assert.That(child.Aggression, Is.EqualTo(.91f).Within(.0001f));
+            Assert.That(child.DietSpecialization, Is.EqualTo(.92f).Within(.0001f));
+            Assert.That(child.MemoryCapacity, Is.EqualTo(.93f).Within(.0001f));
+            Assert.That(child.MemoryRetention, Is.EqualTo(.94f).Within(.0001f));
+            Assert.That(child.LearningRate, Is.EqualTo(.95f).Within(.0001f));
+            Assert.That(child.Exploration, Is.EqualTo(.96f).Within(.0001f));
+            Assert.That(child.TemperatureTolerance, Is.EqualTo(.97f).Within(.0001f));
+            Assert.That(child.FertilityInvestment, Is.EqualTo(.98f).Within(.0001f));
+            Assert.That(child.LifespanTendency, Is.EqualTo(.99f).Within(.0001f));
+            Assert.That(child.UrgencyExponent, Is.EqualTo(.80f).Within(.0001f));
+            Assert.That(child.TravelSensitivity, Is.EqualTo(.79f).Within(.0001f));
+            Assert.That(child.RiskAversion, Is.EqualTo(.78f).Within(.0001f));
+            Assert.That(child.Commitment, Is.EqualTo(.77f).Within(.0001f));
+            Assert.That(child.Persistence, Is.EqualTo(.76f).Within(.0001f));
+        }
+
+        [Test]
+        public void PersistenceMutatesAcrossOffspringRatherThanStayingConstant()
+        {
+            var parent = new Genome(.5f, .5f, .5f, .5f, .5f, .5f, persistence: .5f);
+
+            float first = GenomeInheritance.CreateChild(parent, parent, 42, 0, .03f).Persistence;
+            float second = GenomeInheritance.CreateChild(parent, parent, 42, 1, .03f).Persistence;
+
+            Assert.That(first, Is.Not.EqualTo(second));
+            Assert.That(first, Is.Not.EqualTo(0f));
+        }
+
+        [Test]
         public void FoodAndWaterRestoreOnlyTheirMatchingNeedWithoutExceedingCapacity()
         {
             Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
