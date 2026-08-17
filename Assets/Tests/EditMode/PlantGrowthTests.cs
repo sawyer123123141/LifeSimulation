@@ -339,13 +339,14 @@ namespace LifeSimulation.Tests.EditMode
         {
             var patches = new PlantPatchStore(1);
             int index = patches.Add(new ResourceId(7), new SimVector2(3f, 4f), 5f, 20f, .1f, 1f, 0f);
+            PlantPatchId originalId = patches.GetAt(index).Id;
             var newGenome = new PlantGenome(.9f, .1f, .2f, .3f, .4f, .5f, .6f, .7f);
-            var newLineage = new PlantLineage(patches.GetAt(index).Id, new PlantPatchId(11), 3);
+            var newLineage = new PlantLineage(originalId, new PlantPatchId(11), 3);
 
             patches.ReplaceAt(index, newGenome, newLineage, biomass: 15f, growthRate: .3f, nutrition: .6f, defense: .2f);
 
             PlantPatchState result = patches.GetAt(index);
-            Assert.That(result.Id, Is.EqualTo(patches.GetAt(index).Id));
+            Assert.That(result.Id, Is.EqualTo(originalId));
             Assert.That(result.FoodResourceId, Is.EqualTo(new ResourceId(7)));
             Assert.That(result.Position.X, Is.EqualTo(3f));
             Assert.That(result.Position.Y, Is.EqualTo(4f));

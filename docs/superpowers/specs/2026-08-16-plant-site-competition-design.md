@@ -102,6 +102,17 @@ hash-regression baseline (`PredationVariation`/`Legacy` scenario, hash
   structural blocker (patches can now actually lose ground), but proving an
   actual reciprocal-selection result is a separate follow-up experiment,
   not part of this fix's testing scope.
+- Known gap, found in final review: `FindSite` only draws candidates from
+  `PlantSiteRegistry`, which today only registers initially-*inactive*
+  dispersal-target sites (`SimulationScenario.ApplyTo`). Initially-active
+  founder patches — including the exact patches under defense selection in
+  `ConsumerDefenseCalibrationControl`/`Moderate` — are never registered and
+  therefore can never be taken over. This mechanic currently only reaches
+  second-generation patches that colonized a formerly-empty site, not
+  founder patches. Registering active founder sites too would close this,
+  but changes `PlantSiteRegistry.Count` for every `PlantCohortsEnabled`
+  scenario (shifting dispersal-target RNG draws even with this flag off),
+  so it needs its own design pass rather than a quick patch here.
 
 ## Testing
 
