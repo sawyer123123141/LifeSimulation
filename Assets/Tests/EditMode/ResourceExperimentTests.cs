@@ -184,6 +184,29 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PlantSiteCompetitionEnabledRegistersActiveFounderPatchesAsCompetitionCandidates()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var configWithoutCompetition = new SimulationConfig(
+                42, 12, defaults.Schedule, defaults.MaximumPopulation, defaults.FounderProfile,
+                cognitionEnabled: true, physiologyEnabled: true, decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true, plantSiteCompetitionEnabled: false);
+            var worldWithout = new SimulationWorld(configWithoutCompetition);
+            Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(worldWithout);
+
+            var configWithCompetition = new SimulationConfig(
+                42, 12, defaults.Schedule, defaults.MaximumPopulation, defaults.FounderProfile,
+                cognitionEnabled: true, physiologyEnabled: true, decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true, plantSiteCompetitionEnabled: true);
+            var worldWith = new SimulationWorld(configWithCompetition);
+            Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(worldWith);
+
+            // 2 active founder Food sites + the scenario's existing 6 inactive dispersal targets.
+            Assert.That(worldWithout.PlantSites.Count, Is.EqualTo(6));
+            Assert.That(worldWith.PlantSites.Count, Is.EqualTo(8));
+        }
+
+        [Test]
         public void ResourceStoreCanRelocateAnExistingResourceWithoutChangingItsBudget()
         {
             var resources = new ResourceStore(initialCapacity: 1);

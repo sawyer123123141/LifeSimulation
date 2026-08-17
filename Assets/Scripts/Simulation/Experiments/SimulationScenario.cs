@@ -120,6 +120,10 @@ namespace LifeSimulation.Simulation.Experiments
                         PlantPatchState patch = world.Plants.GetAt(patchIndex);
                         world.Plants.SetGenomeAndLineage(patchIndex, definition.PlantGenome.Value, patch.Lineage);
                     }
+                    if (world.Config.PlantSiteCompetitionEnabled)
+                    {
+                        world.PlantSites.Register(index);
+                    }
                 }
                 else if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food && !definition.IsActive)
                 {
