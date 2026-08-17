@@ -81,6 +81,18 @@ namespace LifeSimulation.Simulation.Environment
             _lineages[index] = lineage;
         }
 
+        public void ReplaceAt(int index, PlantGenome genome, PlantLineage lineage, float biomass, float growthRate, float nutrition, float defense)
+        {
+            if ((uint)index >= (uint)Count) return;
+            _genomes[index] = genome;
+            _lineages[index] = lineage;
+            _growthRates[index] = growthRate;
+            _nutrition[index] = nutrition;
+            _defense[index] = defense;
+            _biomass[index] = Math.Max(0f, Math.Min(_capacities[index], biomass));
+            _reproductionCooldowns[index] = 0f;
+        }
+
         public int FindIndex(ResourceId foodResourceId)
         {
             for (int index = 0; index < Count; index++)

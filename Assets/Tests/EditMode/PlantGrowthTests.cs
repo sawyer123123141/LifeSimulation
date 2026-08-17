@@ -333,5 +333,41 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(config.PlantSiteCompetitionEnabled, Is.True);
         }
+
+        [Test]
+        public void ReplaceAtOverwritesTraitsAndGenomeButPreservesSiteIdentity()
+        {
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(new ResourceId(7), new SimVector2(3f, 4f), 5f, 20f, .1f, 1f, 0f);
+            var newGenome = new PlantGenome(.9f, .1f, .2f, .3f, .4f, .5f, .6f, .7f);
+            var newLineage = new PlantLineage(patches.GetAt(index).Id, new PlantPatchId(11), 3);
+
+            patches.ReplaceAt(index, newGenome, newLineage, biomass: 15f, growthRate: .3f, nutrition: .6f, defense: .2f);
+
+            PlantPatchState result = patches.GetAt(index);
+            Assert.That(result.Id, Is.EqualTo(patches.GetAt(index).Id));
+            Assert.That(result.FoodResourceId, Is.EqualTo(new ResourceId(7)));
+            Assert.That(result.Position.X, Is.EqualTo(3f));
+            Assert.That(result.Position.Y, Is.EqualTo(4f));
+            Assert.That(result.Capacity, Is.EqualTo(20f));
+            Assert.That(result.Biomass, Is.EqualTo(15f));
+            Assert.That(result.GrowthRate, Is.EqualTo(.3f));
+            Assert.That(result.Nutrition, Is.EqualTo(.6f));
+            Assert.That(result.Defense, Is.EqualTo(.2f));
+            Assert.That(result.Genome.Dispersal, Is.EqualTo(newGenome.Dispersal));
+            Assert.That(result.Lineage.Generation, Is.EqualTo(3));
+            Assert.That(result.ReproductionCooldownRemaining, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void ReplaceAtClampsBiomassToCapacity()
+        {
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(new ResourceId(7), new SimVector2(0f, 0f), 5f, 10f, .1f, 1f, 0f);
+
+            patches.ReplaceAt(index, PlantGenome.Neutral, new PlantLineage(patches.GetAt(index).Id, default, 1), biomass: 999f, growthRate: .1f, nutrition: 1f, defense: 0f);
+
+            Assert.That(patches.GetAt(index).Biomass, Is.EqualTo(10f));
+        }
     }
 }
