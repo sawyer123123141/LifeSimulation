@@ -150,7 +150,23 @@ Expected: PASS (2/2)
 
 Run: `cd tools/HeadlessTests && dotnet test`
 
-Expect failures. Every creature's `bodyMass` now includes `+0.05 * 0.5 = +0.025` that it did not before, and `Persistence` now varies, so any test asserting exact energy/health capacities, populations, or state hashes may shift.
+Expect failures.
+
+**Correction (recorded post-review — the original wording here was wrong).** This plan
+originally claimed the cascade came from `bodyMass` gaining `+0.05 * 0.5`. That is not
+what the code does: `bodyMass` derives solely from `genome.BodySize`, and
+`EnergyCapacity`/`HydrationCapacity`/`HealthCapacity` all derive solely from `bodyMass`,
+so none of them are touched by `Persistence` at all. The `0.05f * genome.Persistence`
+term instead feeds a local `maintenance` factor consumed only by
+`BasalEnergyCostMultiplier`. The three real cascade paths are:
+
+1. `BasalEnergyCostMultiplier`, via `maintenance`.
+2. `Persistence` hashed directly into simulation state (`SimulationWorld.cs:364`).
+3. Behavior differences in `ForagingEconomics.CommitmentBonus` / `ShouldAbandon`, now
+   that `Persistence` is nonzero and varies.
+
+The conclusion is unchanged — hash shifts are a legitimate consequence, not a regression —
+but judge each failing test against the correct mechanism above, not the original claim.
 
 For EACH failing test, write down in the report: the test name, the old and new values, and an explicit judgment — **legitimate consequence** (the change is explained by `Persistence` now being `0.5` and heritable) or **genuine regression** (something else broke). Do not edit any expected value until you have written this judgment.
 
