@@ -64,12 +64,23 @@ namespace LifeSimulation.Presentation
 
         private void Awake()
         {
+            EnsureInitialized();
+        }
+
+        private void EnsureInitialized()
+        {
+            // A script edit while Play mode is running triggers a Unity domain reload, which
+            // resets non-serialized fields like _world to their defaults without re-invoking
+            // Awake() on GameObjects that already existed in the scene. Without this guard,
+            // every subsequent Update/OnGUI throws a NullReferenceException on _world forever.
+            if (_world != null) return;
             CreateEnvironment();
             ResetSimulation(Prototype1Scenarios.Baseline);
         }
 
         private void Update()
         {
+            EnsureInitialized();
             HandleInput();
             if (!_isPaused)
             {
@@ -91,6 +102,7 @@ namespace LifeSimulation.Presentation
 
         private void OnGUI()
         {
+            EnsureInitialized();
             GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
