@@ -1,5 +1,11 @@
 # P4 Calibration Blocker — Memory Root Cause Retracted, Overshoot Measured — 2026-08-17
 
+> **SUPERSEDED IN PART 2026-08-17.** The conclusion that the calibration's
+> constraint set is unsatisfiable is withdrawn. It is satisfiable at 4 active
+> plant sites; the binding variable was site count, not lifespan or population
+> cap. See `p4-calibration-unblocked-carrying-capacity-2026-08-17.md`. The
+> place-memory retraction and the overshoot measurement below both stand.
+
 Supersedes the "Root cause: place memory has no invalidation for vanished
 resources" section of `p4-plant-mortality-calibration-blocked-2026-08-17.md`.
 That section is **wrong** and its recommended order of work ("fix place-memory
