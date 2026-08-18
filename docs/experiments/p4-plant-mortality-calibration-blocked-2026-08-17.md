@@ -1,5 +1,11 @@
 # P4 Plant Mortality — Mechanism Works, Calibration Blocked on a Memory Defect — 2026-08-17
 
+> **PARTIALLY RETRACTED 2026-08-17.** The "Root cause: place memory has no
+> invalidation for vanished resources" section below is wrong, and the order of
+> work it recommends begins with a no-op — place memory has never executed in
+> production. See `p4-memory-root-cause-retracted-2026-08-17.md` for the
+> retraction and the measured replacement finding (carrying-capacity overshoot).
+
 Follows `p4-coevolution-null-2026-08-17.md`, which found that plants reach
 generation 2 and stop reproducing forever because sites are never released.
 Age-based plant mortality was designed and built to fix that
