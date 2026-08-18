@@ -43,6 +43,7 @@ namespace LifeSimulation.Simulation.Core
         private int _predationDeathCount;
         private float _cumulativePlantGrowth;
         private float _cumulativePlantBiomassConsumed;
+        private float _cumulativePlantBiomassLostToMortality;
         private float _initialPlantBiomass;
         private long _plantSeedOrdinal;
         private int _plantBirthCount;
@@ -244,6 +245,11 @@ namespace LifeSimulation.Simulation.Core
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
                     _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled);
+                    if (Config.PlantMortalityEnabled)
+                    {
+                        _cumulativePlantBiomassLostToMortality += PlantMortalitySystem.Step(Plants, Resources, resourceDeltaTime);
+                    }
+
                     PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
                 }
                 else
@@ -1533,13 +1539,14 @@ namespace LifeSimulation.Simulation.Core
                 _cumulativePlantGrowth,
                 _cumulativePlantBiomassConsumed,
                 dormantPlantPatches,
-                plantBiomass - (_initialPlantBiomass + _cumulativePlantGrowth - _cumulativePlantBiomassConsumed),
+                plantBiomass - (_initialPlantBiomass + _cumulativePlantGrowth - _cumulativePlantBiomassConsumed - _cumulativePlantBiomassLostToMortality),
                 _plantBirthCount,
                 Plants.Count,
                 highestPlantGeneration,
                 Plants.Count == 0 ? 0f : plantGrowthTotal / Plants.Count,
                 Plants.Count == 0 ? 0f : plantNutritionTotal / Plants.Count,
-                Plants.Count == 0 ? 0f : plantDefenseTotal / Plants.Count);
+                Plants.Count == 0 ? 0f : plantDefenseTotal / Plants.Count,
+                _cumulativePlantBiomassLostToMortality);
         }
 
         private void CountDeathCause(DeathCause cause)

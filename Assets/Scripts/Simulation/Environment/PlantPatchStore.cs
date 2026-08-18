@@ -117,6 +117,40 @@ namespace LifeSimulation.Simulation.Environment
             _biomass[index] = Math.Max(0f, Math.Min(_capacities[index], biomass));
         }
 
+        public void AdvanceAge(int index, float deltaTime)
+        {
+            if ((uint)index >= (uint)Count || deltaTime <= 0f) return;
+            _ages[index] += deltaTime;
+        }
+
+        public void RemoveAt(int index)
+        {
+            if ((uint)index >= (uint)Count) return;
+            int last = Count - 1;
+            if (index != last)
+            {
+                _ids[index] = _ids[last];
+                _foodResourceIds[index] = _foodResourceIds[last];
+                _positions[index] = _positions[last];
+                _biomass[index] = _biomass[last];
+                _capacities[index] = _capacities[last];
+                _growthRates[index] = _growthRates[last];
+                _nutrition[index] = _nutrition[last];
+                _defense[index] = _defense[last];
+                _genomes[index] = _genomes[last];
+                _lineages[index] = _lineages[last];
+                _ages[index] = _ages[last];
+                _seedReserves[index] = _seedReserves[last];
+                _reproductionCooldowns[index] = _reproductionCooldowns[last];
+            }
+
+            _biomass[last] = 0f;
+            _ages[last] = 0f;
+            _seedReserves[last] = 0f;
+            _reproductionCooldowns[last] = 0f;
+            Count--;
+        }
+
         private void EnsureCapacity(int required)
         {
             if (required <= _ids.Length) return;

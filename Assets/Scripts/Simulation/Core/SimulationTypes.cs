@@ -117,7 +117,8 @@ namespace LifeSimulation.Simulation.Core
             int highestPlantGeneration = 0,
             float meanPlantGrowthGene = 0f,
             float meanPlantNutritionGene = 0f,
-            float meanPlantDefenseGene = 0f)
+            float meanPlantDefenseGene = 0f,
+            float cumulativePlantBiomassLostToMortality = 0f)
         {
             Tick = tick;
             Population = population;
@@ -170,6 +171,7 @@ namespace LifeSimulation.Simulation.Core
             MeanPlantGrowthGene = meanPlantGrowthGene;
             MeanPlantNutritionGene = meanPlantNutritionGene;
             MeanPlantDefenseGene = meanPlantDefenseGene;
+            CumulativePlantBiomassLostToMortality = cumulativePlantBiomassLostToMortality;
         }
 
         public long Tick { get; }
@@ -224,6 +226,7 @@ namespace LifeSimulation.Simulation.Core
         public float MeanPlantGrowthGene { get; }
         public float MeanPlantNutritionGene { get; }
         public float MeanPlantDefenseGene { get; }
+        public float CumulativePlantBiomassLostToMortality { get; }
     }
 
     public struct ReproductionState

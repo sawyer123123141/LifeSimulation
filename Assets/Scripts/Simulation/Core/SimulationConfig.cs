@@ -114,7 +114,8 @@ namespace LifeSimulation.Simulation.Core
             bool kinRecognitionEnabled = false,
             bool learnedResourceQualityEnabled = false,
             bool mateSelectionEnabled = false,
-            bool plantSiteCompetitionEnabled = false)
+            bool plantSiteCompetitionEnabled = false,
+            bool plantMortalityEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -146,6 +147,7 @@ namespace LifeSimulation.Simulation.Core
             LearnedResourceQualityEnabled = learnedResourceQualityEnabled;
             MateSelectionEnabled = mateSelectionEnabled;
             PlantSiteCompetitionEnabled = plantSiteCompetitionEnabled;
+            PlantMortalityEnabled = plantMortalityEnabled;
         }
 
         public int WorldSeed { get; }
@@ -177,6 +179,7 @@ namespace LifeSimulation.Simulation.Core
         public bool LearnedResourceQualityEnabled { get; }
         public bool MateSelectionEnabled { get; }
         public bool PlantSiteCompetitionEnabled { get; }
+        public bool PlantMortalityEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 

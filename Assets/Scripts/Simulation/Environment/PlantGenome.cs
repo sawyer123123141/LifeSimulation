@@ -50,13 +50,20 @@ namespace LifeSimulation.Simulation.Environment
 
     public readonly struct PlantPhenotype
     {
-        public PlantPhenotype(float growthRateMultiplier, float nutritionMultiplier, float defense, float dispersalRange, float seedInvestmentFraction)
+        /// <summary>
+        /// Reference lifespan in seconds before the Growth-gene tradeoff is applied.
+        /// Placeholder value; Task 2 replaces it with an empirically derived one.
+        /// </summary>
+        public const float BaseLifespanSeconds = 90f;
+
+        public PlantPhenotype(float growthRateMultiplier, float nutritionMultiplier, float defense, float dispersalRange, float seedInvestmentFraction, float lifespanSeconds)
         {
             GrowthRateMultiplier = growthRateMultiplier;
             NutritionMultiplier = nutritionMultiplier;
             Defense = defense;
             DispersalRange = dispersalRange;
             SeedInvestmentFraction = seedInvestmentFraction;
+            LifespanSeconds = lifespanSeconds;
         }
 
         public float GrowthRateMultiplier { get; }
@@ -64,6 +71,7 @@ namespace LifeSimulation.Simulation.Environment
         public float Defense { get; }
         public float DispersalRange { get; }
         public float SeedInvestmentFraction { get; }
+        public float LifespanSeconds { get; }
 
         public static PlantPhenotype FromGenome(PlantGenome genome)
         {
@@ -73,7 +81,8 @@ namespace LifeSimulation.Simulation.Environment
                 .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),
                 genome.Defense,
                 4f + (20f * genome.Dispersal),
-                .02f + (.10f * genome.SeedInvestment));
+                .02f + (.10f * genome.SeedInvestment),
+                BaseLifespanSeconds * (1.5f - (.75f * genome.Growth)));
         }
     }
 }

@@ -1,5 +1,7 @@
+using System;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Environment;
+using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Resources;
 using NUnit.Framework;
 
@@ -437,6 +439,173 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(patches.GetAt(occupantIndex).Biomass, Is.EqualTo(5f));
             Assert.That(patches.GetAt(occupantIndex).GrowthRate, Is.EqualTo(.2f));
             Assert.That(patches.GetAt(parentIndex).Biomass, Is.EqualTo(10f));
+        }
+
+        [Test]
+        public void RemoveAtSwapsTheLastPatchIntoTheVacatedSlotWithEveryFieldIntact()
+        {
+            var patches = new PlantPatchStore(3);
+            patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 1f, 10f, .1f, 1f, 0f);
+            patches.Add(new ResourceId(2), new SimVector2(1f, 1f), 2f, 20f, .2f, .9f, .1f);
+            int lastIndex = patches.Add(new ResourceId(3), new SimVector2(3f, 4f), 7f, 30f, .3f, .8f, .2f);
+            var lastGenome = new PlantGenome(.9f, .1f, .2f, .3f, .4f, .5f, .6f, .7f);
+            patches.SetGenomeAndLineage(lastIndex, lastGenome, new PlantLineage(patches.GetAt(lastIndex).Id, new PlantPatchId(42), 5));
+            PlantPatchId survivingId = patches.GetAt(lastIndex).Id;
+
+            patches.RemoveAt(1);
+
+            Assert.That(patches.Count, Is.EqualTo(2));
+            PlantPatchState moved = patches.GetAt(1);
+            Assert.That(moved.Id, Is.EqualTo(survivingId));
+            Assert.That(moved.FoodResourceId, Is.EqualTo(new ResourceId(3)));
+            Assert.That(moved.Position.X, Is.EqualTo(3f));
+            Assert.That(moved.Position.Y, Is.EqualTo(4f));
+            Assert.That(moved.Biomass, Is.EqualTo(7f));
+            Assert.That(moved.Capacity, Is.EqualTo(30f));
+            Assert.That(moved.GrowthRate, Is.EqualTo(.3f));
+            Assert.That(moved.Nutrition, Is.EqualTo(.8f));
+            Assert.That(moved.Defense, Is.EqualTo(.2f));
+            Assert.That(moved.Genome.Growth, Is.EqualTo(.9f));
+            Assert.That(moved.Lineage.Generation, Is.EqualTo(5));
+            Assert.That(patches.FindIndex(new ResourceId(1)), Is.EqualTo(0));
+            Assert.That(patches.FindIndex(new ResourceId(3)), Is.EqualTo(1));
+            Assert.That(patches.FindIndex(new ResourceId(2)), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void AdvanceAgeAccumulatesElapsedTimeOnAPatch()
+        {
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(new ResourceId(1), new SimVector2(0f, 0f), 1f, 10f, .1f, 1f, 0f);
+
+            Assert.That(patches.GetAt(index).Age, Is.EqualTo(0f));
+            patches.AdvanceAge(index, 1.5f);
+            patches.AdvanceAge(index, 2.5f);
+
+            Assert.That(patches.GetAt(index).Age, Is.EqualTo(4f).Within(.0001f));
+        }
+
+        [Test]
+        public void SlowestGrowerLivesExactlyTwiceAsLongAsFastestGrower()
+        {
+            var slow = new PlantGenome(0f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
+            var fast = new PlantGenome(1f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
+
+            float slowLifespan = PlantPhenotype.FromGenome(slow).LifespanSeconds;
+            float fastLifespan = PlantPhenotype.FromGenome(fast).LifespanSeconds;
+
+            Assert.That(slowLifespan, Is.EqualTo(fastLifespan * 2f).Within(.0001f));
+            Assert.That(slowLifespan, Is.EqualTo(PlantPhenotype.BaseLifespanSeconds * 1.5f).Within(.0001f));
+            Assert.That(fastLifespan, Is.EqualTo(PlantPhenotype.BaseLifespanSeconds * .75f).Within(.0001f));
+        }
+
+        [Test]
+        public void PatchIsRemovedOnTheStepItsAgeReachesItsLifespanAndNotBefore()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId site = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 5f, 10f, 0f);
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(site, new SimVector2(0f, 0f), 5f, 10f, .1f, 1f, 0f);
+            float lifespan = PlantPhenotype.FromGenome(patches.GetAt(index).Genome).LifespanSeconds;
+
+            float elapsed = 0f;
+            while (elapsed + 1f < lifespan)
+            {
+                PlantMortalitySystem.Step(patches, resources, 1f);
+                elapsed += 1f;
+                Assert.That(patches.Count, Is.EqualTo(1), $"patch died early at age {elapsed}");
+            }
+
+            float removedBiomass = PlantMortalitySystem.Step(patches, resources, 1f);
+
+            Assert.That(patches.Count, Is.EqualTo(0));
+            Assert.That(removedBiomass, Is.EqualTo(5f).Within(.0001f));
+        }
+
+        [Test]
+        public void DyingPatchClearsItsFoodProjectionAndFreesItsSite()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId site = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 5f, 10f, 0f);
+            var patches = new PlantPatchStore(1);
+            patches.Add(site, new SimVector2(0f, 0f), 5f, 10f, .1f, 1f, 0f);
+
+            PlantMortalitySystem.Step(patches, resources, 10000f);
+
+            Assert.That(patches.Count, Is.EqualTo(0));
+            Assert.That(resources.GetAt(0).IsActive, Is.False);
+            Assert.That(resources.GetAt(0).Amount, Is.EqualTo(0f).Within(.0001f));
+        }
+
+        [Test]
+        public void FastGrowingPatchDiesBeforeSlowGrowingPatchCreatedAtTheSameTime()
+        {
+            var resources = new ResourceStore(2);
+            ResourceId fastSite = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 5f, 10f, 0f);
+            ResourceId slowSite = resources.Add(ResourceKind.Food, new SimVector2(5f, 0f), 1f, 5f, 10f, 0f);
+            var patches = new PlantPatchStore(2);
+            int fast = patches.Add(fastSite, new SimVector2(0f, 0f), 5f, 10f, .1f, 1f, 0f);
+            patches.SetGenomeAndLineage(fast, new PlantGenome(1f, .5f, .5f, .5f, .5f, .5f, .5f, .5f), patches.GetAt(fast).Lineage);
+            int slow = patches.Add(slowSite, new SimVector2(5f, 0f), 5f, 10f, .1f, 1f, 0f);
+            patches.SetGenomeAndLineage(slow, new PlantGenome(0f, .5f, .5f, .5f, .5f, .5f, .5f, .5f), patches.GetAt(slow).Lineage);
+
+            int stepsUntilFirstDeath = 0;
+            while (patches.Count == 2 && stepsUntilFirstDeath < 10000)
+            {
+                PlantMortalitySystem.Step(patches, resources, 1f);
+                stepsUntilFirstDeath++;
+            }
+
+            Assert.That(patches.Count, Is.EqualTo(1));
+            Assert.That(patches.GetAt(0).Genome.Growth, Is.EqualTo(0f), "the surviving patch should be the slow grower");
+        }
+
+        [Test]
+        public void BiomassRemovedByMortalityIsReportedSoTheResidualStaysBalanced()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(42, 4);
+            var config = new SimulationConfig(
+                42, 4, defaults.Schedule, defaults.MaximumPopulation, defaults.FounderProfile,
+                cognitionEnabled: true, physiologyEnabled: true,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true, plantMortalityEnabled: true);
+            var world = new SimulationWorld(config);
+            Prototype4Scenarios.PlantBackedBaseline.ApplyTo(world);
+
+            for (int tick = 0; tick < 6000; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            SimulationStatistics stats = world.Statistics;
+            Assert.That(stats.CumulativePlantBiomassLostToMortality, Is.GreaterThan(0f), "no patch died, so this test proves nothing");
+
+            // Conservation is asserted relative to total biomass throughput rather than as a fixed
+            // absolute epsilon: the residual is float32 accumulation drift that grows with run
+            // length, and measured at ~3-6e-6 relative both with AND without mortality enabled
+            // (it is in fact larger with mortality off), so a fixed .0001 would fail on
+            // pre-existing behaviour at this tick count.
+            float throughput = stats.CumulativePlantGrowth + stats.CumulativePlantBiomassConsumed + stats.CumulativePlantBiomassLostToMortality;
+            Assert.That(throughput, Is.GreaterThan(0f));
+            Assert.That(Math.Abs(stats.PlantBiomassResidual) / throughput, Is.LessThan(1e-4f));
+        }
+
+        [Test]
+        public void PlantMortalityFlagOffLeavesTheStandardHashScenarioUnchanged()
+        {
+            var config = new SimulationConfig(
+                99,
+                2,
+                new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1),
+                founderProfile: FounderProfile.PredationVariation);
+            var world = new SimulationWorld(config);
+
+            for (int i = 0; i < 50; i++)
+            {
+                world.Step(config.FixedDeltaTime);
+            }
+
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(13626802794646021369UL));
         }
     }
 }
