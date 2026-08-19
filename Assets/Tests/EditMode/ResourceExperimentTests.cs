@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
@@ -201,9 +202,9 @@ namespace LifeSimulation.Tests.EditMode
             var worldWith = new SimulationWorld(configWithCompetition);
             Prototype4Scenarios.ConsumerDefenseCalibrationControl.ApplyTo(worldWith);
 
-            // 2 active founder Food sites + the scenario's existing 6 inactive dispersal targets.
-            Assert.That(worldWithout.PlantSites.Count, Is.EqualTo(6));
-            Assert.That(worldWith.PlantSites.Count, Is.EqualTo(8));
+            // 6 active founder Food sites + the scenario's 18 inactive dispersal targets.
+            Assert.That(worldWithout.PlantSites.Count, Is.EqualTo(18));
+            Assert.That(worldWith.PlantSites.Count, Is.EqualTo(24));
         }
 
         [Test]
@@ -440,6 +441,92 @@ namespace LifeSimulation.Tests.EditMode
                     plantCohortsEnabled: true);
                 ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.ConsumerDefenseCalibrationControl, ticks: 12000);
                 Assert.That(result.FinalStatistics.Population, Is.GreaterThan(0), $"Seed {seed} went extinct.");
+            }
+        }
+
+        [Test]
+        public void ConsumerDefenseCalibrationExposesSixActiveSitesEachWithColocatedWater()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var world = new SimulationWorld(config);
+
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+
+            int activeFood = 0;
+            int inactiveFood = 0;
+            int water = 0;
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (resource.Kind == ResourceKind.Water) water++;
+                else if (resource.IsActive) activeFood++;
+                else inactiveFood++;
+            }
+
+            Assert.That(activeFood, Is.EqualTo(6), "six spread active plant sites are what makes the calibration constraints satisfiable");
+            Assert.That(water, Is.EqualTo(6));
+            Assert.That(inactiveFood, Is.EqualTo(18), "three dispersal targets per active site");
+            Assert.That(world.Resources.Count, Is.EqualTo(30));
+
+            // Each active food site must share its position with a water source, otherwise
+            // animals tethered to water cannot reach the food it is meant to pair with.
+            for (int index = 0; index < 12; index += 2)
+            {
+                ResourceState food = world.Resources.GetAt(index);
+                ResourceState paired = world.Resources.GetAt(index + 1);
+                Assert.That(food.Kind, Is.EqualTo(ResourceKind.Food));
+                Assert.That(paired.Kind, Is.EqualTo(ResourceKind.Water));
+                Assert.That(paired.Position.X, Is.EqualTo(food.Position.X));
+                Assert.That(paired.Position.Y, Is.EqualTo(food.Position.Y));
+            }
+        }
+
+        [Test]
+        public void ConsumerDefenseCalibrationSitesAreDistinctAndInsideTheArena()
+        {
+            SimulationConfig config = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var world = new SimulationWorld(config);
+
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+
+            var seen = new List<string>();
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                Assert.That(resource.Position.X, Is.InRange(world.Arena.MinimumX, world.Arena.MaximumX));
+                Assert.That(resource.Position.Y, Is.InRange(world.Arena.MinimumY, world.Arena.MaximumY));
+
+                // Food and water deliberately share positions; only same-kind duplicates are a bug.
+                string key = $"{resource.Kind}:{resource.Position.X}:{resource.Position.Y}";
+                Assert.That(seen, Does.Not.Contain(key), $"duplicate {resource.Kind} site at index {index}");
+                seen.Add(key);
+            }
+        }
+
+        [Test]
+        public void ConsumerDefenseCalibrationModerateSurvivesPlantMortalityAcrossSeeds()
+        {
+            // Regression guard for docs/experiments/p4-calibration-unblocked-carrying-capacity-2026-08-17.md:
+            // fails against the two-site scenario, where mortality plus a 48 cap drove 22/30 seeds extinct.
+            int[] seeds = { 42, 43, 44, 45, 46 };
+            foreach (int seed in seeds)
+            {
+                SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(seed, 12);
+                var config = new SimulationConfig(
+                    seed,
+                    initialPopulation: 12,
+                    defaults.Schedule,
+                    maximumPopulation: 48,
+                    defaults.FounderProfile,
+                    cognitionEnabled: true,
+                    physiologyEnabled: true,
+                    decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                    plantCohortsEnabled: true,
+                    plantSiteCompetitionEnabled: true,
+                    plantMortalityEnabled: true);
+                ExperimentResult result = ExperimentRunner.Run(config, Prototype4Scenarios.ConsumerDefenseCalibrationModerate, ticks: 12000);
+                Assert.That(result.FinalStatistics.Population, Is.GreaterThan(0), $"Seed {seed} went extinct.");
+                Assert.That(result.FinalStatistics.HighestPlantGeneration, Is.GreaterThan(2), $"Seed {seed} froze plant turnover.");
             }
         }
 

@@ -5,131 +5,123 @@
 `CreateConsumerDefenseCalibrationScenario` builds two active plant sites against
 a population cap of 48. Carrying capacity therefore sits below the engine's
 population bound: the animal population grows exponentially while food is
-abundant, saturates the cap, and collapses together.
+abundant, saturates the cap, and collapses together. At two sites, 22 of 30
+seeds go extinct and plant turnover never starts.
 
-Measured, seeds 42-71, 12,000 ticks, everything else held identical
-(`docs/experiments/p4-calibration-unblocked-carrying-capacity-2026-08-17.md`):
+## What was measured
 
-| active plant sites | animal extinctions | min plant generations |
-| ---: | ---: | ---: |
-| 2 (as shipped) | 22/30 | 0 |
-| 4 | **0/30** | 11 |
-| 6 | 0/30 | 14 |
-| 8 | 0/30 | 13 |
+An initial site-count sweep suggested four sites sufficed. That sweep was
+confounded: its sites were successive points on a tight grid near the founders,
+so **count and spatial arrangement moved together**. A follow-up sweep separating
+the two — all arms through `ExperimentRunner`, seeds 42-71, 12,000 ticks,
+`maximumPopulation: 48`, cognition, site competition and plant mortality all
+enabled:
 
-Both calibration constraints — at least 8 plant generations, and zero animal
-extinctions across seeds 42-71 — hold simultaneously from four active sites up.
-The smallest satisfying value is **4**, and that is what this design adopts,
-following the project's derive-don't-guess convention and its preference for the
-smallest satisfying value rather than the most comfortable one.
+| layout | animal extinctions | min plant generations | mean final population |
+| --- | ---: | ---: | ---: |
+| 2 sites (as shipped) | 22/30 | 0 | 10.8 |
+| 4 sites, spread across the arena | **16/30** | 11 | 21.9 |
+| 4 sites, clustered along one edge | 0/30 | 13 | 48.0 |
+| **6 sites, spread with two central** | **0/30** | 12 | 48.0 |
+| 8 sites, clustered | 0/30 | 13 | 48.0 |
 
-This is why the earlier `BaseLifespanSeconds` sweep (8x range) and
-`maximumPopulation` sweep (3x range) both read as unsatisfiable: neither
-parameter could reach the binding constraint.
+Both count and arrangement matter. Four spread sites still lose half the seeds:
+when a patch dies, animals in that corner of the arena cannot reach another one.
+Four clustered sites survive because every alternative is close by.
 
 ## Design
 
-Double the active site count from two to four, preserving every other property
-of the scenario: per-site amount and capacity (24), regeneration (12 for food,
-1.5 for water), interaction radius (1.5), co-located water at each active site,
-the plant genome, and the ratio of three inactive dispersal targets per active
-site.
+Six active sites, spread, each with co-located water and three inactive
+dispersal targets. Six spread sites are chosen over four clustered ones because
+clustering satisfies the constraints only by collapsing the spatial structure
+the prototype exists to exercise — with every site adjacent there is no travel
+decision, no local depletion, and nothing for later migration work to build on.
 
 ### Site layout
 
-Active sites form a rectangle at ±12 / ±8-to-12, with the two existing sites
-kept first and at their current coordinates so the diff stays minimal and the
-founder placement is unchanged:
+The four corner sites keep the two original coordinates plus their mirror
+positions. The two central sites at `(-1, 2)` and `(-1, -18)` are what make the
+spread arrangement survivable: they bridge the corners, so a creature whose
+patch dies has a reachable alternative.
 
 | # | active site | co-located water | dispersal targets |
 | --- | --- | --- | --- |
-| 0 | `(-12, -8)` | `(-12, -8)` | `(-20, -8)`, `(-12, -20)`, `(-4, -8)` |
-| 1 | `(10, 12)` | `(10, 12)` | `(18, 12)`, `(10, 22)`, `(2, 12)` |
-| 2 | `(10, -8)` | `(10, -8)` | `(18, -8)`, `(10, -18)`, `(2, -8)` |
-| 3 | `(-12, 12)` | `(-12, 12)` | `(-20, 12)`, `(-12, 22)`, `(-4, 12)` |
+| 0 | `(-12, -8)` | same | `(-20, -8)`, `(-12, 0)`, `(-8, -4)` |
+| 1 | `(10, 12)` | same | `(2, 12)`, `(10, 20)`, `(14, 16)` |
+| 2 | `(10, -8)` | same | `(2, -8)`, `(10, 0)`, `(14, -4)` |
+| 3 | `(-12, 12)` | same | `(-20, 12)`, `(-12, 20)`, `(-8, 16)` |
+| 4 | `(-1, 2)` | same | `(-9, 2)`, `(-1, 10)`, `(3, 6)` |
+| 5 | `(-1, -18)` | same | `(-9, -18)`, `(-1, -10)`, `(3, -14)` |
 
-Sites 0 and 1 and their six targets are exactly the current scenario. Sites 2
-and 3 replicate the same ±8-offset dispersal pattern.
+Dispersal targets follow a fixed rule per active site: `(x-8, y)`, `(x, y+8)`,
+`(x+4, y+4)`. All thirty positions are distinct within their kind, and all lie
+inside the fixed arena bounds `(-25, 25)`.
 
-All twenty positions are distinct, and every one lies inside the fixed arena
-bounds `(-25, 25)` on both axes — the furthest are `(-12, 22)`, `(10, 22)` and
-`(10, -18)`.
+These are the exact coordinates the measured arm used. They are transcribed
+rather than re-derived — substituting a "equivalent-looking" layout for the
+measured one is what produced the 16/30 failure above.
 
 ### Resource ordering
 
-Emission order is: the four food/water pairs first (indices 0-7, food then water
-per site), then the twelve inactive dispersal targets (indices 8-19). Total
-resource count rises from 10 to 20.
+Six food/water pairs first (indices 0-11, food then water per site), then the
+eighteen inactive dispersal targets (indices 12-29). Total resource count rises
+from 10 to 30. Pairing food and water at consecutive indices preserves the
+invariant asserted by
+`Prototype4DefenseCalibrationChangesOnlyPlantDefenseBetweenPairedConditions`.
 
-Pairing food and water at consecutive indices preserves the invariant asserted
-by `Prototype4DefenseCalibrationChangesOnlyPlantDefenseBetweenPairedConditions`,
-which checks that resources 0/1 and 2/3 share a position.
+Per-site properties are unchanged: amount and capacity 24, regeneration 12 for
+food and 1.5 for water, interaction radius 1.5, same plant genome.
 
 ### Scope
 
 Both `ConsumerDefenseCalibrationControl` (defense 0) and
-`ConsumerDefenseCalibrationModerate` (defense 0.3) change together, since both
-are produced by the same factory and the paired-experiment tests require them to
-differ only in plant defense.
-
-No other scenario is touched. `PlantBackedBaseline`, `DefendedPlants`,
-`UndefendedPlants` and `WatchableStarterHabitat` keep their current layouts.
+`ConsumerDefenseCalibrationModerate` (defense 0.3) change together — they share
+the factory, and the paired-experiment tests require them to differ only in
+plant defense. No other scenario is touched.
 
 ## What this is not
 
-This is a **scenario-data change**, not a simulation-behavior change. No system,
-no decision path, and no `SimulationConfig` flag is modified, so the project's
-flag-gating convention does not apply — there is no behavior to gate. Runs of
-every other scenario are bit-identical, and the standard hash-regression
-baseline (a `PredationVariation`/`Legacy` scenario) is untouched.
+A **scenario-data change**, not a simulation-behavior change. No system, no
+decision path, and no `SimulationConfig` flag is modified, so the flag-gating
+convention does not apply — there is no behavior to gate. Every other scenario
+is bit-identical and the standard `PredationVariation`/`Legacy` hash baseline is
+untouched.
 
-Reproduction is already density-dependent
-(`ReproductionSystem.CanReproduce` gates on
-`needs.Energy >= phenotype.EnergyCapacity * 0.7f`); nothing about that changes.
-The gate simply cannot prevent overshoot when carrying capacity is below the
-population cap, which is what this design fixes.
+Reproduction is already density-dependent (`ReproductionSystem.CanReproduce`
+gates on `needs.Energy >= phenotype.EnergyCapacity * 0.7f`). That is unchanged.
+A level gate simply cannot prevent overshoot when carrying capacity sits below
+the population cap.
 
 ## Test impact
 
-1. `ResourceExperimentTests.PlantSiteCompetition...` asserts
-   `PlantSites.Count` of **6** without competition and **8** with. With four
-   active sites and twelve dispersal targets these become **12** and **16**. The
-   comment above them ("2 active founder Food sites + the scenario's existing 6
-   inactive dispersal targets") must be updated to say four and twelve.
-2. `Prototype4DefenseCalibrationChangesOnlyPlantDefenseBetweenPairedConditions`
-   passes unchanged — it compares control against moderate, both of which move
-   together, and its positional assertions cover indices 0-3 which remain
-   food/water pairs.
-3. `PlantPatchGrowthRateMatchesCorrectedFourTimesConversion` passes unchanged —
-   it reads `Plants.GetAt(0).GrowthRate`, which depends on
-   `InitialPopulation`, not on site count.
-4. `ConsumerDefenseCalibrationControlSustainsNonzeroPopulationAcrossAllSeeds`
-   passes unchanged and more robustly: it asserts nonzero final population for
-   seeds 42-46, which more food can only help.
+1. `PlantSiteCompetition...` asserts `PlantSites.Count` of 6 without competition
+   and 8 with; these become **18** and **24** (18 dispersal targets, plus 6
+   active sites when competition is on).
+2. `Prototype4DefenseCalibrationChangesOnlyPlantDefenseBetweenPairedConditions`,
+   `PlantPatchGrowthRateMatchesCorrectedFourTimesConversion`, and
+   `ConsumerDefenseCalibrationControlSustainsNonzeroPopulationAcrossAllSeeds`
+   all pass unchanged.
 
 ## Testing
 
 1. Update the two `PlantSites.Count` assertions and their comment.
-2. New test: the calibration scenario exposes four active food resources, four
-   water resources co-located with them, and twelve inactive food resources, for
-   twenty total.
-3. New test: every resource position in the scenario is distinct and lies within
-   the arena bounds.
-4. Regression guard for this finding: `ConsumerDefenseCalibrationModerate` at
-   `maximumPopulation: 48`, plant mortality and site competition enabled,
-   sustains a nonzero final population across seeds 42-46 at 12,000 ticks. This
-   fails against the two-site scenario and passes after. Five seeds rather than
-   thirty keeps suite runtime acceptable; the full thirty-seed result is recorded
-   in the experiment document.
-5. Full existing suite stays green (`cd tools/HeadlessTests && dotnet test`),
-   currently 351 tests.
+2. Scenario composition: six active food resources, six co-located water
+   resources, eighteen inactive food resources, thirty total, with each
+   food/water pair sharing a position.
+3. Every resource position distinct within its kind and inside arena bounds.
+4. Regression guard: `ConsumerDefenseCalibrationModerate` at
+   `maximumPopulation: 48` with mortality and site competition enabled sustains
+   a nonzero final population and more than two plant generations across seeds
+   42-46 at 12,000 ticks. This fails against both the two-site and the
+   four-spread-site layouts.
+5. Full suite green: 354 tests.
 
-## Follow-on, explicitly out of scope
+## Follow-on, out of scope
 
-- Re-deriving `BaseLifespanSeconds` against the restored constraints. The
-  existing lifespan table was measured at two sites and does not transfer.
-- Re-running the coevolution experiment. Note the caveat recorded in the
-  experiment document: at four or more sites mean energy exceeds 93, so grazing
-  pressure is low and a null coevolution result could indicate an absent
-  selection gradient rather than absent coevolution. That run should report
-  realized grazing pressure.
+- Re-deriving `BaseLifespanSeconds`. The existing table was measured at two
+  sites and does not transfer.
+- Re-running the coevolution experiment. Caveat carried forward: at six sites
+  the population pins at the cap with mean energy above 90, so grazing pressure
+  is low and a null coevolution result could indicate an absent selection
+  gradient rather than absent coevolution. That run should report realized
+  grazing pressure.

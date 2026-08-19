@@ -1,5 +1,14 @@
 # P4 Calibration Unblocked — the Scenario Was Too Small — 2026-08-17
 
+> **CORRECTED 2026-08-17.** The original sweep below varied site count and site
+> *geometry* together — its "sites" were successive points on a tight grid near
+> the founders — so attributing the effect to count alone was unjustified. A
+> follow-up sweep separating the two, run through `ExperimentRunner` to match the
+> regression test, gives: 4 sites **spread** across the arena 16/30 extinct; 4
+> sites **clustered** 0/30; 6 sites spread 0/30; 8 clustered 0/30. Both count and
+> arrangement matter. The shipped scenario uses **6 spread** sites, not 4. The
+> two-site collapse and the overshoot mechanism are unaffected.
+
 Third and final entry in the chain
 `p4-coevolution-null` → `p4-plant-mortality-calibration-blocked` →
 `p4-memory-root-cause-retracted` → this document.

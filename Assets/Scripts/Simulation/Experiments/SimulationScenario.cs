@@ -257,6 +257,23 @@ namespace LifeSimulation.Simulation.Experiments
         // 12 is the smallest doubling-search candidate starting at 1.5f that
         // produces a nonzero final population in all 5 seeds (42-46) of
         // ConsumerDefenseCalibrationControl at 12 founders / 48 population cap / 12,000 ticks.
+        // Active site count raised from 2 to 6 on 2026-08-17
+        // (docs/experiments/p4-calibration-unblocked-carrying-capacity-2026-08-17.md).
+        // At 2 active sites, carrying capacity sits below the 48 population cap, so the
+        // population grows to the cap and collapses: 22/30 seeds extinct, 0 plant generations.
+        //
+        // Both site count AND spatial arrangement matter, measured over seeds 42-71 through
+        // ExperimentRunner with mortality and site competition enabled:
+        //   4 sites spread across the arena -> 16/30 extinct  (corners cannot reach each other)
+        //   4 sites clustered along one edge ->  0/30 extinct
+        //   6 sites spread with two central  ->  0/30 extinct, 12 plant generations
+        //   8 sites clustered                ->  0/30 extinct
+        // Six spread sites are used rather than four clustered ones: clustering satisfies the
+        // constraints but collapses the spatial structure the prototype exists to exercise. The
+        // two central sites at (-1, 2) and (-1, -18) bridge the corner sites, which is what makes
+        // the spread arrangement survivable when a patch dies.
+        //
+        // Dispersal targets are placed per active site at (x-8, y), (x, y+8) and (x+4, y+4).
         private static SimulationScenario CreateConsumerDefenseCalibrationScenario(string id, float defense)
         {
             PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);
@@ -266,12 +283,32 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, 24f, 24f, 1.5f),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, 12f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, -8f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, -8f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, 12f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, 12f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-1f, 2f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-1f, 2f), 1.5f, 24f, 24f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-1f, -18f), 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-1f, -18f), 1.5f, 24f, 24f, 1.5f),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(-20f, -8f), 1.5f, 0f, 24f, 0f, isActive: false),
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -20f), 1.5f, 0f, 24f, 0f, isActive: false),
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(-4f, -8f), 1.5f, 0f, 24f, 0f, isActive: false),
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, 12f), 1.5f, 0f, 24f, 0f, isActive: false),
-                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 22f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, 0f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-8f, -4f), 1.5f, 0f, 24f, 0f, isActive: false),
                 new ResourceDefinition(ResourceKind.Food, new SimVector2(2f, 12f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 20f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(14f, 16f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(2f, -8f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(10f, 0f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(14f, -4f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-20f, 12f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, 20f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-8f, 16f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-9f, 2f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-1f, 10f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(3f, 6f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-9f, -18f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-1f, -10f), 1.5f, 0f, 24f, 0f, isActive: false),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(3f, -14f), 1.5f, 0f, 24f, 0f, isActive: false),
             }, founderPlacement: new SimVector2(-12f, -8f));
         }
     }
