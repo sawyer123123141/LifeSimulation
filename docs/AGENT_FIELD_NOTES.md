@@ -59,8 +59,9 @@ to you within a week. Names below are stable.
   hotkeys (`N`, `E`), the creature inspector. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
 - `Assets/Editor/PrototypeBatchEntry.cs` — batch experiment entry points.
-- `Assets/Tests/EditMode/*.cs` — 354 tests. `ResourceExperimentTests.cs` holds
-  the scenario/calibration tests; `CoreSimulationTests.cs` is the big one.
+- `Assets/Tests/EditMode/*.cs` — 363 tests. `ResourceExperimentTests.cs` holds
+  the scenario/calibration tests; `CoreSimulationTests.cs` is the big one;
+  `LivenessTests.cs` enforces the §4 gene ledger by perturbation.
 - `tools/HeadlessTests/` — `dotnet test` runs the EditMode tests headlessly.
   This is how you run tests; Unity is only needed for Play mode.
 
@@ -93,7 +94,8 @@ Finding a defect is not a mandate to repair it. Ask, in order:
    design half-migrated.
 4. **Is it actually reachable?** A defect in code that never executes is not
    costing anything today. It is worth *recording*, not necessarily fixing. Six
-   mechanisms in this repo are written, tested, and never reached (§4).
+   mechanisms in this repo are written, tested, and never reached (§4). Two of
+   those were deleted on 2026-08-18; check §4, do not assume the count.
 5. **Would fixing it perturb a phase boundary?** Terrain generation (P6) is
    explicitly last, gated behind P4 and P5. Do not "improve" things it will
    replace.
@@ -150,9 +152,7 @@ Always pin liveness against `CreateFullEcosystemDefaults`, which exists for this
 |---|---|
 | `MemorySystem.ObservePlace` | Only writer of place-memory slots. Tests only. |
 | `MemorySystem.TickPlaceMemoryDecay` | No production caller. |
-| `DecisionSystem.PreferRememberedResource` | No production caller. |
-| `PlantPatchState.SeedReserve` | Allocated, never written or read. |
-| `Genome.Commitment` | Inherited, mutated, hashed, aggregated into statistics, exposed as an `ExperimentMetric` — and read by **zero** behavior code. `CommitmentBonus` takes `Persistence` instead. **Kept deliberately** as the drift-control channel that validates the bootstrap pipeline; confirmed dead by perturbation under FULL ecosystem mode and pinned by `LivenessTests`. Do not wire it. |
+| `Genome.NeutralMarker` | Renamed from `Genome.Commitment` on 2026-08-18: the old name collided with the unrelated `ForagingEconomics.CommitmentBonus` and `SimulationConfig.CommitmentStrength` foraging machinery, which takes `Persistence`. That collision is exactly what led the 2026-08-17 audit to assume the gene fed the bonus. Inherited, mutated, hashed, aggregated into statistics, exposed as `ExperimentMetric.NeutralMarker` — and read by **zero** behavior code. **Kept deliberately** as the drift-control channel that validates the bootstrap pipeline; confirmed dead by perturbation under FULL ecosystem mode and pinned by `LivenessTests`. Do not wire it. |
 
 **Executes but always on empty data:** `TryScoreBestRememberedPlace`,
 `RecordFailedPlaceSearch` — both depend on place-memory slots, which are never
@@ -273,6 +273,14 @@ one failure for the other, the same shape as the lifespan and population-cap
 sweeps that were declared "unsatisfiable" in 2026-08-17. When every arm fails in
 alternating directions, the lever is coupled and the fix is a scenario redesign,
 not another sweep.
+
+**2026-08-18 — A name collision is a defect when it makes a wrong belief
+plausible.** `Genome.Commitment` sat beside `ForagingEconomics.CommitmentBonus`
+and `SimulationConfig.CommitmentStrength`, all unrelated — the bonus takes
+`Persistence`. An audit read the shared word and concluded the gene fed the
+bonus. Renaming it `NeutralMarker` cost nothing and removes the trap. When two
+unrelated concepts share a name in this codebase, treat that as worth fixing
+rather than worth a comment.
 
 **2026-08-18 — Liveness verdicts are scoped to the scenario, and a narrow
 scenario manufactures false deaths.** `RiskAversion` reads dead under P4 defaults

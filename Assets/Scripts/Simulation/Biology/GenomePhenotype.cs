@@ -27,7 +27,7 @@ namespace LifeSimulation.Simulation.Biology
             float urgencyExponent = 0.5f,
             float travelSensitivity = 0.5f,
             float riskAversion = 0.5f,
-            float commitment = 0.5f,
+            float neutralMarker = 0.5f,
             float persistence = 0.5f)
         {
             BodySize = Clamp01(bodySize);
@@ -52,7 +52,7 @@ namespace LifeSimulation.Simulation.Biology
             UrgencyExponent = Clamp01(urgencyExponent);
             TravelSensitivity = Clamp01(travelSensitivity);
             RiskAversion = Clamp01(riskAversion);
-            Commitment = Clamp01(commitment);
+            NeutralMarker = Clamp01(neutralMarker);
             Persistence = Clamp01(persistence);
         }
 
@@ -80,7 +80,25 @@ namespace LifeSimulation.Simulation.Biology
         public float UrgencyExponent { get; }
         public float TravelSensitivity { get; }
         public float RiskAversion { get; }
-        public float Commitment { get; }
+        /// <summary>
+        /// Deliberately inert drift-control locus. Inherited, mutated, hashed and reported as
+        /// <c>ExperimentMetric.NeutralMarker</c>, and read by <b>no behavior system at all</b>.
+        ///
+        /// <para>This is not an oversight — do not wire it. Selection cannot act on it, so its
+        /// measured change in any paired experiment is pure drift by construction, which makes it
+        /// the negative control that shows the bootstrap pipeline does not manufacture false
+        /// positives (it returned effect +0.020 with a tight interval around zero on
+        /// 2026-08-17). Wiring it destroys that control and invalidates every experiment that
+        /// leaned on it.</para>
+        ///
+        /// <para>Formerly named <c>Commitment</c>, which collided with
+        /// <c>ForagingEconomics.CommitmentBonus</c> and <c>SimulationConfig.CommitmentStrength</c>
+        /// — unrelated foraging machinery that takes <see cref="Persistence"/>. That collision is
+        /// what led an audit to assume this gene fed the bonus.</para>
+        ///
+        /// <para>Pinned inert by <c>LivenessTests.NeutralMarkerReachesNoBehaviorUnderTheWidestConfiguration</c>.</para>
+        /// </summary>
+        public float NeutralMarker { get; }
         public float Persistence { get; }
 
         public Genome WithBodySize(float value)
@@ -108,7 +126,7 @@ namespace LifeSimulation.Simulation.Biology
                 UrgencyExponent,
                 TravelSensitivity,
                 RiskAversion,
-                Commitment,
+                NeutralMarker,
                 Persistence);
         }
 
@@ -123,7 +141,7 @@ namespace LifeSimulation.Simulation.Biology
             nameof(MemoryCapacity), nameof(MemoryRetention), nameof(LearningRate), nameof(Exploration),
             nameof(TemperatureTolerance), nameof(FertilityInvestment), nameof(LifespanTendency),
             nameof(UrgencyExponent), nameof(TravelSensitivity), nameof(RiskAversion),
-            nameof(Commitment), nameof(Persistence),
+            nameof(NeutralMarker), nameof(Persistence),
         };
 
         /// <summary>Trait name for an index, matching <see cref="ToTraits"/> ordering.</summary>
@@ -152,7 +170,7 @@ namespace LifeSimulation.Simulation.Biology
                 MemoryCapacity, MemoryRetention, LearningRate, Exploration,
                 TemperatureTolerance, FertilityInvestment, LifespanTendency,
                 UrgencyExponent, TravelSensitivity, RiskAversion,
-                Commitment, Persistence,
+                NeutralMarker, Persistence,
             };
         }
 

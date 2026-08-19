@@ -449,7 +449,7 @@ namespace LifeSimulation.EditorTools
 
             using (var writer = new StreamWriter(outputPath, append: false))
             {
-                writer.WriteLine("scenario,seed,ticks,population,births,deaths,travel_sensitivity,urgency_exponent,risk_aversion,commitment,left_food_target_decisions,right_food_target_decisions,mean_food_target_distance,cumulative_food,cumulative_water,state_hash");
+                writer.WriteLine("scenario,seed,ticks,population,births,deaths,travel_sensitivity,urgency_exponent,risk_aversion,neutral_marker,left_food_target_decisions,right_food_target_decisions,mean_food_target_distance,cumulative_food,cumulative_water,state_hash");
                 for (int offset = 0; offset < options.SeedCount; offset++)
                 {
                     int seed = options.FirstSeed + offset;
@@ -460,7 +460,7 @@ namespace LifeSimulation.EditorTools
                         ExperimentResult result = ExperimentRunner.Run(config, scenarios[scenarioIndex], options.Ticks);
                         results[scenarioIndex][offset] = result;
                         SimulationStatistics stats = result.FinalStatistics;
-                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10},{11},{12:F4},{13:F4},{14:F4},{15}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.MeanTravelSensitivityGene, stats.MeanUrgencyExponentGene, stats.MeanRiskAversionGene, stats.MeanCommitmentGene, result.LeftFoodTargetDecisions, result.RightFoodTargetDecisions, result.MeanFoodTargetDistance, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
+                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6:F4},{7:F4},{8:F4},{9:F4},{10},{11},{12:F4},{13:F4},{14:F4},{15}", result.ScenarioId, result.WorldSeed, result.CompletedTicks, stats.Population, stats.BirthCount, stats.DeathCount, stats.MeanTravelSensitivityGene, stats.MeanUrgencyExponentGene, stats.MeanRiskAversionGene, stats.MeanNeutralMarkerGene, result.LeftFoodTargetDecisions, result.RightFoodTargetDecisions, result.MeanFoodTargetDistance, stats.CumulativeFoodConsumed, stats.CumulativeWaterConsumed, result.FinalStateHash));
                     }
                 }
             }

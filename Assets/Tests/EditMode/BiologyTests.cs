@@ -177,7 +177,7 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(child.UrgencyExponent, Is.EqualTo(.80f).Within(.0001f));
             Assert.That(child.TravelSensitivity, Is.EqualTo(.79f).Within(.0001f));
             Assert.That(child.RiskAversion, Is.EqualTo(.78f).Within(.0001f));
-            Assert.That(child.Commitment, Is.EqualTo(.77f).Within(.0001f));
+            Assert.That(child.NeutralMarker, Is.EqualTo(.77f).Within(.0001f));
             Assert.That(child.Persistence, Is.EqualTo(.76f).Within(.0001f));
         }
 

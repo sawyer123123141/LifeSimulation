@@ -154,7 +154,7 @@ namespace LifeSimulation.Simulation.Core
                 urgencyExponent: FounderGene(founderOrdinal, 20, standardDeviation),
                 travelSensitivity: FounderGene(founderOrdinal, 22, standardDeviation),
                 riskAversion: FounderGene(founderOrdinal, 24, standardDeviation),
-                commitment: FounderGene(founderOrdinal, 26, standardDeviation));
+                neutralMarker: FounderGene(founderOrdinal, 26, standardDeviation));
         }
 
         private float FounderGene(long founderOrdinal, int purpose, float standardDeviation)
@@ -356,7 +356,7 @@ namespace LifeSimulation.Simulation.Core
         /// <see cref="ComputeStateHash"/>, because that hash includes the genome directly; it moves
         /// this hash only if the gene actually influenced something. A gene whose perturbation
         /// leaves this hash untouched over a long run has no path to behavior, which is precisely
-        /// the <c>Commitment</c> shape that a caller-search cannot detect.
+        /// the <c>NeutralMarker</c> shape that a caller-search cannot detect.
         ///
         /// Deliberately excludes <c>LivenessRecorder</c> counters, which must never affect any hash.
         /// </summary>
@@ -471,7 +471,7 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, genome.UrgencyExponent);
                 hash = HashFloat(hash, genome.TravelSensitivity);
                 hash = HashFloat(hash, genome.RiskAversion);
-                hash = HashFloat(hash, genome.Commitment);
+                hash = HashFloat(hash, genome.NeutralMarker);
                 hash = HashFloat(hash, genome.Persistence);
 
                 CreatureNeeds needs = Creatures.GetNeedsAt(index);
@@ -1549,7 +1549,7 @@ namespace LifeSimulation.Simulation.Core
             float urgencyExponentTotal = 0f;
             float travelSensitivityTotal = 0f;
             float riskAversionTotal = 0f;
-            float commitmentTotal = 0f;
+            float neutralMarkerTotal = 0f;
             float attackTotal = 0f;
             float defenseTotal = 0f;
             float aggressionTotal = 0f;
@@ -1579,7 +1579,7 @@ namespace LifeSimulation.Simulation.Core
                 urgencyExponentTotal += genome.UrgencyExponent;
                 travelSensitivityTotal += genome.TravelSensitivity;
                 riskAversionTotal += genome.RiskAversion;
-                commitmentTotal += genome.Commitment;
+                neutralMarkerTotal += genome.NeutralMarker;
                 attackTotal += genome.Attack;
                 defenseTotal += genome.Defense;
                 aggressionTotal += genome.Aggression;
@@ -1648,7 +1648,7 @@ namespace LifeSimulation.Simulation.Core
                 urgencyExponentTotal * reciprocalPopulation,
                 travelSensitivityTotal * reciprocalPopulation,
                 riskAversionTotal * reciprocalPopulation,
-                commitmentTotal * reciprocalPopulation,
+                neutralMarkerTotal * reciprocalPopulation,
                 _starvationDeathCount,
                 _dehydrationDeathCount,
                 _ageDeathCount,

@@ -4,7 +4,7 @@ namespace LifeSimulation.Simulation.Diagnostics
 {
     /// <summary>
     /// Mechanisms whose liveness is tracked at runtime. Entries are code paths, not genes:
-    /// a gene with no consumption site anywhere (the <c>Commitment</c> shape) has no probe here
+    /// a gene with no consumption site anywhere (the <c>NeutralMarker</c> shape) has no probe here
     /// by construction, which is why <see cref="GeneLivenessAnalysis"/> and not this recorder is
     /// the authority on whether a gene reaches behavior.
     /// </summary>
@@ -16,10 +16,9 @@ namespace LifeSimulation.Simulation.Diagnostics
         FailedPlaceSearch = 3,
         CommitmentBonus = 4,
         ShouldAbandon = 5,
-        PreferRememberedResource = 6,
-        PlantDefenseDeterrence = 7,
-        LearnedResourceOutcome = 8,
-        ThreatAvoidance = 9,
+        PlantDefenseDeterrence = 6,
+        LearnedResourceOutcome = 7,
+        ThreatAvoidance = 8,
     }
 
     /// <summary>

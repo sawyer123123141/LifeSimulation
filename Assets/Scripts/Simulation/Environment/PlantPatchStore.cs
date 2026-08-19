@@ -17,7 +17,6 @@ namespace LifeSimulation.Simulation.Environment
         private PlantGenome[] _genomes;
         private PlantLineage[] _lineages;
         private float[] _ages;
-        private float[] _seedReserves;
         private float[] _reproductionCooldowns;
         private int _nextId = 1;
 
@@ -35,7 +34,6 @@ namespace LifeSimulation.Simulation.Environment
             _genomes = new PlantGenome[capacity];
             _lineages = new PlantLineage[capacity];
             _ages = new float[capacity];
-            _seedReserves = new float[capacity];
             _reproductionCooldowns = new float[capacity];
         }
 
@@ -65,7 +63,7 @@ namespace LifeSimulation.Simulation.Environment
 
         public PlantPatchState GetAt(int index)
         {
-            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _seedReserves[index], _reproductionCooldowns[index]);
+            return new PlantPatchState(_ids[index], _foodResourceIds[index], _positions[index], _biomass[index], _capacities[index], _growthRates[index], _nutrition[index], _defense[index], _genomes[index], _lineages[index], _ages[index], _reproductionCooldowns[index]);
         }
 
         public void SetReproductionCooldown(int index, float value)
@@ -140,13 +138,11 @@ namespace LifeSimulation.Simulation.Environment
                 _genomes[index] = _genomes[last];
                 _lineages[index] = _lineages[last];
                 _ages[index] = _ages[last];
-                _seedReserves[index] = _seedReserves[last];
                 _reproductionCooldowns[index] = _reproductionCooldowns[last];
             }
 
             _biomass[last] = 0f;
             _ages[last] = 0f;
-            _seedReserves[last] = 0f;
             _reproductionCooldowns[last] = 0f;
             Count--;
         }
@@ -166,7 +162,6 @@ namespace LifeSimulation.Simulation.Environment
             Array.Resize(ref _genomes, capacity);
             Array.Resize(ref _lineages, capacity);
             Array.Resize(ref _ages, capacity);
-            Array.Resize(ref _seedReserves, capacity);
             Array.Resize(ref _reproductionCooldowns, capacity);
         }
     }

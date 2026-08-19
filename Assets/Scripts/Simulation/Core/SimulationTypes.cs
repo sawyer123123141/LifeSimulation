@@ -93,7 +93,7 @@ namespace LifeSimulation.Simulation.Core
             float meanUrgencyExponentGene = 0f,
             float meanTravelSensitivityGene = 0f,
             float meanRiskAversionGene = 0f,
-            float meanCommitmentGene = 0f,
+            float meanNeutralMarkerGene = 0f,
             int starvationDeathCount = 0,
             int dehydrationDeathCount = 0,
             int ageDeathCount = 0,
@@ -148,7 +148,7 @@ namespace LifeSimulation.Simulation.Core
             MeanUrgencyExponentGene = meanUrgencyExponentGene;
             MeanTravelSensitivityGene = meanTravelSensitivityGene;
             MeanRiskAversionGene = meanRiskAversionGene;
-            MeanCommitmentGene = meanCommitmentGene;
+            MeanNeutralMarkerGene = meanNeutralMarkerGene;
             StarvationDeathCount = starvationDeathCount;
             DehydrationDeathCount = dehydrationDeathCount;
             AgeDeathCount = ageDeathCount;
@@ -204,7 +204,7 @@ namespace LifeSimulation.Simulation.Core
         public float MeanUrgencyExponentGene { get; }
         public float MeanTravelSensitivityGene { get; }
         public float MeanRiskAversionGene { get; }
-        public float MeanCommitmentGene { get; }
+        public float MeanNeutralMarkerGene { get; }
         public int StarvationDeathCount { get; }
         public int DehydrationDeathCount { get; }
         public int AgeDeathCount { get; }

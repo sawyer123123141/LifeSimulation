@@ -108,7 +108,7 @@ namespace LifeSimulation.Tests.EditMode
             ulong behaviorBefore = world.ComputeBehaviorHash();
             ulong stateBefore = world.ComputeStateHash();
 
-            // Commitment is inert, so overwriting it must move the state hash and nothing else.
+            // NeutralMarker is inert, so overwriting it must move the state hash and nothing else.
             world.OverwriteTraitForAllCreatures(22, 0.123f);
 
             Assert.That(world.ComputeBehaviorHash(), Is.EqualTo(behaviorBefore));
@@ -157,21 +157,21 @@ namespace LifeSimulation.Tests.EditMode
         // ---- The ledger itself ------------------------------------------------------------
 
         [Test]
-        public void CommitmentReachesNoBehaviorUnderTheWidestConfiguration()
+        public void NeutralMarkerReachesNoBehaviorUnderTheWidestConfiguration()
         {
-            // Ledger entry: Genome.Commitment is inherited, mutated, hashed and reported as an
+            // Ledger entry: Genome.NeutralMarker is inherited, mutated, hashed and reported as an
             // ExperimentMetric while no behavior system reads it. It is retained deliberately as a
             // drift-control channel: the 2026-08-17 coevolution run used its inertness to show the
             // bootstrap pipeline does not manufacture false positives. That argument only holds
             // while it stays inert, which is what this test pins.
             //
-            // If this fails, someone wired Commitment to behavior. That invalidates its use as a
+            // If this fails, someone wired NeutralMarker to behavior. That invalidates its use as a
             // placebo in every paired experiment, and those results must be re-read.
-            GeneLivenessResult commitment = AnalyzeFullEcosystem()[22];
+            GeneLivenessResult neutralMarker = AnalyzeFullEcosystem()[22];
 
-            Assert.That(commitment.TraitName, Is.EqualTo(nameof(Genome.Commitment)));
-            Assert.That(commitment.ReachesBehavior, Is.False,
-                "Commitment is documented as the inert drift-control channel but now reaches behavior.");
+            Assert.That(neutralMarker.TraitName, Is.EqualTo(nameof(Genome.NeutralMarker)));
+            Assert.That(neutralMarker.ReachesBehavior, Is.False,
+                "NeutralMarker is documented as the inert drift-control channel but now reaches behavior.");
         }
 
         [Test]
@@ -189,7 +189,7 @@ namespace LifeSimulation.Tests.EditMode
                 .Select(result => result.TraitName)
                 .ToList();
 
-            Assert.That(dead, Is.EqualTo(new[] { nameof(Genome.Commitment) }),
+            Assert.That(dead, Is.EqualTo(new[] { nameof(Genome.NeutralMarker) }),
                 $"Gene liveness changed.\n{GeneLivenessAnalysis.Report(results)}");
         }
 

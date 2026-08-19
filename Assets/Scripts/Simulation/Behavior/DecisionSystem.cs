@@ -781,38 +781,6 @@ namespace LifeSimulation.Simulation.Behavior
             return Decide(needs, phenotype, food, water, out _);
         }
 
-        public static CreatureDecision PreferRememberedResource(
-            CreatureNeeds needs,
-            Phenotype phenotype,
-            MemoryState memory,
-            CreatureDecision currentDecision,
-            out SimVector2 rememberedTarget)
-        {
-            rememberedTarget = default;
-            if (currentDecision.Action != CreatureAction.Wander)
-            {
-                return currentDecision;
-            }
-
-            float foodValue = KnownOutcomeOrCuriosity(memory.FoodOutcomeValue, memory.FoodExperienceCount, phenotype.Exploration);
-            float waterValue = KnownOutcomeOrCuriosity(memory.WaterOutcomeValue, memory.WaterExperienceCount, phenotype.Exploration);
-            float foodScore = Urgency(needs.Energy, phenotype.EnergyCapacity) * memory.FoodConfidence * foodValue;
-            float waterScore = Urgency(needs.Hydration, phenotype.HydrationCapacity) * memory.WaterConfidence * waterValue;
-            if (Math.Max(foodScore, waterScore) < MinimumUrgencyToSeekResource)
-            {
-                return currentDecision;
-            }
-
-            if (waterScore > foodScore)
-            {
-                rememberedTarget = memory.WaterPosition;
-                return new CreatureDecision(CreatureAction.SeekWater, -1, waterScore);
-            }
-
-            rememberedTarget = memory.FoodPosition;
-            return new CreatureDecision(CreatureAction.SeekFood, -1, foodScore);
-        }
-
         public static CreatureDecision DecideFromLearnedOutcomes(
             CreatureNeeds needs,
             Phenotype phenotype,

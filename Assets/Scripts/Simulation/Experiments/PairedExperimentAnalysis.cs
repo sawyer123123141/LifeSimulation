@@ -21,7 +21,7 @@ namespace LifeSimulation.Simulation.Experiments
         UrgencyExponent = 12,
         TravelSensitivity = 13,
         RiskAversion = 14,
-        Commitment = 15,
+        NeutralMarker = 15,
         PlantDefense = 16,
         RealizedGrazingPressure = 17,
     }
@@ -183,8 +183,8 @@ namespace LifeSimulation.Simulation.Experiments
                     return result.FinalStatistics.MeanTravelSensitivityGene;
                 case ExperimentMetric.RiskAversion:
                     return result.FinalStatistics.MeanRiskAversionGene;
-                case ExperimentMetric.Commitment:
-                    return result.FinalStatistics.MeanCommitmentGene;
+                case ExperimentMetric.NeutralMarker:
+                    return result.FinalStatistics.MeanNeutralMarkerGene;
                 case ExperimentMetric.PlantDefense:
                     return result.FinalStatistics.MeanPlantDefenseGene;
                 case ExperimentMetric.RealizedGrazingPressure:
