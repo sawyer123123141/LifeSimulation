@@ -156,6 +156,10 @@ Do not describe work as complete, verified, or passing unless you actually ran i
 
 Read these before non-trivial work:
 
+- `docs/AGENT_FIELD_NOTES.md` — **for the lead/planning agent, not implementation
+  subagents.** A file map so the repository does not need re-reading, a ledger of
+  which mechanisms actually execute, when a found bug should *not* be fixed, and
+  an accumulating lessons log. Append to it when a session ends with a lesson.
 - `README.md` — project overview and current status
 - `docs/ARCHITECTURE.md` — layer separation and creature representation
 - `docs/PERFORMANCE.md` — performance strategy and metrics
