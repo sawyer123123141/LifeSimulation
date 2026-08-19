@@ -321,11 +321,31 @@ measured drift and nothing else. Seeding three of six sites defended produced
 deltas of -0.05, ten to thirty times any earlier arm. Before concluding a trait
 "does not respond", check that the founders actually differ in it.
 
-**2026-08-18 — A control that moves the trait downward is still a valid positive
-control.** The blocker demanded proof the setup could detect selection on plant
-defense before a null would mean anything. The demonstration came out negative
-(defense is selected away), which serves exactly as well: the machinery is proven
-live. Do not keep searching for an upward response to "prove" a pipeline works.
+**2026-08-18 — Compare an effect against its own sampling error, never against
+another arm whose spread is small for structural reasons.** The -0.05 defense
+decline was called "measurable directional selection" because it was 10-30x the
+deltas in the uniform-founder arms. But uniform founders have no standing
+variance, so no lineage can fix and their SD is structurally tiny — the
+comparison measured the presence of variance, not of selection. Against its own
+SE the decline is t = -1.44, 95% CI [-0.122, +0.032]. **Retracted the same day.**
+This is the recorded "n=5 looked real, vanished at n=30" failure in a subtler
+form: the error was not sample size but a baseline chosen for the wrong reason.
+Compute SD, SE and a bootstrap CI before calling anything a response.
+
+**2026-08-18 — A six-patch population is drift-dominated; expect to need far more
+than 30 seeds.** Standing variance triples the outcome SD (0.208 vs 0.069), which
+is lineage fixation, not selection. At that SD an effect near -0.055 needs roughly
+230 seeds for 80% power. Raising the **patch count** shrinks the spread far more
+efficiently than raising the seed count, because drift scales inversely with
+population size. Check the achievable power before designing another plant-trait
+experiment at six sites.
+
+**2026-08-18 — A control that moves the trait downward would still be a valid
+positive control.** The principle holds and is worth keeping: the blocker asks for
+proof the setup can detect selection at all, and a demonstrated *decline* answers
+that as well as a rise. Do not keep hunting for an upward response to prove a
+pipeline works. (The 2026-08-18 attempt to supply one failed on significance, not
+on direction — see the entry above.)
 
 **2026-08-18 — A clamped score term silently deletes a whole decision dimension.**
 `ComputeNeedGain` ends in `Math.Min(1f, ..)` and returned exactly 1.0000 for 88 of
