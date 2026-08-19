@@ -99,29 +99,48 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
-        public void TemperatureToleranceCannotHelpThePlantEvenWhenTemperatureIsLimiting()
+        public void TemperatureToleranceIsAPureCostWhenAdaptationIsDisabled()
         {
-            // Characterization of a known gap, not an endorsement of it.
+            // Flag-off behavior, kept as the regression guard for the old path.
             //
-            // PlantGrowthSystem computes:
-            //   limit = min(moistureAdaptation, min(sample.Fertility, sample.Temperature))
-            // Temperature enters as a RAW limit with no genome modulation, unlike moisture which has
-            // an adaptation term. So plant TemperatureTolerance pays -.10f growth in PlantPhenotype
-            // and can never earn it back, under any environment.
-            //
-            // This is why richer terrain fields alone will NOT make the gene meaningful: a
-            // temperatureAdaptation term mirroring moistureAdaptation is also required. Both halves
-            // or neither.
-            //
-            // When that lands, this test should FAIL and be replaced by the moisture-shaped
-            // assertion above.
+            // limit = min(moistureAdaptation, min(sample.Fertility, sample.Temperature)) - temperature
+            // enters as a RAW limit with no genome modulation, so TemperatureTolerance pays -.10f
+            // growth in PlantPhenotype and can never earn it back.
             var field = new EnvironmentField(moisture: 1f, fertility: 1f, temperature: 0.2f);
 
             float intolerant = PlantGrowthSystem.Step(StoreWithTolerance(0f, 0f), field, 1f);
             float tolerant = PlantGrowthSystem.Step(StoreWithTolerance(0f, 1f), field, 1f);
 
             Assert.That(tolerant, Is.LessThan(intolerant),
-                "expected TemperatureTolerance to be a pure cost: it charges growth and has no adaptation term to earn it back");
+                "with adaptation disabled, TemperatureTolerance should remain a pure cost");
+        }
+
+        [Test]
+        public void TemperatureToleranceHelpsThePlantWhenAdaptationIsEnabled()
+        {
+            // The fix: temperature now mirrors the moisture pattern, so tolerance buys real growth
+            // at a limiting site instead of only charging for itself.
+            var field = new EnvironmentField(moisture: 1f, fertility: 1f, temperature: 0.2f);
+
+            float intolerant = PlantGrowthSystem.Step(StoreWithTolerance(0f, 0f), field, 1f, temperatureAdaptationEnabled: true);
+            float tolerant = PlantGrowthSystem.Step(StoreWithTolerance(0f, 1f), field, 1f, temperatureAdaptationEnabled: true);
+
+            Assert.That(tolerant, Is.GreaterThan(intolerant),
+                "TemperatureTolerance should improve growth under a limiting temperature once adaptation is enabled");
+        }
+
+        [Test]
+        public void TemperatureAdaptationIsByteIdenticalWhereTemperatureIsUnlimiting()
+        {
+            // Why the flag reads inert in production: at temperature 1 the adaptation expression
+            // collapses to the raw value, so enabling it changes nothing until the environment
+            // actually varies. This is the measured basis for its entry in KnownInertFlags.
+            var field = new EnvironmentField(moisture: 1f, fertility: 1f, temperature: 1f);
+
+            float off = PlantGrowthSystem.Step(StoreWithTolerance(0f, 1f), field, 1f);
+            float on = PlantGrowthSystem.Step(StoreWithTolerance(0f, 1f), field, 1f, temperatureAdaptationEnabled: true);
+
+            Assert.That(on, Is.EqualTo(off));
         }
 
         [Test]

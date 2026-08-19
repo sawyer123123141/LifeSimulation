@@ -52,6 +52,7 @@ to you within a week. Names below are stable.
 | `Experiments/PairedExperimentAnalysis.cs` | Statistics for paired experiments | `Assess`, `Summarize`, `ExperimentMetric` |
 | `Diagnostics/GeneLivenessAnalysis.cs` | **The authority on whether a gene reaches behavior.** Perturbation, not caller-search. | `Analyze`, `Report`, `GeneLivenessResult` |
 | `Diagnostics/FlagLivenessAnalysis.cs` | **The authority on whether a config flag does anything.** Reflection over the constructor, so new flags are covered without anyone remembering. | `Analyze`, `Report`, `FlagLivenessResult` |
+| `Diagnostics/PlantGeneLivenessAnalysis.cs` | Same perturbation method for `PlantGenome`. The animal harness does not cover plant genes. | `Analyze`, `Report`, `PlantGeneLivenessResult` |
 | `Diagnostics/LivenessRecorder.cs` | Runtime probe counters for code *paths*; covers the §4 "runs on empty data" class that perturbation cannot reach. Attach via `SimulationWorld.Liveness` (null by default); never touches any hash. | `LivenessProbe`, `RecordOutcome`, `IsInertlyExecuting` |
 
 ### Elsewhere
@@ -60,7 +61,7 @@ to you within a week. Names below are stable.
   hotkeys (`N`, `E`), the creature inspector. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
 - `Assets/Editor/PrototypeBatchEntry.cs` — batch experiment entry points.
-- `Assets/Tests/EditMode/*.cs` — 368 tests. `ResourceExperimentTests.cs` holds
+- `Assets/Tests/EditMode/*.cs` — 377 tests. `ResourceExperimentTests.cs` holds
   the scenario/calibration tests; `CoreSimulationTests.cs` is the big one;
   `LivenessTests.cs` enforces the §4 gene ledger by perturbation.
 - `tools/HeadlessTests/` — `dotnet test` runs the EditMode tests headlessly.
@@ -137,6 +138,14 @@ rediscovering this is expensive. **Update in the same commit as any change.**
 Full evidence: `docs/experiments/halfway-wired-mechanism-audit-2026-08-17.md`,
 corrected by `docs/experiments/gene-liveness-perturbation-2026-08-18.md`.
 
+> **What perturbation cannot tell you: reward.** All three harnesses detect
+> *influence* — whether a gene or flag changes what the simulation does. A
+> **pure-cost** gene passes: plant `TemperatureTolerance` reads live purely because
+> `PlantPhenotype` charges `-.10f` growth for it, while having (before 2026-08-18)
+> no channel to earn that back under any environment. "Live" is not "selectable
+> for". When a trait will not evolve, check that it has a *benefit* path, not just
+> a reader. See `docs/experiments/plant-gene-liveness-2026-08-18.md`.
+
 **You should not need to re-audit this by hand.** `LivenessTests` enforces the
 gene half of this table by perturbation and fails the build when it changes. Run
 `dotnet test --filter "FullyQualifiedName~LivenessTests"` instead of grepping for
@@ -198,6 +207,7 @@ under FULL ecosystem mode where all four are on:
 | `multiThreatPerceptionEnabled` | `IntentUtilityV1` carries its own inline threat handling |
 | `kinRecognitionEnabled` | no reader on the `IntentUtilityV1` path |
 | `learnedResourceQualityEnabled` | single reader is inside `DecideFromLearnedOutcomes`, the Legacy+Cognition path |
+| `plantTemperatureAdaptationEnabled` | **different reason — temporary.** Fully wired on the live path, but `EnvironmentField` returns `Temperature = 1` everywhere, and the adaptation expression collapses to the raw value at 1. **Move it out of `KnownInertFlags` when terrain fields land**; the test failing is the correct signal that it went live. |
 
 > The 2026-08-17 audit cleared all sixteen flags because each "has at least one
 > production reader". That is true of all four above and **insufficient** — the
@@ -320,6 +330,23 @@ to selection is proportional to within-population variance, so the flat results
 measured drift and nothing else. Seeding three of six sites defended produced
 deltas of -0.05, ten to thirty times any earlier arm. Before concluding a trait
 "does not respond", check that the founders actually differ in it.
+
+**2026-08-18 — A liveness test cannot tell you a trait is worth carrying.**
+Perturbation detects influence, not reward, so a **pure-cost** gene passes it.
+Plant `TemperatureTolerance` read live only because it charges `-.10f` growth,
+while temperature entered `PlantGrowthSystem` as a raw limit no gene could improve
+against. Prediction that it would read *dead* was wrong for that reason. When a
+trait refuses to evolve, ask what its **benefit path** is — a reader is not a
+benefit. `MoistureTolerance` next to it is the reference for what a real trade-off
+looks like.
+
+**2026-08-18 — Environment constants silently disable whole gene channels.**
+`EnvironmentField` returns `Fertility = 1` and `Temperature = 1` on every
+production path, so the growth limit always collapsed to `moistureAdaptation` and
+two of three environment channels did nothing. Before adding a trait that adapts
+to an environment field, check the field actually varies — otherwise the trait ships
+as a tax. This is why terrain work needs the field *and* the adaptation term
+together; landing only the field makes such genes more costly, not more meaningful.
 
 **2026-08-18 — Compare an effect against its own sampling error, never against
 another arm whose spread is small for structural reasons.** The -0.05 defense

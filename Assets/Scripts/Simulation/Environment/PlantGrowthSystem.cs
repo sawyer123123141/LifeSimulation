@@ -7,7 +7,11 @@ namespace LifeSimulation.Simulation.Environment
     {
         private const float SproutFloorFraction = 0.01f;
 
-        public static float Step(PlantPatchStore patches, EnvironmentField field, float deltaTime)
+        public static float Step(
+            PlantPatchStore patches,
+            EnvironmentField field,
+            float deltaTime,
+            bool temperatureAdaptationEnabled = false)
         {
             float addedBiomass = 0f;
             for (int index = 0; index < patches.Count; index++)
@@ -19,7 +23,29 @@ namespace LifeSimulation.Simulation.Environment
                 float moistureAdaptation = sample.Moisture <= 0f
                     ? 0f
                     : Math.Min(1f, sample.Moisture + ((1f - sample.Moisture) * (.7f * patch.Genome.WaterEfficiency + .3f * patch.Genome.MoistureTolerance)));
-                float limit = Math.Max(0f, Math.Min(moistureAdaptation, Math.Min(sample.Fertility, sample.Temperature)));
+
+                // Temperature mirrors the moisture pattern above when enabled. Without it,
+                // sample.Temperature is a raw limit that no gene can improve against, so
+                // TemperatureTolerance pays a -.10f growth penalty in PlantPhenotype and can never
+                // earn it back - a pure cost under every environment
+                // (docs/experiments/plant-gene-liveness-2026-08-18.md).
+                //
+                // Moisture splits its adaptation between two genes (.7 WaterEfficiency +
+                // .3 MoistureTolerance); temperature has only the one, so it carries full weight.
+                //
+                // Note this is inert until the environment actually varies in temperature:
+                // EnvironmentField returns Temperature = 1 on every production path today, and at
+                // 1 the expression collapses to 1, exactly the raw value. The flag is therefore
+                // listed in LivenessTests.KnownInertFlags until terrain fields land.
+                float temperatureLimit = sample.Temperature;
+                if (temperatureAdaptationEnabled)
+                {
+                    temperatureLimit = sample.Temperature <= 0f
+                        ? 0f
+                        : Math.Min(1f, sample.Temperature + ((1f - sample.Temperature) * patch.Genome.TemperatureTolerance));
+                }
+
+                float limit = Math.Max(0f, Math.Min(moistureAdaptation, Math.Min(sample.Fertility, temperatureLimit)));
                 float sproutBiomass = patch.Biomass + (SproutFloorFraction * patch.Capacity);
                 float growth = patch.GrowthRate * phenotype.GrowthRateMultiplier * sproutBiomass * (1f - (patch.Biomass / patch.Capacity)) * limit * deltaTime;
                 float next = Math.Min(patch.Capacity, patch.Biomass + growth);

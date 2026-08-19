@@ -125,7 +125,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantMortalityEnabled = false,
             bool plantDefenseDeterrenceEnabled = false,
             float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength,
-            bool plantQualityPreferenceEnabled = false)
+            bool plantQualityPreferenceEnabled = false,
+            bool plantTemperatureAdaptationEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -161,6 +162,7 @@ namespace LifeSimulation.Simulation.Core
             PlantDefenseDeterrenceEnabled = plantDefenseDeterrenceEnabled;
             PlantDefenseDeterrenceStrength = plantDefenseDeterrenceStrength;
             PlantQualityPreferenceEnabled = plantQualityPreferenceEnabled;
+            PlantTemperatureAdaptationEnabled = plantTemperatureAdaptationEnabled;
         }
 
         public int WorldSeed { get; }
@@ -218,6 +220,22 @@ namespace LifeSimulation.Simulation.Core
         /// selected on. See docs/experiments/needgain-clamp-2026-08-18.md.</para>
         /// </summary>
         public bool PlantQualityPreferenceEnabled { get; }
+
+        /// <summary>
+        /// When set, plant <c>TemperatureTolerance</c> improves a patch's position against a cold or
+        /// hot site, mirroring how <c>MoistureTolerance</c> already works in
+        /// <c>PlantGrowthSystem</c>.
+        ///
+        /// <para>Off by default, and <b>inert even when on</b> until the environment varies in
+        /// temperature: <c>EnvironmentField</c> returns <c>Temperature = 1</c> on every production
+        /// path, and the adaptation expression collapses to the raw value at 1. It is listed in
+        /// <c>LivenessTests.KnownInertFlags</c> for exactly that reason, and should be moved out of
+        /// that list when terrain fields land.</para>
+        ///
+        /// <para>Without this, <c>TemperatureTolerance</c> is a pure cost - it charges growth in
+        /// <c>PlantPhenotype</c> and has no channel to earn it back under any environment.</para>
+        /// </summary>
+        public bool PlantTemperatureAdaptationEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 

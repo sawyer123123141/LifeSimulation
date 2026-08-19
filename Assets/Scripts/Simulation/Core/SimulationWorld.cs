@@ -246,7 +246,7 @@ namespace LifeSimulation.Simulation.Core
                 if (Config.PlantCohortsEnabled)
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
-                    _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime);
+                    _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime, Config.PlantTemperatureAdaptationEnabled);
                     _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled);
                     if (Config.PlantMortalityEnabled)
                     {
