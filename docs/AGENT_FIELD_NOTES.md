@@ -301,6 +301,27 @@ sweeps that were declared "unsatisfiable" in 2026-08-17. When every arm fails in
 alternating directions, the lever is coupled and the fix is a scenario redesign,
 not another sweep.
 
+**2026-08-18 — Selection cannot act without standing variance, and a uniform
+founder value provides none.** Every plant-defense sweep from 2026-08-17 onward
+seeded *all* patches with the same defense, varying it only between arms. Response
+to selection is proportional to within-population variance, so the flat results
+measured drift and nothing else. Seeding three of six sites defended produced
+deltas of -0.05, ten to thirty times any earlier arm. Before concluding a trait
+"does not respond", check that the founders actually differ in it.
+
+**2026-08-18 — A control that moves the trait downward is still a valid positive
+control.** The blocker demanded proof the setup could detect selection on plant
+defense before a null would mean anything. The demonstration came out negative
+(defense is selected away), which serves exactly as well: the machinery is proven
+live. Do not keep searching for an upward response to "prove" a pipeline works.
+
+**2026-08-18 — A clamped score term silently deletes a whole decision dimension.**
+`ComputeNeedGain` ends in `Math.Min(1f, ..)` and returned exactly 1.0000 for 88 of
+88 patch-and-hunger combinations, ~10x over the clamp even at 5% energy. Patch
+quality was therefore invisible to `IntentUtilityV1` foraging — grazers chose on
+hunger and distance alone. When a scoring term is bounded, measure its realized
+distribution before assuming it discriminates.
+
 **2026-08-18 — Identical results across an arm flip means the flag is dead, not
 that the effect is small.** A sweep adding `learnedResourceQualityEnabled` to the
 deterrence arm returned numbers matching the previous run to four decimals in
@@ -359,6 +380,12 @@ scenario alongside any negative verdict.
   moves together, so any difference it produces is unattributable. Use it to pin
   liveness against the widest surface; run experiment arms against
   `CreatePrototype4Defaults` varying one flag.
+- `PlantQualityPreferenceEnabled` defaults `false`. With it off, `ComputeNeedGain`
+  saturates at its `Math.Min(1f, ..)` clamp for every active patch, so patch
+  quality is invisible to `IntentUtilityV1` foraging and grazing is uniform.
+- **Seed plant founders with *varying* defense when testing selection.** A uniform
+  founder value gives zero standing variance and every result is drift. See
+  `docs/experiments/p4-defense-selection-demonstrated-2026-08-18.md`.
 - `PlantDefenseDeterrenceEnabled` defaults `false`. With it off, plant defense
   protects no biomass and cannot be selected on at all — see
   `docs/experiments/p4-defense-no-gradient-2026-08-18.md`. Any coevolution run

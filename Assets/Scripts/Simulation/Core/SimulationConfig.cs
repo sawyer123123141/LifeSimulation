@@ -124,7 +124,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantSiteCompetitionEnabled = false,
             bool plantMortalityEnabled = false,
             bool plantDefenseDeterrenceEnabled = false,
-            float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength)
+            float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength,
+            bool plantQualityPreferenceEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -159,6 +160,7 @@ namespace LifeSimulation.Simulation.Core
             PlantMortalityEnabled = plantMortalityEnabled;
             PlantDefenseDeterrenceEnabled = plantDefenseDeterrenceEnabled;
             PlantDefenseDeterrenceStrength = plantDefenseDeterrenceStrength;
+            PlantQualityPreferenceEnabled = plantQualityPreferenceEnabled;
         }
 
         public int WorldSeed { get; }
@@ -202,6 +204,20 @@ namespace LifeSimulation.Simulation.Core
 
         /// <summary>Fraction of a bite withheld at Defense = 1. Only read when deterrence is enabled.</summary>
         public float PlantDefenseDeterrenceStrength { get; }
+
+        /// <summary>
+        /// When set, foraging patch choice under <c>IntentUtilityV1</c> weights a patch by its
+        /// nutrition density, so a richer patch is preferred even when both patches would fully
+        /// satisfy the need.
+        ///
+        /// <para>Off by default. With it off, <c>ComputeNeedGain</c> returns exactly 1.0 for every
+        /// active patch — measured at 88 of 88 patch-hunger combinations, roughly 10x over its
+        /// <c>Math.Min(1f, ..)</c> clamp — so patch quality is invisible to foraging and grazing is
+        /// effectively uniform. Plant defense lowers nutrition density, so without this flag defense
+        /// cannot cause a defended patch to be avoided, and uniform grazing gives it nothing to be
+        /// selected on. See docs/experiments/needgain-clamp-2026-08-18.md.</para>
+        /// </summary>
+        public bool PlantQualityPreferenceEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 

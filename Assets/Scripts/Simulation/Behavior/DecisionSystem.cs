@@ -368,14 +368,15 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureId selfId = default,
             CreatureLineage selfLineage = default,
             CreatureLineage otherLineage = default,
-            bool kinRecognitionEnabled = false)
+            bool kinRecognitionEnabled = false,
+            bool plantQualityPreferenceEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
                 threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled,
-                selfId, selfLineage, otherLineage, kinRecognitionEnabled);
+                selfId, selfLineage, otherLineage, kinRecognitionEnabled, plantQualityPreferenceEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -410,14 +411,15 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureId selfId = default,
             CreatureLineage selfLineage = default,
             CreatureLineage otherLineage = default,
-            bool kinRecognitionEnabled = false)
+            bool kinRecognitionEnabled = false,
+            bool plantQualityPreferenceEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
             float bestWaterScore = -1f;
 
-            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, ref candidates, ref bestFoodScore);
-            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, ref candidates, ref bestWaterScore);
+            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, ref candidates, ref bestFoodScore);
+            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, ref candidates, ref bestWaterScore);
             if (cognitionEnabled)
             {
                 ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestFoodScore);
@@ -671,6 +673,7 @@ namespace LifeSimulation.Simulation.Behavior
             ResourceCandidateBuffer observations,
             CreatureObservation threat,
             float threatIntensity,
+            bool plantQualityPreferenceEnabled,
             ref DecisionCandidateBuffer candidates,
             ref float bestScore)
         {
@@ -678,7 +681,7 @@ namespace LifeSimulation.Simulation.Behavior
             {
                 ResourceObservation observation = observations.GetAt(index);
                 ResourceState resource = resources.GetAt(observation.ResourceIndex);
-                float score = ResourceUtility(intent, needs, genome, phenotype, resource, observation.Distance, threat, threatIntensity);
+                float score = ResourceUtility(intent, needs, genome, phenotype, resource, observation.Distance, threat, threatIntensity, plantQualityPreferenceEnabled);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -751,16 +754,40 @@ namespace LifeSimulation.Simulation.Behavior
             ResourceState resource,
             float distance,
             CreatureObservation threat,
-            float threatIntensity)
+            float threatIntensity,
+            bool plantQualityPreferenceEnabled)
         {
             bool seekingWater = intent == CreatureIntent.SeekWater;
             float capacity = seekingWater ? phenotype.HydrationCapacity : phenotype.EnergyCapacity;
             float current = seekingWater ? needs.Hydration : needs.Energy;
             float urgency = (float)Math.Pow(Urgency(current, capacity), 0.5f + (2.5f * genome.UrgencyExponent));
             float needGain = ComputeNeedGain(seekingWater, needs, phenotype, resource);
+
+            // ComputeNeedGain is clamped by Math.Min(1f, ..) and in practice saturates: every
+            // active food patch returns exactly 1.0, roughly 10x over the clamp, at every hunger
+            // level down to 5% energy. So the term carries no information about which patch is
+            // better, and foraging reduces to urgency minus travel and danger — grazing is uniform.
+            //
+            // Plant defense lowers a patch's nutrition density, so uniform grazing is exactly the
+            // condition under which defense cannot pay: it is never differentially avoided. This
+            // term restores that preference, weighting a patch by nutrition density even when both
+            // candidates would fully satisfy the need. Water is unaffected (no nutrition density).
+            float qualityPreference = 1f;
+            if (plantQualityPreferenceEnabled && !seekingWater)
+            {
+                qualityPreference = Math.Max(0f, resource.NutritionMultiplier);
+            }
+
             float travelBurden = (0.5f + (1.5f * genome.TravelSensitivity)) * EstimateTravelBurden(distance, phenotype);
             float dangerPenalty = threat.IsValid ? Math.Max(0f, threatIntensity) * genome.RiskAversion * (distance / Math.Max(0.01f, phenotype.MaximumSpeed)) : 0f;
-            return Math.Max(0f, (urgency * needGain) - travelBurden - dangerPenalty);
+            if (!plantQualityPreferenceEnabled)
+            {
+                // Kept as a separate return so the flag-off path is the original expression
+                // verbatim, rather than relying on multiplication by 1f being bit-exact.
+                return Math.Max(0f, (urgency * needGain) - travelBurden - dangerPenalty);
+            }
+
+            return Math.Max(0f, (urgency * needGain * qualityPreference) - travelBurden - dangerPenalty);
         }
 
         private static float EstimateTravelBurden(float distance, Phenotype phenotype)
