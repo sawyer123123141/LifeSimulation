@@ -193,6 +193,80 @@ namespace LifeSimulation.Tests.EditMode
                 $"Gene liveness changed.\n{GeneLivenessAnalysis.Report(results)}");
         }
 
+        // ---- Class B: executes, but always on empty data --------------------------------------
+
+        [Test]
+        public void PlaceMemoryProbesRunButNeverTakeEffect()
+        {
+            // Enforces the §4 "executes but always on empty data" entry, which neither perturbation
+            // harness can reach: there is no gene and no flag to flip for place memory, so its
+            // deadness was documented and nothing checked it. Place memory reading as live is what
+            // produced the retracted root cause in
+            // docs/experiments/p4-memory-root-cause-retracted-2026-08-17.md.
+            //
+            // If either probe reports live, someone wired ObservePlace. That is a real behavior
+            // change and every baseline measured before it is suspect.
+            SimulationConfig config = FullEcosystem();
+            var world = new SimulationWorld(config) { Liveness = new LivenessRecorder() };
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+
+            for (int step = 0; step < 4000; step++)
+            {
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+            }
+
+            Assert.That(world.Liveness.IsLive(LivenessProbe.PlaceMemoryScoring), Is.False,
+                $"place-memory scoring produced a result, so slots are now populated.\n{world.Liveness.Report()}");
+            Assert.That(world.Liveness.IsLive(LivenessProbe.FailedPlaceSearch), Is.False,
+                $"failed-place-search altered confidence, so slots are now populated.\n{world.Liveness.Report()}");
+        }
+
+        [Test]
+        public void DeterrenceProbeIsLiveSoTheRecorderIsNotSilentlyBroken()
+        {
+            // Control for the test above. A recorder that only ever reports INERT is
+            // indistinguishable from one whose probes never fire at all, so at least one probe must
+            // demonstrably register a real effect.
+            SimulationConfig config = FullEcosystem();
+            var world = new SimulationWorld(config) { Liveness = new LivenessRecorder() };
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+
+            for (int step = 0; step < 4000; step++)
+            {
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+            }
+
+            Assert.That(world.Liveness.IsLive(LivenessProbe.PlantDefenseDeterrence), Is.True,
+                $"deterrence probe never registered an effect; the recorder may not be wired.\n{world.Liveness.Report()}");
+        }
+
+        [Test]
+        public void AttachingARecorderDoesNotChangeTheSimulation()
+        {
+            // The recorder observes; it must never perturb. Same seed, same scenario, one world
+            // instrumented and one not — both hashes must match at the end.
+            SimulationConfig bare = FullEcosystem();
+            var without = new SimulationWorld(bare);
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(without);
+
+            SimulationConfig instrumentedConfig = FullEcosystem();
+            var with = new SimulationWorld(instrumentedConfig) { Liveness = new LivenessRecorder() };
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(with);
+
+            for (int step = 0; step < 1500; step++)
+            {
+                without.Step(bare.FixedDeltaTime);
+                with.Step(instrumentedConfig.FixedDeltaTime);
+                without.Events.Clear();
+                with.Events.Clear();
+            }
+
+            Assert.That(with.ComputeStateHash(), Is.EqualTo(without.ComputeStateHash()));
+            Assert.That(with.ComputeBehaviorHash(), Is.EqualTo(without.ComputeBehaviorHash()));
+        }
+
         // ---- Config flags -------------------------------------------------------------------
 
         /// <summary>

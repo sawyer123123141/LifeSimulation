@@ -4,6 +4,7 @@ using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Spatial;
 using LifeSimulation.Simulation.Environment;
+using LifeSimulation.Simulation.Diagnostics;
 using LifeSimulation.Simulation.Experiments;
 
 namespace LifeSimulation.Simulation.Core
@@ -360,6 +361,24 @@ namespace LifeSimulation.Simulation.Core
         ///
         /// Deliberately excludes <c>LivenessRecorder</c> counters, which must never affect any hash.
         /// </summary>
+        /// <summary>
+        /// Optional runtime liveness probe sink. <b>Null by default</b>, and deliberately not gated
+        /// by a <c>SimulationConfig</c> flag: a diagnostics flag would have to be behavior-inert to
+        /// be correct, and <c>FlagLivenessAnalysis</c> would then report it as inert and fail the
+        /// known-inert-flag assertion. An optional sink avoids that contradiction and costs a null
+        /// check when unused.
+        ///
+        /// <para>Nothing in the simulation may ever read this. It records only; see
+        /// <c>LivenessRecorder</c>. It is absent from both hashes by construction.</para>
+        ///
+        /// <para>Covers what perturbation cannot: the �4 "executes but always on empty data" class,
+        /// where there is no gene or flag to flip. <c>TryScoreBestRememberedPlace</c> and
+        /// <c>RecordFailedPlaceSearch</c> run every tick against permanently empty place-memory
+        /// slots, and place memory reading as live is what produced the retracted root cause in
+        /// docs/experiments/p4-memory-root-cause-retracted-2026-08-17.md.</para>
+        /// </summary>
+        public LivenessRecorder Liveness { get; set; }
+
         public ulong ComputeBehaviorHash()
         {
             ulong hash = 14695981039346656037UL;
@@ -908,7 +927,17 @@ namespace LifeSimulation.Simulation.Core
                     if (nothingOfThatKindVisible)
                     {
                         int usableSlotCount = GetUsableMemorySlotCount(Creatures.GetGenomeAt(index));
+                        MemoryState beforeFailedSearch = Creatures.GetMemoryRefAt(index);
                         MemorySystem.RecordFailedPlaceSearch(Creatures, index, usableSlotCount, movement.Position, previousKind, Config.SamePlaceRadius);
+
+                        // Effective only if the call actually altered a slot's confidence. It runs
+                        // whenever the branch is reached, but cannot match a slot while place memory
+                        // is never populated, so the expected verdict is INERT rather than UNREACHED.
+                        MemoryState afterFailedSearch = Creatures.GetMemoryRefAt(index);
+                        Liveness?.RecordOutcome(
+                            LivenessProbe.FailedPlaceSearch,
+                            afterFailedSearch.FoodConfidence != beforeFailedSearch.FoodConfidence
+                                || afterFailedSearch.WaterConfidence != beforeFailedSearch.WaterConfidence);
                     }
                 }
                 DecisionDiagnostics diagnostics;
@@ -1029,6 +1058,11 @@ namespace LifeSimulation.Simulation.Core
                             out SimVector2 bestPosition,
                             out ResourceKind bestKind,
                             out float bestScore);
+
+                        // Reached whenever a creature wanders; effective only if a populated slot
+                        // actually produced a score. Expected INERT while ObservePlace has no
+                        // production caller, which is the whole point of tracking it.
+                        Liveness?.RecordOutcome(LivenessProbe.PlaceMemoryScoring, foundRememberedPlace);
                         if (foundRememberedPlace && bestScore >= RememberedPlaceMinimumScore)
                         {
                             decision = new CreatureDecision(
@@ -1288,7 +1322,13 @@ namespace LifeSimulation.Simulation.Core
                 // the next resource tick.
                 if (Config.PlantDefenseDeterrenceEnabled && resource.Kind == ResourceKind.Food)
                 {
+                    float undeterredAmount = allocatedAmount;
                     allocatedAmount *= 1f - (resource.PlantDefense * Config.PlantDefenseDeterrenceStrength);
+
+                    // Known-live control for the recorder itself. A liveness tool that only ever
+                    // reports INERT is indistinguishable from one that is broken, so at least one
+                    // probe must sit on a path that genuinely fires.
+                    Liveness?.RecordOutput(LivenessProbe.PlantDefenseDeterrence, allocatedAmount, undeterredAmount);
                     if (allocatedAmount <= 0f)
                     {
                         continue;
