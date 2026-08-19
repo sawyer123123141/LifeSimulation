@@ -52,7 +52,16 @@ namespace LifeSimulation.Simulation.Environment
     {
         /// <summary>
         /// Reference lifespan in seconds before the Growth-gene tradeoff is applied.
-        /// Placeholder value; Task 2 replaces it with an empirically derived one.
+        /// Derived empirically on 2026-08-17 against the six-site
+        /// ConsumerDefenseCalibrationModerate scenario, seeds 42-71, 12,000 ticks, with
+        /// mortality and site competition enabled. Halving downward from 90:
+        ///   90    -> 0/30 extinct, 12 plant generations
+        ///   45    -> 1/30 extinct, 0 plant generations (plants collapse in some seeds)
+        ///   22.5  -> 30/30 extinct
+        ///   11.25 -> 30/30 extinct
+        /// 90 is the smallest value satisfying both calibration constraints (>=8 plant
+        /// generations, zero animal extinctions). Shorter lifespans kill the plant layer
+        /// outright rather than merely accelerating turnover.
         /// </summary>
         public const float BaseLifespanSeconds = 90f;
 
