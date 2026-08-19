@@ -193,6 +193,68 @@ namespace LifeSimulation.Tests.EditMode
                 $"Gene liveness changed.\n{GeneLivenessAnalysis.Report(results)}");
         }
 
+        // ---- Config flags -------------------------------------------------------------------
+
+        /// <summary>
+        /// Flags that have a production reader but whose reader sits on a path
+        /// <c>IntentUtilityV1</c> never takes. Flipping any of them produces bit-identical runs.
+        ///
+        /// This list is not a wish list — it is a measurement. The 2026-08-17 audit cleared all of
+        /// these on the grounds that each had "at least one production reader", which is true and
+        /// insufficient. Turning one of them on is currently a no-op, so do not reach for one
+        /// expecting an effect, and do not "verify" one by grepping for its name.
+        /// </summary>
+        private static readonly string[] KnownInertFlags =
+        {
+            "foragingEconomicsEnabled",
+            "kinRecognitionEnabled",
+            "learnedResourceQualityEnabled",
+            "multiThreatPerceptionEnabled",
+        };
+
+        [Test]
+        public void InertFlagsAreExactlyTheKnownSetUnderTheWidestConfiguration()
+        {
+            // FULL ecosystem mode has all sixteen flags on, so an "inert" verdict here cannot be
+            // blamed on the flag simply having no occasion to fire.
+            FlagLivenessResult[] results = FlagLivenessAnalysis.Analyze(
+                FullEcosystem,
+                Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
+                LivenessTicks);
+
+            string[] inert = results
+                .Where(result => !result.ChangesBehavior)
+                .Select(result => result.FlagName)
+                .OrderBy(name => name, System.StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(inert, Is.EqualTo(KnownInertFlags),
+                "Config flag liveness changed. If a flag became live, that is a real behavior "
+                + "change and every baseline measured before it is suspect.\n"
+                + FlagLivenessAnalysis.Report(results));
+        }
+
+        [Test]
+        public void EveryConfigFlagIsCoveredByTheLivenessSweep()
+        {
+            // Guards the reflection: if the constructor convention changes and bool parameters stop
+            // being discovered, the test above would silently pass on an empty sweep.
+            FlagLivenessResult[] results = FlagLivenessAnalysis.Analyze(
+                FullEcosystem,
+                Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
+                ticks: 5);
+
+            int flagCount = typeof(SimulationConfig)
+                .GetConstructors()
+                .OrderByDescending(candidate => candidate.GetParameters().Length)
+                .First()
+                .GetParameters()
+                .Count(parameter => parameter.ParameterType == typeof(bool));
+
+            Assert.That(flagCount, Is.GreaterThan(0));
+            Assert.That(results.Length, Is.EqualTo(flagCount));
+        }
+
         [Test]
         public void RiskAversionIsLiveOnlyWhenThreatsExist()
         {

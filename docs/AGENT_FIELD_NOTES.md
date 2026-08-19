@@ -51,6 +51,7 @@ to you within a week. Names below are stable.
 | `Experiments/ExperimentRunner.cs` | Headless run harness | `Run(config, scenario, ticks)` |
 | `Experiments/PairedExperimentAnalysis.cs` | Statistics for paired experiments | `Assess`, `Summarize`, `ExperimentMetric` |
 | `Diagnostics/GeneLivenessAnalysis.cs` | **The authority on whether a gene reaches behavior.** Perturbation, not caller-search. | `Analyze`, `Report`, `GeneLivenessResult` |
+| `Diagnostics/FlagLivenessAnalysis.cs` | **The authority on whether a config flag does anything.** Reflection over the constructor, so new flags are covered without anyone remembering. | `Analyze`, `Report`, `FlagLivenessResult` |
 | `Diagnostics/LivenessRecorder.cs` | Runtime probe counters for code *paths*; never touches any hash | `LivenessProbe`, `RecordOutput`, `IsInertlyExecuting` |
 
 ### Elsewhere
@@ -59,7 +60,7 @@ to you within a week. Names below are stable.
   hotkeys (`N`, `E`), the creature inspector. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
 - `Assets/Editor/PrototypeBatchEntry.cs` — batch experiment entry points.
-- `Assets/Tests/EditMode/*.cs` — 363 tests. `ResourceExperimentTests.cs` holds
+- `Assets/Tests/EditMode/*.cs` — 365 tests. `ResourceExperimentTests.cs` holds
   the scenario/calibration tests; `CoreSimulationTests.cs` is the big one;
   `LivenessTests.cs` enforces the §4 gene ledger by perturbation.
 - `tools/HeadlessTests/` — `dotnet test` runs the EditMode tests headlessly.
@@ -174,6 +175,32 @@ populated.
 `DecisionSystem`, all gated on a valid threat. It reads dead under P4's herbivore
 calibration and live under FULL ecosystem mode. Not dead code.
 
+### Inert config flags (measured 2026-08-18, `FlagLivenessAnalysis`)
+
+Flipping any of these produces a **bit-identical run**, under P4 defaults *and*
+under FULL ecosystem mode where all four are on:
+
+| flag | why |
+|---|---|
+| `foragingEconomicsEnabled` | its consumers (`CommitmentBonus`, `ShouldAbandon`) are Legacy-only |
+| `multiThreatPerceptionEnabled` | `IntentUtilityV1` carries its own inline threat handling |
+| `kinRecognitionEnabled` | no reader on the `IntentUtilityV1` path |
+| `learnedResourceQualityEnabled` | single reader is inside `DecideFromLearnedOutcomes`, the Legacy+Cognition path |
+
+> The 2026-08-17 audit cleared all sixteen flags because each "has at least one
+> production reader". That is true of all four above and **insufficient** — the
+> reader exists on a path `IntentUtilityV1` never takes. Same error shape as the
+> `Persistence` entry.
+
+**Do not turn one of these on expecting an effect**, and do not verify one by
+grepping for its name. `LivenessTests.InertFlagsAreExactlyTheKnownSetUnderTheWidestConfiguration`
+pins the set and fails the build if it changes — a flag becoming live is a real
+behavior change that invalidates every baseline measured before it.
+
+Corollary worth stating: FULL ecosystem mode is the widest surface *available*,
+but for these four no configuration gives them a chance short of switching to
+`Legacy`. "Widest available" is not "every mechanism gets its chance".
+
 **Verified live, do not re-audit:** `CognitionRestCostMultiplier`,
 `ReproductionCooldownSeconds`, `ReproductionEnergyCostFraction`, all
 `SimulationConfig` flags, and every state-struct field.
@@ -273,6 +300,28 @@ one failure for the other, the same shape as the lifespan and population-cap
 sweeps that were declared "unsatisfiable" in 2026-08-17. When every arm fails in
 alternating directions, the lever is coupled and the fix is a scenario redesign,
 not another sweep.
+
+**2026-08-18 — Identical results across an arm flip means the flag is dead, not
+that the effect is small.** A sweep adding `learnedResourceQualityEnabled` to the
+deterrence arm returned numbers matching the previous run to four decimals in
+every cell. That is not a weak effect — floating-point ecology does not reproduce
+by coincidence. Bit-identical output is a liveness signal; read it that way
+immediately instead of interpreting the "difference".
+
+**2026-08-18 — Per-patch drawdown and population survival cannot be separated by
+site count.** Grazers-per-patch and regen-per-patch scale together, so their
+ratio is `total_need / total_regen` regardless of how many sites exist. Drawing
+the *average* patch below capacity therefore requires the population to need more
+biomass than the system regrows — starvation by definition. Selection on a defense
+trait needs **heterogeneity** (some patches grazed hard, others spared), not more
+average pressure. Any future "raise grazing pressure" proposal should be checked
+against this before it costs another sweep.
+
+**2026-08-18 — Perturbation must cover config flags, not just genes.** Four of
+sixteen flags are inert under `IntentUtilityV1` and every one had passed a
+caller-search audit. `FlagLivenessAnalysis` flips each flag and compares behavior
+hashes; it enumerates flags by reflection so a newly added flag is covered without
+anyone remembering to add it. Run it before trusting any flag.
 
 **2026-08-18 — A name collision is a defect when it makes a wrong belief
 plausible.** `Genome.Commitment` sat beside `ForagingEconomics.CommitmentBonus`
