@@ -456,6 +456,22 @@ namespace LifeSimulation.Simulation.Core
             }
         }
 
+        /// <summary>
+        /// Overwrite one plant trait across every live patch. Diagnostics only — the plant-side
+        /// counterpart of <see cref="OverwriteTraitForAllCreatures"/>, used by
+        /// <c>PlantGeneLivenessAnalysis</c>. Not called by simulation logic.
+        ///
+        /// <para>Lineage is preserved so the perturbation changes only the trait under test.</para>
+        /// </summary>
+        public void OverwritePlantTraitForAllPatches(int traitIndex, float value)
+        {
+            for (int index = 0; index < Plants.Count; index++)
+            {
+                PlantPatchState patch = Plants.GetAt(index);
+                Plants.SetGenomeAndLineage(index, patch.Genome.WithTrait(traitIndex, value), patch.Lineage);
+            }
+        }
+
         public ulong ComputeStateHash()
         {
             ulong hash = 14695981039346656037UL;

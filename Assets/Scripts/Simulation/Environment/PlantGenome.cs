@@ -45,6 +45,80 @@ namespace LifeSimulation.Simulation.Environment
             return value + (DeterministicRandom.Gaussian(worldSeed, RandomDomain.PlantMutation, ordinal, trait, 0, 0) * standardDeviation);
         }
 
+        /// <summary>Number of heritable plant traits. Keep in step with the constructor, <see cref="ToTraits"/> and <see cref="CloneMutated"/>.</summary>
+        public const int TraitCount = 8;
+
+        private static readonly string[] TraitNames =
+        {
+            nameof(Growth), nameof(SeedInvestment), nameof(WaterEfficiency), nameof(Nutrition),
+            nameof(Defense), nameof(Dispersal), nameof(MoistureTolerance), nameof(TemperatureTolerance),
+        };
+
+        /// <summary>Trait name for an index. Ordering matches the mutation trait indices in <see cref="CloneMutated"/>.</summary>
+        public static string TraitName(int index)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return TraitNames[index];
+        }
+
+        /// <summary>
+        /// All traits in constructor order. Single enumeration of the plant genome, so a trait
+        /// missing here fails the round-trip test rather than silently taking a default.
+        /// </summary>
+        public float[] ToTraits()
+        {
+            return new[]
+            {
+                Growth, SeedInvestment, WaterEfficiency, Nutrition,
+                Defense, Dispersal, MoistureTolerance, TemperatureTolerance,
+            };
+        }
+
+        /// <summary>Rebuild a plant genome from <see cref="ToTraits"/> output.</summary>
+        public static PlantGenome FromTraits(float[] traits)
+        {
+            if (traits == null)
+            {
+                throw new ArgumentNullException(nameof(traits));
+            }
+
+            if (traits.Length != TraitCount)
+            {
+                throw new ArgumentException($"Expected {TraitCount} traits, got {traits.Length}.", nameof(traits));
+            }
+
+            return new PlantGenome(
+                traits[0], traits[1], traits[2], traits[3],
+                traits[4], traits[5], traits[6], traits[7]);
+        }
+
+        public float GetTrait(int index)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return ToTraits()[index];
+        }
+
+        /// <summary>Copy with one trait replaced. Used by the plant gene liveness perturbation harness.</summary>
+        public PlantGenome WithTrait(int index, float value)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            float[] traits = ToTraits();
+            traits[index] = value;
+            return FromTraits(traits);
+        }
+
         private static float Clamp01(float value) { return Math.Max(0f, Math.Min(1f, value)); }
     }
 
