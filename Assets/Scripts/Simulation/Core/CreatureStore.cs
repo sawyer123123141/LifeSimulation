@@ -180,6 +180,18 @@ namespace LifeSimulation.Simulation.Core
             return _genomes[index];
         }
 
+        /// <summary>
+        /// Replace a creature's genome and rederive its phenotype. Diagnostics only: this is how
+        /// the gene liveness harness injects a perturbation. Needs are left alone so the
+        /// perturbation shows up through behavior rather than by resetting state directly.
+        /// </summary>
+        public void OverwriteGenomeAt(int index, Genome genome)
+        {
+            ValidateIndex(index);
+            _genomes[index] = genome;
+            _phenotypes[index] = Phenotype.FromGenome(genome);
+        }
+
         public Phenotype GetPhenotypeAt(int index)
         {
             ValidateIndex(index);

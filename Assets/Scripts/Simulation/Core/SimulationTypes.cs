@@ -118,7 +118,9 @@ namespace LifeSimulation.Simulation.Core
             float meanPlantGrowthGene = 0f,
             float meanPlantNutritionGene = 0f,
             float meanPlantDefenseGene = 0f,
-            float cumulativePlantBiomassLostToMortality = 0f)
+            float cumulativePlantBiomassLostToMortality = 0f,
+            float plantBiomassSeconds = 0f,
+            float plantPatchSeconds = 0f)
         {
             Tick = tick;
             Population = population;
@@ -172,6 +174,8 @@ namespace LifeSimulation.Simulation.Core
             MeanPlantNutritionGene = meanPlantNutritionGene;
             MeanPlantDefenseGene = meanPlantDefenseGene;
             CumulativePlantBiomassLostToMortality = cumulativePlantBiomassLostToMortality;
+            PlantBiomassSeconds = plantBiomassSeconds;
+            PlantPatchSeconds = plantPatchSeconds;
         }
 
         public long Tick { get; }
@@ -227,6 +231,35 @@ namespace LifeSimulation.Simulation.Core
         public float MeanPlantNutritionGene { get; }
         public float MeanPlantDefenseGene { get; }
         public float CumulativePlantBiomassLostToMortality { get; }
+
+        /// <summary>
+        /// Time integral of standing plant biomass (biomass units x seconds), accumulated on the
+        /// resource tick. Exists to normalize <see cref="CumulativePlantBiomassConsumed"/> into a
+        /// rate; on its own it is not interpretable.
+        /// </summary>
+        public float PlantBiomassSeconds { get; }
+
+        /// <summary>Time integral of the live plant patch count (patches x seconds).</summary>
+        public float PlantPatchSeconds { get; }
+
+        /// <summary>
+        /// Realized grazing pressure: the fraction of standing plant biomass removed by consumers
+        /// per second, averaged over the whole run.
+        ///
+        /// This is the metric a coevolution null must be read against. A null recorded at low
+        /// realized pressure cannot distinguish "plants and consumers do not coevolve" from
+        /// "nothing was grazing hard enough to select on defense" — the trap
+        /// docs/experiments/p4-coevolution-null-2026-08-17.md fell into. Always report it
+        /// alongside any plant-trait result.
+        /// </summary>
+        public float RealizedGrazingPressure => PlantBiomassSeconds <= 0f
+            ? 0f
+            : CumulativePlantBiomassConsumed / PlantBiomassSeconds;
+
+        /// <summary>Biomass removed by consumers per live patch per second, averaged over the run.</summary>
+        public float GrazingPerPatchSecond => PlantPatchSeconds <= 0f
+            ? 0f
+            : CumulativePlantBiomassConsumed / PlantPatchSeconds;
     }
 
     public struct ReproductionState

@@ -50,6 +50,8 @@ to you within a week. Names below are stable.
 | `Experiments/SimulationScenario.cs` | **All scenario definitions.** `Prototype4Scenarios` is here. | `ConsumerDefenseCalibrationModerate`, `CreateConsumerDefenseCalibrationScenario`, `ApplyTo` |
 | `Experiments/ExperimentRunner.cs` | Headless run harness | `Run(config, scenario, ticks)` |
 | `Experiments/PairedExperimentAnalysis.cs` | Statistics for paired experiments | `Assess`, `Summarize`, `ExperimentMetric` |
+| `Diagnostics/GeneLivenessAnalysis.cs` | **The authority on whether a gene reaches behavior.** Perturbation, not caller-search. | `Analyze`, `Report`, `GeneLivenessResult` |
+| `Diagnostics/LivenessRecorder.cs` | Runtime probe counters for code *paths*; never touches any hash | `LivenessProbe`, `RecordOutput`, `IsInertlyExecuting` |
 
 ### Elsewhere
 
@@ -129,7 +131,18 @@ reaches production behavior.** See the `Persistence` entry in §5.
 
 Maintained because "the code exists" is unrelated to "the code runs", and
 rediscovering this is expensive. **Update in the same commit as any change.**
-Full evidence: `docs/experiments/halfway-wired-mechanism-audit-2026-08-17.md`.
+Full evidence: `docs/experiments/halfway-wired-mechanism-audit-2026-08-17.md`,
+corrected by `docs/experiments/gene-liveness-perturbation-2026-08-18.md`.
+
+**You should not need to re-audit this by hand.** `LivenessTests` enforces the
+gene half of this table by perturbation and fails the build when it changes. Run
+`dotnet test --filter "FullyQualifiedName~LivenessTests"` instead of grepping for
+callers. Two entries below were wrong precisely because a caller-search was used.
+
+**Verdicts are scoped to the scenario measured.** A gene reading dead in a narrow
+scenario may simply have no occasion to fire — `RiskAversion` reads dead under
+`CreatePrototype4Defaults` because the herbivore calibration produces no threats.
+Always pin liveness against `CreateFullEcosystemDefaults`, which exists for this.
 
 **Never executes in production (as of 2026-08-17):**
 
@@ -139,7 +152,7 @@ Full evidence: `docs/experiments/halfway-wired-mechanism-audit-2026-08-17.md`.
 | `MemorySystem.TickPlaceMemoryDecay` | No production caller. |
 | `DecisionSystem.PreferRememberedResource` | No production caller. |
 | `PlantPatchState.SeedReserve` | Allocated, never written or read. |
-| `Genome.Commitment` | Inherited, mutated, hashed, aggregated into statistics, exposed as an `ExperimentMetric` — and read by **zero** behavior code. `CommitmentBonus` takes `Persistence` instead. |
+| `Genome.Commitment` | Inherited, mutated, hashed, aggregated into statistics, exposed as an `ExperimentMetric` — and read by **zero** behavior code. `CommitmentBonus` takes `Persistence` instead. **Kept deliberately** as the drift-control channel that validates the bootstrap pipeline; confirmed dead by perturbation under FULL ecosystem mode and pinned by `LivenessTests`. Do not wire it. |
 
 **Executes but always on empty data:** `TryScoreBestRememberedPlace`,
 `RecordFailedPlaceSearch` — both depend on place-memory slots, which are never
@@ -148,8 +161,18 @@ populated.
 **Unreachable under `IntentUtilityV1`** (the policy every P4 scenario uses):
 `ForagingEconomics.CommitmentBonus` (Legacy foraging path only) and
 `ForagingEconomics.ShouldAbandon` (`ForagingEconomicsEnabled && Legacy &&
-!CognitionEnabled`). Consequence: **`Persistence` has no behavioral effect under
-P4** even though its inheritance bug was fixed.
+!CognitionEnabled`).
+
+> **CORRECTED 2026-08-18.** This entry previously concluded "**`Persistence` has
+> no behavioral effect under P4**". That is **withdrawn**. Perturbation diverges
+> the behavior hash at tick 10 under plain P4 defaults: `GenomePhenotype.cs:351`
+> adds `0.05f * genome.Persistence` into `bodyMass`, which sets energy capacity,
+> speed and metabolic cost. Only the *foraging commitment* half is Legacy-only.
+> `Persistence` is **not** an inert channel and must not be used as a placebo.
+
+**Also live but easy to mis-audit:** `RiskAversion` has three real call sites in
+`DecisionSystem`, all gated on a valid threat. It reads dead under P4's herbivore
+calibration and live under FULL ecosystem mode. Not dead code.
 
 **Verified live, do not re-audit:** `CognitionRestCostMultiplier`,
 `ReproductionCooldownSeconds`, `ReproductionEnergyCostFraction`, all
@@ -206,6 +229,58 @@ suspect the variable is not in the sweep.
 change shipped with a guard that immediately failed. The guard was correct and
 the implementation was wrong. Do not reach for the tolerance.
 
+**2026-08-18 — When a trait will not move, check that it *can* move before
+tuning pressure.** Three documents in a row treated flat plant defense as a
+calibration problem and proposed raising grazing pressure. Reading the
+consumption path took ten minutes and showed `ConsumeAt` removes biomass with no
+defense term: defense protected zero tissue, so no pressure setting could have
+produced a gradient. Before sweeping a parameter to make selection appear, verify
+the trait has a path to fitness at all. `GeneLivenessAnalysis` answers this for
+animal genes; for plant genes, read the consumption path.
+
+**2026-08-18 — A prediction that fails is still a measurement; report both.**
+The prediction here was that defense would be selected *down*, being a cost that
+buys nothing. It was not — deltas were pure drift. The cost was unrealized too,
+because patches sit at capacity and the penalty is charged against growth *rate*.
+"Cost-free and benefit-free" is a different diagnosis with different fixes than
+"costly and unrewarded", and only measurement separated them.
+
+**2026-08-18 — Check the sign of a feedback, not just its magnitude.** Defense
+lowers nutrition per unit eaten, so consumers compensate by eating more: realized
+grazing rose 2.2x from defense 0.0 to 0.9. The mechanism was not weak, it was
+*inverted* relative to the ecology being modelled. A metric reported without its
+sign checked would have read as "pressure exists, so the null is real".
+
+**2026-08-18 — A caller-search misses readers inside aggregate expressions.**
+The 2026-08-17 audit reported `Persistence` as having exactly three readers and
+concluded it was behaviorally inert under P4. It missed `0.05f * genome.Persistence`
+inside the `bodyMass` weighted sum — a real production path found immediately by
+perturbation. Grep finds *names*; it does not tell you whether the value flows
+anywhere. Use `LivenessTests`.
+
+**2026-08-18 — A trait that only moves while the ecosystem collapses has not
+demonstrated a gradient.** Sweeping plant regeneration down finally moved defense
+(+0.1157 at founder 0.6, regeneration 3) — in an arm where 30/30 seeds lost their
+animal population and plants reached generation 0. That number is not a positive
+control and must not be cited as one. When a long-flat trait suddenly responds,
+check the survival columns in the same row before celebrating.
+
+**2026-08-18 — A one-dimensional pressure lever moves two things here.**
+`RegenerationPerSecond` sets both the food supply for the whole animal population
+and how depletable an individual patch is. Sweeping it cannot find a window where
+grazing bites locally without starving the population globally — the arms trade
+one failure for the other, the same shape as the lifespan and population-cap
+sweeps that were declared "unsatisfiable" in 2026-08-17. When every arm fails in
+alternating directions, the lever is coupled and the fix is a scenario redesign,
+not another sweep.
+
+**2026-08-18 — Liveness verdicts are scoped to the scenario, and a narrow
+scenario manufactures false deaths.** `RiskAversion` reads dead under P4 defaults
+purely because the herbivore calibration never produces a threat for its three
+guarded call sites. Had that been recorded as "dead code" it would have been
+deleted. Always pin liveness against `CreateFullEcosystemDefaults`, and state the
+scenario alongside any negative verdict.
+
 ---
 
 ## 6. Standing project facts
@@ -222,6 +297,19 @@ the implementation was wrong. Do not reach for the tolerance.
   are not behavior changes and need no flag.
 - `PlantMortalityEnabled` defaults `false`. Any ecosystem experiment must enable
   it explicitly or plants freeze at generation 2.
+- `CreateFullEcosystemDefaults` turns every P4 mechanism on at once. It is a
+  **liveness and integration** configuration, not an experimental one: every flag
+  moves together, so any difference it produces is unattributable. Use it to pin
+  liveness against the widest surface; run experiment arms against
+  `CreatePrototype4Defaults` varying one flag.
+- `PlantDefenseDeterrenceEnabled` defaults `false`. With it off, plant defense
+  protects no biomass and cannot be selected on at all — see
+  `docs/experiments/p4-defense-no-gradient-2026-08-18.md`. Any coevolution run
+  must enable it, and must report `SimulationStatistics.RealizedGrazingPressure`
+  so a null can be read against the pressure that actually existed.
+- `SimulationStatistics.RealizedGrazingPressure` and the `PlantBiomassSeconds` /
+  `PlantPatchSeconds` integrals behind it are read-only accumulators, deliberately
+  absent from `ComputeStateHash`. Same rule applies to anything in `Diagnostics/`.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

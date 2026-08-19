@@ -112,6 +112,95 @@ namespace LifeSimulation.Simulation.Biology
                 Persistence);
         }
 
+        /// <summary>Number of heritable traits. Keep in step with the constructor and <see cref="ToTraits"/>.</summary>
+        public const int TraitCount = 24;
+
+        private static readonly string[] TraitNames =
+        {
+            nameof(BodySize), nameof(MovementSpeed), nameof(MetabolicPace), nameof(VisionRange),
+            nameof(WaterEfficiency), nameof(FoodEfficiency), nameof(Attack), nameof(Defense),
+            nameof(Maneuverability), nameof(Fear), nameof(Aggression), nameof(DietSpecialization),
+            nameof(MemoryCapacity), nameof(MemoryRetention), nameof(LearningRate), nameof(Exploration),
+            nameof(TemperatureTolerance), nameof(FertilityInvestment), nameof(LifespanTendency),
+            nameof(UrgencyExponent), nameof(TravelSensitivity), nameof(RiskAversion),
+            nameof(Commitment), nameof(Persistence),
+        };
+
+        /// <summary>Trait name for an index, matching <see cref="ToTraits"/> ordering.</summary>
+        public static string TraitName(int index)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return TraitNames[index];
+        }
+
+        /// <summary>
+        /// All traits in constructor order. The single enumeration of the genome: a trait missing
+        /// here fails the round-trip test rather than silently taking a default, which is how
+        /// <c>Persistence</c> was dropped for every creature ever born.
+        /// </summary>
+        public float[] ToTraits()
+        {
+            return new[]
+            {
+                BodySize, MovementSpeed, MetabolicPace, VisionRange,
+                WaterEfficiency, FoodEfficiency, Attack, Defense,
+                Maneuverability, Fear, Aggression, DietSpecialization,
+                MemoryCapacity, MemoryRetention, LearningRate, Exploration,
+                TemperatureTolerance, FertilityInvestment, LifespanTendency,
+                UrgencyExponent, TravelSensitivity, RiskAversion,
+                Commitment, Persistence,
+            };
+        }
+
+        /// <summary>Rebuild a genome from <see cref="ToTraits"/> output.</summary>
+        public static Genome FromTraits(float[] traits)
+        {
+            if (traits == null)
+            {
+                throw new ArgumentNullException(nameof(traits));
+            }
+
+            if (traits.Length != TraitCount)
+            {
+                throw new ArgumentException($"Expected {TraitCount} traits, got {traits.Length}.", nameof(traits));
+            }
+
+            return new Genome(
+                traits[0], traits[1], traits[2], traits[3],
+                traits[4], traits[5], traits[6], traits[7],
+                traits[8], traits[9], traits[10], traits[11],
+                traits[12], traits[13], traits[14], traits[15],
+                traits[16], traits[17], traits[18], traits[19],
+                traits[20], traits[21], traits[22], traits[23]);
+        }
+
+        public float GetTrait(int index)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return ToTraits()[index];
+        }
+
+        /// <summary>Copy with one trait replaced. Used by the gene liveness perturbation harness.</summary>
+        public Genome WithTrait(int index, float value)
+        {
+            if ((uint)index >= (uint)TraitCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            float[] traits = ToTraits();
+            traits[index] = value;
+            return FromTraits(traits);
+        }
+
         private static float Clamp01(float value)
         {
             return Math.Max(0f, Math.Min(1f, value));

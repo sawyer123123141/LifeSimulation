@@ -45,6 +45,8 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativePlantBiomassConsumed;
         private float _cumulativePlantBiomassLostToMortality;
         private float _initialPlantBiomass;
+        private float _plantBiomassSeconds;
+        private float _plantPatchSeconds;
         private long _plantSeedOrdinal;
         private int _plantBirthCount;
 
@@ -251,6 +253,19 @@ namespace LifeSimulation.Simulation.Core
                     }
 
                     PlantGrowthSystem.ProjectFoodResources(Plants, Resources);
+
+                    // Standing-biomass and patch-count time integrals. Read-only accumulators:
+                    // nothing in the simulation consumes them, and they are deliberately absent
+                    // from ComputeStateHash, so realized grazing pressure can be reported without
+                    // perturbing the run it measures.
+                    float standingBiomass = 0f;
+                    for (int index = 0; index < Plants.Count; index++)
+                    {
+                        standingBiomass += Plants.GetAt(index).Biomass;
+                    }
+
+                    _plantBiomassSeconds += standingBiomass * resourceDeltaTime;
+                    _plantPatchSeconds += Plants.Count * resourceDeltaTime;
                 }
                 else
                 {
@@ -330,6 +345,96 @@ namespace LifeSimulation.Simulation.Core
 
             _pendingDeathCount = 0;
             CurrentTick = nextTick;
+        }
+
+        /// <summary>
+        /// Hash of everything a gene can only reach <i>through behavior</i>: needs, movement,
+        /// decisions, combat, reproduction, memory, population, resources and plant biomass —
+        /// but no genome or phenotype field.
+        ///
+        /// This is the basis of the gene liveness test. Perturbing a gene always moves
+        /// <see cref="ComputeStateHash"/>, because that hash includes the genome directly; it moves
+        /// this hash only if the gene actually influenced something. A gene whose perturbation
+        /// leaves this hash untouched over a long run has no path to behavior, which is precisely
+        /// the <c>Commitment</c> shape that a caller-search cannot detect.
+        ///
+        /// Deliberately excludes <c>LivenessRecorder</c> counters, which must never affect any hash.
+        /// </summary>
+        public ulong ComputeBehaviorHash()
+        {
+            ulong hash = 14695981039346656037UL;
+            hash = Hash(hash, unchecked((ulong)CurrentTick));
+            hash = Hash(hash, unchecked((ulong)CreatureCount));
+            hash = Hash(hash, unchecked((ulong)_spawnOrdinal));
+            hash = Hash(hash, unchecked((ulong)_birthCount));
+            hash = Hash(hash, unchecked((ulong)_deathCount));
+            hash = Hash(hash, unchecked((ulong)_starvationDeathCount));
+            hash = Hash(hash, unchecked((ulong)_dehydrationDeathCount));
+            hash = Hash(hash, unchecked((ulong)_ageDeathCount));
+            hash = Hash(hash, unchecked((ulong)_healthDeathCount));
+            hash = Hash(hash, unchecked((ulong)_predationDeathCount));
+            hash = Hash(hash, unchecked((ulong)_attackHitCount));
+
+            for (int index = 0; index < CreatureCount; index++)
+            {
+                CreatureNeeds needs = Creatures.GetNeedsAt(index);
+                hash = HashFloat(hash, needs.Energy);
+                hash = HashFloat(hash, needs.Hydration);
+                hash = HashFloat(hash, needs.Rest);
+                hash = HashFloat(hash, needs.Health);
+                hash = HashFloat(hash, needs.Age);
+
+                MovementState movement = Creatures.GetMovementAt(index);
+                hash = HashFloat(hash, movement.Position.X);
+                hash = HashFloat(hash, movement.Position.Y);
+                hash = HashFloat(hash, movement.DistanceSinceLastNeeds);
+
+                CreatureDecision decision = Creatures.GetDecisionAt(index);
+                hash = Hash(hash, unchecked((ulong)decision.Action));
+                hash = Hash(hash, unchecked((ulong)(long)decision.TargetResourceIndex));
+                hash = HashFloat(hash, decision.Score);
+
+                ReproductionState reproduction = Creatures.GetReproductionRefAt(index);
+                hash = HashFloat(hash, reproduction.CooldownRemaining);
+
+                CombatState combat = Creatures.GetCombatRefAt(index);
+                hash = HashFloat(hash, combat.WoundSeverity);
+
+                MemoryState memory = Creatures.GetMemoryRefAt(index);
+                hash = HashFloat(hash, memory.FoodConfidence);
+                hash = HashFloat(hash, memory.WaterConfidence);
+                hash = HashFloat(hash, memory.ThreatConfidence);
+                hash = HashFloat(hash, memory.FoodOutcomeValue);
+                hash = HashFloat(hash, memory.WaterOutcomeValue);
+            }
+
+            for (int index = 0; index < Resources.Count; index++)
+            {
+                ResourceState resource = Resources.GetAt(index);
+                hash = HashFloat(hash, resource.Amount);
+                hash = Hash(hash, resource.IsActive ? 1UL : 0UL);
+            }
+
+            for (int index = 0; index < Plants.Count; index++)
+            {
+                PlantPatchState patch = Plants.GetAt(index);
+                hash = HashFloat(hash, patch.Biomass);
+                hash = Hash(hash, unchecked((ulong)patch.Lineage.Generation));
+            }
+
+            return hash;
+        }
+
+        /// <summary>
+        /// Overwrite one trait across every living creature. Diagnostics only — used by the gene
+        /// liveness harness to inject a perturbation before stepping. Not called by simulation logic.
+        /// </summary>
+        public void OverwriteTraitForAllCreatures(int traitIndex, float value)
+        {
+            for (int index = 0; index < CreatureCount; index++)
+            {
+                Creatures.OverwriteGenomeAt(index, Creatures.GetGenomeAt(index).WithTrait(traitIndex, value));
+            }
         }
 
         public ulong ComputeStateHash()
@@ -1167,6 +1272,28 @@ namespace LifeSimulation.Simulation.Core
 
                 ResourceRequest request = _resourceRequests[requestIndex];
                 ResourceState resource = Resources.GetAt(request.ResourceIndex);
+
+                // Deterrence: defended tissue is harder to strip, so a defended patch loses less
+                // biomass per bite and the grazer carries away correspondingly less. With the flag
+                // off this is exactly allocatedAmount, so the path stays byte-identical.
+                //
+                // Without it, Defense scales only the nutrition term below while ConsumeAt removes
+                // the full bite. Defense then protects no tissue, giving the patch carrying it no
+                // individual benefit and leaving nothing for selection to act on.
+                //
+                // ResourceAllocationSystem.Resolve has already drawn the full bite out of the food
+                // resource pool, so between resource ticks the pool under-reports what the patch
+                // still holds. PlantGrowthSystem.ProjectFoodResources resyncs it from biomass on
+                // the next resource tick.
+                if (Config.PlantDefenseDeterrenceEnabled && resource.Kind == ResourceKind.Food)
+                {
+                    allocatedAmount *= 1f - (resource.PlantDefense * Config.PlantDefenseDeterrenceStrength);
+                    if (allocatedAmount <= 0f)
+                    {
+                        continue;
+                    }
+                }
+
                 if (Config.PlantCohortsEnabled && resource.Kind == ResourceKind.Food)
                 {
                     int plantPatchIndex = Plants.FindIndex(resource.Id);
@@ -1546,7 +1673,9 @@ namespace LifeSimulation.Simulation.Core
                 Plants.Count == 0 ? 0f : plantGrowthTotal / Plants.Count,
                 Plants.Count == 0 ? 0f : plantNutritionTotal / Plants.Count,
                 Plants.Count == 0 ? 0f : plantDefenseTotal / Plants.Count,
-                _cumulativePlantBiomassLostToMortality);
+                _cumulativePlantBiomassLostToMortality,
+                _plantBiomassSeconds,
+                _plantPatchSeconds);
         }
 
         private void CountDeathCause(DeathCause cause)

@@ -22,6 +22,8 @@ namespace LifeSimulation.Simulation.Experiments
         TravelSensitivity = 13,
         RiskAversion = 14,
         Commitment = 15,
+        PlantDefense = 16,
+        RealizedGrazingPressure = 17,
     }
 
     public readonly struct PairedExperimentSummary
@@ -183,6 +185,10 @@ namespace LifeSimulation.Simulation.Experiments
                     return result.FinalStatistics.MeanRiskAversionGene;
                 case ExperimentMetric.Commitment:
                     return result.FinalStatistics.MeanCommitmentGene;
+                case ExperimentMetric.PlantDefense:
+                    return result.FinalStatistics.MeanPlantDefenseGene;
+                case ExperimentMetric.RealizedGrazingPressure:
+                    return result.FinalStatistics.RealizedGrazingPressure;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(metric));
             }

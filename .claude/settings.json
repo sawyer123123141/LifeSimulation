@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/field-notes-reminder.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

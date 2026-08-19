@@ -84,6 +84,13 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Distance at which a remembered threat's avoidance penalty falls to exactly zero.</summary>
         public const float DefaultThreatFalloffDistance = 10f;
 
+        /// <summary>
+        /// Fraction of a grazing bite that a maximally defended patch (Defense = 1) withholds when
+        /// <c>PlantDefenseDeterrenceEnabled</c> is set. Placeholder pending the sweep in
+        /// docs/experiments/; not yet derived.
+        /// </summary>
+        public const float DefaultPlantDefenseDeterrenceStrength = 0.75f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -115,7 +122,9 @@ namespace LifeSimulation.Simulation.Core
             bool learnedResourceQualityEnabled = false,
             bool mateSelectionEnabled = false,
             bool plantSiteCompetitionEnabled = false,
-            bool plantMortalityEnabled = false)
+            bool plantMortalityEnabled = false,
+            bool plantDefenseDeterrenceEnabled = false,
+            float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -148,6 +157,8 @@ namespace LifeSimulation.Simulation.Core
             MateSelectionEnabled = mateSelectionEnabled;
             PlantSiteCompetitionEnabled = plantSiteCompetitionEnabled;
             PlantMortalityEnabled = plantMortalityEnabled;
+            PlantDefenseDeterrenceEnabled = plantDefenseDeterrenceEnabled;
+            PlantDefenseDeterrenceStrength = plantDefenseDeterrenceStrength;
         }
 
         public int WorldSeed { get; }
@@ -180,6 +191,17 @@ namespace LifeSimulation.Simulation.Core
         public bool MateSelectionEnabled { get; }
         public bool PlantSiteCompetitionEnabled { get; }
         public bool PlantMortalityEnabled { get; }
+
+        /// <summary>
+        /// When set, plant Defense reduces the biomass a grazer can actually remove per bite,
+        /// not merely the nutrition extracted from it. Off by default: with it off, Defense
+        /// protects no tissue at all, so it carries no individual-level benefit and cannot be
+        /// selected on (docs/experiments/p4-defense-no-gradient-2026-08-18.md).
+        /// </summary>
+        public bool PlantDefenseDeterrenceEnabled { get; }
+
+        /// <summary>Fraction of a bite withheld at Defense = 1. Only read when deterrence is enabled.</summary>
+        public float PlantDefenseDeterrenceStrength { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -228,6 +250,48 @@ namespace LifeSimulation.Simulation.Core
         {
             SimulationConfig defaults = CreatePrototype3Defaults(worldSeed, initialPopulation);
             return new SimulationConfig(worldSeed, initialPopulation, defaults.Schedule, defaults.MaximumPopulation, FounderProfile.PhysiologyVariation, cognitionEnabled: true, physiologyEnabled: true, decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1, plantCohortsEnabled: true);
+        }
+
+        /// <summary>
+        /// Every P4 mechanism switched on at once, including plant mortality and defense deterrence.
+        ///
+        /// <para>This is a <b>liveness and integration</b> configuration, not an experimental one.
+        /// Its purpose is to give every mechanism its best chance of mattering, so that
+        /// <c>GeneLivenessAnalysis</c> and <c>LivenessRecorder</c> report against the widest
+        /// available surface: a gene that reads as dead here is dead under every narrower
+        /// configuration too.</para>
+        ///
+        /// <para><b>Do not run experiment arms against this.</b> Every flag moves together, so any
+        /// difference it produces is unattributable — the confounded-sweep mistake recorded in
+        /// docs/AGENT_FIELD_NOTES.md §5. Experiments vary one flag against
+        /// <see cref="CreatePrototype4Defaults"/>.</para>
+        /// </summary>
+        public static SimulationConfig CreateFullEcosystemDefaults(int worldSeed, int initialPopulation)
+        {
+            SimulationConfig defaults = CreatePrototype4Defaults(worldSeed, initialPopulation);
+            return new SimulationConfig(
+                worldSeed,
+                initialPopulation,
+                defaults.Schedule,
+                defaults.MaximumPopulation,
+                FounderProfile.PhysiologyVariation,
+                cognitionEnabled: true,
+                physiologyEnabled: true,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true,
+                foragingEconomicsEnabled: true,
+                predationEconomicsEnabled: true,
+                decisionStaggerEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                restBehaviorEnabled: true,
+                juvenileCapabilityEnabled: true,
+                parentalFollowingEnabled: true,
+                kinRecognitionEnabled: true,
+                learnedResourceQualityEnabled: true,
+                mateSelectionEnabled: true,
+                plantSiteCompetitionEnabled: true,
+                plantMortalityEnabled: true,
+                plantDefenseDeterrenceEnabled: true);
         }
 
         public void Validate()
