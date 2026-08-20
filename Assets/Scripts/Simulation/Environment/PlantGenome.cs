@@ -12,7 +12,7 @@ namespace LifeSimulation.Simulation.Environment
         /// <see cref="CloneMutated"/>, <see cref="ToTraits"/>, <see cref="FromTraits"/> and the
         /// state hash all pass it explicitly and a transmission test fails if one stops.
         /// </param>
-        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance, float nutrientUptake = .5f, float seedlingResilience = .5f)
+        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance, float nutrientUptake = .5f, float seedlingResilience = .5f, float seedProductionRate = .5f)
         {
             Growth = Clamp01(growth);
             SeedInvestment = Clamp01(seedInvestment);
@@ -24,9 +24,10 @@ namespace LifeSimulation.Simulation.Environment
             TemperatureTolerance = Clamp01(temperatureTolerance);
             NutrientUptake = Clamp01(nutrientUptake);
             SeedlingResilience = Clamp01(seedlingResilience);
+            SeedProductionRate = Clamp01(seedProductionRate);
         }
 
-        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
+        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
         public float Growth { get; }
         public float SeedInvestment { get; }
         public float WaterEfficiency { get; }
@@ -57,6 +58,13 @@ namespace LifeSimulation.Simulation.Environment
         /// </summary>
         public float SeedlingResilience { get; }
 
+        /// <summary>
+        /// Reduces the cooldown after a successful seeding event. This route acts after a patch
+        /// has reached maturity, so it bypasses the near-capacity growth gate that leaves growth
+        /// rate traits nearly unselectable.
+        /// </summary>
+        public float SeedProductionRate { get; }
+
         public static PlantGenome CloneMutated(PlantGenome parent, int worldSeed, long ordinal, float mutationStandardDeviation)
         {
             return new PlantGenome(
@@ -69,7 +77,8 @@ namespace LifeSimulation.Simulation.Environment
                 Mutate(parent.MoistureTolerance, worldSeed, ordinal, 6, mutationStandardDeviation),
                 Mutate(parent.TemperatureTolerance, worldSeed, ordinal, 7, mutationStandardDeviation),
                 Mutate(parent.NutrientUptake, worldSeed, ordinal, 8, mutationStandardDeviation),
-                Mutate(parent.SeedlingResilience, worldSeed, ordinal, 9, mutationStandardDeviation));
+                Mutate(parent.SeedlingResilience, worldSeed, ordinal, 9, mutationStandardDeviation),
+                Mutate(parent.SeedProductionRate, worldSeed, ordinal, 10, mutationStandardDeviation));
         }
 
         private static float Mutate(float value, int worldSeed, long ordinal, int trait, float standardDeviation)
@@ -78,13 +87,13 @@ namespace LifeSimulation.Simulation.Environment
         }
 
         /// <summary>Number of heritable plant traits. Keep in step with the constructor, <see cref="ToTraits"/> and <see cref="CloneMutated"/>.</summary>
-        public const int TraitCount = 10;
+        public const int TraitCount = 11;
 
         private static readonly string[] TraitNames =
         {
             nameof(Growth), nameof(SeedInvestment), nameof(WaterEfficiency), nameof(Nutrition),
             nameof(Defense), nameof(Dispersal), nameof(MoistureTolerance), nameof(TemperatureTolerance),
-            nameof(NutrientUptake), nameof(SeedlingResilience),
+            nameof(NutrientUptake), nameof(SeedlingResilience), nameof(SeedProductionRate),
         };
 
         /// <summary>Trait name for an index. Ordering matches the mutation trait indices in <see cref="CloneMutated"/>.</summary>
@@ -108,6 +117,7 @@ namespace LifeSimulation.Simulation.Environment
             {
                 Growth, SeedInvestment, WaterEfficiency, Nutrition,
                 Defense, Dispersal, MoistureTolerance, TemperatureTolerance, NutrientUptake, SeedlingResilience,
+                SeedProductionRate,
             };
         }
 
@@ -126,7 +136,7 @@ namespace LifeSimulation.Simulation.Environment
 
             return new PlantGenome(
                 traits[0], traits[1], traits[2], traits[3],
-                traits[4], traits[5], traits[6], traits[7], traits[8], traits[9]);
+                traits[4], traits[5], traits[6], traits[7], traits[8], traits[9], traits[10]);
         }
 
         public float GetTrait(int index)
@@ -172,7 +182,7 @@ namespace LifeSimulation.Simulation.Environment
         /// </summary>
         public const float BaseLifespanSeconds = 90f;
 
-        public PlantPhenotype(float growthRateMultiplier, float nutritionMultiplier, float defense, float dispersalRange, float seedInvestmentFraction, float lifespanSeconds)
+        public PlantPhenotype(float growthRateMultiplier, float nutritionMultiplier, float defense, float dispersalRange, float seedInvestmentFraction, float lifespanSeconds, float reproductionCooldownSeconds)
         {
             GrowthRateMultiplier = growthRateMultiplier;
             NutritionMultiplier = nutritionMultiplier;
@@ -180,6 +190,7 @@ namespace LifeSimulation.Simulation.Environment
             DispersalRange = dispersalRange;
             SeedInvestmentFraction = seedInvestmentFraction;
             LifespanSeconds = lifespanSeconds;
+            ReproductionCooldownSeconds = reproductionCooldownSeconds;
         }
 
         public float GrowthRateMultiplier { get; }
@@ -188,6 +199,7 @@ namespace LifeSimulation.Simulation.Environment
         public float DispersalRange { get; }
         public float SeedInvestmentFraction { get; }
         public float LifespanSeconds { get; }
+        public float ReproductionCooldownSeconds { get; }
 
         /// <param name="fertilityAdaptationEnabled">
         /// Gates the <c>NutrientUptake</c> growth charge as well as its benefit in
@@ -201,7 +213,7 @@ namespace LifeSimulation.Simulation.Environment
         /// <see cref="PlantReproductionSystem"/>, so that flag-off is byte-identical to the world
         /// before the gene existed - the same reason the fertility charge above is gated.
         /// </param>
-        public static PlantPhenotype FromGenome(PlantGenome genome, bool fertilityAdaptationEnabled = false, bool establishmentContestEnabled = false)
+        public static PlantPhenotype FromGenome(PlantGenome genome, bool fertilityAdaptationEnabled = false, bool establishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false)
         {
             float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.08f * genome.WaterEfficiency) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
             if (fertilityAdaptationEnabled)
@@ -219,13 +231,21 @@ namespace LifeSimulation.Simulation.Environment
                 dispersalRange = Math.Max(0f, dispersalRange - (2f * genome.SeedlingResilience));
             }
 
+            float reproductionCooldownSeconds = PlantReproductionSystem.ReproductionCooldownSeconds;
+            if (seedProductionRateEnabled)
+            {
+                dispersalRange = Math.Max(0f, dispersalRange - (seedProductionRateDispersalCharge * genome.SeedProductionRate));
+                reproductionCooldownSeconds *= 1.5f - (.75f * genome.SeedProductionRate);
+            }
+
             return new PlantPhenotype(
                 Math.Max(.1f, growth),
                 .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),
                 genome.Defense,
                 dispersalRange,
                 .02f + (.10f * genome.SeedInvestment),
-                BaseLifespanSeconds * (1.5f - (.75f * genome.Growth)));
+                BaseLifespanSeconds * (1.5f - (.75f * genome.Growth)),
+                reproductionCooldownSeconds);
         }
     }
 }

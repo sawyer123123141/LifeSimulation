@@ -21,7 +21,7 @@ Unity checkout (Play mode only, and the user compiles it there):
   C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim
 Same remote, separate trees — pull the other after every push.
 Tests: cd tools/HeadlessTests && dotnet test
-Both trees on main, 395/395 green, trees clean. Run git log --oneline -1 for the head.
+Both trees on main, 398/398 green, trees clean. Run git log --oneline -1 for the head.
 The Unity editor compile was last confirmed by the user on 2026-08-19; the 2026-08-20
 plant work has not been opened in the editor. A green dotnet test does not prove Unity
 compiles — if the editor disagrees, check for global usings first.
@@ -66,22 +66,31 @@ Why establishment and not the other two:
     r(Growth, lifespan) = -0.51 among patches that die of age — and it converts to
     R2 = 0.024 on offspring. Site occupancy is 91% of 24 sites, so reproduction is
     site-limited, not time-limited.
-  - SEED PRODUCTION is capped by the hard-coded ReproductionCooldownSeconds = 20f. There is
-    no genetic channel on seeding rate at all.
+  - SEED PRODUCTION now HAS a genetic channel (SeedProductionRate) and it is a measured
+    null. Halving the cooldown moves births under 10%, for the same reason mortality
+    has no headroom: both buy TIME, and free SITES are what is scarce.
 
 === RECOMMENDED NEXT ===
 
-Pick one. Both are small next to what came before.
+One item left on this track, plus a pending user decision.
 
-A. THE THIRD ROUTE. ReproductionCooldownSeconds is a hard-coded 20f and it is why ~96
-   seconds of life yields a mean of 1.52 offspring out of roughly four possible. Giving it
-   a genetic channel is the last untouched ungated route, and it is the mechanism that
-   makes lifespan worthless today — so it may raise the mortality route as a side effect.
-   Same treatment: flag defaulting false, effect size predicted as a NUMBER, and SWEEP THE
-   COST as well as the benefit (see METHOD RULES — a single arm at one charge is what made
-   the establishment contest look like a fourth null).
+ALL THREE non-growth-rate routes are now measured and the third one is CLOSED. Do not
+reopen it. `SeedProductionRate` (eleventh gene, PlantSeedProductionRateEnabled, default
+false) shortens the post-birth cooldown and is a measured null at every charge including
+zero — charge 0 read t +3.22 with 68/120 seeds up against a flag-DISABLED control arm at
+t +1.51 with 70/120 up, so it is less directionally consistent than pure drift.
+The reason is the one thing to carry forward: **reproduction here is SITE-limited, not
+time-limited.** Halving the cooldown moves plant births only 203.7 -> 221.8 and raises
+generations not at all, because a 95.8-second patch already spends 58.7 seconds mature,
+off cooldown, and failing to find a free site at 91% occupancy. Lifespan fails for the
+same reason. Both buy TIME; time is not scarce, free SITES are.
+  docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md
 
-B. THE INVADER SIDE. The contest is one-sided: only the incumbent's genome enters. An
+Before proposing any new plant trait, ask whether it changes a patch's access to SITES.
+If it only changes how fast the patch grows, how long it lives, or how often it seeds,
+that question is already answered and the answer is no.
+
+A. THE INVADER SIDE. The contest is one-sided: only the incumbent's genome enters. An
    invader-side term is the obvious question and was deliberately left out to keep the
    first wiring one-variable.
 
@@ -91,8 +100,8 @@ only in CreateFullEcosystemDefaults. Ask rather than deciding.
 
 Two things to be careful of, both learned the hard way:
   - A prediction stated as a mechanism story is not evidence. State it as a number.
-  - Any new plant gene needs the tenth-parameter treatment (see
-    PlantGenome.SeedlingResilience): constructor, CloneMutated, ToTraits/FromTraits,
+  - Any new plant gene needs the eleventh-parameter treatment (see
+    PlantGenome.SeedProductionRate): constructor, CloneMutated, ToTraits/FromTraits,
     TraitNames, TraitCount, ComputeStateHash, and a transmission test. The animal genome
     once dropped a gene silently this exact way.
 
@@ -124,6 +133,7 @@ conclusion in an older document.
 
   p4-where-plant-fitness-is-decided-2026-08-20.md             where the variance lives
   p4-establishment-contest-2026-08-20.md                      the blocker, answered
+  p4-seed-production-rate-is-not-the-constraint-2026-08-20.md why the 3rd route is closed
   p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md  the big one, read first
   p4-fertility-binds-the-growth-limit-2026-08-19.md            why the Min matters
   p4-plant-trait-selection-nonreplication-2026-08-19.md        tolerance did not replicate

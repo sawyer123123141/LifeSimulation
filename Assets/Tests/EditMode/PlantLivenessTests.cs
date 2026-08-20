@@ -236,6 +236,55 @@ namespace LifeSimulation.Tests.EditMode
             }
         }
 
+        // ---- The seed-production route (live, and a MEASURED NULL) ---------------------------
+
+        [Test]
+        public void SeedProductionRateChangesNothingUntilItsRouteIsEnabled()
+        {
+            PlantGenome fast = PlantGenome.Neutral.WithTrait(10, 1f);
+            PlantGenome slow = PlantGenome.Neutral.WithTrait(10, 0f);
+
+            PlantPhenotype fastOff = PlantPhenotype.FromGenome(fast);
+            PlantPhenotype slowOff = PlantPhenotype.FromGenome(slow);
+
+            Assert.That(fastOff.ReproductionCooldownSeconds, Is.EqualTo(slowOff.ReproductionCooldownSeconds));
+            Assert.That(fastOff.DispersalRange, Is.EqualTo(slowOff.DispersalRange));
+            Assert.That(fastOff.ReproductionCooldownSeconds, Is.EqualTo(PlantReproductionSystem.ReproductionCooldownSeconds));
+        }
+
+        [Test]
+        public void SeedProductionRateShortensTheCooldownAndChargesDispersalWhenEnabled()
+        {
+            // Both halves move together so flag-off stays byte-identical, the same shape as
+            // NutrientUptake and SeedlingResilience.
+            PlantPhenotype fast = PlantPhenotype.FromGenome(
+                PlantGenome.Neutral.WithTrait(10, 1f), false, false, seedProductionRateDispersalCharge: 2f, seedProductionRateEnabled: true);
+            PlantPhenotype slow = PlantPhenotype.FromGenome(
+                PlantGenome.Neutral.WithTrait(10, 0f), false, false, seedProductionRateDispersalCharge: 2f, seedProductionRateEnabled: true);
+
+            Assert.That(fast.ReproductionCooldownSeconds, Is.LessThan(slow.ReproductionCooldownSeconds));
+            Assert.That(fast.DispersalRange, Is.EqualTo(slow.DispersalRange - 2f));
+        }
+
+        [Test]
+        public void TheSeedProductionCooldownStillSpansTwoFoldSoTheMeasuredNullStillApplies()
+        {
+            // Pins WHY this route is a null, so nobody spends another session re-testing it. A
+            // patch lives 95.8s: 6.7s growing to maturity, 30.4s on cooldown, and 58.7s ALREADY
+            // mature, off cooldown, and failing to find a free site at 91% occupancy. Freeing
+            // cooldown time only adds to a pool of time that is already being wasted. Measured
+            // over seeds 42-71: births move 203.7 -> 221.8 across the gene's full span, under 10%,
+            // and plant generations do not rise at all.
+            // docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md
+            float slow = PlantPhenotype.FromGenome(
+                PlantGenome.Neutral.WithTrait(10, 0f), false, false, 0f, true).ReproductionCooldownSeconds;
+            float fast = PlantPhenotype.FromGenome(
+                PlantGenome.Neutral.WithTrait(10, 1f), false, false, 0f, true).ReproductionCooldownSeconds;
+
+            Assert.That(slow / fast, Is.EqualTo(2f).Within(.001f),
+                "if the span changes, the measured sub-10% birth swing no longer applies");
+        }
+
         // ---- The establishment contest ------------------------------------------------------
 
         [Test]

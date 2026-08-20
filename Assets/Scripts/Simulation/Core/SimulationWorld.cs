@@ -249,7 +249,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime, Config.PlantTemperatureAdaptationEnabled, Config.PlantFertilityAdaptationEnabled);
-                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled, Config.PlantEstablishmentContestEnabled);
+                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled, Config.PlantEstablishmentContestEnabled, Config.PlantSeedProductionRateDispersalCharge, Config.PlantSeedProductionRateEnabled);
                     if (Config.PlantMortalityEnabled)
                     {
                         _cumulativePlantBiomassLostToMortality += PlantMortalitySystem.Step(Plants, Resources, resourceDeltaTime);
@@ -598,6 +598,7 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, patch.Genome.TemperatureTolerance);
                 hash = HashFloat(hash, patch.Genome.NutrientUptake);
                 hash = HashFloat(hash, patch.Genome.SeedlingResilience);
+                hash = HashFloat(hash, patch.Genome.SeedProductionRate);
                 hash = Hash(hash, unchecked((ulong)patch.Lineage.LineageId.Value));
                 hash = Hash(hash, unchecked((ulong)patch.Lineage.ParentId.Value));
                 hash = Hash(hash, unchecked((ulong)patch.Lineage.Generation));

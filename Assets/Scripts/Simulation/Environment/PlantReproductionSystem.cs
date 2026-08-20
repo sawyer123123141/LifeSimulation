@@ -9,7 +9,7 @@ namespace LifeSimulation.Simulation.Environment
         private const float MaturityFraction = .75f;
         private const float MutationStandardDeviation = .03f;
         private const int SiteAttempts = 4;
-        private const float ReproductionCooldownSeconds = 20f;
+        public const float ReproductionCooldownSeconds = 20f;
         private const float VulnerabilityFraction = .25f;
 
         /// <param name="establishmentContestEnabled">
@@ -20,7 +20,7 @@ namespace LifeSimulation.Simulation.Environment
         /// the outcome above |r| = 0.10 - the largest non-heritable term in plant fitness.
         /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md
         /// </param>
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false)
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -34,7 +34,7 @@ namespace LifeSimulation.Simulation.Environment
                     if (remaining > 0f) continue;
                 }
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
-                PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome, fertilityAdaptationEnabled: false, establishmentContestEnabled);
+                PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome, fertilityAdaptationEnabled: false, establishmentContestEnabled, seedProductionRateDispersalCharge, seedProductionRateEnabled);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
                 int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled, establishmentContestEnabled);
                 if (siteIndex < 0) continue;
@@ -61,7 +61,7 @@ namespace LifeSimulation.Simulation.Environment
                 }
 
                 resources.SetActiveAt(siteIndex, true);
-                patches.SetReproductionCooldown(parentIndex, ReproductionCooldownSeconds);
+                patches.SetReproductionCooldown(parentIndex, phenotype.ReproductionCooldownSeconds);
                 births++;
             }
 

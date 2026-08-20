@@ -91,6 +91,9 @@ namespace LifeSimulation.Simulation.Core
         /// </summary>
         public const float DefaultPlantDefenseDeterrenceStrength = 0.75f;
 
+        /// <summary>Dispersal-range charge at maximum SeedProductionRate when its route is enabled.</summary>
+        public const float DefaultPlantSeedProductionRateDispersalCharge = 2f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -130,7 +133,9 @@ namespace LifeSimulation.Simulation.Core
             bool proceduralEnvironmentFieldsEnabled = false,
             bool plantFertilityAdaptationEnabled = false,
             bool elevationFieldEnabled = false,
-            bool plantEstablishmentContestEnabled = false)
+            bool plantEstablishmentContestEnabled = false,
+            float plantSeedProductionRateDispersalCharge = DefaultPlantSeedProductionRateDispersalCharge,
+            bool plantSeedProductionRateEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -171,6 +176,8 @@ namespace LifeSimulation.Simulation.Core
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
             ElevationFieldEnabled = elevationFieldEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
+            PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
+            PlantSeedProductionRateEnabled = plantSeedProductionRateEnabled;
         }
 
         public int WorldSeed { get; }
@@ -289,6 +296,16 @@ namespace LifeSimulation.Simulation.Core
         /// <see cref="PlantSiteCompetitionEnabled"/>, which is what creates the contest at all.
         /// </summary>
         public bool PlantEstablishmentContestEnabled { get; }
+
+        /// <summary>Dispersal-range cost paid at SeedProductionRate = 1 when its route is enabled.</summary>
+        public float PlantSeedProductionRateDispersalCharge { get; }
+
+        /// <summary>
+        /// Lets <c>SeedProductionRate</c> shorten a mature patch's successful-seeding cooldown.
+        /// The flag gates its dispersal charge at the same time, preserving byte-identical output
+        /// for configurations that predate this gene.
+        /// </summary>
+        public bool PlantSeedProductionRateEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -384,7 +401,8 @@ namespace LifeSimulation.Simulation.Core
                 proceduralEnvironmentFieldsEnabled: true,
                 plantFertilityAdaptationEnabled: true,
                 elevationFieldEnabled: true,
-                plantEstablishmentContestEnabled: true);
+                plantEstablishmentContestEnabled: true,
+                plantSeedProductionRateEnabled: true);
         }
 
         public void Validate()
@@ -397,6 +415,11 @@ namespace LifeSimulation.Simulation.Core
             if (MaximumPopulation < InitialPopulation)
             {
                 throw new ArgumentOutOfRangeException(nameof(MaximumPopulation), "Population limit cannot be lower than the founder population.");
+            }
+
+            if (PlantSeedProductionRateDispersalCharge < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(PlantSeedProductionRateDispersalCharge), "Seed-production dispersal charge cannot be negative.");
             }
 
             if (!Enum.IsDefined(typeof(FounderProfile), FounderProfile))

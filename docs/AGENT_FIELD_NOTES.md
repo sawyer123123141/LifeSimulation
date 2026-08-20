@@ -579,6 +579,41 @@ not evidence the intermediate reaches fitness.** Measure the last link.
 
 ---
 
+**2026-08-20 — A genetic seeding-rate channel did not clear the directional bar.**
+`SeedProductionRate` shortens the post-birth cooldown and bypasses the growth gate, but a
+120-seed, 12,000-tick sweep found charge 0 at delta +0.01953, t +3.22, only 68/120 up;
+charge 2 at delta -0.00355, t -0.62, 57/120 up; and charge 6 at delta -0.01172,
+t -1.77, 53/120 up. Dispersal remained live in every arm (t +13.22 to +15.56) and
+there were 0/120 extinctions, so this is a measured weak route, not a collapsed scenario.
+Do not call the zero-charge arm selection or ship a nonzero price without a new, separately
+predicted calibration.
+
+**2026-08-20 — WHY that route is null, recorded so nobody retries it: the cooldown was never the
+constraint.** With founders pinned so the cooldown is a constant per arm, halving it from 30s to
+15s moves plant births only **203.7 to 221.8 (+8.9%)** and does not raise plant generations at
+all. The lifetime budget of a 95.8-second patch is **6.7s growing to maturity, 30.4s on cooldown,
+and 58.7s already mature, off cooldown, and failing to find a free site** at 91% occupancy.
+Cooldown time freed by a gene is added to a pool of time that is already being wasted. **Two of
+the three non-growth routes fail for the same reason, and it is not the growth gate: lifespan and
+cooldown both buy TIME, and time is not the scarce resource here — free sites are.** Only
+establishment acts on the scarce thing.
+`docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md`
+
+**2026-08-20 — A task was set on an inference the same day's own data already refuted.** The
+handoff asserted that `ReproductionCooldownSeconds` "is why a 96-second lifetime yields 1.52
+offspring out of roughly four possible". The decomposition CSV collected hours earlier contained
+`meanEligible = 58.7` against `meanBirths = 1.52`, which says a patch is *already* idle and
+eligible for most of its life. Nobody did that subtraction before spending a session on it.
+**When a handoff states a causal claim, check whether the last measurement already answers it —
+the arithmetic here was one `awk` line over a CSV that was already committed.**
+
+**2026-08-20 — A `t` that beats its own inert control while being LESS directionally consistent
+than it is not a result.** The seeding-rate arm at charge 0 read t +3.22 with 68/120 seeds up; the
+flag-disabled arm, where the gene does nothing whatsoever, read t +1.51 with **70/120** up. The
+disabled arm is the null distribution, so it is the comparison that matters, and the "better" t
+came with worse directional agreement. Run the flag-disabled arm as a fourth arm on every trait
+sweep — it costs one arm and it calibrates what drift looks like for that trait in that harness.
+
 ## 6. Standing project facts
 
 - Two decision policies exist: `Legacy` and `IntentUtilityV1`. **Every P4
@@ -618,6 +653,20 @@ not evidence the intermediate reaches fitness.** Measure the last link.
   existed. `PlantGenome.TraitCount` is now **9**; the ninth constructor parameter has a default,
   which is the shape that once silently dropped `persistence`, so
   `EveryPlantTraitTransmitsThroughCloneMutated` pins it.
+- **All three non-growth-rate plant routes are now measured, and reproduction is SITE-LIMITED.**
+  Establishment is **selectable** (`SeedlingResilience`, t +4.03, 76/120 up, with a real cost);
+  mortality has **no headroom** (a live 2x genetic span on `LifespanSeconds` converting at
+  R² = 0.024); seed production is **live but not selectable** (`SeedProductionRate`, full 2x
+  cooldown span moves births under 10%). The last two fail for the same reason — they buy TIME,
+  and a patch already spends 58.7 of its 95.8 seconds mature, off cooldown, and failing to find a
+  free site. Free sites are the scarce resource. Before proposing any new plant trait, ask whether
+  it changes a patch's access to SITES; if it only changes how fast or how long the patch lives,
+  it is already answered. `docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md`
+- **`PlantSeedProductionRateEnabled` defaults `false` and is kept as the project's live NEGATIVE
+  control.** It reaches behaviour and demonstrably is not selected, which `Genome.NeutralMarker`
+  cannot supply because that one is unwired. `PlantGenome.TraitCount` is now **11**. Its dispersal
+  charge is a `float` config value, not a bool, so `FlagLivenessAnalysis` does not cover it —
+  perturb it by hand if you need a verdict on the charge.
 - **The P4 plant-selection blocker is answered: the route is ESTABLISHMENT.**
   `PlantEstablishmentContestEnabled` (default `false`) lets a seedling below
   `VulnerabilityFraction` resist takeover with `PlantGenome.SeedlingResilience`, the tenth plant
