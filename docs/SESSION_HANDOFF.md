@@ -1,4 +1,4 @@
-# Session Handoff — 2026-08-18
+# Session Handoff — 2026-08-19
 
 Paste the block below to start a fresh session. Everything it needs is in the repo; the prompt's
 job is to point at the right files and stop the next session rediscovering what this one paid for.
@@ -20,22 +20,40 @@ Unity checkout (Play mode only):
   C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim
 Same remote, separate trees — pull the other after every push.
 Tests: cd tools/HeadlessTests && dotnet test
-Both at 3899685, 385/385 green, tree clean.
+Both at a081d28, 393/393 green, tree clean.
 
-=== WHERE THINGS STAND ===
+=== WHERE THINGS STAND (updated 2026-08-19) ===
 
-The P4 blocker from p4-lifespan-derived-2026-08-17.md is RESOLVED. Plant defense
-declines only when grazers are present (cap-0 control flat, t -0.05; grazed arms
-CI excludes zero). That is the positive control the blocker demanded, so a
-coevolution null is now interpretable.
+THE ONE THING TO KNOW: plant traits acting on GROWTH RATE are close to
+unselectable, and no adaptation term fixes that. growth is multiplied by
+(1 - Biomass/Capacity), whose measured mean is 0.1711, with 39.8% of patch-ticks
+within 1% of capacity. Every trait routed through GrowthRateMultiplier - Nutrition,
+Defense, WaterEfficiency, both tolerances, NutrientUptake - measures null or weak.
+The two that ARE strongly selected, Dispersal (t 14-17) and SeedInvestment (t 4.8-6.8),
+are the only ones acting on colonisation instead.
+  docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md
 
-P4's EXIT GATE is not met and will not be met by tuning. Defense has no route to
-rise: it costs growth, protects no tissue (ConsumeAt ignores it), and provokes
-compensatory feeding, so grazing selects it away. Giving defense a positive
-fitness route is a DESIGN decision, not a calibration.
+Three sessions have now tried to make a growth-rate trait selectable by improving its
+benefit channel. The benefit channel was never the constraint. DO NOT RUN A FOURTH.
+Selection on plants has to act on establishment, mortality or seed production - a
+DESIGN decision nobody has taken.
+
+Dispersal is the positive control to read any plant-trait null against: +0.098 to
++0.125, t 14-17, 105-115 of 120 seeds up, four arms, 0/120 extinct, ~15 plant
+generations. Unlike the 2026-08-18 defense result it is not fragile and does not come
+from collapsing runs.
+
+The P4 EXIT GATE is still not met, and the reason is now structural rather than a
+calibration problem. Defense has no route to rise, and neither does any other
+growth-rate trait.
 
 Read in order, and note several docs carry supersede or retraction banners —
 read those before trusting any conclusion:
+  docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md (the big one)
+  docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md (why the Min matters)
+  docs/experiments/p4-plant-trait-selection-nonreplication-2026-08-19.md (tolerance did not replicate)
+  docs/experiments/p4-inert-flags-readjudicated-2026-08-19.md (2 of 4 flags are wired, not dead)
+  docs/experiments/p4-elevation-field-2026-08-19.md (elevation, and the 2 conditions it needs)
   docs/experiments/p4-grazing-dose-response-2026-08-18.md   (the positive control)
   docs/experiments/p4-dose-curve-2026-08-18.md              (operating point, 1 refuted hypothesis)
   docs/experiments/p4-scale-and-closing-position-2026-08-18.md (closing position, 2 more refuted)
@@ -64,6 +82,20 @@ Flags added this session, all defaulting false:
 Environment: EnvironmentNoise (3D value noise on DeterministicRandom, sphere-sampled)
 and EnvironmentField.CreateProcedural. Replaces a linear moisture ramp and two
 constants pinned at 1.
+
+Added 2026-08-19:
+  PlantGenome.NutrientUptake        ninth plant trait; TraitCount is now 9, and the ninth
+                                    constructor parameter has a DEFAULT - the shape that once
+                                    silently dropped persistence - so
+                                    EveryPlantTraitTransmitsThroughCloneMutated pins it
+  plantFertilityAdaptationEnabled   fertility gets an adaptation term; gates the gene's COST
+                                    as well as its benefit, so flag-off is byte-identical
+  EnvironmentNoise.RidgedFbm        folded, octave-weighted noise for terrain chains
+  EnvironmentSample.Elevation       + a .45 lapse rate onto temperature
+  elevationFieldEnabled             both default false
+
+Careful with the last two: elevation is INERT under the standard P4 plant config. It needs
+cap=1000 AND plantFertilityAdaptationEnabled together before it changes anything.
 
 Play mode: H cycles ground overlay temperature -> biome -> off. N (all-flags
 playtest) enables procedural fields so there is terrain to see.
@@ -173,6 +205,21 @@ playtest) enables procedural fields so there is terrain to see.
 - A green dotnet test does not prove Unity compiles. Check for global usings first
   if the editor disagrees.
 - Never run perl -0pi over the docs; it mangles UTF-8. Use the Edit tool.
+- TRANSCRIBE the measured config, including the engine bounds. maximumPopulation is 48 in
+  the plant calibration and 1000 from the factory; rebuilding the config by hand and taking
+  the factory default collapses the scenario 30/30 and looks exactly like a behavior
+  regression. Copy it from the committed guard
+  (ResourceExperimentTests.ConsumerDefenseCalibrationModerateSurvivesPlantMortalityAcrossSeeds).
+- PRINT THE SURVIVAL COLUMNS ON EVERY ARM, including arms that appear to confirm what you
+  expected. A flag "going live" under PredationVariation founders turned out to be measured
+  on a population that was already extinct with zero births.
+- Report the SIGN TEST next to the t. A t of -2.05 with 50/120 seeds down is magnitude-driven
+  noise, and that is the exact shape of the claim retracted on 2026-08-18.
+- Regress FINAL on FOUNDER, never delta on founder — the latter puts the founder mean on both
+  sides with opposite signs and manufactures a slope out of noise. Slope 1 is drift, 0 is
+  convergence, and the flag-off control should land on 1 (it read 0.9995 +/- 0.0412).
+- Bit-identical output across an arm flip means DEAD, not "small effect". Check the state hash
+  before interpreting any difference, especially when aggregates look reassuringly unchanged.
 
 Append any new lesson to AGENT_FIELD_NOTES.md §5 before the session ends.
 ```
