@@ -129,10 +129,20 @@ playtest) enables procedural fields so there is terrain to see.
    dispersal, site placement and spatial hashing while preserving determinism and
    every hash baseline. P6/P7, gated behind P4 and P5.
 
-3. Four config flags are inert because their readers sit on the Legacy path, which
-   no configuration reaches: foragingEconomicsEnabled, kinRecognitionEnabled,
-   learnedResourceQualityEnabled, multiThreatPerceptionEnabled. Wire or delete —
-   nobody has decided.
+3. RE-ADJUDICATED 2026-08-19 — the framing was wrong for half of them. See
+   docs/experiments/p4-inert-flags-readjudicated-2026-08-19.md.
+   - foragingEconomicsEnabled and learnedResourceQualityEnabled ARE Legacy-only and are the
+     genuine wire-or-delete candidates. (foragingEconomics also runs two per-tick foraging
+     updates on the live path whose output nothing there consumes — inert, but not unwired.)
+   - multiThreatPerceptionEnabled and kinRecognitionEnabled are ALREADY WIRED into
+     DecideIntentUtilityV1: the first selects ScorePredationMulti vs ScorePredation, the
+     second is read inside both. They read inert only because every use site sits inside
+     if (predationEnabled) and the pinned sweep runs a herbivore scenario with no threats.
+     DO NOT DELETE THEM.
+   Blocker: there is no survivable predator-prey scenario. FounderProfile.PredationVariation
+   is extinct before 3,000 ticks with zero births on the plant calibration, so a liveness
+   verdict measured there is worthless in both directions. Building that scenario is the real
+   task behind this item, and it is closer to P5 species work than to P4.
 
 4. Place memory is still unwired, deliberately, and now enforced-inert by test.
    Wire-or-delete deferred to P5.

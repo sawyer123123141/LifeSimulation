@@ -203,10 +203,18 @@ under FULL ecosystem mode where all four are on:
 
 | flag | why |
 |---|---|
-| `foragingEconomicsEnabled` | its consumers (`CommitmentBonus`, `ShouldAbandon`) are Legacy-only |
-| `multiThreatPerceptionEnabled` | `IntentUtilityV1` carries its own inline threat handling |
-| `kinRecognitionEnabled` | no reader on the `IntentUtilityV1` path |
+| `foragingEconomicsEnabled` | its behavioral consumers (`CommitmentBonus`, `ShouldAbandon`) are Legacy-only. **Nuance added 2026-08-19:** it also gates `AdvanceForagingActionTime` and `UpdateForagingIntakeRate`, which *do* run every tick on the live path and maintain foraging state nothing on that path consumes — the "executes but nothing consumes the result" class, not "unwired". |
+| `multiThreatPerceptionEnabled` | **CORRECTED 2026-08-19 — the old reason ("`IntentUtilityV1` carries its own inline threat handling") is WITHDRAWN.** The flag is passed into `DecideIntentUtilityV1` and selects between `ScorePredationMulti` and `ScorePredation`. It is inert only because the pinned sweep runs a **herbivore** scenario with no threats, so both branches score nothing. |
+| `kinRecognitionEnabled` | **CORRECTED 2026-08-19 — the old reason ("no reader on the `IntentUtilityV1` path") is WITHDRAWN.** It is passed in and read inside both predation scorers, gating `IsKin`. Same scenario-scoping as above. |
 | `learnedResourceQualityEnabled` | single reader is inside `DecideFromLearnedOutcomes`, the Legacy+Cognition path |
+
+> **Two of these four are unexercised, not unwired — do not delete them.** Every use site of
+> `multiThreatPerceptionEnabled` and `kinRecognitionEnabled` sits inside `if (predationEnabled)`,
+> and `CreateFullEcosystemDefaults` widens the *config* but not the *scenario*. Adjudicating them
+> needs a **survivable predator-prey scenario**, which does not exist: `FounderProfile.PredationVariation`
+> is extinct before 3,000 ticks with zero births on the plant calibration, so every verdict measured
+> there — in both directions — is measured on a corpse. See
+> `docs/experiments/p4-inert-flags-readjudicated-2026-08-19.md`.
 | `plantTemperatureAdaptationEnabled` | **different reason — temporary.** Fully wired on the live path, but `EnvironmentField` returns `Temperature = 1` everywhere, and the adaptation expression collapses to the raw value at 1. **Move it out of `KnownInertFlags` when terrain fields land**; the test failing is the correct signal that it went live. |
 
 > The 2026-08-17 audit cleared all sixteen flags because each "has at least one
@@ -495,6 +503,23 @@ colonisation and are ungated. **Three sessions have now tried to make a growth-r
 selectable by improving its benefit channel; the benefit channel was never the constraint.**
 Do not run a fourth. Selection on plants has to act on establishment, mortality or seed
 production. See `docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md`.
+
+**2026-08-19 — "Widest configuration" is not "widest scenario", and a flag sweep inherits the
+scenario's blind spots.** `FlagLivenessAnalysis` pins against `CreateFullEcosystemDefaults` on
+`ConsumerDefenseCalibrationModerate`. That turns every flag on, and still cannot exercise
+anything gated on `predationEnabled`, because the calibration is a herbivore world with no
+threats. Two flags were recorded as unwired on that basis when both are fully wired into
+`DecideIntentUtilityV1`. **Before writing down *why* a flag is inert, find its use sites and
+check whether the scenario can reach them** — the conclusion "inert here" is cheap and correct;
+the explanation is what gets code deleted.
+
+**2026-08-19 — Print the survival columns on every arm, including the ones you expect to
+work.** Switching to `PredationVariation` founders moved a flag out of the inert set and was
+briefly reported as a confirmed prediction. The population was extinct before 3,000 ticks with
+**zero births**: the flag was changing how the collapse unfolded, and three other flags went
+"inert" purely because nothing lived to mate, parent or rest. The survival check that caught it
+took one probe. Arms that appear to confirm a hypothesis need the check more than arms that
+refute one.
 
 **2026-08-19 — Regress the final value on the founder value, never the delta.** Testing whether
 a trait converges to an equilibrium by regressing `delta` on `founderMean` is invalid: the
