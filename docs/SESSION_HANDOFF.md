@@ -1,4 +1,4 @@
-# Session Handoff — 2026-08-20
+# Session Handoff — 2026-08-21
 
 Paste the block below to start a fresh session. Everything it needs is in the repo; the prompt's
 job is to point at the right files and stop the next session rediscovering what this one paid for.
@@ -21,8 +21,10 @@ Unity checkout (Play mode only, and the user compiles it there):
   C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim
 Same remote, separate trees — pull the other after every push.
 Tests: cd tools/HeadlessTests && dotnet test
-Both trees on main, 393/393 green, trees clean. Verified compiling in the Unity editor
-by the user on 2026-08-19. Run git log --oneline -1 for the current head.
+Both trees on main, 395/395 green, trees clean. Run git log --oneline -1 for the head.
+The Unity editor compile was last confirmed by the user on 2026-08-19; the 2026-08-20
+plant work has not been opened in the editor. A green dotnet test does not prove Unity
+compiles — if the editor disagrees, check for global usings first.
 
 === THE ONE THING TO KNOW ===
 
@@ -45,31 +47,54 @@ Dispersal is the POSITIVE CONTROL. Read every plant-trait null against it. Unlik
 retracted 2026-08-18 defense result it is not fragile and does not come from collapsing
 runs: four arms, 0/120 extinct, ~15 plant generations.
 
-=== RECOMMENDED NEXT: give plant selection a route that is not growth rate ===
+=== THE P4 BLOCKER IS ANSWERED: the route is ESTABLISHMENT ===
 
-This is the P4 exit gate and it is a DESIGN decision, so do not just pick one and build it.
-Make it an evidence-backed choice first — that is the part this project is good at and the
-part that is missing.
+Closed 2026-08-20. PlantEstablishmentContestEnabled (default false) lets a seedling below
+VulnerabilityFraction resist takeover with PlantGenome.SeedlingResilience, the tenth plant
+trait. It rises at t +4.03, 76/120 seeds up, 0/120 extinct, paying a DispersalRange charge
+of 2. That is a plant trait selected without touching growth rate, between SeedInvestment
+and Dispersal in strength, with a real cost.
+  docs/experiments/p4-establishment-contest-2026-08-20.md
+  docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md
 
-Suggested first task, mostly measurement and entirely non-destructive:
-  Measure where plant lineage success is actually decided. For a patch lineage, decompose
-  outcome variance across the three ungated routes:
-    (a) ESTABLISHMENT   — PlantReproductionSystem.FindSite / PlantSiteRegistry, whether a
-                          seed lands somewhere free and viable
-    (b) MORTALITY       — PlantMortalitySystem, how long a patch persists
-    (c) SEED PRODUCTION — SeedInvestmentFraction and dispersal range
-  Dispersal and SeedInvestment already move hard, which says (a) and (c) carry real
-  selective weight today. The open question is how much headroom (b) has, and whether a
-  trait wired into establishment or mortality would be selectable where a growth trait is not.
+Why establishment and not the other two:
+  - Site competition is INFANTICIDE. Only patches below VulnerabilityFraction = .25 can be
+    taken over, and newborns start at 1.5-9% of capacity, so newborns are the only class it
+    reaches. Uncontested it destroys 34% of every patch ever born inside a median two
+    seconds, and that binary is 51.9% of the variance in per-patch lifetime offspring.
+  - MORTALITY has no headroom. LifespanSeconds gives Growth a genuine 2x span and
+    r(Growth, lifespan) = -0.51 among patches that die of age — and it converts to
+    R2 = 0.024 on offspring. Site occupancy is 91% of 24 sites, so reproduction is
+    site-limited, not time-limited.
+  - SEED PRODUCTION is capped by the hard-coded ReproductionCooldownSeconds = 20f. There is
+    no genetic channel on seeding rate at all.
 
-Then propose ONE trait wiring behind a flag defaulting false, with the predicted effect
-size stated BEFORE the run, and check it against Dispersal as the positive control.
+=== RECOMMENDED NEXT ===
+
+Pick one. Both are small next to what came before.
+
+A. THE THIRD ROUTE. ReproductionCooldownSeconds is a hard-coded 20f and it is why ~96
+   seconds of life yields a mean of 1.52 offspring out of roughly four possible. Giving it
+   a genetic channel is the last untouched ungated route, and it is the mechanism that
+   makes lifespan worthless today — so it may raise the mortality route as a side effect.
+   Same treatment: flag defaulting false, effect size predicted as a NUMBER, and SWEEP THE
+   COST as well as the benefit (see METHOD RULES — a single arm at one charge is what made
+   the establishment contest look like a fourth null).
+
+B. THE INVADER SIDE. The contest is one-sided: only the incumbent's genome enters. An
+   invader-side term is the obvious question and was deliberately left out to keep the
+   first wiring one-variable.
+
+USER DECISION PENDING: with the blocker answered, does P4 exit now, and does
+PlantEstablishmentContestEnabled belong in CreatePrototype4Defaults? It is currently on
+only in CreateFullEcosystemDefaults. Ask rather than deciding.
 
 Two things to be careful of, both learned the hard way:
   - A prediction stated as a mechanism story is not evidence. State it as a number.
-  - Any new plant gene needs the ninth-parameter treatment (see PlantGenome.NutrientUptake):
-    constructor, CloneMutated, ToTraits/FromTraits, TraitNames, TraitCount, ComputeStateHash,
-    and a transmission test. The animal genome once dropped a gene silently this exact way.
+  - Any new plant gene needs the tenth-parameter treatment (see
+    PlantGenome.SeedlingResilience): constructor, CloneMutated, ToTraits/FromTraits,
+    TraitNames, TraitCount, ComputeStateHash, and a transmission test. The animal genome
+    once dropped a gene silently this exact way.
 
 === ALSO OPEN, LOWER VALUE ===
 
@@ -97,6 +122,8 @@ E. Place memory still unwired, deliberately, enforced-inert by test. Deferred to
 Several docs carry supersede or retraction banners. Read the banner before trusting any
 conclusion in an older document.
 
+  p4-where-plant-fitness-is-decided-2026-08-20.md             where the variance lives
+  p4-establishment-contest-2026-08-20.md                      the blocker, answered
   p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md  the big one, read first
   p4-fertility-binds-the-growth-limit-2026-08-19.md            why the Min matters
   p4-plant-trait-selection-nonreplication-2026-08-19.md        tolerance did not replicate
@@ -128,7 +155,7 @@ and are DELETED before committing. Verify the tree is clean afterwards.
 
 === STATE OF THE PLANT SIDE ===
 
-PlantGenome.TraitCount is 9. Growth-rate costs in PlantPhenotype.FromGenome:
+PlantGenome.TraitCount is 10. Growth-rate costs in PlantPhenotype.FromGenome:
   Growth +.90 benefit, Nutrition -.18, Defense -.15, WaterEfficiency -.08,
   MoistureTolerance -.10, TemperatureTolerance -.10, NutrientUptake -.10 (flag-gated)
 Ungated by (1 - B/K): SeedInvestmentFraction, DispersalRange. Those are the ones that move.
@@ -143,6 +170,7 @@ Flags, all defaulting false:
   plantDefenseDeterrenceEnabled     plantQualityPreferenceEnabled
   plantTemperatureAdaptationEnabled proceduralEnvironmentFieldsEnabled
   plantFertilityAdaptationEnabled   elevationFieldEnabled
+  plantEstablishmentContestEnabled
 maximumPopulation is 48 in the plant calibration and 1000 from the factory. This matters
 enormously — see METHOD RULES.
 
@@ -165,6 +193,16 @@ enables procedural fields so there is terrain to see.
 - Response to selection scales with standing variance, so a null at one founder spread does not
   carry to another. Answer that objection by MEASURING it — add an arm at a wider spread —
   rather than caveating it.
+- SWEEP THE COST, NOT JUST THE BENEFIT. A new trait with a cost term that reads null tells you
+  nothing about WHICH HALF is wrong. The establishment contest read t -2.10 at its first charge
+  and +6.24 at zero charge — same benefit wiring, same seeds. Three sessions had responded to
+  that exact shape by improving a benefit channel that was never the problem.
+- SHARE OF VARIANCE IS NOT SHARE OF AVAILABLE SELECTION. 51.9% of plant offspring variance is
+  newborn takeover, and most of that stays luck whatever gene is wired in. Pricing a cost
+  against the whole share put the first charge three times too high.
+- SPLIT THE SAMPLE BY HOW THE OUTCOME HAPPENED before attributing variance to a mechanism.
+  Pooled, lifespan looked like 53% of plant offspring variance; split by cause of death it is
+  2.4%, and the difference was two-second infants mixed in with hundred-second adults.
 - Compare an effect against its OWN sampling error (SD, SE, bootstrap CI), never against
   another arm whose spread is small for structural reasons. That error produced a retraction
   the same day it was made.

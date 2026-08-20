@@ -235,5 +235,63 @@ namespace LifeSimulation.Tests.EditMode
                 Assert.That(sample.Temperature, Is.EqualTo(1f), $"plant-facing temperature varied at {position.X},{position.Y}");
             }
         }
+
+        // ---- The establishment contest ------------------------------------------------------
+
+        [Test]
+        public void SeedlingResilienceCostsDispersalRangeOnlyWhenTheContestIsEnabled()
+        {
+            // Charged against dispersal rather than growth rate on purpose: a growth-rate charge is
+            // multiplied by (1 - Biomass/Capacity), measured mean 0.1711, so it is almost free.
+            // Dispersal is the strongest measured fitness channel, so this trade-off actually bites.
+            PlantGenome tough = PlantGenome.Neutral.WithTrait(9, 1f);
+
+            float off = PlantPhenotype.FromGenome(tough).DispersalRange;
+            float on = PlantPhenotype.FromGenome(tough, fertilityAdaptationEnabled: false, establishmentContestEnabled: true).DispersalRange;
+
+            Assert.That(off, Is.EqualTo(4f + (20f * .5f)));
+            Assert.That(on, Is.EqualTo(off - 2f));
+        }
+
+        [Test]
+        public void SeedlingResilienceDecidesTheTakeoverOnlyWhenTheContestIsEnabled()
+        {
+            // With the contest off, a maximally resilient seedling is overwritten exactly like a
+            // defenceless one - which is the world as measured on 2026-08-20, where 34% of every
+            // patch ever born dies this way inside a median two seconds and no gene correlates
+            // with the outcome above |r| = 0.10.
+            Assert.That(TakeoversOf(resilience: 0f, contestEnabled: false), Is.EqualTo(1));
+            Assert.That(TakeoversOf(resilience: 1f, contestEnabled: false), Is.EqualTo(1));
+
+            Assert.That(TakeoversOf(resilience: 0f, contestEnabled: true), Is.EqualTo(1),
+                "a seedling with no resilience must still lose its site, or the contest is just a block");
+            Assert.That(TakeoversOf(resilience: 1f, contestEnabled: true), Is.EqualTo(0),
+                "a maximally resilient seedling must hold its site");
+        }
+
+        /// <summary>
+        /// One takeover attempt against a seedling sitting below VulnerabilityFraction. Seed 4 and
+        /// tick 1 are the pair whose second establishment attempt succeeds (see
+        /// PlantGrowthTests.SiteWithinRangeThatFailsItsEstablishmentRollLetsStepRetryTheNextAttempt),
+        /// so the resilience-0 arm asserting one birth is what pins the roll as reachable at all.
+        /// </summary>
+        private static int TakeoversOf(float resilience, bool contestEnabled)
+        {
+            var resources = new ResourceStore(2);
+            ResourceId parentSite = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 12f, 0f);
+            ResourceId contested = resources.Add(ResourceKind.Food, new SimVector2(2f, 0f), 1f, 1f, 12f, 0f);
+            resources.SetActive(contested, true);
+            var sites = new PlantSiteRegistry(1);
+            sites.Register(1);
+
+            var patches = new PlantPatchStore(4);
+            int parentIndex = patches.Add(parentSite, new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
+            patches.SetGenomeAndLineage(parentIndex, PlantGenome.Neutral.WithTrait(9, 0f), patches.GetAt(parentIndex).Lineage);
+            int seedlingIndex = patches.Add(contested, new SimVector2(2f, 0f), 1f, 10f, .1f, 1f, 0f);
+            patches.SetGenomeAndLineage(seedlingIndex, PlantGenome.Neutral.WithTrait(9, resilience), patches.GetAt(seedlingIndex).Lineage);
+
+            long ordinal = 0;
+            return PlantReproductionSystem.Step(patches, resources, sites, 4, 1, 1f, ref ordinal, competitionEnabled: true, establishmentContestEnabled: contestEnabled);
+        }
     }
 }

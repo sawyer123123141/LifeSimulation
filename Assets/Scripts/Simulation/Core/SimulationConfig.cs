@@ -129,7 +129,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantTemperatureAdaptationEnabled = false,
             bool proceduralEnvironmentFieldsEnabled = false,
             bool plantFertilityAdaptationEnabled = false,
-            bool elevationFieldEnabled = false)
+            bool elevationFieldEnabled = false,
+            bool plantEstablishmentContestEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -169,6 +170,7 @@ namespace LifeSimulation.Simulation.Core
             ProceduralEnvironmentFieldsEnabled = proceduralEnvironmentFieldsEnabled;
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
             ElevationFieldEnabled = elevationFieldEnabled;
+            PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
         }
 
         public int WorldSeed { get; }
@@ -279,6 +281,14 @@ namespace LifeSimulation.Simulation.Core
         /// terrain and P6 groundwork, and it is not expected to make any plant gene selectable.</para>
         /// </summary>
         public bool ElevationFieldEnabled { get; }
+
+        /// <summary>
+        /// Lets a vulnerable seedling resist takeover with its own <c>SeedlingResilience</c>,
+        /// turning the single largest non-heritable term in plant fitness into a selectable one -
+        /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md. Requires
+        /// <see cref="PlantSiteCompetitionEnabled"/>, which is what creates the contest at all.
+        /// </summary>
+        public bool PlantEstablishmentContestEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -373,7 +383,8 @@ namespace LifeSimulation.Simulation.Core
                 plantTemperatureAdaptationEnabled: true,
                 proceduralEnvironmentFieldsEnabled: true,
                 plantFertilityAdaptationEnabled: true,
-                elevationFieldEnabled: true);
+                elevationFieldEnabled: true,
+                plantEstablishmentContestEnabled: true);
         }
 
         public void Validate()

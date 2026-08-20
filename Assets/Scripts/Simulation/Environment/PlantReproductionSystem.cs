@@ -12,7 +12,15 @@ namespace LifeSimulation.Simulation.Environment
         private const float ReproductionCooldownSeconds = 20f;
         private const float VulnerabilityFraction = .25f;
 
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false)
+        /// <param name="establishmentContestEnabled">
+        /// Makes the takeover of a vulnerable seedling a contest its <c>SeedlingResilience</c> can
+        /// win, instead of an unconditional replacement. Measured on 2026-08-20, that replacement
+        /// destroys 34% of every patch ever born inside a median two seconds and accounts for
+        /// 51.9% of the variance in per-patch lifetime offspring, with no gene correlating with
+        /// the outcome above |r| = 0.10 - the largest non-heritable term in plant fitness.
+        /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md
+        /// </param>
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -26,9 +34,9 @@ namespace LifeSimulation.Simulation.Environment
                     if (remaining > 0f) continue;
                 }
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
-                PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome);
+                PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome, fertilityAdaptationEnabled: false, establishmentContestEnabled);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
-                int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled);
+                int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled, establishmentContestEnabled);
                 if (siteIndex < 0) continue;
 
                 ResourceState site = resources.GetAt(siteIndex);
@@ -67,7 +75,7 @@ namespace LifeSimulation.Simulation.Environment
             return 1f - normalizedDistance;
         }
 
-        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchStore patches, PlantPatchState parent, int seed, long tick, long ordinal, float range, bool competitionEnabled)
+        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchStore patches, PlantPatchState parent, int seed, long tick, long ordinal, float range, bool competitionEnabled, bool establishmentContestEnabled)
         {
             if (sites.Count == 0) return -1;
 
@@ -87,6 +95,15 @@ namespace LifeSimulation.Simulation.Environment
                     PlantPatchState occupant = patches.GetAt(occupantIndex);
                     if (occupant.Capacity <= 0f) continue;
                     if (occupant.Biomass / occupant.Capacity >= VulnerabilityFraction) continue;
+
+                    // The incumbent seedling gets to defend itself. Drawn on its own random
+                    // domain rather than reusing PlantEstablishment, so the two rolls stay
+                    // independent and the contest cannot correlate with the distance roll below.
+                    if (establishmentContestEnabled)
+                    {
+                        float contestRoll = DeterministicRandom.Float01(seed, RandomDomain.PlantEstablishmentContest, tick, parent.Id.Value, ordinal, attempt);
+                        if (contestRoll < occupant.Genome.SeedlingResilience) continue;
+                    }
                 }
 
                 float distance = SimVector2.Distance(parent.Position, candidate.Position);

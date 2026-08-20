@@ -12,7 +12,7 @@ namespace LifeSimulation.Simulation.Environment
         /// <see cref="CloneMutated"/>, <see cref="ToTraits"/>, <see cref="FromTraits"/> and the
         /// state hash all pass it explicitly and a transmission test fails if one stops.
         /// </param>
-        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance, float nutrientUptake = .5f)
+        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance, float nutrientUptake = .5f, float seedlingResilience = .5f)
         {
             Growth = Clamp01(growth);
             SeedInvestment = Clamp01(seedInvestment);
@@ -23,9 +23,10 @@ namespace LifeSimulation.Simulation.Environment
             MoistureTolerance = Clamp01(moistureTolerance);
             TemperatureTolerance = Clamp01(temperatureTolerance);
             NutrientUptake = Clamp01(nutrientUptake);
+            SeedlingResilience = Clamp01(seedlingResilience);
         }
 
-        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
+        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
         public float Growth { get; }
         public float SeedInvestment { get; }
         public float WaterEfficiency { get; }
@@ -43,6 +44,19 @@ namespace LifeSimulation.Simulation.Environment
         /// </summary>
         public float NutrientUptake { get; }
 
+        /// <summary>
+        /// A seedling's chance of surviving a takeover attempt while it is still below
+        /// <c>PlantReproductionSystem.VulnerabilityFraction</c>. Aimed at the one channel that
+        /// carries the variance: 51.9% of the spread in per-patch lifetime offspring is the single
+        /// binary of whether a newborn survives its first two seconds, and before this gene existed
+        /// no trait correlated with that outcome above |r| = 0.10 - see
+        /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md.
+        /// Paid for in <see cref="PlantPhenotype.DispersalRange"/> rather than in growth rate,
+        /// because a growth-rate charge is multiplied by (1 - Biomass/Capacity) and is therefore
+        /// almost free; dispersal is the strongest measured fitness channel, so the trade-off bites.
+        /// </summary>
+        public float SeedlingResilience { get; }
+
         public static PlantGenome CloneMutated(PlantGenome parent, int worldSeed, long ordinal, float mutationStandardDeviation)
         {
             return new PlantGenome(
@@ -54,7 +68,8 @@ namespace LifeSimulation.Simulation.Environment
                 Mutate(parent.Dispersal, worldSeed, ordinal, 5, mutationStandardDeviation),
                 Mutate(parent.MoistureTolerance, worldSeed, ordinal, 6, mutationStandardDeviation),
                 Mutate(parent.TemperatureTolerance, worldSeed, ordinal, 7, mutationStandardDeviation),
-                Mutate(parent.NutrientUptake, worldSeed, ordinal, 8, mutationStandardDeviation));
+                Mutate(parent.NutrientUptake, worldSeed, ordinal, 8, mutationStandardDeviation),
+                Mutate(parent.SeedlingResilience, worldSeed, ordinal, 9, mutationStandardDeviation));
         }
 
         private static float Mutate(float value, int worldSeed, long ordinal, int trait, float standardDeviation)
@@ -63,13 +78,13 @@ namespace LifeSimulation.Simulation.Environment
         }
 
         /// <summary>Number of heritable plant traits. Keep in step with the constructor, <see cref="ToTraits"/> and <see cref="CloneMutated"/>.</summary>
-        public const int TraitCount = 9;
+        public const int TraitCount = 10;
 
         private static readonly string[] TraitNames =
         {
             nameof(Growth), nameof(SeedInvestment), nameof(WaterEfficiency), nameof(Nutrition),
             nameof(Defense), nameof(Dispersal), nameof(MoistureTolerance), nameof(TemperatureTolerance),
-            nameof(NutrientUptake),
+            nameof(NutrientUptake), nameof(SeedlingResilience),
         };
 
         /// <summary>Trait name for an index. Ordering matches the mutation trait indices in <see cref="CloneMutated"/>.</summary>
@@ -92,7 +107,7 @@ namespace LifeSimulation.Simulation.Environment
             return new[]
             {
                 Growth, SeedInvestment, WaterEfficiency, Nutrition,
-                Defense, Dispersal, MoistureTolerance, TemperatureTolerance, NutrientUptake,
+                Defense, Dispersal, MoistureTolerance, TemperatureTolerance, NutrientUptake, SeedlingResilience,
             };
         }
 
@@ -111,7 +126,7 @@ namespace LifeSimulation.Simulation.Environment
 
             return new PlantGenome(
                 traits[0], traits[1], traits[2], traits[3],
-                traits[4], traits[5], traits[6], traits[7], traits[8]);
+                traits[4], traits[5], traits[6], traits[7], traits[8], traits[9]);
         }
 
         public float GetTrait(int index)
@@ -181,7 +196,12 @@ namespace LifeSimulation.Simulation.Environment
         /// change every plant run the moment the gene was added, which is exactly what the
         /// flag-off-is-identical rule exists to prevent.
         /// </param>
-        public static PlantPhenotype FromGenome(PlantGenome genome, bool fertilityAdaptationEnabled = false)
+        /// <param name="establishmentContestEnabled">
+        /// Gates <c>SeedlingResilience</c>'s dispersal charge alongside the benefit it buys in
+        /// <see cref="PlantReproductionSystem"/>, so that flag-off is byte-identical to the world
+        /// before the gene existed - the same reason the fertility charge above is gated.
+        /// </param>
+        public static PlantPhenotype FromGenome(PlantGenome genome, bool fertilityAdaptationEnabled = false, bool establishmentContestEnabled = false)
         {
             float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.08f * genome.WaterEfficiency) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
             if (fertilityAdaptationEnabled)
@@ -189,11 +209,21 @@ namespace LifeSimulation.Simulation.Environment
                 growth -= .10f * genome.NutrientUptake;
             }
 
+            float dispersalRange = 4f + (20f * genome.Dispersal);
+            if (establishmentContestEnabled)
+            {
+                // Charge calibrated on 2026-08-20, 120 seeds per arm: at 0 the gene rises at t +6.24
+                // with no trade-off at all, at 6 the dispersal loss overwhelms the benefit and it
+                // falls (t -2.10, 48/120 up - the shape of a magnitude-driven null). 2 keeps a real
+                // price on the gene while leaving it selectable at t +4.03, 76/120 up.
+                dispersalRange = Math.Max(0f, dispersalRange - (2f * genome.SeedlingResilience));
+            }
+
             return new PlantPhenotype(
                 Math.Max(.1f, growth),
                 .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),
                 genome.Defense,
-                4f + (20f * genome.Dispersal),
+                dispersalRange,
                 .02f + (.10f * genome.SeedInvestment),
                 BaseLifespanSeconds * (1.5f - (.75f * genome.Growth)));
         }

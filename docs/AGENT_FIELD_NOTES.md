@@ -549,6 +549,34 @@ fertility and temperature are pinned at 1. Flipping `proceduralEnvironmentFields
 therefore changes three channels at once and is not a one-variable contrast. Do not describe
 that arm as a flat or no-variation baseline.
 
+**2026-08-20 — Share of variance is not share of available selection.** 51.9% of the variance in
+per-patch plant offspring is the single binary of surviving newborn takeover, and that number was
+read as if the whole 51.9% were up for grabs. It is not: most of it stays luck no matter what
+gene is wired in, because a doomed seedling faces repeated attempts and the invader just retries
+elsewhere. The cost of the new trait was priced against the imagined payoff and came out three
+times too high, so the trait *declined* in its first sweep. **Decompose variance to find where to
+look, then measure the response slope before pricing anything against it.**
+
+**2026-08-20 — Sweep the COST, not just the benefit.** The first arm of a new plant trait read as
+another null (t -2.10, 48/120 up). Three prior sessions had responded to that shape by improving
+a benefit channel. Sweeping the *charge* instead — 6, 2, 0 — showed the benefit channel was fine
+the whole time and the trait rises at t +6.24 uncharged, +4.03 at a charge it can afford. A
+single-arm null on a trait with a cost term tells you nothing about which half is wrong.
+
+**2026-08-20 — Pooling two death classes invented a route that does not exist.** Realised plant
+lifespan looked like it explained 53% of offspring variance. It explains **2.4%**: the pooled
+number came from mixing two-second infants killed by takeover with hundred-second adults. Before
+attributing variance to a mechanism, split the sample by *how* the outcome happened — the
+`endReason` column cost nothing and moved the conclusion from "mortality is the dominant route"
+to "mortality has no headroom at all".
+
+**2026-08-20 — A live genetic channel can convert at nearly zero.** `LifespanSeconds` gives
+`Growth` a genuine 2x span and `r(Growth, lifespan) = -0.51` among patches that die of age. It
+buys `r(Growth, offspring) = -0.07`, because reproduction here is site-limited, not time-limited:
+91% site occupancy, a hard-coded 20-second cooldown, ~96 seconds of life, and a mean of 1.52
+offspring achieved out of roughly four possible. **A strong correlation with an intermediate is
+not evidence the intermediate reaches fitness.** Measure the last link.
+
 ---
 
 ## 6. Standing project facts
@@ -590,6 +618,20 @@ that arm as a flat or no-variation baseline.
   existed. `PlantGenome.TraitCount` is now **9**; the ninth constructor parameter has a default,
   which is the shape that once silently dropped `persistence`, so
   `EveryPlantTraitTransmitsThroughCloneMutated` pins it.
+- **The P4 plant-selection blocker is answered: the route is ESTABLISHMENT.**
+  `PlantEstablishmentContestEnabled` (default `false`) lets a seedling below
+  `VulnerabilityFraction` resist takeover with `PlantGenome.SeedlingResilience`, the tenth plant
+  trait. It rises at t +4.03, 76/120 seeds up, 0/120 extinct, paying a real `DispersalRange`
+  charge of 2. Requires `PlantSiteCompetitionEnabled`, which is what creates the contest.
+  `PlantGenome.TraitCount` is now **10**. See
+  `docs/experiments/p4-establishment-contest-2026-08-20.md`.
+- **Site competition is infanticide, not competition between established patches.** Only patches
+  below `VulnerabilityFraction = .25f` can be taken over, and newborns start at 1.5-9% of
+  capacity, so newborns are the only class it ever reaches. Without the contest flag it destroys
+  **34% of every patch ever born** inside a median two seconds, and that binary is **51.9% of the
+  variance** in per-patch lifetime offspring. Site occupancy is 91% of 24 sites, so reproduction
+  is site-limited: realised lifespan explains only **2.4%** of offspring variance among survivors.
+  `docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md`.
 - **The plant-selection positive control is `Dispersal`.** It moves +0.098 to +0.125 at
   t 14-17 with 105-115 of 120 seeds up, across four arms, at 0/120 extinctions —
   `docs/experiments/p4-plant-trait-selection-nonreplication-2026-08-19.md`. Read any plant-trait
