@@ -71,6 +71,82 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(dead, Is.Empty, $"plant gene liveness changed.\n{PlantGeneLivenessAnalysis.Report(results)}");
         }
 
+        [Test]
+        public void EveryPlantTraitTransmitsThroughCloneMutated()
+        {
+            // The animal genome once passed 23 of 24 positional arguments and nothing failed, so
+            // persistence took its default for every creature ever born. PlantGenome's ninth
+            // parameter HAS a default, which is exactly that trap, so pin it: at a zero mutation
+            // standard deviation a clone must reproduce every trait exactly, and the values are
+            // pairwise distinct so a dropped or swapped argument cannot pass.
+            var traits = new float[PlantGenome.TraitCount];
+            for (int index = 0; index < traits.Length; index++)
+            {
+                traits[index] = (index + 1) / (float)(PlantGenome.TraitCount + 1);
+            }
+
+            PlantGenome parent = PlantGenome.FromTraits(traits);
+            PlantGenome child = PlantGenome.CloneMutated(parent, worldSeed: 7, ordinal: 3, mutationStandardDeviation: 0f);
+
+            Assert.That(child.ToTraits(), Is.EqualTo(traits),
+                "a plant trait stopped transmitting through CloneMutated");
+        }
+
+        // ---- Fertility adaptation ----------------------------------------------------------
+
+        private static PlantPatchStore StoreWithUptake(float nutrientUptake)
+        {
+            var store = new PlantPatchStore(4);
+            int index = store.Add(new ResourceId(1), new SimVector2(0f, 0f), biomass: 5f, capacity: 100f,
+                growthRate: 1f, nutrition: 1f, defense: 0f);
+            PlantGenome genome = new PlantGenome(.5f, .5f, .5f, .5f, 0f, .5f, 0f, 0f, nutrientUptake);
+            store.SetGenomeAndLineage(index, genome, default);
+            return store;
+        }
+
+        [Test]
+        public void NutrientUptakeIsInertWhenFertilityAdaptationIsDisabled()
+        {
+            // Flag-off must be byte-identical to the world before the gene existed, which means the
+            // -.10f charge has to be gated alongside the benefit. An unconditional cost would make
+            // merely ADDING the gene change every plant run.
+            var field = new EnvironmentField(moisture: 1f, fertility: 0.2f, temperature: 1f);
+
+            float without = PlantGrowthSystem.Step(StoreWithUptake(0f), field, 1f);
+            float with = PlantGrowthSystem.Step(StoreWithUptake(1f), field, 1f);
+
+            Assert.That(with, Is.EqualTo(without),
+                "with fertility adaptation disabled, NutrientUptake must not affect growth at all");
+        }
+
+        [Test]
+        public void NutrientUptakeHelpsThePlantWhenFertilityIsPoor()
+        {
+            var field = new EnvironmentField(moisture: 1f, fertility: 0.2f, temperature: 1f);
+
+            float without = PlantGrowthSystem.Step(StoreWithUptake(0f), field, 1f, fertilityAdaptationEnabled: true);
+            float with = PlantGrowthSystem.Step(StoreWithUptake(1f), field, 1f, fertilityAdaptationEnabled: true);
+
+            Assert.That(with, Is.GreaterThan(without),
+                "NutrientUptake should buy real growth on poor soil");
+        }
+
+        [Test]
+        public void NutrientUptakeIsAPureCostWhereFertilityDoesNotBind()
+        {
+            // The self-defeating half of the Min structure, pinned deliberately: an adaptation term
+            // lifts its own channel out of contention, so once fertility is no longer the smallest
+            // channel the gene buys nothing and still pays. That is what should make the trait settle
+            // at an interior equilibrium instead of ramping to 1.
+            var field = new EnvironmentField(moisture: 1f, fertility: 1f, temperature: 1f);
+
+            float without = PlantGrowthSystem.Step(StoreWithUptake(0f), field, 1f, fertilityAdaptationEnabled: true);
+            float with = PlantGrowthSystem.Step(StoreWithUptake(1f), field, 1f, fertilityAdaptationEnabled: true);
+
+            Assert.That(with, Is.LessThan(without),
+                "where fertility does not bind, NutrientUptake should be a pure cost");
+        }
+
         // ---- Trade-off characterization ---------------------------------------------------
 
         private static PlantPatchStore StoreWithTolerance(float moistureTolerance, float temperatureTolerance)

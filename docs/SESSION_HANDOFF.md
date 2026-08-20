@@ -98,8 +98,21 @@ playtest) enables procedural fields so there is terrain to see.
    contention for the Min. Elevation couples to temperature and moisture — channels that
    already vary and already lose the minimum to fertility — so it will NOT make the tolerance
    genes selectable. Build elevation for terrain and P6 groundwork, not for that.
-   The direct fix is a fertility adaptation term; a softer alternative is replacing the hard
-   Min, which is a behavior change that invalidates plant baselines. Nobody has decided.
+   The fertility adaptation term is now BUILT (NutrientUptake, PlantFertilityAdaptationEnabled,
+   default false, flag-off byte-identical, 389/389). It works as designed and barely matters,
+   for a reason that supersedes this whole line of work:
+
+1c. THE STRUCTURAL FINDING, read before proposing any plant-trait experiment:
+   docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md.
+   growth is multiplied by (1 - Biomass/Capacity); the measured mean of that gate is 0.1711,
+   with 39.8% of patch-ticks within 1% of capacity. Every trait routed through
+   GrowthRateMultiplier - Nutrition, Defense, WaterEfficiency, both tolerances, NutrientUptake -
+   is null or weak. The two that ARE strongly selected, Dispersal and SeedInvestment, are the
+   only ones acting on colonisation instead of growth rate.
+   Three sessions have now tried to make a growth-rate trait selectable by improving its
+   benefit channel. The benefit channel was never the constraint. DO NOT RUN A FOURTH.
+   Selection on plants has to act on establishment, mortality or seed production - a design
+   decision nobody has taken yet.
 
 2. Elevation field. NOT blocked on anything external — the other three fields were
    designed in-repo and elevation is the same job. Ridged multifractal

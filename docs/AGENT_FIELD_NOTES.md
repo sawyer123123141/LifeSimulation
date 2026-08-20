@@ -484,6 +484,27 @@ multiplied by `(1 - Biomass/Capacity)` and so is barely paid at capacity. Before
 environment channel or another adaptation gene, check which channel actually binds — see
 `docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md`.
 
+**2026-08-19 — Plant growth-RATE traits are nearly unselectable, and no adaptation term fixes
+that.** `growth` is multiplied by `(1 - Biomass/Capacity)`, and patches live near capacity:
+measured mean gate **0.1711**, with 39.8% of patch-ticks within 1% of capacity. A trait that
+changes growth rate by X% changes realised growth by roughly `0.17 * X%`, and by ~nothing for
+two fifths of the time. That single fact covers every plant-trait null on record — Nutrition,
+Defense, WaterEfficiency, both tolerances and `NutrientUptake` all route through
+`GrowthRateMultiplier`, while `Dispersal` (t 14-17) and `SeedInvestment` (t 4.8-6.8) act on
+colonisation and are ungated. **Three sessions have now tried to make a growth-rate trait
+selectable by improving its benefit channel; the benefit channel was never the constraint.**
+Do not run a fourth. Selection on plants has to act on establishment, mortality or seed
+production. See `docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md`.
+
+**2026-08-19 — Regress the final value on the founder value, never the delta.** Testing whether
+a trait converges to an equilibrium by regressing `delta` on `founderMean` is invalid: the
+founder mean sits on both sides with opposite signs and manufactures a negative slope out of
+pure noise. Regress **final on founder** instead — slope 1 is drift, slope 0 is full
+convergence — and give it leverage, because six independent founder draws average out to an
+SD of 0.073 and leave the slope undetermined. A per-seed centre for between-seed spread plus
+per-site jitter for within-run standing variance answers both needs at once. The flag-off arm
+came out at slope 0.9995 +/- 0.0412, which is what a correct drift baseline looks like.
+
 **2026-08-19 — The P4 "flat environment control" is not flat.** `SimulationWorld.cs:62-64`
 builds `EnvironmentField.CreateMoistureGradient()` whenever `plantCohortsEnabled` is on, which
 `CreatePrototype4Defaults` sets. Moisture already varies with the procedural flag off; only
@@ -518,6 +539,11 @@ that arm as a flat or no-variation baseline.
 - **Seed plant founders with *varying* defense when testing selection.** A uniform
   founder value gives zero standing variance and every result is drift. See
   `docs/experiments/p4-defense-selection-demonstrated-2026-08-18.md`.
+- **`PlantFertilityAdaptationEnabled` defaults `false`** and gates `NutrientUptake`'s growth
+  charge as well as its benefit, so flag-off is byte-identical to the world before the gene
+  existed. `PlantGenome.TraitCount` is now **9**; the ninth constructor parameter has a default,
+  which is the shape that once silently dropped `persistence`, so
+  `EveryPlantTraitTransmitsThroughCloneMutated` pins it.
 - **The plant-selection positive control is `Dispersal`.** It moves +0.098 to +0.125 at
   t 14-17 with 105-115 of 120 seeds up, across four arms, at 0/120 extinctions —
   `docs/experiments/p4-plant-trait-selection-nonreplication-2026-08-19.md`. Read any plant-trait

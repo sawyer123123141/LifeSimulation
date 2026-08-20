@@ -5,7 +5,14 @@ namespace LifeSimulation.Simulation.Environment
 {
     public readonly struct PlantGenome
     {
-        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance)
+        /// <param name="nutrientUptake">
+        /// Answers the fertility channel, which no other gene can reach. Defaults to .5f so the
+        /// many existing eight-argument constructions keep compiling at a neutral value - which
+        /// is the same shape that silently dropped <c>persistence</c> from the animal genome, so
+        /// <see cref="CloneMutated"/>, <see cref="ToTraits"/>, <see cref="FromTraits"/> and the
+        /// state hash all pass it explicitly and a transmission test fails if one stops.
+        /// </param>
+        public PlantGenome(float growth, float seedInvestment, float waterEfficiency, float nutrition, float defense, float dispersal, float moistureTolerance, float temperatureTolerance, float nutrientUptake = .5f)
         {
             Growth = Clamp01(growth);
             SeedInvestment = Clamp01(seedInvestment);
@@ -15,9 +22,10 @@ namespace LifeSimulation.Simulation.Environment
             Dispersal = Clamp01(dispersal);
             MoistureTolerance = Clamp01(moistureTolerance);
             TemperatureTolerance = Clamp01(temperatureTolerance);
+            NutrientUptake = Clamp01(nutrientUptake);
         }
 
-        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
+        public static PlantGenome Neutral => new PlantGenome(.5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f, .5f);
         public float Growth { get; }
         public float SeedInvestment { get; }
         public float WaterEfficiency { get; }
@@ -26,6 +34,14 @@ namespace LifeSimulation.Simulation.Environment
         public float Dispersal { get; }
         public float MoistureTolerance { get; }
         public float TemperatureTolerance { get; }
+
+        /// <summary>
+        /// Adaptation to soil fertility. Fertility binds the growth limit at 82-90% of
+        /// plant-reachable positions and was the one channel with no genome modulation, which is
+        /// why neither tolerance gene could be selected on - see
+        /// docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md.
+        /// </summary>
+        public float NutrientUptake { get; }
 
         public static PlantGenome CloneMutated(PlantGenome parent, int worldSeed, long ordinal, float mutationStandardDeviation)
         {
@@ -37,7 +53,8 @@ namespace LifeSimulation.Simulation.Environment
                 Mutate(parent.Defense, worldSeed, ordinal, 4, mutationStandardDeviation),
                 Mutate(parent.Dispersal, worldSeed, ordinal, 5, mutationStandardDeviation),
                 Mutate(parent.MoistureTolerance, worldSeed, ordinal, 6, mutationStandardDeviation),
-                Mutate(parent.TemperatureTolerance, worldSeed, ordinal, 7, mutationStandardDeviation));
+                Mutate(parent.TemperatureTolerance, worldSeed, ordinal, 7, mutationStandardDeviation),
+                Mutate(parent.NutrientUptake, worldSeed, ordinal, 8, mutationStandardDeviation));
         }
 
         private static float Mutate(float value, int worldSeed, long ordinal, int trait, float standardDeviation)
@@ -46,12 +63,13 @@ namespace LifeSimulation.Simulation.Environment
         }
 
         /// <summary>Number of heritable plant traits. Keep in step with the constructor, <see cref="ToTraits"/> and <see cref="CloneMutated"/>.</summary>
-        public const int TraitCount = 8;
+        public const int TraitCount = 9;
 
         private static readonly string[] TraitNames =
         {
             nameof(Growth), nameof(SeedInvestment), nameof(WaterEfficiency), nameof(Nutrition),
             nameof(Defense), nameof(Dispersal), nameof(MoistureTolerance), nameof(TemperatureTolerance),
+            nameof(NutrientUptake),
         };
 
         /// <summary>Trait name for an index. Ordering matches the mutation trait indices in <see cref="CloneMutated"/>.</summary>
@@ -74,7 +92,7 @@ namespace LifeSimulation.Simulation.Environment
             return new[]
             {
                 Growth, SeedInvestment, WaterEfficiency, Nutrition,
-                Defense, Dispersal, MoistureTolerance, TemperatureTolerance,
+                Defense, Dispersal, MoistureTolerance, TemperatureTolerance, NutrientUptake,
             };
         }
 
@@ -93,7 +111,7 @@ namespace LifeSimulation.Simulation.Environment
 
             return new PlantGenome(
                 traits[0], traits[1], traits[2], traits[3],
-                traits[4], traits[5], traits[6], traits[7]);
+                traits[4], traits[5], traits[6], traits[7], traits[8]);
         }
 
         public float GetTrait(int index)
@@ -156,9 +174,21 @@ namespace LifeSimulation.Simulation.Environment
         public float SeedInvestmentFraction { get; }
         public float LifespanSeconds { get; }
 
-        public static PlantPhenotype FromGenome(PlantGenome genome)
+        /// <param name="fertilityAdaptationEnabled">
+        /// Gates the <c>NutrientUptake</c> growth charge as well as its benefit in
+        /// <see cref="PlantGrowthSystem"/>. Both halves move together so that flag-off is
+        /// byte-identical to the world before the gene existed: an unconditional cost here would
+        /// change every plant run the moment the gene was added, which is exactly what the
+        /// flag-off-is-identical rule exists to prevent.
+        /// </param>
+        public static PlantPhenotype FromGenome(PlantGenome genome, bool fertilityAdaptationEnabled = false)
         {
             float growth = .55f + (.90f * genome.Growth) - (.18f * genome.Nutrition) - (.15f * genome.Defense) - (.08f * genome.WaterEfficiency) - (.10f * genome.MoistureTolerance) - (.10f * genome.TemperatureTolerance);
+            if (fertilityAdaptationEnabled)
+            {
+                growth -= .10f * genome.NutrientUptake;
+            }
+
             return new PlantPhenotype(
                 Math.Max(.1f, growth),
                 .55f + (.90f * genome.Nutrition) - (.25f * genome.Defense),

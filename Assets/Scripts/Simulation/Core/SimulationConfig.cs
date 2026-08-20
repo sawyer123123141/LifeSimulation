@@ -127,7 +127,8 @@ namespace LifeSimulation.Simulation.Core
             float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength,
             bool plantQualityPreferenceEnabled = false,
             bool plantTemperatureAdaptationEnabled = false,
-            bool proceduralEnvironmentFieldsEnabled = false)
+            bool proceduralEnvironmentFieldsEnabled = false,
+            bool plantFertilityAdaptationEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -165,6 +166,7 @@ namespace LifeSimulation.Simulation.Core
             PlantQualityPreferenceEnabled = plantQualityPreferenceEnabled;
             PlantTemperatureAdaptationEnabled = plantTemperatureAdaptationEnabled;
             ProceduralEnvironmentFieldsEnabled = proceduralEnvironmentFieldsEnabled;
+            PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
         }
 
         public int WorldSeed { get; }
@@ -245,6 +247,21 @@ namespace LifeSimulation.Simulation.Core
         /// fertility and temperature of 1.
         /// </summary>
         public bool ProceduralEnvironmentFieldsEnabled { get; }
+
+        /// <summary>
+        /// When set, plant <c>NutrientUptake</c> improves a patch's position against poor soil,
+        /// mirroring how <c>MoistureTolerance</c> and <c>TemperatureTolerance</c> already work,
+        /// and the gene is charged <c>-.10f</c> growth for it.
+        ///
+        /// <para>Fertility was the only growth channel with no genome modulation, and it bound the
+        /// <c>Min</c> at 82-90% of plant-reachable positions - so both existing adaptation terms
+        /// were mostly buying nothing, which is why neither tolerance gene could be selected on.
+        /// See docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md.</para>
+        ///
+        /// <para>The flag gates the cost as well as the benefit, so flag-off is byte-identical to
+        /// the world before <c>NutrientUptake</c> existed.</para>
+        /// </summary>
+        public bool PlantFertilityAdaptationEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -337,7 +354,8 @@ namespace LifeSimulation.Simulation.Core
                 plantDefenseDeterrenceEnabled: true,
                 plantQualityPreferenceEnabled: true,
                 plantTemperatureAdaptationEnabled: true,
-                proceduralEnvironmentFieldsEnabled: true);
+                proceduralEnvironmentFieldsEnabled: true,
+                plantFertilityAdaptationEnabled: true);
         }
 
         public void Validate()

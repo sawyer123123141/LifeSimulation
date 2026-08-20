@@ -11,7 +11,8 @@ namespace LifeSimulation.Simulation.Environment
             PlantPatchStore patches,
             EnvironmentField field,
             float deltaTime,
-            bool temperatureAdaptationEnabled = false)
+            bool temperatureAdaptationEnabled = false,
+            bool fertilityAdaptationEnabled = false)
         {
             float addedBiomass = 0f;
             for (int index = 0; index < patches.Count; index++)
@@ -19,7 +20,7 @@ namespace LifeSimulation.Simulation.Environment
                 PlantPatchState patch = patches.GetAt(index);
                 if (patch.Biomass >= patch.Capacity) continue;
                 EnvironmentSample sample = field.Sample(patch.Position);
-                PlantPhenotype phenotype = PlantPhenotype.FromGenome(patch.Genome);
+                PlantPhenotype phenotype = PlantPhenotype.FromGenome(patch.Genome, fertilityAdaptationEnabled);
                 float moistureAdaptation = sample.Moisture <= 0f
                     ? 0f
                     : Math.Min(1f, sample.Moisture + ((1f - sample.Moisture) * (.7f * patch.Genome.WaterEfficiency + .3f * patch.Genome.MoistureTolerance)));
@@ -45,7 +46,26 @@ namespace LifeSimulation.Simulation.Environment
                         : Math.Min(1f, sample.Temperature + ((1f - sample.Temperature) * patch.Genome.TemperatureTolerance));
                 }
 
-                float limit = Math.Max(0f, Math.Min(moistureAdaptation, Math.Min(sample.Fertility, temperatureLimit)));
+                // Fertility mirrors the same pattern, and it is the channel that mattered most:
+                // measured over 120 seeds at plant-reachable positions, fertility was the binding
+                // minimum for 82-90% of them, because it was the only channel no gene could answer
+                // while both adaptation terms lift THEIR channel out of contention for the Min.
+                // That is why neither tolerance gene showed a selection response
+                // (docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md).
+                //
+                // Like temperature, this is inert while the environment is flat: fertility is
+                // pinned at 1 unless ProceduralEnvironmentFieldsEnabled is set, and at 1 the
+                // expression collapses to the raw value. Unlike temperature, the flag is still
+                // live under a flat field because it also gates NutrientUptake's growth charge.
+                float fertilityLimit = sample.Fertility;
+                if (fertilityAdaptationEnabled)
+                {
+                    fertilityLimit = sample.Fertility <= 0f
+                        ? 0f
+                        : Math.Min(1f, sample.Fertility + ((1f - sample.Fertility) * patch.Genome.NutrientUptake));
+                }
+
+                float limit = Math.Max(0f, Math.Min(moistureAdaptation, Math.Min(fertilityLimit, temperatureLimit)));
                 float sproutBiomass = patch.Biomass + (SproutFloorFraction * patch.Capacity);
                 float growth = patch.GrowthRate * phenotype.GrowthRateMultiplier * sproutBiomass * (1f - (patch.Biomass / patch.Capacity)) * limit * deltaTime;
                 float next = Math.Min(patch.Capacity, patch.Biomass + growth);
