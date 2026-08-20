@@ -79,11 +79,20 @@ playtest) enables procedural fields so there is terrain to see.
    the likely reading is that tolerance is insurance for bad ground, and the
    population concentrates on good ground where it is pure cost.
 
-2. Elevation field, waiting on a spec from ChatGPT. See docs/sphere-sandbox-prompt.md.
-   Slots in as a fourth channel on EnvironmentSample. The FIELD can land and be
-   measured long before the world is round; sphere geometry is a separate and much
-   larger job (every position is a 2D SimVector2, arena hardcoded (-25,25),
-   perception on a uniform 2D grid).
+2. Elevation field. NOT blocked on anything external — the other three fields were
+   designed in-repo and elevation is the same job. Ridged multifractal
+   (accumulate 1 - |noise|) for mountain chains rather than plain fBm, a lapse rate
+   coupling it to temperature, optionally a rain shadow coupling it to moisture.
+   Slots in as a fourth channel on EnvironmentSample, behind a flag like everything
+   else. docs/sphere-sandbox-prompt.md exists if an outside visual opinion is ever
+   wanted, but it is optional and nothing waits on it.
+
+   The FIELD can land and be measured long before the world is round. Sphere
+   GEOMETRY is a separate and much larger job: every position is a 2D SimVector2,
+   the arena is hardcoded (-25,25), and perception runs on a uniform 2D grid, so a
+   round world is a spatial-model refactor threaded through movement, distance,
+   dispersal, site placement and spatial hashing while preserving determinism and
+   every hash baseline. P6/P7, gated behind P4 and P5.
 
 3. Four config flags are inert because their readers sit on the Legacy path, which
    no configuration reaches: foragingEconomicsEnabled, kinRecognitionEnabled,
