@@ -114,7 +114,19 @@ playtest) enables procedural fields so there is terrain to see.
    Selection on plants has to act on establishment, mortality or seed production - a design
    decision nobody has taken yet.
 
-2. Elevation field. NOT blocked on anything external — the other three fields were
+2. DONE 2026-08-19 — docs/experiments/p4-elevation-field-2026-08-19.md.
+   EnvironmentNoise.RidgedFbm, EnvironmentSample.Elevation, a .45 lapse rate onto temperature,
+   behind ElevationFieldEnabled (default false, flag-off byte-identical, 4 tests, 393/393).
+   Mean elevation 0.3948 at plant positions; temperature 0.6593 -> 0.4816. Calibration
+   untouched: 0/30 extinct either way.
+   IMPORTANT SCOPING: elevation is INERT under the standard P4 plant config. It goes live only
+   when cap=1000 (grazing pulls patches off capacity) AND plantFertilityAdaptationEnabled is on
+   (fertility stops binding the Min). Neither alone is enough. Enabling it at cap 48 does
+   nothing at all, and the survival table will look reassuringly unchanged while nothing happens.
+   NOT DONE, deliberately: the rain shadow (needs a wind-direction convention - a design choice),
+   and an elevation mode on the H overlay (Unity presentation code, cannot be verified headlessly).
+
+   Original notes, still accurate for the sphere half: — the other three fields were
    designed in-repo and elevation is the same job. Ridged multifractal
    (accumulate 1 - |noise|) for mountain chains rather than plain fBm, a lapse rate
    coupling it to temperature, optionally a rain shadow coupling it to moisture.

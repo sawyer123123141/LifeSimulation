@@ -174,5 +174,142 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(west.Fertility, Is.EqualTo(1f));
             Assert.That(west.Temperature, Is.EqualTo(1f));
         }
+
+        // ---- Elevation ---------------------------------------------------------------------
+
+        private static SimVector2[] ArenaGrid(float step)
+        {
+            var positions = new System.Collections.Generic.List<SimVector2>();
+            for (float x = -25f; x <= 25f; x += step)
+            for (float y = -25f; y <= 25f; y += step)
+            {
+                positions.Add(new SimVector2(x, y));
+            }
+
+            return positions.ToArray();
+        }
+
+        [Test]
+        public void ElevationIsZeroAndTheOtherChannelsAreUntouchedWhenTheFlagIsOff()
+        {
+            // Flag-off must be byte-identical to the field before elevation existed, so it is not
+            // enough that Elevation reads 0 - moisture and fertility have to match exactly too.
+            EnvironmentField without = EnvironmentField.CreateProcedural(42);
+            EnvironmentField with = EnvironmentField.CreateProcedural(42, elevationEnabled: true);
+
+            foreach (SimVector2 position in ArenaGrid(5f))
+            {
+                EnvironmentSample flat = without.Sample(position);
+                Assert.That(flat.Elevation, Is.EqualTo(0f), $"elevation leaked at {position.X},{position.Y}");
+
+                EnvironmentSample raised = with.Sample(position);
+                Assert.That(raised.Moisture, Is.EqualTo(flat.Moisture), "elevation must not touch moisture");
+                Assert.That(raised.Fertility, Is.EqualTo(flat.Fertility), "elevation must not touch fertility");
+            }
+        }
+
+        [Test]
+        public void ElevationSpansARealRangeAndStaysInBounds()
+        {
+            EnvironmentField field = EnvironmentField.CreateProcedural(42, elevationEnabled: true);
+
+            float lowest = float.MaxValue;
+            float highest = float.MinValue;
+            foreach (SimVector2 position in ArenaGrid(2f))
+            {
+                float elevation = field.Sample(position).Elevation;
+                Assert.That(float.IsNaN(elevation), Is.False);
+                Assert.That(elevation, Is.InRange(0f, 1f));
+                if (elevation < lowest) lowest = elevation;
+                if (elevation > highest) highest = elevation;
+            }
+
+            // A field that barely varies is the failure mode this line of work exists to avoid: it
+            // would make the lapse rate a constant offset rather than a gradient.
+            Assert.That(highest - lowest, Is.GreaterThan(.35f),
+                $"elevation spans only {lowest:F3}..{highest:F3}");
+        }
+
+        [Test]
+        public void HighGroundIsColderThanTheSameGroundUnraised()
+        {
+            // The lapse rate is elevation's only route into the simulation. Pin it against the same
+            // field with elevation off, not against an absolute temperature.
+            EnvironmentField flat = EnvironmentField.CreateProcedural(42);
+            EnvironmentField raised = EnvironmentField.CreateProcedural(42, elevationEnabled: true);
+
+            int checkedPositions = 0;
+            foreach (SimVector2 position in ArenaGrid(2f))
+            {
+                EnvironmentSample before = flat.Sample(position);
+                EnvironmentSample after = raised.Sample(position);
+                if (after.Elevation <= .05f) continue;
+
+                checkedPositions++;
+                Assert.That(after.Temperature, Is.LessThanOrEqualTo(before.Temperature + 1e-6f),
+                    $"raising the ground warmed {position.X},{position.Y}");
+            }
+
+            Assert.That(checkedPositions, Is.GreaterThan(50), "too little high ground to test the lapse rate");
+        }
+
+        [Test]
+        public void RidgedNoiseIsRightSkewedAndUsesMoreOfTheRangeThanPlainFbm()
+        {
+            // Characterises the choice of ridged multifractal over plain fBm: folding about the
+            // peaks makes crests creases rather than domes, so most ground is low and the high
+            // ground is sparse.
+            //
+            // An earlier version of this test asserted that under 45% of the arena sits above its
+            // own mean. That measure is nearly blind here - it read 48.1% ridged against 49.6% fBm -
+            // because the mean shifts down with the distribution, so the fraction above it barely
+            // moves. Skewness measures the asymmetry directly and separates the two decisively
+            // (+0.249 against +0.019 when this was written). The threshold is comparative rather
+            // than absolute so it tests the difference, not a magic number.
+            const int Side = 100;
+            var ridged = new double[Side * Side];
+            var plain = new double[Side * Side];
+
+            int index = 0;
+            for (int ix = 0; ix < Side; ix++)
+            for (int iy = 0; iy < Side; iy++)
+            {
+                double x = ix * .35d;
+                double y = iy * .35d;
+                ridged[index] = EnvironmentNoise.RidgedFbm(42, 160, x, y, 0d, 5, 2.15d, .5d, 1.8d);
+                plain[index] = EnvironmentNoise.Fbm(42, 160, x, y, 0d, 5, 2.15d, .5d);
+                index++;
+            }
+
+            Shape(ridged, out double ridgedSkew, out double ridgedSd);
+            Shape(plain, out double plainSkew, out double plainSd);
+
+            Assert.That(ridgedSkew, Is.GreaterThan(plainSkew + .12d),
+                $"ridged skew {ridgedSkew:F3} is not meaningfully above plain fBm's {plainSkew:F3}; "
+                + "the fold has stopped concentrating high ground");
+            Assert.That(ridgedSd, Is.GreaterThan(plainSd),
+                $"ridged sd {ridgedSd:F3} should exceed plain fBm's {plainSd:F3}");
+        }
+
+        private static void Shape(double[] values, out double skew, out double standardDeviation)
+        {
+            double mean = 0d;
+            foreach (double value in values) mean += value;
+            mean /= values.Length;
+
+            double variance = 0d;
+            double thirdMoment = 0d;
+            foreach (double value in values)
+            {
+                double d = value - mean;
+                variance += d * d;
+                thirdMoment += d * d * d;
+            }
+
+            variance /= values.Length;
+            thirdMoment /= values.Length;
+            standardDeviation = System.Math.Sqrt(variance);
+            skew = standardDeviation <= 0d ? 0d : thirdMoment / (standardDeviation * standardDeviation * standardDeviation);
+        }
     }
 }

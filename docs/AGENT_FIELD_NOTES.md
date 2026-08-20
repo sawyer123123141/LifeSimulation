@@ -504,6 +504,18 @@ selectable by improving its benefit channel; the benefit channel was never the c
 Do not run a fourth. Selection on plants has to act on establishment, mortality or seed
 production. See `docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md`.
 
+**2026-08-19 — An environment channel needs the binding channel lifted AND the patches below
+capacity before it can matter; neither alone is enough.** `ElevationFieldEnabled` drops
+temperature by 0.18 on average at plant positions and is nonetheless **bit-identical** under the
+standard P4 plant config. It only goes live when the population cap is 1000 (grazing pulls
+patches off capacity, so the growth limit has something to act on) **and**
+`PlantFertilityAdaptationEnabled` is on (fertility stops binding the `Min`, so temperature can).
+Two guesses at a single cause were both wrong before the two-factor test separated them. When a
+new environment channel reads inert, check both conditions before concluding the wiring is
+broken — and note that this makes the fertility adaptation term a **precondition for any other
+channel mattering**, which is a better reason to keep it than the one it was built on. See
+`docs/experiments/p4-elevation-field-2026-08-19.md`.
+
 **2026-08-19 — "Widest configuration" is not "widest scenario", and a flag sweep inherits the
 scenario's blind spots.** `FlagLivenessAnalysis` pins against `CreateFullEcosystemDefaults` on
 `ConsumerDefenseCalibrationModerate`. That turns every flag on, and still cannot exercise

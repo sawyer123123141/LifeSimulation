@@ -60,7 +60,7 @@ namespace LifeSimulation.Simulation.Core
             Plants = new PlantPatchStore(initialCapacity: 8);
             PlantSites = new PlantSiteRegistry(initialCapacity: 8);
             Environment = Config.ProceduralEnvironmentFieldsEnabled
-                ? EnvironmentField.CreateProcedural(Config.WorldSeed)
+                ? EnvironmentField.CreateProcedural(Config.WorldSeed, Config.ElevationFieldEnabled)
                 : Config.PlantCohortsEnabled ? EnvironmentField.CreateMoistureGradient() : new EnvironmentField();
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);

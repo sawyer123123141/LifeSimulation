@@ -5,16 +5,27 @@ namespace LifeSimulation.Simulation.Environment
 {
     public readonly struct EnvironmentSample
     {
-        public EnvironmentSample(float moisture, float fertility, float temperature)
+        public EnvironmentSample(float moisture, float fertility, float temperature, float elevation = 0f)
         {
             Moisture = moisture;
             Fertility = fertility;
             Temperature = temperature;
+            Elevation = elevation;
         }
 
         public float Moisture { get; }
         public float Fertility { get; }
         public float Temperature { get; }
+
+        /// <summary>
+        /// Height above the arena floor, 0..1, and zero unless
+        /// <c>SimulationConfig.ElevationFieldEnabled</c> is set. Unlike the other three channels
+        /// nothing reads this directly for growth: it reaches the world through the lapse rate in
+        /// <see cref="EnvironmentField"/>. That is deliberate - a fourth channel that plants had to
+        /// adapt to would ship as another tax on a genome that already cannot pay
+        /// (docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md).
+        /// </summary>
+        public float Elevation { get; }
     }
 
     public sealed class EnvironmentField
@@ -37,7 +48,15 @@ namespace LifeSimulation.Simulation.Environment
         private readonly EnvironmentSample _constantSample;
         private readonly bool _usesMoistureGradient;
         private readonly bool _usesProceduralFields;
+        private readonly bool _usesElevation;
         private readonly int _worldSeed;
+
+        /// <summary>
+        /// How much of the temperature range the full height of the terrain removes. 0.45 is chosen
+        /// so a ridge crest is decisively colder than the valley beside it without driving
+        /// temperature to zero, which would stop growth outright rather than merely limiting it.
+        /// </summary>
+        private const double LapseRate = .45d;
 
         public EnvironmentField(float moisture = 1f, float fertility = 1f, float temperature = 1f)
         {
@@ -50,10 +69,11 @@ namespace LifeSimulation.Simulation.Environment
             _usesMoistureGradient = usesMoistureGradient;
         }
 
-        private EnvironmentField(int worldSeed, bool procedural)
+        private EnvironmentField(int worldSeed, bool procedural, bool elevation)
         {
             _constantSample = new EnvironmentSample(1f, 1f, 1f);
             _usesProceduralFields = procedural;
+            _usesElevation = elevation;
             _worldSeed = worldSeed;
         }
 
@@ -63,7 +83,10 @@ namespace LifeSimulation.Simulation.Environment
         /// Procedural moisture, fertility and temperature, sampled on a sphere. Deterministic in
         /// <paramref name="worldSeed"/> and position only.
         /// </summary>
-        public static EnvironmentField CreateProcedural(int worldSeed) { return new EnvironmentField(worldSeed, true); }
+        public static EnvironmentField CreateProcedural(int worldSeed, bool elevationEnabled = false)
+        {
+            return new EnvironmentField(worldSeed, true, elevationEnabled);
+        }
 
         /// <summary>
         /// Map an arena position onto a point on the unit sphere, then scale into noise space.
@@ -129,7 +152,30 @@ namespace LifeSimulation.Simulation.Environment
             double moistureBalance = 1d - EnvironmentNoise.Clamp01(Math.Abs(moisture - .55d) * 1.8d);
             double fertility = .20d + (.80d * EnvironmentNoise.Clamp01(fertilityNoise * (.35d + (.65d * moistureBalance))));
 
-            return new EnvironmentSample((float)moisture, (float)fertility, (float)temperature);
+            // Elevation: ridged multifractal, so the terrain reads as connected chains rather than
+            // scattered hills. It reaches the world only through the lapse rate below - deliberately
+            // no growth channel of its own, because a fourth channel plants had to adapt to would be
+            // another unpayable tax on genes that already cannot pay
+            // (docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md).
+            //
+            // Flag-off must be byte-identical, so nothing above this point may read elevation and
+            // temperature is only rewritten inside the branch.
+            double elevation = 0d;
+            if (_usesElevation)
+            {
+                elevation = EnvironmentNoise.RidgedFbm(
+                    _worldSeed, channel: 160, x, y, z,
+                    octaves: 5, lacunarity: 2.15d, gain: .5d, ridgeWeighting: 1.8d);
+
+                // Lapse rate: height costs warmth. This is the whole reason elevation exists as a
+                // simulation quantity rather than a rendering one - it makes high ground a real
+                // ecological gradient instead of decoration, using the channel that already limits
+                // growth. Floored at .02 rather than 0: temperature 0 stops growth outright, and a
+                // dead crest is less interesting than a cold one.
+                temperature = Math.Max(.02d, temperature - (LapseRate * elevation));
+            }
+
+            return new EnvironmentSample((float)moisture, (float)fertility, (float)temperature, (float)elevation);
         }
 
         private static float Clamp01(float value) { return value < 0f ? 0f : value > 1f ? 1f : value; }

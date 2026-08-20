@@ -128,7 +128,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantQualityPreferenceEnabled = false,
             bool plantTemperatureAdaptationEnabled = false,
             bool proceduralEnvironmentFieldsEnabled = false,
-            bool plantFertilityAdaptationEnabled = false)
+            bool plantFertilityAdaptationEnabled = false,
+            bool elevationFieldEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -167,6 +168,7 @@ namespace LifeSimulation.Simulation.Core
             PlantTemperatureAdaptationEnabled = plantTemperatureAdaptationEnabled;
             ProceduralEnvironmentFieldsEnabled = proceduralEnvironmentFieldsEnabled;
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
+            ElevationFieldEnabled = elevationFieldEnabled;
         }
 
         public int WorldSeed { get; }
@@ -262,6 +264,21 @@ namespace LifeSimulation.Simulation.Core
         /// the world before <c>NutrientUptake</c> existed.</para>
         /// </summary>
         public bool PlantFertilityAdaptationEnabled { get; }
+
+        /// <summary>
+        /// When set, <c>EnvironmentField</c> generates a ridged-multifractal elevation channel and
+        /// applies a lapse rate, so high ground is colder than the valley beside it.
+        ///
+        /// <para>Requires <see cref="ProceduralEnvironmentFieldsEnabled"/>; the constant and
+        /// moisture-gradient fields have no terrain to raise.</para>
+        ///
+        /// <para>Elevation deliberately has <b>no</b> growth channel of its own. It acts through
+        /// temperature, which already limits growth, because a fourth channel plants had to adapt to
+        /// would ship as another tax on genes that demonstrably cannot pay it - see
+        /// docs/experiments/p4-growth-rate-traits-are-nearly-unselectable-2026-08-19.md. This is
+        /// terrain and P6 groundwork, and it is not expected to make any plant gene selectable.</para>
+        /// </summary>
+        public bool ElevationFieldEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -355,7 +372,8 @@ namespace LifeSimulation.Simulation.Core
                 plantQualityPreferenceEnabled: true,
                 plantTemperatureAdaptationEnabled: true,
                 proceduralEnvironmentFieldsEnabled: true,
-                plantFertilityAdaptationEnabled: true);
+                plantFertilityAdaptationEnabled: true,
+                elevationFieldEnabled: true);
         }
 
         public void Validate()

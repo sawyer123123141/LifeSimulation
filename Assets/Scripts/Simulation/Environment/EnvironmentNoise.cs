@@ -119,6 +119,54 @@ namespace LifeSimulation.Simulation.Environment
         }
 
         /// <summary>
+        /// Ridged multifractal, normalized to 0..1. Two differences from <see cref="Fbm"/> matter:
+        ///
+        /// <para>Each octave is folded as <c>1 - |2n - 1|</c>, turning the smooth peaks of value
+        /// noise into creases, and squared to sharpen the crease into a crest. Summed over octaves
+        /// this gives connected ridge LINES - mountain chains - where plain fBm gives isolated round
+        /// hills, because the fold makes the maximum a crease rather than a broad dome.</para>
+        ///
+        /// <para>Each octave is also weighted by the previous octave's signal, which is what makes
+        /// this multi-fractal rather than merely folded: fine detail accumulates on ground that is
+        /// already high and stays suppressed in the valleys, so foothills gather around ranges
+        /// instead of scattering uniformly.</para>
+        /// </summary>
+        public static double RidgedFbm(
+            int worldSeed,
+            int channel,
+            double x,
+            double y,
+            double z,
+            int octaves,
+            double lacunarity,
+            double gain,
+            double ridgeWeighting)
+        {
+            double sum = 0d;
+            double amplitude = 1d;
+            double totalAmplitude = 0d;
+            double frequency = 1d;
+            double weight = 1d;
+
+            for (int octave = 0; octave < octaves; octave++)
+            {
+                double noise = ValueNoise(worldSeed, channel + octave, x * frequency, y * frequency, z * frequency);
+                double signal = 1d - Math.Abs((2d * noise) - 1d);
+                signal *= signal;
+                signal *= weight;
+
+                sum += amplitude * signal;
+                totalAmplitude += amplitude;
+
+                weight = Clamp01(signal * ridgeWeighting);
+                amplitude *= gain;
+                frequency *= lacunarity;
+            }
+
+            return totalAmplitude <= 0d ? 0d : Clamp01(sum / totalAmplitude);
+        }
+
+        /// <summary>
         /// Expand contrast about the midpoint. Necessary because fBm sums independent octaves and
         /// therefore concentrates near 0.5 — a raw 4-octave field spans roughly .37...82 rather than
         /// the full range, and a field that barely varies gives adaptation genes almost nothing to
