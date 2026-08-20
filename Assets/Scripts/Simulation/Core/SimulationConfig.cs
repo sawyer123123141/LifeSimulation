@@ -126,7 +126,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantDefenseDeterrenceEnabled = false,
             float plantDefenseDeterrenceStrength = DefaultPlantDefenseDeterrenceStrength,
             bool plantQualityPreferenceEnabled = false,
-            bool plantTemperatureAdaptationEnabled = false)
+            bool plantTemperatureAdaptationEnabled = false,
+            bool proceduralEnvironmentFieldsEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -163,6 +164,7 @@ namespace LifeSimulation.Simulation.Core
             PlantDefenseDeterrenceStrength = plantDefenseDeterrenceStrength;
             PlantQualityPreferenceEnabled = plantQualityPreferenceEnabled;
             PlantTemperatureAdaptationEnabled = plantTemperatureAdaptationEnabled;
+            ProceduralEnvironmentFieldsEnabled = proceduralEnvironmentFieldsEnabled;
         }
 
         public int WorldSeed { get; }
@@ -236,6 +238,13 @@ namespace LifeSimulation.Simulation.Core
         /// <c>PlantPhenotype</c> and has no channel to earn it back under any environment.</para>
         /// </summary>
         public bool PlantTemperatureAdaptationEnabled { get; }
+
+        /// <summary>
+        /// When set, <c>EnvironmentField</c> supplies procedural moisture, fertility and temperature
+        /// sampled on a sphere, replacing the hardcoded linear moisture ramp and the constant
+        /// fertility and temperature of 1.
+        /// </summary>
+        public bool ProceduralEnvironmentFieldsEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -325,7 +334,10 @@ namespace LifeSimulation.Simulation.Core
                 mateSelectionEnabled: true,
                 plantSiteCompetitionEnabled: true,
                 plantMortalityEnabled: true,
-                plantDefenseDeterrenceEnabled: true);
+                plantDefenseDeterrenceEnabled: true,
+                plantQualityPreferenceEnabled: true,
+                plantTemperatureAdaptationEnabled: true,
+                proceduralEnvironmentFieldsEnabled: true);
         }
 
         public void Validate()

@@ -285,16 +285,13 @@ namespace LifeSimulation.Tests.EditMode
             "learnedResourceQualityEnabled",
             "multiThreatPerceptionEnabled",
 
-            // Inert for a different reason than the four above, and only for now. Those four have
-            // readers stranded on the Legacy path. This one is fully wired on the live path but the
-            // environment gives it nothing to act on: EnvironmentField returns Temperature = 1
-            // everywhere in production, and at 1 the adaptation expression collapses to the raw
-            // value (pinned by
-            // PlantLivenessTests.TemperatureAdaptationIsByteIdenticalWhereTemperatureIsUnlimiting).
-            //
-            // MOVE THIS OUT of the list when terrain fields land - at that point it becomes live,
-            // and this test failing is the correct signal that it did.
-            "plantTemperatureAdaptationEnabled",
+            // plantTemperatureAdaptationEnabled was listed here between a4304bd and the procedural
+            // environment fields landing. It was inert for a different reason than the four above:
+            // fully wired on the live path, but EnvironmentField returned Temperature = 1 everywhere,
+            // and at 1 the adaptation expression collapses to the raw value. Once the fields varied
+            // it diverged at tick 40 and this test failed - which was the designed signal - so it was
+            // removed. The four that remain are inert because their readers sit on the Legacy path,
+            // which no configuration reaches; those will not resolve themselves.
         };
 
         [Test]

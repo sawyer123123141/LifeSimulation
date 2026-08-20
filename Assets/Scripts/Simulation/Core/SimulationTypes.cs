@@ -321,7 +321,8 @@ namespace LifeSimulation.Simulation.Core
         AttackResolution = 8,
         PlantMutation = 9,
         PlantDispersal = 10,
-        PlantEstablishment = 11
+        PlantEstablishment = 11,
+        TerrainField = 12
     }
 
     public enum DeathCause : byte
