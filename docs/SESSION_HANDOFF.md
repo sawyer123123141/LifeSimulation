@@ -92,6 +92,15 @@ playtest) enables procedural fields so there is terrain to see.
    -0.0225, t -3.04, 71/119 down — one cell of 32, under a Bonferroni bar near 3.2, and
    the same claim shape that was retracted on 2026-08-18.
 
+1b. READ BEFORE ITEM 2: docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md.
+   Fertility binds the growth limit 82-90% of the time at plant-reachable positions, and that
+   share RISES as tolerance rises, because each adaptation term lifts its own channel out of
+   contention for the Min. Elevation couples to temperature and moisture — channels that
+   already vary and already lose the minimum to fertility — so it will NOT make the tolerance
+   genes selectable. Build elevation for terrain and P6 groundwork, not for that.
+   The direct fix is a fertility adaptation term; a softer alternative is replacing the hard
+   Min, which is a behavior change that invalidates plant baselines. Nobody has decided.
+
 2. Elevation field. NOT blocked on anything external — the other three fields were
    designed in-repo and elevation is the same job. Ridged multifractal
    (accumulate 1 - |noise|) for mountain chains rather than plain fBm, a lapse rate

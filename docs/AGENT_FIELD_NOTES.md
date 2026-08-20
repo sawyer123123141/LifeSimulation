@@ -474,6 +474,16 @@ produced both the refutation of that session's own hypothesis and the strongest 
 control the project has (`Dispersal`, t 14-17 across four arms). A sweep scoped to the trait
 you are curious about cannot tell you the effect belongs to that trait.
 
+**2026-08-19 — A `Min` over channels hands all selection to the channel no gene can answer,
+and adaptation makes it worse.** `PlantGrowthSystem` takes `limit = Min(moistureAdaptation,
+Fertility, temperatureLimit)`. Fertility has no genome modulation, and it binds **82-90%** of
+plant-reachable positions — *rising* as tolerance rises, because each adaptation term lifts its
+own channel out of contention for the minimum. Raising both tolerances .35 to .65 buys +2.23%
+growth limit against -7.76% on `GrowthRateMultiplier`, net **-5.7%** on a rate that is
+multiplied by `(1 - Biomass/Capacity)` and so is barely paid at capacity. Before adding another
+environment channel or another adaptation gene, check which channel actually binds — see
+`docs/experiments/p4-fertility-binds-the-growth-limit-2026-08-19.md`.
+
 **2026-08-19 — The P4 "flat environment control" is not flat.** `SimulationWorld.cs:62-64`
 builds `EnvironmentField.CreateMoistureGradient()` whenever `plantCohortsEnabled` is on, which
 `CreatePrototype4Defaults` sets. Moisture already varies with the procedural flag off; only
