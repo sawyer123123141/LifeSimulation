@@ -5,6 +5,10 @@
     <IsTestProject>true</IsTestProject>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <!-- Unity does not use implicit global usings, so neither does this project. Without this,
+         a file missing "using System;" compiles here and fails only in the Unity editor - which
+         defeats the purpose of dotnet test being the fast compile check. -->
+    <ImplicitUsings>disable</ImplicitUsings>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>

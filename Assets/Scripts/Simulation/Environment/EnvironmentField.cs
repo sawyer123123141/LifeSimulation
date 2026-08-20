@@ -1,3 +1,4 @@
+using System;
 using LifeSimulation.Simulation.Core;
 
 namespace LifeSimulation.Simulation.Environment

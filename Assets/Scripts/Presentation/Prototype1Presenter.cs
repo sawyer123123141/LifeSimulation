@@ -45,6 +45,7 @@ namespace LifeSimulation.Presentation
         private float _speedMultiplier = 4f;
         private bool _isPaused;
         private bool _showTemperatureHeatmap = true;
+        private TerrainOverlay _overlay = TerrainOverlay.Temperature;
         private ResourceId _draggedResourceId;
         private bool _isDraggingResource;
         private string _scenarioId;
@@ -122,7 +123,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · H heatmap");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · H overlay (temp/biome/off)");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Drag food/water · Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
@@ -246,6 +247,37 @@ namespace LifeSimulation.Presentation
             SynchronizePresentation();
         }
 
+        /// <summary>
+        /// Ground overlay modes, cycled with <c>H</c>. Biome reads the simulation's own
+        /// <c>EnvironmentField</c>, so with <c>ProceduralEnvironmentFieldsEnabled</c> off it renders
+        /// the flat legacy environment honestly rather than pretending there is terrain.
+        /// </summary>
+        private enum TerrainOverlay
+        {
+            None = 0,
+            Temperature = 1,
+            Biome = 2,
+        }
+
+        /// <summary>Biome palette, matching docs/experiments/field-atlas.html so the game view and the atlas agree.</summary>
+        private static readonly Color[] BiomeColors =
+        {
+            new Color(0.784f, 0.635f, 0.290f), // arid
+            new Color(0.498f, 0.584f, 0.659f), // cold steppe
+            new Color(0.290f, 0.490f, 0.431f), // marsh
+            new Color(0.247f, 0.561f, 0.227f), // fertile grassland
+            new Color(0.604f, 0.561f, 0.369f), // scrub
+        };
+
+        private static int ClassifyBiome(EnvironmentSample sample)
+        {
+            if (sample.Moisture < 0.34f) return 0;
+            if (sample.Temperature < 0.42f) return 1;
+            if (sample.Moisture > 0.74f && sample.Fertility < 0.48f) return 2;
+            if (sample.Fertility > 0.58f) return 3;
+            return 4;
+        }
+
         private void UpdateTemperatureHeatmapIfNeeded()
         {
             if (_world == null || _heatmapUpdateAccumulator < HeatmapUpdateInterval)
@@ -265,16 +297,28 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < HeatmapResolution; x++)
                 {
                     float worldX = Mathf.Lerp(minX, maxX, (x + 0.5f) / HeatmapResolution);
-                    float temperature = TemperatureField.Sample(new SimVector2(worldX, z), _world.CurrentTick);
-                    float temperatureFraction = Mathf.InverseLerp(ColdTemperature, HotTemperature, temperature);
-                    _temperaturePixels[rowStart + x] = Color.Lerp(Color.blue, Color.red, temperatureFraction);
+                    var position = new SimVector2(worldX, z);
+                    if (_overlay == TerrainOverlay.Biome)
+                    {
+                        EnvironmentSample sample = _world.Environment.Sample(position);
+                        // Shade each biome by its own fertility so the map shows gradient within a
+                        // region, not just flat colour blocks.
+                        _temperaturePixels[rowStart + x] = BiomeColors[ClassifyBiome(sample)]
+                            * Mathf.Lerp(0.72f, 1.18f, sample.Fertility);
+                    }
+                    else
+                    {
+                        float temperature = TemperatureField.Sample(position, _world.CurrentTick);
+                        float temperatureFraction = Mathf.InverseLerp(ColdTemperature, HotTemperature, temperature);
+                        _temperaturePixels[rowStart + x] = Color.Lerp(Color.blue, Color.red, temperatureFraction);
+                    }
                 }
             }
 
             _temperatureHeatmap.SetPixels(_temperaturePixels);
             _temperatureHeatmap.Apply();
             _heatmapUpdateAccumulator = 0f;
-            if (_showTemperatureHeatmap)
+            if (_overlay != TerrainOverlay.None)
             {
                 ApplyTemperatureHeatmap();
             }
@@ -282,7 +326,8 @@ namespace LifeSimulation.Presentation
 
         private void ToggleTemperatureHeatmap()
         {
-            _showTemperatureHeatmap = !_showTemperatureHeatmap;
+            _overlay = (TerrainOverlay)(((int)_overlay + 1) % 3);
+            _showTemperatureHeatmap = _overlay != TerrainOverlay.None;
             if (_showTemperatureHeatmap)
             {
                 _heatmapUpdateAccumulator = HeatmapUpdateInterval;
@@ -334,7 +379,13 @@ namespace LifeSimulation.Presentation
                     // IntentUtilityV1, so the flag is inert here. Included for completeness/future-proofing
                     // in case the policy ever changes, not because it does anything right now.
                     learnedResourceQualityEnabled: true,
-                    mateSelectionEnabled: true));
+                    mateSelectionEnabled: true,
+                    plantSiteCompetitionEnabled: true,
+                    plantMortalityEnabled: true,
+                    plantDefenseDeterrenceEnabled: true,
+                    plantQualityPreferenceEnabled: true,
+                    plantTemperatureAdaptationEnabled: true,
+                    proceduralEnvironmentFieldsEnabled: true));
             for (int index = 0; index < _world.CreatureCount; index++)
             {
                 _world.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;

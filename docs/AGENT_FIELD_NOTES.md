@@ -331,6 +331,16 @@ measured drift and nothing else. Seeding three of six sites defended produced
 deltas of -0.05, ten to thirty times any earlier arm. Before concluding a trait
 "does not respond", check that the founders actually differ in it.
 
+**2026-08-18 — `dotnet test` passing did not mean Unity compiles.**
+`tools/HeadlessTests/GlobalUsings.cs` carried `global using System;`, which Unity
+has no equivalent of. A file using `System.Math` without `using System;` passed all
+385 headless tests and then failed in the editor with seven `CS0103`s. The file is
+now empty and commented to stay that way — emptying it produced zero errors, so
+nothing depended on it — and `<ImplicitUsings>disable</ImplicitUsings>` is set.
+Verified by deleting a `using` and confirming the headless build now fails (14
+errors) where it previously succeeded. **If a green headless run is ever
+contradicted by the editor again, check for global usings first.**
+
 **2026-08-18 — A liveness test cannot tell you a trait is worth carrying.**
 Perturbation detects influence, not reward, so a **pure-cost** gene passes it.
 Plant `TemperatureTolerance` read live only because it charges `-.10f` growth,
