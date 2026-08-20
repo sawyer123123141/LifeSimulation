@@ -74,10 +74,10 @@ Why establishment and not the other two:
 
 One item left on this track, plus a pending user decision.
 
-ALL THREE non-growth-rate routes are now measured and the third one is CLOSED. Do not
-reopen it. `SeedProductionRate` (eleventh gene, PlantSeedProductionRateEnabled, default
-false) shortens the post-birth cooldown and is a measured null at every charge including
-zero — charge 0 read t +3.22 with 68/120 seeds up against a flag-DISABLED control arm at
+`SeedProductionRate` is conditional, not closed: at the 24-site calibration it is null
+(charge 0: t +3.22, 68/120 up versus 70/120 disabled drift), but at 168 sites it is selected
+(t +4.32, 79/120 up versus 66/120 drift). Site abundance moves mean occupancy from ~0.91 to
+~0.32 with no extinctions. See `docs/experiments/p4-site-abundance-seed-production-rate-2026-08-20.md`.
 t +1.51 with 70/120 up, so it is less directionally consistent than pure drift.
 The reason is the one thing to carry forward: **reproduction here is SITE-limited, not
 time-limited.** Halving the cooldown moves plant births only 203.7 -> 221.8 and raises

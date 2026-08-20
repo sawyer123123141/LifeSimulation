@@ -680,6 +680,11 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
   cannot supply because that one is unwired. `PlantGenome.TraitCount` is now **11**. Its dispersal
   charge is a `float` config value, not a bool, so `FlagLivenessAnalysis` does not cover it —
   perturb it by hand if you need a verdict on the charge.
+- **Site abundance is the mediator for `SeedProductionRate`** (2026-08-20): at 24 sites,
+  occupancy is 0.904-0.908 and the enabled arm is null (+0.01953, t +3.22, 68/120 up versus
+  70/120 disabled drift). At 168 sites, occupancy falls to 0.322 and it becomes selected
+  (+0.02022, t +4.32, 79/120 versus 66/120 drift), with no extinctions. The gene is thus a
+  conditional positive, not a universal negative; see the site-abundance writeup.
 - **The P4 plant-selection blocker is answered: the route is ESTABLISHMENT.**
   `PlantEstablishmentContestEnabled` (default `false`) lets a seedling below
   `VulnerabilityFraction` resist takeover with `PlantGenome.SeedlingResilience`, the tenth plant
