@@ -662,6 +662,19 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
   free site. Free sites are the scarce resource. Before proposing any new plant trait, ask whether
   it changes a patch's access to SITES; if it only changes how fast or how long the patch lives,
   it is already answered. `docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md`
+- **The liveness suite is the slow half and it grows with every flag and gene.** `dotnet test` is
+  ~49 s, of which the two liveness fixtures are ~35 s, and a single test —
+  `LivenessTests.RiskAversionIsLiveOnlyWhenThreatsExist` — is **16 s** on its own, more than
+  tests 1-12 of that shard combined. `FlagLivenessAnalysis` runs a simulation pair per config
+  flag, so the cost rises every time a flag is added. In a throttled container this reads as a
+  hung runner. Shard it: `--filter "FullyQualifiedName!~LivenessTests"` covers 365 tests in ~12 s;
+  run the liveness fixtures separately with a long timeout. If the suite ever needs to shrink,
+  that one test is where to look first.
+- **`PlantEstablishmentContestEnabled` stays OUT of `CreatePrototype4Defaults`** (decided
+  2026-08-20). That factory sets exactly one plant flag, `plantCohortsEnabled`; every other plant
+  mechanism is opted into explicitly at each experiment's call site. Defaulting the contest on
+  would make it the only plant mechanism ever enabled by the factory and would invalidate every
+  P4 baseline on record.
 - **`PlantSeedProductionRateEnabled` defaults `false` and is kept as the project's live NEGATIVE
   control.** It reaches behaviour and demonstrably is not selected, which `Genome.NeutralMarker`
   cannot supply because that one is unwired. `PlantGenome.TraitCount` is now **11**. Its dispersal

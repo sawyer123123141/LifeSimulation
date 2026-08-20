@@ -22,8 +22,8 @@ Unity checkout (Play mode only, and the user compiles it there):
 Same remote, separate trees — pull the other after every push.
 Tests: cd tools/HeadlessTests && dotnet test
 Both trees on main, 398/398 green, trees clean. Run git log --oneline -1 for the head.
-The Unity editor compile was last confirmed by the user on 2026-08-19; the 2026-08-20
-plant work has not been opened in the editor. A green dotnet test does not prove Unity
+Unity editor compile confirmed by the user on 2026-08-20, covering the tenth and eleventh
+plant genes and both new flags. A green dotnet test does not prove Unity
 compiles — if the editor disagrees, check for global usings first.
 
 === THE ONE THING TO KNOW ===
@@ -94,9 +94,15 @@ A. THE INVADER SIDE. The contest is one-sided: only the incumbent's genome enter
    invader-side term is the obvious question and was deliberately left out to keep the
    first wiring one-variable.
 
-USER DECISION PENDING: with the blocker answered, does P4 exit now, and does
-PlantEstablishmentContestEnabled belong in CreatePrototype4Defaults? It is currently on
-only in CreateFullEcosystemDefaults. Ask rather than deciding.
+DECIDED 2026-08-20, do not reopen: PlantEstablishmentContestEnabled stays OUT of
+CreatePrototype4Defaults. That factory sets exactly one plant flag, plantCohortsEnabled;
+site competition, mortality and every other plant mechanism are opted into explicitly at
+the call site of each experiment. Defaulting the contest on would make it the only plant
+mechanism ever enabled by the factory, and would invalidate every P4 baseline on record.
+It stays on only in CreateFullEcosystemDefaults, which exists for liveness, not experiments.
+
+P4's exit criterion is met: plant selection has a demonstrated route off the growth-rate
+gate. The remaining P4 items below are optional polish, not blockers.
 
 Two things to be careful of, both learned the hard way:
   - A prediction stated as a mechanism story is not evidence. State it as a number.
