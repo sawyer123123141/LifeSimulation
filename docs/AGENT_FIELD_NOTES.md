@@ -576,6 +576,15 @@ that arm as a flat or no-variation baseline.
 - **Seed plant founders with *varying* defense when testing selection.** A uniform
   founder value gives zero standing variance and every result is drift. See
   `docs/experiments/p4-defense-selection-demonstrated-2026-08-18.md`.
+- **Growth-rate traits are the wrong place to look for plant selection.** `growth` is gated by
+  `(1 - Biomass/Capacity)`, measured mean **0.1711**. Everything through
+  `PlantPhenotype.GrowthRateMultiplier` measures null or weak; `SeedInvestmentFraction` and
+  `DispersalRange` skip the gate and are the only traits that move. Before wiring a new plant
+  trait, check which side of that gate it lands on.
+- **`ElevationFieldEnabled` defaults `false`** and is **inert under the standard P4 plant
+  config**. It needs `maximumPopulation: 1000` *and* `PlantFertilityAdaptationEnabled` together
+  before it changes anything — grazing has to pull patches off capacity, and fertility has to
+  stop binding the `Min`. Requires `ProceduralEnvironmentFieldsEnabled`.
 - **`PlantFertilityAdaptationEnabled` defaults `false`** and gates `NutrientUptake`'s growth
   charge as well as its benefit, so flag-off is byte-identical to the world before the gene
   existed. `PlantGenome.TraitCount` is now **9**; the ninth constructor parameter has a default,
