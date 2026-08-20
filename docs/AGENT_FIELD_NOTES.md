@@ -443,6 +443,44 @@ guarded call sites. Had that been recorded as "dead code" it would have been
 deleted. Always pin liveness against `CreateFullEcosystemDefaults`, and state the
 scenario alongside any negative verdict.
 
+**2026-08-19 — The measured config includes the engine bounds, and "looks equivalent" is
+how you lose them.** A probe rebuilt the calibration config by hand and passed
+`baseline.MaximumPopulation` (**1000**) where the committed guard
+`ConsumerDefenseCalibrationModerateSurvivesPlantMortalityAcrossSeeds` pins
+`maximumPopulation: 48`. The population ran to ~310, stripped every patch, and gave 30/30
+extinct on a scenario whose own comment records 0/30 — which was briefly reported as
+behavior drift before the cap was found. Transcribing 48 restored 0/30 exactly. This is the
+2026-08-17 "transcribe, never reconstruct" lesson recurring in the one place easiest to miss:
+the cap is not an ecological parameter, so it does not look like part of the configuration.
+**Copy the config out of the committed guard, do not rebuild it from the factory defaults.**
+
+**2026-08-19 — Answer the variance objection by measuring it, not by conceding it.** A null
+on a trait is only as good as the standing variance it was measured at, because response to
+selection is proportional to variance. Rather than caveat the tolerance null, a second pair of
+arms widened *only* the two tolerance founders to Uniform(.2, .8) — doubling the outcome SD —
+and the null held. One extra arm pair converts "suggestive, conditional on founder spread"
+into a result. Widening *every* trait instead destroys the operating point: the first attempt
+did that and lost the whole ecosystem.
+
+**2026-08-19 — Report the sign test next to the t.** `Defense` under the moisture-gradient arm
+gave t -2.05 with 50 of 120 seeds down — no directional consistency at all, a t driven by a
+few large magnitudes. A t alone would have been read as a near-significant decline, which is
+the shape of the claim retracted on 2026-08-18. The sign test costs one `awk` line over the
+per-run CSV.
+
+**2026-08-19 — Measure every trait in the same runs; the free ones are the controls.**
+Recording all eight plant genes instead of the two under investigation cost nothing extra and
+produced both the refutation of that session's own hypothesis and the strongest positive
+control the project has (`Dispersal`, t 14-17 across four arms). A sweep scoped to the trait
+you are curious about cannot tell you the effect belongs to that trait.
+
+**2026-08-19 — The P4 "flat environment control" is not flat.** `SimulationWorld.cs:62-64`
+builds `EnvironmentField.CreateMoistureGradient()` whenever `plantCohortsEnabled` is on, which
+`CreatePrototype4Defaults` sets. Moisture already varies with the procedural flag off; only
+fertility and temperature are pinned at 1. Flipping `proceduralEnvironmentFieldsEnabled`
+therefore changes three channels at once and is not a one-variable contrast. Do not describe
+that arm as a flat or no-variation baseline.
+
 ---
 
 ## 6. Standing project facts
@@ -470,6 +508,14 @@ scenario alongside any negative verdict.
 - **Seed plant founders with *varying* defense when testing selection.** A uniform
   founder value gives zero standing variance and every result is drift. See
   `docs/experiments/p4-defense-selection-demonstrated-2026-08-18.md`.
+- **The plant-selection positive control is `Dispersal`.** It moves +0.098 to +0.125 at
+  t 14-17 with 105-115 of 120 seeds up, across four arms, at 0/120 extinctions —
+  `docs/experiments/p4-plant-trait-selection-nonreplication-2026-08-19.md`. Read any plant-trait
+  null against it. `SeedInvestment` is a weaker second (t 4.8-6.8). Both are the traits with no
+  growth-rate cost term in `PlantPhenotype`.
+- **`maximumPopulation: 48` is part of the P4 plant calibration**, not a default. The factory
+  default is 1000, which collapses the calibration scenario entirely. Copy the config from
+  `ResourceExperimentTests.ConsumerDefenseCalibrationModerateSurvivesPlantMortalityAcrossSeeds`.
 - `PlantDefenseDeterrenceEnabled` defaults `false`. With it off, plant defense
   protects no biomass and cannot be selected on at all — see
   `docs/experiments/p4-defense-no-gradient-2026-08-18.md`. Any coevolution run

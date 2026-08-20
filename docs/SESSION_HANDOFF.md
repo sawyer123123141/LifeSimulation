@@ -70,14 +70,27 @@ playtest) enables procedural fields so there is terrain to see.
 
 === OPEN WORK, ROUGHLY BY VALUE ===
 
-1. Plant tolerance genes now respond to selection, DOWNWARD. Measured: flat
-   environment gives no response (t 0.29 / 0.64); procedural fields give
-   -0.086 on both MoistureTolerance and TemperatureTolerance (t -2.45, -2.57,
-   CIs exclude zero, 8 up / 22 down and 10 up / 20 down). Four comparisons puts
-   the Bonferroni bar near 2.6, so both sit just under — suggestive, not
-   established, and I did not write it up. Worth confirming and understanding:
-   the likely reading is that tolerance is insurance for bad ground, and the
-   population concentrates on good ground where it is pure cost.
+1. CLOSED 2026-08-19. The tolerance result did NOT replicate — see
+   docs/experiments/p4-plant-trait-selection-nonreplication-2026-08-19.md. At n=120
+   both tolerances sit at zero under procedural fields (t 0.08 and 0.29, CIs
+   [-0.013,+0.015] and [-0.012,+0.016]), with sign counts at chance in all arms, and
+   the null holds at a doubled founder variance too. -0.086 is far outside every CI.
+   Scoped to a transcribed config; the original config was never recorded, so this is
+   a non-replication under a documented setup, not proof the original was wrong.
+
+   Two things came out of it that matter more than the tolerance question:
+   - Dispersal is a STRONG positive control: +0.098 to +0.125, t 14-17, 105-115 of
+     120 seeds up, in all four arms, 0/120 extinct, 15 plant generations. Read any
+     future plant-trait null against it. SeedInvestment is a weaker second (t 4.8-6.8).
+     Both are the traits with no growth-rate cost term in PlantPhenotype.
+   - The "flat environment control" is not flat. With plantCohortsEnabled on,
+     SimulationWorld builds CreateMoistureGradient(); moisture already varies and only
+     fertility and temperature are pinned at 1. Flipping proceduralEnvironmentFieldsEnabled
+     moves three channels at once.
+
+   Open thread, deliberately not claimed: Defense under procedural+wideTolerance is
+   -0.0225, t -3.04, 71/119 down — one cell of 32, under a Bonferroni bar near 3.2, and
+   the same claim shape that was retracted on 2026-08-18.
 
 2. Elevation field. NOT blocked on anything external — the other three fields were
    designed in-repo and elevation is the same job. Ridged multifractal
