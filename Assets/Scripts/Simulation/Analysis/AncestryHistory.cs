@@ -27,6 +27,11 @@ namespace LifeSimulation.Simulation.Analysis
     {
         private readonly Dictionary<CreatureId, AncestryRecord> _records = new Dictionary<CreatureId, AncestryRecord>();
         private readonly Dictionary<CreatureId, List<CreatureId>> _childrenByParent = new Dictionary<CreatureId, List<CreatureId>>();
+        private bool _overflowed;
+
+        public bool HasRecordedFounders { get; private set; }
+        public bool IsComplete => HasRecordedFounders && !_overflowed;
+        public long CompleteThroughTick { get; private set; } = -1;
 
         /// <summary>Call once from the host before draining events so the event history has explicit roots.</summary>
         public void RecordFounders(long tick, CreatureStore creatures)
@@ -40,6 +45,8 @@ namespace LifeSimulation.Simulation.Analysis
                     _records.Add(founderId, new AncestryRecord(tick, default, default, 0, DeathCause.None));
                 }
             }
+
+            HasRecordedFounders = true;
         }
 
         public void Record(SimulationEvent simulationEvent)
@@ -69,6 +76,36 @@ namespace LifeSimulation.Simulation.Analysis
             {
                 Record(events.GetAt(index));
             }
+        }
+
+        /// <summary>Records one host-drained event batch and advances only when its ancestry evidence is complete.</summary>
+        public void RecordCompleteBatch(SimulationEventBuffer events, long throughTick)
+        {
+            if (events == null) throw new ArgumentNullException(nameof(events));
+            if (!HasRecordedFounders) throw new InvalidOperationException("Founders must be recorded before event batches.");
+            if (throughTick < 0) throw new ArgumentOutOfRangeException(nameof(throughTick));
+            if (throughTick < CompleteThroughTick) throw new ArgumentOutOfRangeException(nameof(throughTick));
+
+            long previousEventTick = -1;
+            for (int index = 0; index < events.Count; index++)
+            {
+                SimulationEvent simulationEvent = events.GetAt(index);
+                if (simulationEvent.Tick < 0) throw new ArgumentOutOfRangeException(nameof(events));
+                if (simulationEvent.Tick < CompleteThroughTick) throw new ArgumentException("An event occurs before the completed ancestry interval.", nameof(events));
+                if (simulationEvent.Tick == CompleteThroughTick && throughTick != CompleteThroughTick) throw new ArgumentException("A watermark-boundary event can only be replayed without advancing completeness.", nameof(events));
+                if (simulationEvent.Tick > throughTick) throw new ArgumentException("An event occurs after the requested completeness watermark.", nameof(events));
+                if (simulationEvent.Tick < previousEventTick) throw new ArgumentException("Events must be ordered by nondecreasing tick.", nameof(events));
+                previousEventTick = simulationEvent.Tick;
+            }
+
+            Record(events);
+            if (events.Overflowed)
+            {
+                _overflowed = true;
+            }
+
+            if (_overflowed) return;
+            CompleteThroughTick = throughTick;
         }
 
         public bool TryGet(CreatureId creatureId, out AncestryRecord record)
