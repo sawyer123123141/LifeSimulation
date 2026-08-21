@@ -20,5 +20,19 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(entry.DeathCount, Is.EqualTo(1));
             Assert.That(entry.StarvationDeathCount, Is.EqualTo(1));
         }
+
+        [Test]
+        public void TimelineCanReadAnEventBufferWithoutClearingIt()
+        {
+            var events = new SimulationEventBuffer(2);
+            events.TryWrite(new SimulationEvent(10, SimulationEventKind.Birth, new CreatureId(3), new CreatureId(1), new CreatureId(2), DeathCause.None));
+            var timeline = new LifecycleTimeline();
+
+            timeline.Record(events);
+
+            Assert.That(events.Count, Is.EqualTo(1));
+            Assert.That(timeline.Count, Is.EqualTo(1));
+            Assert.That(timeline.GetAt(0).BirthCount, Is.EqualTo(1));
+        }
     }
 }

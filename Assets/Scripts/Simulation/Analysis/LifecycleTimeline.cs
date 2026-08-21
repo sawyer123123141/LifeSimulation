@@ -33,6 +33,14 @@ namespace LifeSimulation.Simulation.Analysis
             if (index >= 0 && _entries[index].Tick == simulationEvent.Tick) _entries[index] = updated; else _entries.Add(updated);
         }
 
+        public void Record(SimulationEventBuffer events)
+        {
+            for (int index = 0; index < events.Count; index++)
+            {
+                Record(events.GetAt(index));
+            }
+        }
+
         public LifecycleTimelineEntry GetAt(int index) => _entries[index];
     }
 }
