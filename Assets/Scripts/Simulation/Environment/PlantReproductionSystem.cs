@@ -20,7 +20,7 @@ namespace LifeSimulation.Simulation.Environment
         /// the outcome above |r| = 0.10 - the largest non-heritable term in plant fitness.
         /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md
         /// </param>
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false)
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false, bool invaderEstablishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -36,7 +36,7 @@ namespace LifeSimulation.Simulation.Environment
                 if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome, fertilityAdaptationEnabled: false, establishmentContestEnabled, seedProductionRateDispersalCharge, seedProductionRateEnabled);
                 float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
-                int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled, establishmentContestEnabled);
+                int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled, establishmentContestEnabled, invaderEstablishmentContestEnabled);
                 if (siteIndex < 0) continue;
 
                 ResourceState site = resources.GetAt(siteIndex);
@@ -75,7 +75,7 @@ namespace LifeSimulation.Simulation.Environment
             return 1f - normalizedDistance;
         }
 
-        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchStore patches, PlantPatchState parent, int seed, long tick, long ordinal, float range, bool competitionEnabled, bool establishmentContestEnabled)
+        private static int FindSite(ResourceStore resources, PlantSiteRegistry sites, PlantPatchStore patches, PlantPatchState parent, int seed, long tick, long ordinal, float range, bool competitionEnabled, bool establishmentContestEnabled, bool invaderEstablishmentContestEnabled)
         {
             if (sites.Count == 0) return -1;
 
@@ -102,7 +102,12 @@ namespace LifeSimulation.Simulation.Environment
                     if (establishmentContestEnabled)
                     {
                         float contestRoll = DeterministicRandom.Float01(seed, RandomDomain.PlantEstablishmentContest, tick, parent.Id.Value, ordinal, attempt);
-                        if (contestRoll < occupant.Genome.SeedlingResilience) continue;
+                        float incumbentThreshold = occupant.Genome.SeedlingResilience;
+                        if (invaderEstablishmentContestEnabled)
+                        {
+                            incumbentThreshold = Math.Max(0f, incumbentThreshold - parent.Genome.SeedlingResilience);
+                        }
+                        if (contestRoll < incumbentThreshold) continue;
                     }
                 }
 

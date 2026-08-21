@@ -318,13 +318,20 @@ namespace LifeSimulation.Tests.EditMode
                 "a maximally resilient seedling must hold its site");
         }
 
+        [Test]
+        public void InvaderResilienceCanOvercomeAnEqualIncumbentOnlyWhenItsContestFlagIsEnabled()
+        {
+            Assert.That(TakeoversOf(resilience: 1f, invaderResilience: 1f, contestEnabled: true, invaderContestEnabled: false), Is.EqualTo(0));
+            Assert.That(TakeoversOf(resilience: 1f, invaderResilience: 1f, contestEnabled: true, invaderContestEnabled: true), Is.EqualTo(1));
+        }
+
         /// <summary>
         /// One takeover attempt against a seedling sitting below VulnerabilityFraction. Seed 4 and
         /// tick 1 are the pair whose second establishment attempt succeeds (see
         /// PlantGrowthTests.SiteWithinRangeThatFailsItsEstablishmentRollLetsStepRetryTheNextAttempt),
         /// so the resilience-0 arm asserting one birth is what pins the roll as reachable at all.
         /// </summary>
-        private static int TakeoversOf(float resilience, bool contestEnabled)
+        private static int TakeoversOf(float resilience, bool contestEnabled, float invaderResilience = 0f, bool invaderContestEnabled = false)
         {
             var resources = new ResourceStore(2);
             ResourceId parentSite = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 10f, 12f, 0f);
@@ -335,12 +342,12 @@ namespace LifeSimulation.Tests.EditMode
 
             var patches = new PlantPatchStore(4);
             int parentIndex = patches.Add(parentSite, new SimVector2(0f, 0f), 10f, 10f, .1f, 1f, 0f);
-            patches.SetGenomeAndLineage(parentIndex, PlantGenome.Neutral.WithTrait(9, 0f), patches.GetAt(parentIndex).Lineage);
+            patches.SetGenomeAndLineage(parentIndex, PlantGenome.Neutral.WithTrait(9, invaderResilience), patches.GetAt(parentIndex).Lineage);
             int seedlingIndex = patches.Add(contested, new SimVector2(2f, 0f), 1f, 10f, .1f, 1f, 0f);
             patches.SetGenomeAndLineage(seedlingIndex, PlantGenome.Neutral.WithTrait(9, resilience), patches.GetAt(seedlingIndex).Lineage);
 
             long ordinal = 0;
-            return PlantReproductionSystem.Step(patches, resources, sites, 4, 1, 1f, ref ordinal, competitionEnabled: true, establishmentContestEnabled: contestEnabled);
+            return PlantReproductionSystem.Step(patches, resources, sites, 4, 1, 1f, ref ordinal, competitionEnabled: true, establishmentContestEnabled: contestEnabled, invaderEstablishmentContestEnabled: invaderContestEnabled);
         }
     }
 }

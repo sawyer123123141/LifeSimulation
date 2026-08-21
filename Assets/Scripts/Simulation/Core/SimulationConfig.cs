@@ -134,6 +134,7 @@ namespace LifeSimulation.Simulation.Core
             bool plantFertilityAdaptationEnabled = false,
             bool elevationFieldEnabled = false,
             bool plantEstablishmentContestEnabled = false,
+            bool plantInvaderEstablishmentContestEnabled = false,
             float plantSeedProductionRateDispersalCharge = DefaultPlantSeedProductionRateDispersalCharge,
             bool plantSeedProductionRateEnabled = false,
             bool safetyGatedMateRendezvousEnabled = false)
@@ -177,6 +178,7 @@ namespace LifeSimulation.Simulation.Core
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
             ElevationFieldEnabled = elevationFieldEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
+            PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
             PlantSeedProductionRateEnabled = plantSeedProductionRateEnabled;
             SafetyGatedMateRendezvousEnabled = safetyGatedMateRendezvousEnabled;
@@ -299,6 +301,7 @@ namespace LifeSimulation.Simulation.Core
         /// <see cref="PlantSiteCompetitionEnabled"/>, which is what creates the contest at all.
         /// </summary>
         public bool PlantEstablishmentContestEnabled { get; }
+        public bool PlantInvaderEstablishmentContestEnabled { get; }
 
         /// <summary>Dispersal-range cost paid at SeedProductionRate = 1 when its route is enabled.</summary>
         public float PlantSeedProductionRateDispersalCharge { get; }
@@ -405,6 +408,7 @@ namespace LifeSimulation.Simulation.Core
                 plantFertilityAdaptationEnabled: true,
                 elevationFieldEnabled: true,
                 plantEstablishmentContestEnabled: true,
+                plantInvaderEstablishmentContestEnabled: true,
                 plantSeedProductionRateEnabled: true);
         }
 
