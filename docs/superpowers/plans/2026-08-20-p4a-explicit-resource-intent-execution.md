@@ -1,5 +1,7 @@
 # Explicit Resource-Intent Execution Implementation Plan
 
+> **WITHDRAWN 2026-08-20.** The premise was already satisfied: `SimulationWorld.ResolveResourceInteractions` requires a valid, active, non-empty, matching in-range resource index before creating intake. No implementation is needed.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ensure a remembered food or water destination cannot directly execute eating or drinking until perception resolves a matching visible resource.

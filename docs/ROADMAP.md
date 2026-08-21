@@ -71,7 +71,7 @@ Predator/prey roles should emerge from biology rather than hardcoded labels such
 This is the bridge between a scientifically valid survival simulation and a simulation that is interesting to observe. It follows the current survival/reproduction reliability gate and precedes broad biome, terrain, and art work.
 
 - reliable multi-generation baseline under declared resource conditions
-- explicit resource-intent execution: remembered targets must resolve to a real visible resource before eating or drinking
+- explicit resource-intent execution: remembered targets must resolve to a real visible resource before eating or drinking (**already implemented** in `SimulationWorld.ResolveResourceInteractions`)
 - soft home-range affinity: creatures prefer familiar successful areas but can leave under need, danger, scarcity, mating opportunity, or exploration pressure
 - clustered, changing plant/resource patches so travel creates recognizable routes rather than unstructured wandering
 - safety-gated rendezvous and two-parent reproduction, creating short-lived family/local groups without hardcoded species packs
