@@ -28,6 +28,20 @@ namespace LifeSimulation.Simulation.Analysis
         private readonly Dictionary<CreatureId, AncestryRecord> _records = new Dictionary<CreatureId, AncestryRecord>();
         private readonly Dictionary<CreatureId, List<CreatureId>> _childrenByParent = new Dictionary<CreatureId, List<CreatureId>>();
 
+        /// <summary>Call once from the host before draining events so the event history has explicit roots.</summary>
+        public void RecordFounders(long tick, CreatureStore creatures)
+        {
+            if (tick < 0) throw new ArgumentOutOfRangeException(nameof(tick));
+            for (int index = 0; index < creatures.Count; index++)
+            {
+                CreatureId founderId = creatures.GetIdAt(index);
+                if (!_records.ContainsKey(founderId))
+                {
+                    _records.Add(founderId, new AncestryRecord(tick, default, default, 0, DeathCause.None));
+                }
+            }
+        }
+
         public void Record(SimulationEvent simulationEvent)
         {
             if (simulationEvent.Kind == SimulationEventKind.Birth)
