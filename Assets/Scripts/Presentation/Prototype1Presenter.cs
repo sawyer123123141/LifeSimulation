@@ -123,7 +123,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · H overlay (temp/biome/off)");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · F5-F8 watch scenarios · H overlay");
             GUI.Label(new Rect(24f, 194f, 400f, 22f), "Drag food/water · Green: wander · Gold: food · Blue: water · Purple: mate/reproduce");
         }
 
@@ -182,6 +182,10 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.G)) ResetForagingMemoryDemo();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
+            if (Input.GetKeyDown(KeyCode.F5)) ResetObservationScenario(Prototype4Scenarios.ObservationStable, foundersAreMature: false);
+            if (Input.GetKeyDown(KeyCode.F6)) ResetObservationScenario(Prototype4Scenarios.ObservationScarcity, foundersAreMature: false);
+            if (Input.GetKeyDown(KeyCode.F7)) ResetObservationScenario(Prototype4Scenarios.ObservationMigration, foundersAreMature: false);
+            if (Input.GetKeyDown(KeyCode.F8)) ResetObservationScenario(Prototype4Scenarios.ObservationMating, foundersAreMature: true);
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
@@ -455,6 +459,11 @@ namespace LifeSimulation.Presentation
 
         private void ResetWatchableStarterHabitat()
         {
+            ResetObservationScenario(Prototype4Scenarios.WatchableStarterHabitat, foundersAreMature: true);
+        }
+
+        private void ResetObservationScenario(SimulationScenario scenario, bool foundersAreMature)
+        {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
             var config = new SimulationConfig(
                 defaults.WorldSeed,
@@ -475,9 +484,12 @@ namespace LifeSimulation.Presentation
                 kinRecognitionEnabled: true,
                 learnedResourceQualityEnabled: true,
                 mateSelectionEnabled: true);
-            ResetSimulation(
-                Prototype4Scenarios.WatchableStarterHabitat,
-                config);
+            ResetSimulation(scenario, config);
+            if (!foundersAreMature)
+            {
+                return;
+            }
+
             for (int index = 0; index < _world.CreatureCount; index++)
             {
                 _world.Creatures.GetNeedsRefAt(index).Age = ReproductionSystem.AdultAgeSeconds;
