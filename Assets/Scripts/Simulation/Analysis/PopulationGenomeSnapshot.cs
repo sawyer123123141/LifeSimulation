@@ -10,15 +10,21 @@ namespace LifeSimulation.Simulation.Analysis
         private readonly CreatureId[] _ids;
         private readonly Genome[] _genomes;
 
-        private PopulationGenomeSnapshot(long tick, CreatureId[] ids, Genome[] genomes)
+        private PopulationGenomeSnapshot(long tick, CreatureId[] ids, Genome[] genomes, bool isSampled, int sourcePopulationCount, int sampleLimit)
         {
             Tick = tick;
             _ids = ids;
             _genomes = genomes;
+            IsSampled = isSampled;
+            SourcePopulationCount = sourcePopulationCount;
+            SampleLimit = sampleLimit;
         }
 
         public long Tick { get; }
         public int Count => _ids.Length;
+        public bool IsSampled { get; }
+        public int SourcePopulationCount { get; }
+        public int SampleLimit { get; }
 
         public static PopulationGenomeSnapshot Capture(long tick, CreatureStore creatures)
         {
@@ -29,7 +35,7 @@ namespace LifeSimulation.Simulation.Analysis
                 ids[index] = creatures.GetIdAt(index);
                 genomes[index] = creatures.GetGenomeAt(index);
             }
-            return new PopulationGenomeSnapshot(tick, ids, genomes);
+            return new PopulationGenomeSnapshot(tick, ids, genomes, isSampled: false, sourcePopulationCount: creatures.Count, sampleLimit: 0);
         }
 
         public static PopulationGenomeSnapshot CaptureSample(long tick, CreatureStore creatures, int maximumCount)
@@ -50,7 +56,7 @@ namespace LifeSimulation.Simulation.Analysis
                 genomes[sampleIndex] = creatures.GetGenomeAt(sourceIndex);
             }
 
-            return new PopulationGenomeSnapshot(tick, ids, genomes);
+            return new PopulationGenomeSnapshot(tick, ids, genomes, isSampled: true, sourcePopulationCount: creatures.Count, sampleLimit: maximumCount);
         }
 
         public CreatureId GetIdAt(int index) => _ids[index];
