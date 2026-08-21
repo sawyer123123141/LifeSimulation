@@ -21,5 +21,18 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(record.DeathTick, Is.EqualTo(25));
             Assert.That(record.DeathCause, Is.EqualTo(DeathCause.Predation));
         }
+
+        [Test]
+        public void HistoryCanReadAnEventBufferWithoutClearingTheHostBuffer()
+        {
+            var events = new SimulationEventBuffer(2);
+            events.TryWrite(new SimulationEvent(10, SimulationEventKind.Birth, new CreatureId(3), new CreatureId(1), new CreatureId(2), DeathCause.None));
+            var history = new AncestryHistory();
+
+            history.Record(events);
+
+            Assert.That(events.Count, Is.EqualTo(1));
+            Assert.That(history.TryGet(new CreatureId(3), out _), Is.True);
+        }
     }
 }

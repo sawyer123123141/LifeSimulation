@@ -40,6 +40,14 @@ namespace LifeSimulation.Simulation.Analysis
             }
         }
 
+        public void Record(SimulationEventBuffer events)
+        {
+            for (int index = 0; index < events.Count; index++)
+            {
+                Record(events.GetAt(index));
+            }
+        }
+
         public bool TryGet(CreatureId creatureId, out AncestryRecord record)
         {
             return _records.TryGetValue(creatureId, out record);
