@@ -46,6 +46,11 @@ namespace LifeSimulation.Simulation.Analysis
         {
             if (simulationEvent.Kind == SimulationEventKind.Birth)
             {
+                if (_records.ContainsKey(simulationEvent.Subject))
+                {
+                    return;
+                }
+
                 _records[simulationEvent.Subject] = new AncestryRecord(simulationEvent.Tick, simulationEvent.FirstRelated, simulationEvent.SecondRelated, 0, DeathCause.None);
                 AddChild(simulationEvent.FirstRelated, simulationEvent.Subject);
                 AddChild(simulationEvent.SecondRelated, simulationEvent.Subject);

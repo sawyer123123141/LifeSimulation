@@ -67,5 +67,18 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(history.TryGet(secondFounder, out AncestryRecord secondRecord), Is.True);
             Assert.That(secondRecord.SecondParent, Is.EqualTo(default(CreatureId)));
         }
+
+        [Test]
+        public void ReplayingTheSameBirthDoesNotDuplicateTheParentChildIndex()
+        {
+            var history = new AncestryHistory();
+            var parent = new CreatureId(1);
+            var birth = new SimulationEvent(10, SimulationEventKind.Birth, new CreatureId(3), parent, new CreatureId(2), DeathCause.None);
+
+            history.Record(birth);
+            history.Record(birth);
+
+            Assert.That(history.GetChildCount(parent), Is.EqualTo(1));
+        }
     }
 }
