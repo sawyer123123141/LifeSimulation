@@ -204,6 +204,14 @@ namespace LifeSimulation.Simulation.Experiments
             "p4-watchable-starter-habitat",
             CreateWatchableStarterHabitat(),
             founderPlacement: new SimVector2(-12f, -8f));
+        public static SimulationScenario ObservationStable { get; } = CreateObservationScenario("p4-observation-stable", 600f, 30f, 60f, 3f);
+        public static SimulationScenario ObservationScarcity { get; } = CreateObservationScenario("p4-observation-scarcity", 60f, 3f, 24f, 1f);
+        public static SimulationScenario ObservationMigration { get; } = new SimulationScenario("p4-observation-migration", CreateObservationMigrationResources(), new SimVector2(-18f, -8f));
+        public static SimulationScenario ObservationMating { get; } = new SimulationScenario("p4-observation-mating", new[]
+        {
+            new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 900f, 900f, 45f),
+            new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, 90f, 90f, 4.5f),
+        }, new SimVector2(-12f, -8f));
 
         private static ResourceDefinition[] CreatePlantSites()
         {
@@ -234,6 +242,29 @@ namespace LifeSimulation.Simulation.Experiments
                 new ResourceDefinition(ResourceKind.Water, new SimVector2(10f, 12f), 1.5f, 60f, 60f, 3f),
             };
         }
+
+        private static SimulationScenario CreateObservationScenario(string id, float foodAmount, float foodRegeneration, float waterAmount, float waterRegeneration)
+        {
+            return new SimulationScenario(id, new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, foodAmount, foodAmount, foodRegeneration),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-12f, -8f), 1.5f, waterAmount, waterAmount, waterRegeneration),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(12f, 8f), 1.5f, foodAmount, foodAmount, foodRegeneration),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(12f, 8f), 1.5f, waterAmount, waterAmount, waterRegeneration),
+            }, new SimVector2(-12f, -8f));
+        }
+
+        private static ResourceDefinition[] CreateObservationMigrationResources()
+        {
+            return new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-18f, -8f), 1.5f, 36f, 36f, 1f), new ResourceDefinition(ResourceKind.Water, new SimVector2(-18f, -8f), 1.5f, 24f, 24f, 1f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-6f, -8f), 1.5f, 180f, 180f, 9f), new ResourceDefinition(ResourceKind.Water, new SimVector2(-6f, -8f), 1.5f, 48f, 48f, 2f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(6f, -8f), 1.5f, 360f, 360f, 18f), new ResourceDefinition(ResourceKind.Water, new SimVector2(6f, -8f), 1.5f, 72f, 72f, 3f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(18f, -8f), 1.5f, 600f, 600f, 30f), new ResourceDefinition(ResourceKind.Water, new SimVector2(18f, -8f), 1.5f, 96f, 96f, 4f),
+            };
+        }
+
 
         public static SimulationScenario DefendedPlants { get; } = CreateDefenseScenario("p4-defended-plants", defense: .85f);
         public static SimulationScenario UndefendedPlants { get; } = CreateDefenseScenario("p4-undefended-plants", defense: 0f);

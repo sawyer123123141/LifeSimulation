@@ -18,7 +18,9 @@ namespace LifeSimulation.Simulation.Experiments
             int leftFoodTargetDecisions = 0,
             int rightFoodTargetDecisions = 0,
             float totalFoodTargetDistance = 0f,
-            int foodTargetDecisionCount = 0)
+            int foodTargetDecisionCount = 0,
+            int leftLocalPopulationTicks = 0,
+            int rightLocalPopulationTicks = 0)
         {
             ScenarioId = scenarioId;
             WorldSeed = worldSeed;
@@ -31,6 +33,8 @@ namespace LifeSimulation.Simulation.Experiments
             RightFoodTargetDecisions = rightFoodTargetDecisions;
             TotalFoodTargetDistance = totalFoodTargetDistance;
             FoodTargetDecisionCount = foodTargetDecisionCount;
+            LeftLocalPopulationTicks = leftLocalPopulationTicks;
+            RightLocalPopulationTicks = rightLocalPopulationTicks;
         }
 
         public string ScenarioId { get; }
@@ -44,6 +48,8 @@ namespace LifeSimulation.Simulation.Experiments
         public int RightFoodTargetDecisions { get; }
         public float TotalFoodTargetDistance { get; }
         public int FoodTargetDecisionCount { get; }
+        public int LeftLocalPopulationTicks { get; }
+        public int RightLocalPopulationTicks { get; }
         public float MeanFoodTargetDistance => FoodTargetDecisionCount == 0 ? 0f : TotalFoodTargetDistance / FoodTargetDecisionCount;
     }
 
@@ -74,10 +80,13 @@ namespace LifeSimulation.Simulation.Experiments
             int rightFoodTargetDecisions = 0;
             float totalFoodTargetDistance = 0f;
             int foodTargetDecisionCount = 0;
+            int leftLocalPopulationTicks = 0;
+            int rightLocalPopulationTicks = 0;
             for (int index = 0; index < ticks; index++)
             {
                 world.Step(config.FixedDeltaTime);
                 CountFoodTargetDecisions(world, ref leftFoodTargetDecisions, ref rightFoodTargetDecisions, ref totalFoodTargetDistance, ref foodTargetDecisionCount);
+                CountLocalPopulation(world, ref leftLocalPopulationTicks, ref rightLocalPopulationTicks);
                 eventOverflowed |= world.Events.Overflowed;
                 populationCapReached |= world.CreatureCount >= config.MaximumPopulation;
                 world.Events.Clear();
@@ -94,7 +103,9 @@ namespace LifeSimulation.Simulation.Experiments
                 leftFoodTargetDecisions,
                 rightFoodTargetDecisions,
                 totalFoodTargetDistance,
-                foodTargetDecisionCount);
+                foodTargetDecisionCount,
+                leftLocalPopulationTicks,
+                rightLocalPopulationTicks);
         }
 
         private static void CountFoodTargetDecisions(SimulationWorld world, ref int leftCount, ref int rightCount, ref float totalDistance, ref int targetCount)
@@ -117,6 +128,21 @@ namespace LifeSimulation.Simulation.Experiments
                     targetCount++;
                     if (target.Position.X < 0f) leftCount++;
                     else rightCount++;
+                }
+            }
+        }
+
+        private static void CountLocalPopulation(SimulationWorld world, ref int leftCount, ref int rightCount)
+        {
+            for (int creatureIndex = 0; creatureIndex < world.CreatureCount; creatureIndex++)
+            {
+                if (world.GetCreatureMovementAt(creatureIndex).Position.X < 0f)
+                {
+                    leftCount++;
+                }
+                else
+                {
+                    rightCount++;
                 }
             }
         }

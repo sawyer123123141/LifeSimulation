@@ -35,7 +35,6 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(richWorld.GetCreatureNeedsAt(0).Energy, Is.GreaterThan(poorWorld.GetCreatureNeedsAt(0).Energy));
             Assert.That(richWorld.Resources.GetAt(0).Amount, Is.EqualTo(poorWorld.Resources.GetAt(0).Amount).Within(0.0001f));
         }
-
         [Test]
         public void PlantPatchGrowthRateMatchesCorrectedFourTimesConversion()
         {
@@ -185,6 +184,16 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void Prototype4ObservationScenariosRepeatRoutesVisitsBirthsAndPopulationAcrossFixedSeeds()
+        {
+            AssertRepeatableObservationScenario(Prototype4Scenarios.ObservationStable, mateSelectionEnabled: false);
+            AssertRepeatableObservationScenario(Prototype4Scenarios.ObservationScarcity, mateSelectionEnabled: false);
+            AssertRepeatableObservationScenario(Prototype4Scenarios.ObservationMigration, mateSelectionEnabled: false);
+            AssertRepeatableObservationScenario(Prototype4Scenarios.ObservationMating, mateSelectionEnabled: true);
+        }
+
+
+        [Test]
         public void PlantSiteCompetitionEnabledRegistersActiveFounderPatchesAsCompetitionCandidates()
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(42, 12);
@@ -205,6 +214,31 @@ namespace LifeSimulation.Tests.EditMode
             // 6 active founder Food sites + the scenario's 18 inactive dispersal targets.
             Assert.That(worldWithout.PlantSites.Count, Is.EqualTo(18));
             Assert.That(worldWith.PlantSites.Count, Is.EqualTo(24));
+        }
+
+        private static void AssertRepeatableObservationScenario(SimulationScenario scenario, bool mateSelectionEnabled)
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(42, 12);
+            var config = new SimulationConfig(
+                42, 12, defaults.Schedule, maximumPopulation: 48,
+                founderProfile: defaults.FounderProfile,
+                cognitionEnabled: true, physiologyEnabled: true,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                plantCohortsEnabled: true,
+                mateSelectionEnabled: mateSelectionEnabled);
+
+            ExperimentResult first = ExperimentRunner.Run(config, scenario, ticks: 2000);
+            ExperimentResult second = ExperimentRunner.Run(config, scenario, ticks: 2000);
+
+            Assert.That(second.FinalStateHash, Is.EqualTo(first.FinalStateHash), scenario.Id);
+            Assert.That(second.FinalStatistics.BirthCount, Is.EqualTo(first.FinalStatistics.BirthCount), scenario.Id);
+            Assert.That(second.FinalStatistics.Population, Is.EqualTo(first.FinalStatistics.Population), scenario.Id);
+            Assert.That(second.LeftFoodTargetDecisions, Is.EqualTo(first.LeftFoodTargetDecisions), scenario.Id);
+            Assert.That(second.RightFoodTargetDecisions, Is.EqualTo(first.RightFoodTargetDecisions), scenario.Id);
+            Assert.That(second.FoodTargetDecisionCount, Is.EqualTo(first.FoodTargetDecisionCount), scenario.Id);
+            Assert.That(second.TotalFoodTargetDistance, Is.EqualTo(first.TotalFoodTargetDistance), scenario.Id);
+            Assert.That(second.LeftLocalPopulationTicks, Is.EqualTo(first.LeftLocalPopulationTicks), scenario.Id);
+            Assert.That(second.RightLocalPopulationTicks, Is.EqualTo(first.RightLocalPopulationTicks), scenario.Id);
         }
 
         [Test]
