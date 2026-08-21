@@ -1,5 +1,7 @@
 # Growth-Rate Traits Are Nearly Unselectable; Colonisation Traits Are Not — 2026-08-19
 
+> **RE-AUDITED 2026-08-20.** Five remaining growth-rate traits stayed null at the 168-site, ~33%-occupancy operating point. The capacity-gate conclusion survives that re-test; `Growth` remains separate because it also changes lifespan. See `p4-low-occupancy-growth-trait-reaudit-2026-08-20.md`.
+
 Third document of 2026-08-19, and the one that explains the other two. Adds
 `NutrientUptake` and `PlantFertilityAdaptationEnabled`, measures them, and finds the
 adaptation term works exactly as designed while barely mattering — for a reason that
