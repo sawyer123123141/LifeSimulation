@@ -183,10 +183,10 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.G)) ResetForagingMemoryDemo();
             if (Input.GetKeyDown(KeyCode.M)) ResetMatingDemo();
             if (Input.GetKeyDown(KeyCode.E)) ResetWatchableStarterHabitat();
-            if (Input.GetKeyDown(KeyCode.Alpha5)) ResetObservationScenario(Prototype4Scenarios.ObservationStable, foundersAreMature: false);
-            if (Input.GetKeyDown(KeyCode.Alpha6)) ResetObservationScenario(Prototype4Scenarios.ObservationScarcity, foundersAreMature: false);
-            if (Input.GetKeyDown(KeyCode.Alpha7)) ResetObservationScenario(Prototype4Scenarios.ObservationMigration, foundersAreMature: false);
-            if (Input.GetKeyDown(KeyCode.Alpha9)) ResetObservationScenario(Prototype4Scenarios.ObservationMating, foundersAreMature: true);
+            if (Input.GetKeyDown(KeyCode.Alpha5)) ResetObservationScenario(Prototype4Scenarios.ObservationStable, foundersAreMature: false, mateSelectionEnabled: false);
+            if (Input.GetKeyDown(KeyCode.Alpha6)) ResetObservationScenario(Prototype4Scenarios.ObservationScarcity, foundersAreMature: false, mateSelectionEnabled: false);
+            if (Input.GetKeyDown(KeyCode.Alpha7)) ResetObservationScenario(Prototype4Scenarios.ObservationMigration, foundersAreMature: false, mateSelectionEnabled: false);
+            if (Input.GetKeyDown(KeyCode.Alpha9)) ResetObservationScenario(Prototype4Scenarios.ObservationMating, foundersAreMature: true, mateSelectionEnabled: true);
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
@@ -460,10 +460,10 @@ namespace LifeSimulation.Presentation
 
         private void ResetWatchableStarterHabitat()
         {
-            ResetObservationScenario(Prototype4Scenarios.WatchableStarterHabitat, foundersAreMature: true);
+            ResetObservationScenario(Prototype4Scenarios.WatchableStarterHabitat, foundersAreMature: true, mateSelectionEnabled: true);
         }
 
-        private void ResetObservationScenario(SimulationScenario scenario, bool foundersAreMature)
+        private void ResetObservationScenario(SimulationScenario scenario, bool foundersAreMature, bool mateSelectionEnabled)
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
             var config = new SimulationConfig(
@@ -484,7 +484,7 @@ namespace LifeSimulation.Presentation
                 parentalFollowingEnabled: true,
                 kinRecognitionEnabled: true,
                 learnedResourceQualityEnabled: true,
-                mateSelectionEnabled: true);
+                mateSelectionEnabled: mateSelectionEnabled);
             ResetSimulation(scenario, config);
             if (!foundersAreMature)
             {
