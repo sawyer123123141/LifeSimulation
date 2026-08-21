@@ -129,7 +129,7 @@ namespace LifeSimulation.Presentation
 
         private void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 220f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 242f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
@@ -141,6 +141,7 @@ namespace LifeSimulation.Presentation
             {
                 GUI.Label(new Rect(476f, 194f, 250f, 22f), $"P1 cohorts: hunters {stats.ViableHunterCount}  others {stats.NonHunterCount}");
             }
+            GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating");
         }
 
         private void CaptureRecentEvent()
