@@ -1,5 +1,6 @@
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
+using System;
 
 namespace LifeSimulation.Simulation.Analysis
 {
@@ -31,7 +32,47 @@ namespace LifeSimulation.Simulation.Analysis
             return new PopulationGenomeSnapshot(tick, ids, genomes);
         }
 
+        public static PopulationGenomeSnapshot CaptureSample(long tick, CreatureStore creatures, int maximumCount)
+        {
+            if (maximumCount <= 0) throw new ArgumentOutOfRangeException(nameof(maximumCount));
+            int sampleCount = Math.Min(creatures.Count, maximumCount);
+            var sourceIndices = new int[creatures.Count];
+            for (int index = 0; index < sourceIndices.Length; index++) sourceIndices[index] = index;
+            SortByCreatureId(creatures, sourceIndices);
+
+            var ids = new CreatureId[sampleCount];
+            var genomes = new Genome[sampleCount];
+            for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+            {
+                int sortedIndex = sampleCount == 1 ? 0 : (sampleIndex * (creatures.Count - 1)) / (sampleCount - 1);
+                int sourceIndex = sourceIndices[sortedIndex];
+                ids[sampleIndex] = creatures.GetIdAt(sourceIndex);
+                genomes[sampleIndex] = creatures.GetGenomeAt(sourceIndex);
+            }
+
+            return new PopulationGenomeSnapshot(tick, ids, genomes);
+        }
+
         public CreatureId GetIdAt(int index) => _ids[index];
         public Genome GetGenomeAt(int index) => _genomes[index];
+
+        private static void SortByCreatureId(CreatureStore creatures, int[] sourceIndices)
+        {
+            for (int first = 0; first < sourceIndices.Length; first++)
+            {
+                int smallest = first;
+                for (int candidate = first + 1; candidate < sourceIndices.Length; candidate++)
+                {
+                    if (creatures.GetIdAt(sourceIndices[candidate]).Value < creatures.GetIdAt(sourceIndices[smallest]).Value)
+                    {
+                        smallest = candidate;
+                    }
+                }
+
+                int sourceIndex = sourceIndices[first];
+                sourceIndices[first] = sourceIndices[smallest];
+                sourceIndices[smallest] = sourceIndex;
+            }
+        }
     }
 }

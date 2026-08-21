@@ -22,5 +22,23 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(snapshot.GetGenomeAt(1).BodySize, Is.EqualTo(.8f));
             Assert.That(snapshot.GetIdAt(1), Is.EqualTo(second));
         }
+
+        [Test]
+        public void SampleUsesEvenlySpacedCreatureIdsIncludingBothEnds()
+        {
+            var creatures = new CreatureStore(5);
+            CreatureId first = creatures.Add(Genome.Neutral.WithBodySize(.1f));
+            creatures.Add(Genome.Neutral.WithBodySize(.2f));
+            CreatureId middle = creatures.Add(Genome.Neutral.WithBodySize(.3f));
+            creatures.Add(Genome.Neutral.WithBodySize(.4f));
+            CreatureId last = creatures.Add(Genome.Neutral.WithBodySize(.5f));
+
+            PopulationGenomeSnapshot sample = PopulationGenomeSnapshot.CaptureSample(17, creatures, maximumCount: 3);
+
+            Assert.That(sample.Count, Is.EqualTo(3));
+            Assert.That(sample.GetIdAt(0), Is.EqualTo(first));
+            Assert.That(sample.GetIdAt(1), Is.EqualTo(middle));
+            Assert.That(sample.GetIdAt(2), Is.EqualTo(last));
+        }
     }
 }
