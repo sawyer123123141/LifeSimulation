@@ -49,6 +49,7 @@ namespace LifeSimulation.Presentation
         private ResourceId _draggedResourceId;
         private bool _isDraggingResource;
         private string _scenarioId;
+        private string _scenarioHint;
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
         private SimulationEvent _recentEvent;
@@ -129,7 +130,7 @@ namespace LifeSimulation.Presentation
 
         private void DrawPopulationCondition(SimulationStatistics stats)
         {
-            GUI.Box(new Rect(464f, 12f, 280f, 242f), "Population condition");
+            GUI.Box(new Rect(464f, 12f, 280f, 264f), "Population condition");
             GUI.Label(new Rect(476f, 40f, 250f, 22f), $"Energy: {stats.MeanEnergyFraction:P0}");
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
@@ -142,6 +143,7 @@ namespace LifeSimulation.Presentation
                 GUI.Label(new Rect(476f, 194f, 250f, 22f), $"P1 cohorts: hunters {stats.ViableHunterCount}  others {stats.NonHunterCount}");
             }
             GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating");
+            GUI.Label(new Rect(476f, 238f, 250f, 22f), _scenarioHint);
         }
 
         private void CaptureRecentEvent()
@@ -238,6 +240,7 @@ namespace LifeSimulation.Presentation
             _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
             _scenarioId = scenario.Id;
+            _scenarioHint = GetScenarioHint(scenario.Id);
             _accumulator = 0f;
             _heatmapUpdateAccumulator = HeatmapUpdateInterval;
             _hasSelectedCreature = false;
@@ -461,6 +464,16 @@ namespace LifeSimulation.Presentation
         private void ResetWatchableStarterHabitat()
         {
             ResetObservationScenario(Prototype4Scenarios.WatchableStarterHabitat, foundersAreMature: true, mateSelectionEnabled: true);
+        }
+
+        private static string GetScenarioHint(string scenarioId)
+        {
+            if (scenarioId == "p4-observation-stable") return "Watch: two sustainable patches";
+            if (scenarioId == "p4-observation-scarcity") return "Watch: local resources run low";
+            if (scenarioId == "p4-observation-migration") return "Watch: travel toward richer patches";
+            if (scenarioId == "p4-observation-mating") return "Watch: purple courtship and births";
+            if (scenarioId == "p4-watchable-starter-habitat") return "Watch: a compact mixed habitat";
+            return string.Empty;
         }
 
         private void ResetObservationScenario(SimulationScenario scenario, bool foundersAreMature, bool mateSelectionEnabled)
