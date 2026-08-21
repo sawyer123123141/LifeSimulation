@@ -1658,6 +1658,27 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void SafetyGatedMateRendezvousDisabledProducesIdenticalHashToMateSelectionBaseline()
+        {
+            SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);
+            var baseline = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                mateSelectionEnabled: false);
+            var explicitDisabled = new SimulationConfig(
+                worldSeed: 99, initialPopulation: 2, schedule: schedule,
+                founderProfile: FounderProfile.PredationVariation,
+                mateSelectionEnabled: false,
+                safetyGatedMateRendezvousEnabled: false);
+            var first = new SimulationWorld(baseline);
+            var second = new SimulationWorld(explicitDisabled);
+
+            for (int i = 0; i < 50; i++) { first.Step(baseline.FixedDeltaTime); second.Step(explicitDisabled.FixedDeltaTime); }
+
+            Assert.That(second.ComputeStateHash(), Is.EqualTo(first.ComputeStateHash()));
+        }
+
+        [Test]
         public void MateSelectionEnabledBirthRateComparedToDisabledUnderIntentUtilityV1()
         {
             SimulationSchedule schedule = new SimulationSchedule(60, 60, 30, 10, 10, 10, 5, 1);

@@ -135,7 +135,8 @@ namespace LifeSimulation.Simulation.Core
             bool elevationFieldEnabled = false,
             bool plantEstablishmentContestEnabled = false,
             float plantSeedProductionRateDispersalCharge = DefaultPlantSeedProductionRateDispersalCharge,
-            bool plantSeedProductionRateEnabled = false)
+            bool plantSeedProductionRateEnabled = false,
+            bool safetyGatedMateRendezvousEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -178,6 +179,7 @@ namespace LifeSimulation.Simulation.Core
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
             PlantSeedProductionRateEnabled = plantSeedProductionRateEnabled;
+            SafetyGatedMateRendezvousEnabled = safetyGatedMateRendezvousEnabled;
         }
 
         public int WorldSeed { get; }
@@ -210,6 +212,7 @@ namespace LifeSimulation.Simulation.Core
         public bool MateSelectionEnabled { get; }
         public bool PlantSiteCompetitionEnabled { get; }
         public bool PlantMortalityEnabled { get; }
+        public bool SafetyGatedMateRendezvousEnabled { get; }
 
         /// <summary>
         /// When set, plant Defense reduces the biomass a grazer can actually remove per bite,

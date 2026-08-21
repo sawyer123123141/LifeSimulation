@@ -998,7 +998,8 @@ namespace LifeSimulation.Simulation.Core
                         selfLineage,
                         other.IsValid ? Creatures.GetLineageAt(other.CreatureIndex) : default,
                         Config.KinRecognitionEnabled,
-                        Config.PlantQualityPreferenceEnabled);
+                        Config.PlantQualityPreferenceEnabled,
+                        Config.SafetyGatedMateRendezvousEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);

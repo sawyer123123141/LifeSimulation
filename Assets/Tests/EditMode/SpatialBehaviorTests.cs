@@ -588,6 +588,43 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void IntentUtilityDoesNotSeekMateWhenSafetyGateSeesAThreat()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Age = 21f;
+            var resources = new ResourceStore(initialCapacity: 0);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: new CreatureObservation(new CreatureId(3), 1, 1f), threatIntensity: 1f,
+                otherPhenotype: phenotype, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: new CreatureObservation(new CreatureId(2), 1, 1f), mateNeeds: needs, matePhenotype: phenotype,
+                mateReproduction: default, reproductionEnabled: true, tick: 0, diagnostics: out _, safetyGatedMateRendezvousEnabled: true);
+
+            Assert.That(decision.Action, Is.Not.EqualTo(CreatureAction.SeekMate));
+        }
+
+        [Test]
+        public void IntentUtilitySafetyGateDoesNotTreatANeutralMateAsAThreat()
+        {
+            Phenotype phenotype = Phenotype.FromGenome(Genome.Neutral);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Age = 21f;
+            var resources = new ResourceStore(initialCapacity: 0);
+            CreatureObservation mate = new CreatureObservation(new CreatureId(2), 1, 1f);
+
+            CreatureDecision decision = DecisionSystem.DecideIntentUtilityV1(
+                needs, Genome.Neutral, phenotype, resources, new SimVector2(0f, 0f), default, default,
+                carcass: default, memory: default, cognitionEnabled: false, threat: mate, threatIntensity: 0f,
+                otherPhenotype: phenotype, predationEnabled: true, physiologyEnabled: false,
+                reproduction: default, mate: mate, mateNeeds: needs, matePhenotype: phenotype,
+                mateReproduction: default, reproductionEnabled: true, tick: 0, diagnostics: out _, safetyGatedMateRendezvousEnabled: true);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.SeekMate));
+        }
+
+        [Test]
         public void WanderingCreatureUsesAHeadingLongEnoughToExploreMeaningfully()
         {
             SimulationConfig config = SimulationConfig.CreatePrototype1Defaults(42, 0);
