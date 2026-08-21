@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LifeSimulation.Simulation.Core;
 
@@ -25,12 +26,15 @@ namespace LifeSimulation.Simulation.Analysis
     public sealed class AncestryHistory
     {
         private readonly Dictionary<CreatureId, AncestryRecord> _records = new Dictionary<CreatureId, AncestryRecord>();
+        private readonly Dictionary<CreatureId, List<CreatureId>> _childrenByParent = new Dictionary<CreatureId, List<CreatureId>>();
 
         public void Record(SimulationEvent simulationEvent)
         {
             if (simulationEvent.Kind == SimulationEventKind.Birth)
             {
                 _records[simulationEvent.Subject] = new AncestryRecord(simulationEvent.Tick, simulationEvent.FirstRelated, simulationEvent.SecondRelated, 0, DeathCause.None);
+                AddChild(simulationEvent.FirstRelated, simulationEvent.Subject);
+                AddChild(simulationEvent.SecondRelated, simulationEvent.Subject);
                 return;
             }
 
@@ -51,6 +55,31 @@ namespace LifeSimulation.Simulation.Analysis
         public bool TryGet(CreatureId creatureId, out AncestryRecord record)
         {
             return _records.TryGetValue(creatureId, out record);
+        }
+
+        public int GetChildCount(CreatureId parentId)
+        {
+            if (!_childrenByParent.TryGetValue(parentId, out List<CreatureId>? children) || children == null) return 0;
+            return children.Count;
+        }
+
+        public CreatureId GetChildAt(CreatureId parentId, int childIndex)
+        {
+            if (!_childrenByParent.TryGetValue(parentId, out List<CreatureId>? children) || children == null) throw new ArgumentOutOfRangeException(nameof(parentId));
+            if ((uint)childIndex >= (uint)children.Count) throw new ArgumentOutOfRangeException(nameof(childIndex));
+            return children[childIndex];
+        }
+
+        private void AddChild(CreatureId parentId, CreatureId childId)
+        {
+            if (parentId.Value == 0) return;
+            if (!_childrenByParent.TryGetValue(parentId, out List<CreatureId>? children) || children == null)
+            {
+                children = new List<CreatureId>();
+                _childrenByParent.Add(parentId, children);
+            }
+
+            children.Add(childId);
         }
     }
 }
