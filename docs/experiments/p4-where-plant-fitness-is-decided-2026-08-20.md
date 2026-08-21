@@ -1,5 +1,7 @@
 # Where Plant Lineage Success Is Actually Decided — 2026-08-20
 
+> **SUPERSEDED IN PART 2026-08-20.** “Mortality has no headroom” applies to the 24-site, 91%-occupancy scenario only. At the 168-site operating point, the lifespan-linked `Growth` trait declines (t −2.65, 46/120 up). See `p4-low-occupancy-plant-route-audit-2026-08-20.md`.
+
 The P4 exit gate is "give plant selection a route that is not growth rate", and the three
 candidate routes that skip the `(1 - Biomass/Capacity)` gate are **establishment**, **mortality**
 and **seed production**. This decomposes the variance in per-patch lifetime offspring across

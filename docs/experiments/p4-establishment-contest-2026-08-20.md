@@ -1,5 +1,7 @@
 # The Establishment Contest: A Plant Trait Selected Off the Growth-Rate Gate — 2026-08-20
 
+> **SUPERSEDED IN PART 2026-08-20.** The positive result is specific to the scarce 24-site operating point. At 168 sites, `SeedlingResilience` declines (t −2.56, 44/120 up) as its dispersal charge remains while contests become less valuable. See `p4-low-occupancy-plant-route-audit-2026-08-20.md`.
+
 Follows directly from `p4-where-plant-fitness-is-decided-2026-08-20.md`, which measured that
 51.9% of the variance in per-patch lifetime offspring is the single binary of whether a newborn
 survives site-competition takeover, and that **no gene influenced that outcome above |r| = 0.11**.
