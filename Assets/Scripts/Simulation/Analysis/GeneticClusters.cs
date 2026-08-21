@@ -5,7 +5,14 @@ namespace LifeSimulation.Simulation.Analysis
     /// <summary>Analysis-only connected genetic groups; callers must state their threshold explicitly.</summary>
     public sealed class GeneticClusters
     {
-        private GeneticClusters(int count) { Count = count; }
+        private readonly int[] _clusterIndices;
+
+        private GeneticClusters(int count, int[] clusterIndices)
+        {
+            Count = count;
+            _clusterIndices = clusterIndices;
+        }
+
         public int Count { get; }
 
         public static GeneticClusters From(PopulationGenomeSnapshot snapshot, float threshold)
@@ -20,9 +27,24 @@ namespace LifeSimulation.Simulation.Analysis
                     if (GeneticDistance.Between(snapshot.GetGenomeAt(first), snapshot.GetGenomeAt(second)) <= threshold) Union(parents, first, second);
                 }
             }
+            var clusterIndices = new int[snapshot.Count];
             int count = 0;
-            for (int index = 0; index < parents.Length; index++) if (Find(parents, index) == index) count++;
-            return new GeneticClusters(count);
+            for (int index = 0; index < parents.Length; index++)
+            {
+                int root = Find(parents, index);
+                int clusterIndex = 0;
+                while (clusterIndex < index && Find(parents, clusterIndex) != root) clusterIndex++;
+                if (clusterIndex == index) count++;
+                clusterIndices[index] = clusterIndex;
+            }
+
+            return new GeneticClusters(count, clusterIndices);
+        }
+
+        public int GetClusterIndexAt(int sampleIndex)
+        {
+            if ((uint)sampleIndex >= (uint)_clusterIndices.Length) throw new ArgumentOutOfRangeException(nameof(sampleIndex));
+            return _clusterIndices[sampleIndex];
         }
 
         private static int Find(int[] parents, int index)
