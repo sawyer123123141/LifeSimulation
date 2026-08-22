@@ -21,7 +21,7 @@ The panel is deliberately ephemeral. Resetting the scenario discards its observa
 
 ## Boundaries
 
-`Prototype1Presenter` is the only new P5 host in this slice. It may allocate and invoke P5 analysis after simulation stepping, because it is Unity-facing presentation code. `SimulationWorld` and every simulation system remain unchanged.
+`Prototype1Presenter` is the only new P5 host in this slice. It allocates and invokes a pure, host-triggered `P5HistoryPanelSession` after simulation stepping; that helper lives in `Simulation/Analysis` solely so the existing headless project can test it, but it is never constructed by `SimulationWorld` or a simulation system. `SimulationWorld` and every simulation system remain unchanged.
 
 ```
 SimulationWorld.Step

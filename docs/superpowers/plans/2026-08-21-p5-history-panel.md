@@ -24,14 +24,14 @@
 
 | File | Responsibility |
 | --- | --- |
-| `Assets/Scripts/Presentation/P5HistoryPanelSession.cs` | Presentation-side owner of P5 analysis session, explicit settings, host-event draining, observation cadence, and bounded display-event reads. |
+| `Assets/Scripts/Simulation/Analysis/P5HistoryPanelSession.cs` | Pure host-triggered session helper, owned only by the presenter; explicit settings, host-event draining, observation cadence, and bounded display-event reads. |
 | `Assets/Scripts/Presentation/Prototype1Presenter.cs` | Constructs/resets/advances the session and renders its compact on-screen panel. |
 | `Assets/Tests/EditMode/P5HistoryPanelSessionTests.cs` | Pure deterministic contracts for timing, event drain ordering, reset, and no simulation-state feedback. |
 
 ### Task 1: Build the presenter-side P5 session
 
 **Files:**
-- Create: `Assets/Scripts/Presentation/P5HistoryPanelSession.cs`
+- Create: `Assets/Scripts/Simulation/Analysis/P5HistoryPanelSession.cs`
 - Create: `Assets/Tests/EditMode/P5HistoryPanelSessionTests.cs`
 
 **Interfaces:**
@@ -120,7 +120,7 @@ Expected: all pass; equal state hashes prove no feedback to simulation truth.
 - [ ] **Step 6: Commit.**
 
 ```bash
-git add Assets/Scripts/Presentation/P5HistoryPanelSession.cs Assets/Tests/EditMode/P5HistoryPanelSessionTests.cs
+git add Assets/Scripts/Simulation/Analysis/P5HistoryPanelSession.cs Assets/Tests/EditMode/P5HistoryPanelSessionTests.cs
 git commit -m "feat: add P5 history panel session"
 ```
 
