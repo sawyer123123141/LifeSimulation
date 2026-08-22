@@ -655,6 +655,17 @@ off**: a creature picks one cluster at birth and never visits the other. No affi
 improve on 1.0000. Scarcity additionally goes **30/30 extinct in both arms**, so it judges nothing.
 Check that a scenario can physically express the behavior before measuring a mechanism in it.
 
+**2026-08-22 - Building the scenario a mechanism needs is a legitimate rescue attempt, and it can
+still kill the mechanism.** Soft home-range affinity read null in scenarios where the route metric
+was saturated, so `ObservationRouteRing` was built specifically to give it opportunity: 90.6% of
+creature-ticks with a genuine equidistant choice, familiarity 0.88, an off-arm route metric at
+0.7955 with headroom in both directions. The flag then moved route repeatability **down** (t -2.87)
+and same-site re-entry **up** (t +4.93). **When you rescue a null with a better test bed, commit in
+advance to accepting a negative from it** - otherwise the rescue is just a search for a scenario
+that flatters the code. And note the general lesson about the mechanism: a bonus proportional to
+proximity-to-recent-success can only ever reward staying put; nothing in that shape rewards
+completing a circuit between complementary resources.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -763,16 +774,25 @@ Check that a scenario can physically express the behavior before measuring a mec
 - `SimulationStatistics.RealizedGrazingPressure` and the `PlantBiomassSeconds` /
   `PlantPatchSeconds` integrals behind it are read-only accumulators, deliberately
   absent from `ComputeStateHash`. Same rule applies to anything in `Diagnostics/`.
-- **Soft home-range affinity is implemented, Play-testable on key `R`, and MEASURED NULL for its
-  stated purpose (2026-08-22).** `HomeRangeAffinityEnabled` still defaults false. The state and
-  learning work (familiarity 0.80-0.89 in play, flag-off byte-identical, state excluded from the
-  off hash). What it does **not** do is create routes: same-site fidelity delta +0.0000 in
-  migration, +0.0001 at a 10x bonus, and stable/scarcity already sit at fidelity 1.0000 with the
-  flag off. At 10x the only effect is patch clinging that costs 2.7% food intake for no births.
-  Do not mark the P4a bullet complete, do not tune the constants, and do not re-run this
-  experiment: the blockers are scenario geometry (food and water co-located, clusters beyond
-  vision range) and a bonus term collinear with the existing travel burden. Full numbers and the
-  recommended redesign: `docs/experiments/p4a-home-range-affinity-2026-08-22.md`.
+- **Soft home-range affinity is CLOSED as a measured negative (2026-08-22). Do not tune it, do not
+  reopen it.** `HomeRangeAffinityEnabled` stays default `false`; the implementation, its tests and
+  key `R` stay in the tree because they are correct and flag-off is byte-identical. Measured across
+  two experiments, five conditions, 240 fixed-seed runs. Shipped observation scenarios: route
+  metric saturated at 1.0000 flag-off, delta +0.0000, +0.0001 at a 10x bonus, and the 10x arm cost
+  2.7% food intake for no births. `ObservationRouteRing`, built so a route *can* exist and
+  delivering **90.6% decision opportunity at 0.88 familiarity**: route repeatability **fell**
+  -0.0345 (t -2.87, 8/30 up) while same-site re-entry **rose** +0.0594 (t +4.93, 26/30 up).
+  Geometry was tested as the rescue hypothesis and was not the blocker. Spec and plan carry
+  SUPERSEDED banners. Evidence: `docs/experiments/p4a-home-range-affinity-2026-08-22.md`,
+  `docs/experiments/p4a-route-ring-home-range-2026-08-22.md`.
+- **`Prototype4Scenarios.ObservationRouteRing` is the repository's only route-capable geometry.**
+  Eight sites on a radius-8 ring alternating Food and Water: adjacent opposite-kind separation
+  6.12, same-kind 11.31, founders at the centre, total capacity/regeneration matched to
+  `ObservationStable`. Every site has two equidistant opposite-kind neighbours, so travel burden
+  alone cannot break the choice. **It is a harsh survival condition, not a calibration: 11/30 and
+  9/30 seeds go extinct** even at matched productivity, because splitting the same output across
+  eight sites is harder to live on than two co-located pairs. Use it as the harness for
+  clustered/changing-patch work; never as a survival baseline.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

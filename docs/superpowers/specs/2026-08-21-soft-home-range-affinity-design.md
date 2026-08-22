@@ -1,5 +1,20 @@
 # Soft Home-Range Affinity Design
 
+> **SUPERSEDED — CLOSED AS A MEASURED NEGATIVE, 2026-08-22.** The implementation described here is
+> correct, deterministic and byte-identical when disabled, and it stays in the tree with
+> `HomeRangeAffinityEnabled` defaulting `false`. Its *ecological purpose* — recognisable repeatable
+> routes — was measured across two experiments, five conditions and 240 fixed-seed runs and does
+> not occur. In the shipped observation scenarios the route metric is saturated at 1.0000 with the
+> flag off (delta +0.0000, and +0.0001 at a 10x bonus). In `ObservationRouteRing`, purpose-built so
+> that a route can exist and delivering 90.6% decision opportunity at 0.88 familiarity, route
+> repeatability **fell** (-0.0345, t -2.87, 8/30 seeds up) while same-site re-entry **rose**
+> (+0.0594, t +4.93, 26/30 up). A proximity-to-recent-success bonus rewards clinging, not
+> circuits. **Do not tune the constants and do not reopen this design** — the sign of the effect is
+> wrong, not its size. Evidence:
+> `docs/experiments/p4a-home-range-affinity-2026-08-22.md` and
+> `docs/experiments/p4a-route-ring-home-range-2026-08-22.md`.
+
+
 **Status:** proposed for review  
 **Date:** 2026-08-21
 

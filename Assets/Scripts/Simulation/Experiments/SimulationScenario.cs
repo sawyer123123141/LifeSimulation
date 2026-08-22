@@ -207,6 +207,35 @@ namespace LifeSimulation.Simulation.Experiments
         public static SimulationScenario ObservationStable { get; } = CreateObservationScenario("p4-observation-stable", 600f, 30f, 60f, 3f);
         public static SimulationScenario ObservationScarcity { get; } = CreateObservationScenario("p4-observation-scarcity", 60f, 3f, 24f, 1f);
         public static SimulationScenario ObservationMigration { get; } = new SimulationScenario("p4-observation-migration", CreateObservationMigrationResources(), new SimVector2(-18f, -8f));
+        /// <summary>
+        /// Route geometry: eight sites on a radius-8 ring, alternating Food and Water, founders at
+        /// the centre. Adjacent food-to-water separation is 6.12 units, so a shuttle route exists
+        /// inside one local region; each site has two different opposite-kind neighbours at equal
+        /// distance, so the choice of which one to use is a genuine tie the utility score cannot
+        /// break on travel cost alone. Total capacity and regeneration match ObservationStable
+        /// (1200 food / 60 per second, 120 water / 6 per second) so survival stays comparable.
+        /// </summary>
+        public static SimulationScenario ObservationRouteRing { get; } = new SimulationScenario(
+            "p4a-observation-route-ring",
+            CreateRouteRingResources(),
+            founderPlacement: new SimVector2(0f, 0f));
+
+        private static ResourceDefinition[] CreateRouteRingResources()
+        {
+            const float diagonal = 5.656854f;
+            return new[]
+            {
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(8f, 0f), 1.5f, 300f, 300f, 15f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(diagonal, diagonal), 1.5f, 30f, 30f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(0f, 8f), 1.5f, 300f, 300f, 15f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-diagonal, diagonal), 1.5f, 30f, 30f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(-8f, 0f), 1.5f, 300f, 300f, 15f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(-diagonal, -diagonal), 1.5f, 30f, 30f, 1.5f),
+                new ResourceDefinition(ResourceKind.Food, new SimVector2(0f, -8f), 1.5f, 300f, 300f, 15f),
+                new ResourceDefinition(ResourceKind.Water, new SimVector2(diagonal, -diagonal), 1.5f, 30f, 30f, 1.5f),
+            };
+        }
+
         public static SimulationScenario ObservationMating { get; } = new SimulationScenario("p4-observation-mating", new[]
         {
             new ResourceDefinition(ResourceKind.Food, new SimVector2(-12f, -8f), 1.5f, 900f, 900f, 45f),

@@ -278,14 +278,18 @@ Two real review bugs were already caught and fixed: the first version could make
 creature seek a familiar resource from zero utility, and it gated affinity using a nearest-creature
 shortcut inconsistent with filtered threat scoring. Do not reintroduce either.
 
-**Route formation was measured on 2026-08-22 and the answer is no.** Key `R` now enables the flag
-on `ObservationStable`. Across 30 paired seeds in stable, scarcity and migration, same-site
-fidelity changed by +0.0000 (and +0.0001 at a 10x bonus), while stable and scarcity already sit at
-fidelity 1.0000 with the flag off because food and water are co-located and the second cluster is
-outside vision range. The only effect a large bonus produces is patch clinging at a food-intake
-cost. The blockers are scenario geometry and a bonus term collinear with the existing travel
-burden — not the constants. Do not re-run this sweep or tune the constants; read
-`docs/experiments/p4a-home-range-affinity-2026-08-22.md` and fix the geometry first.
+**CLOSED 2026-08-22 as a measured negative — do not tune, do not reopen.** Key `R` enables the flag
+on `ObservationStable`. Two experiments, five conditions, 240 fixed-seed runs. In the shipped
+scenarios the route metric is saturated at 1.0000 with the flag off (delta +0.0000, +0.0001 at a
+10x bonus, and the 10x arm cost 2.7% food intake for no births). Geometry was then tested as the
+rescue hypothesis: `ObservationRouteRing` gives 90.6% decision opportunity at 0.88 familiarity with
+an unsaturated off-arm metric, and there the flag made route repeatability **fall** (-0.0345,
+t -2.87, 8/30 up) while same-site re-entry **rose** (+0.0594, t +4.93, 26/30 up). Geometry was not
+the blocker; the mechanism shape is. A proximity-to-recent-success bonus rewards clinging, and
+contains nothing that rewards completing a circuit. The flag stays default false, the code and
+tests stay (correct, byte-identical off), spec and plan carry SUPERSEDED banners. Evidence:
+`docs/experiments/p4a-home-range-affinity-2026-08-22.md`,
+`docs/experiments/p4a-route-ring-home-range-2026-08-22.md`.
 
 ## Play-mode controls and what they mean
 
@@ -412,7 +416,10 @@ presentation changes.
 1. ~~Add `R` matched home-range Play mode and measure it.~~ **Done 2026-08-22. Result: null for
    route formation, and not a tuning problem.** Do not re-run it; read the experiment writeup.
 2. ~~Filter routine P5 continuity in the presenter.~~ **Done 2026-08-22.**
-3. Design clustered, changing resource patches as scenario data, with fixed-seed route/travel/
+3. **NEXT:** design clustered, changing resource patches as scenario data. `ObservationRouteRing`
+   (added 2026-08-22) is the route-capable harness to build on - but it is a harsh survival
+   condition (11/30 and 9/30 extinct at productivity matched to Stable), not a calibration.
+   Original wording: design clustered, changing resource patches as scenario data, with fixed-seed route/travel/
    survival measurements. This is likely the largest remaining visual-ecology gain.
 4. Reassess whether safety-gated rendezvous plus existing two-parent mating produces any local
    groups. Its first ecological experiment was null; do not build pack architecture to force it.
