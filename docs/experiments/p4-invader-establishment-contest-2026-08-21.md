@@ -1,5 +1,21 @@
 # P4 invader-side establishment contest — 2026-08-21
 
+> **REQUIRES RE-MEASUREMENT — 2026-08-22.** This result was measured with
+> `PlantSiteCompetitionEnabled` on, before the `PlantPatchStore.ReplaceAt` takeover-age defect was
+> fixed in `4cc9a47`. Until that fix, a seedling installed by a takeover inherited the incumbent's
+> accumulated age and was frequently aged out within a tick or two of establishing — on the exact
+> mechanism this document draws conclusions about. A paired old-versus-fixed audit over 30 seeds
+> found every state hash on the competition path changed, `SeedlingResilience` moving **downward**
+> under the fix (t -1.99, 19 of 30 seeds down) and plant generations falling by one (t -2.63).
+>
+> Those figures are drift magnitudes measured on the uniform-founder calibration, so they do **not**
+> overturn a selection result measured at t +4.03 under standing variance — but they push against it
+> on the mechanism it concerns, so the conclusion is neither retracted nor confirmed. **Re-run this
+> experiment's original design before relying on it.** Nothing here has been edited or recomputed;
+> the numbers below are the original measurements.
+> Audit: `evidence-impact-audit-2026-08-22.md`.
+
+
 ## Question
 
 Does letting an invader's inherited `SeedlingResilience` offset the vulnerable incumbent's

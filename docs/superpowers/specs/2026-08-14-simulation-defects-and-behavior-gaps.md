@@ -174,3 +174,49 @@ Recorded because they bear on whether gates have actually been passed, and both 
 6. **B-5**, **B-6**, **B-8**, **C-3**, **C-4**, **C-5** as their dependent slices arrive.
 
 Items in groups B and C each need a versioned scenario migration and re-run evidence before their prototype can be described as passing.
+
+## 2026-08-22 evidence-integrity review
+
+Three findings were confirmed on `main` and handled. A fourth class was found during the audit.
+
+### FIXED — `PlantPatchStore.ReplaceAt` did not reset age (`4cc9a47`)
+
+A takeover installs a new seedling on an existing site. `ReplaceAt` overwrote genome, lineage,
+traits, biomass and cooldown but left `_ages[index]`, so the replacement inherited the incumbent's
+age and `PlantMortalitySystem` aged it out on the dead patch's clock. Behaviour change; only reaches
+runs with `PlantSiteCompetitionEnabled`. Impact measured before anything was retracted:
+`docs/experiments/evidence-impact-audit-2026-08-22.md`.
+
+### FIXED — statistics sampled before the tick's deaths were committed (`9763374`)
+
+`Step` built the statistics sample before draining `_pendingDeaths`, so a statistics tick reported a
+population containing creatures it had just killed and a death count excluding them, and could
+report a surviving population on an extinction tick. `ExperimentRunner` additionally returned the
+cached cadence sample, which is stale on any tick that is not a multiple of the statistics interval
+and pre-scenario at tick zero. The commit loop now precedes the sample, and
+`SimulationWorld.CaptureStatistics()` provides an explicit current snapshot. Reporting-only: the
+audit found a seed whose death count changed while its state hash stayed identical.
+
+### DESIGNED, NOT IMPLEMENTED — `ComputeStateHash` is incomplete as a future-state fingerprint
+
+See `2026-08-22-state-fingerprint-design.md`. Three hashes with three jobs, not one merged hash.
+The audit found omissions the review did not name, in descending severity: **`_birthOrdinal`** and
+**`_plantSeedOrdinal`** (both feed deterministic RNG streams, so two worlds equal on V1 produce
+different offspring and different dispersal), plant `Age` and `ReproductionCooldownRemaining`, the
+three store next-id counters, `PlantSiteRegistry` contents and order, and configuration beyond
+`WorldSeed`.
+
+**The constraint that shapes the design:** `BehaviorHash` must never include configuration.
+`FlagLivenessAnalysis` decides liveness by flipping a flag and comparing that hash, so folding
+config in would make every flag read live and destroy the only harness distinguishing wired
+mechanisms from unreachable ones.
+
+**Evidence that this matters concretely:** the takeover-age defect above was a real behaviour change
+that no pinned hash could detect, because plant age is not hashed and the pinned regression runs a
+scenario with no plant competition.
+
+### OPEN — experiments whose scenario was never committed cannot be re-audited
+
+The 168-site low-occupancy operating point could not be re-run during the audit: its geometry lived
+in a throwaway probe, so the low-occupancy conclusions have no impact assessment. Reconstruct that
+layout as committed scenario data before relying on those documents again.

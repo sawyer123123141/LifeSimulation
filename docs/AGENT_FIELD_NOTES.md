@@ -691,6 +691,26 @@ resources and 33.5% when food sits 7 units from water. **When a population fails
 and check the reproduction eligibility window before tuning the environment.** Both numbers are
 cheap; the four refuted calibration arms were not.
 
+**2026-08-22 - A behaviour bug hid for weeks because the thing it changed was not in the hash.**
+`PlantPatchStore.ReplaceAt` never reset plant age, so every takeover installed a seedling that died
+on the incumbent's clock. No hash regression caught it: plant `Age` is absent from
+`ComputeStateHash`, and the pinned regression runs a scenario with no plant competition. **A passing
+hash regression proves only that the hashed fields did not move in the pinned scenario.** Before
+trusting one, check that the field you changed is actually hashed and that some pinned scenario
+actually exercises the path.
+
+**2026-08-22 - Measure the blast radius before retracting anything.** The correctness fixes above
+could in principle have invalidated a season of plant conclusions. A paired old-versus-fixed run in a
+detached worktree at the pre-fix commit settled it in two probe runs: every competition-off result
+was **bit-identical** (home-range, route ring, shifting patches - cleared outright), and only the
+competition path moved. Retraction by assumption would have thrown away good evidence; clearing by
+assumption would have kept bad evidence. **Run the paired sweep.**
+
+**2026-08-22 - An experiment whose scenario was never committed cannot be re-audited.** The 168-site
+low-occupancy geometry lived in a deleted throwaway probe, so when a correctness fix landed there was
+no way to assess its impact on those conclusions. Promote any geometry a conclusion depends on into
+committed scenario data.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -856,6 +876,14 @@ cheap; the four refuted calibration arms were not.
   resource map must declare no dormant sites at all, not merely leave mortality off. This
   mis-specified a control on 2026-08-22 and inflated a scenario's real productivity from a declared
   1200 food capacity to roughly 3600.
+- **`SimulationWorld.CaptureStatistics()` is the correct way to read end-of-run statistics.** The
+  `Statistics` property is refreshed only on statistics-cadence ticks (every 20 ticks at the P1
+  schedule) and its constructor-time value predates any applied scenario. `ExperimentRunner` uses
+  `CaptureStatistics`. Per-tick simulation code must not call it - it walks every creature.
+- **Statistics are sampled after the tick's deaths are committed (since 2026-08-22).** Any figure
+  taken from a pre-`9763374` run understates deaths at run boundaries and can report a surviving
+  population on an extinction tick. Trajectories are unaffected: the audit found a seed whose death
+  count changed while its state hash stayed identical.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

@@ -45,32 +45,58 @@ Experiment writeups and per-seed CSVs are in `docs/experiments/`:
 `p4a-route-ring-home-range-2026-08-22.md`, `p4a-shifting-patches-2026-08-22.md`. The clustered-patch
 design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-patches-design.md`.
 
+## Current state — evidence-integrity audit (2026-08-22)
+
+The P4a/P5 queue is **paused** for an evidence-integrity audit prompted by a deep code review. Three
+review findings were independently confirmed on `main` and handled in order, tests first. The
+review's blanket claim that all evidence is unreliable was **not** accepted, and the paired audit
+shows why it would have been wrong.
+
+Done and pushed:
+
+1. `4cc9a47` — `PlantPatchStore.ReplaceAt` now resets plant age. Takeovers previously installed
+   seedlings carrying the incumbent's age, killed on the dead patch's clock. Two failing tests
+   first.
+2. `9763374` — statistics are sampled after the tick's deaths are committed, and
+   `SimulationWorld.CaptureStatistics()` gives an explicit end-of-run snapshot that
+   `ExperimentRunner` now uses. Five failing tests first.
+3. `docs/superpowers/specs/2026-08-22-state-fingerprint-design.md` — design only, deliberately not
+   implemented. Three separate hashes (frozen V1, versioned complete V2 including config,
+   config-free BehaviorHash), plus an omissions audit that found `_birthOrdinal` and
+   `_plantSeedOrdinal` — two RNG stream counters the review did not name.
+4. `docs/experiments/evidence-impact-audit-2026-08-22.md` — paired old-versus-fixed sweep, 85 runs,
+   pre-fix worktree versus fixed main.
+
+**Audit outcome.** Everything with `PlantSiteCompetitionEnabled` off is **bit-identical** across the
+fix: home-range, route-ring and shifting-patch conclusions are cleared outright, no banner needed.
+Only the competition path moved (30/30 hashes), where `SeedlingResilience` drifts **down** (t -1.99)
+and plant generations fall by one (t -2.63). Three establishment/competition experiments carry
+**requires re-measurement** banners — not retractions, because those drift magnitudes do not
+overturn a t +4.03 selection result measured under standing variance, and not clearance either,
+because they move the mechanism those conclusions rest on in the unfavourable direction. Original
+files are preserved unedited.
+
 ## Next task
 
-**The reproduction-gate question is DECIDED and closed.** The user chose to keep the joint
-70%/70% gate: reduced fertility while commuting between separated resources is accepted as real
-ecology. `ReproductionSystem.CanReproduce` must not be changed, no re-baseline is needed, and every
-result on record stands. The standing consequence is that a spatially separated scenario must be
-calibrated to be viable *under* the gate — more productivity, more founders, or accepted extinction
-— rather than the gate being relaxed. Do not reopen this as a bug.
+Finish the audit, then resume the ROADMAP. In order:
 
-Remaining P4a and P5 work, in the order I would take it:
+1. **Re-run the establishment/contest experiments' original design** (120 seeds, *varying* plant
+   founder traits, the recorded dispersal charge) on fixed code, and either lift the banners or
+   retract. This is the only outstanding conclusion-level question.
+2. **Reconstruct the 168-site low-occupancy geometry as committed scenario data**, then re-audit the
+   three low-occupancy documents. They currently have no impact assessment at all because their
+   geometry lived in a deleted throwaway probe.
+3. Then the review's P1 queue, in its stated order: finite/range validation; experiment
+   manifest/provenance; allocation-free genetic distance with a measured P5 budget; benchmark
+   crowded resource allocation before optimising it.
+4. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
+   design questions, not automatic fixes. The stale-grid question is already scoped by the
+   fingerprint design's settled-tick validity rule.
 
-1. **Continue selected-creature and population feedback.** The breeding-readiness line and the
-   "ready to breed" count landed on 2026-08-22 because measurement showed the joint gate was both
-   binding and invisible. The same test applies to anything added next: does it let a person see
-   something real that they currently cannot? Candidates are resource depletion/recovery feedback
-   and a short per-creature event history.
-2. **Reassess safety-gated rendezvous.** Its first ecological experiment was null; do not build pack
-   architecture to force it.
-3. **P5**: durable chunk storage and a graphical evolutionary tree, and a behaviour-preserving
-   decomposition of the ~1,310-line `GeneticClusterHistory.cs` before adding classification logic.
+Implementing State fingerprint V2 is queued behind those; the design is written and its acceptance
+criteria include that `FlagLivenessAnalysis` must still report exactly the known inert set.
 
-Do **not** build the "optional juvenile local-area bias" as a fix for separated-resource extinction
-— juveniles are not the failing class and mortality is not the failure mode. Do not reopen soft
-home-range affinity; it is closed as a measured negative with SUPERSEDED banners on its spec and
-plan. Do not run another placement or productivity calibration on `ObservationShiftingPatches`; six
-variants are recorded and the joint gate explains why all of them failed.
+Resume the ROADMAP only after items 1 and 2 above.
 
 ## Working-tree rules
 
