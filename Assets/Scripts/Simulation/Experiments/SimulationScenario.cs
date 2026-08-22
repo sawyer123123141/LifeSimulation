@@ -390,9 +390,20 @@ namespace LifeSimulation.Simulation.Experiments
         ///
         /// <para>Active sites, their water, capacities, regeneration and founder genome are
         /// identical to <see cref="ConsumerDefenseCalibrationModerate"/>. Only the dispersal-target
-        /// layout differs, and it is fully specified here: a lattice over [-24, 24] on both axes in
-        /// steps of 4 (13 x 13 = 169 points), excluding any point within 2.0 of an active food
-        /// site, then taking the first 162 remaining points in row-major order.</para>
+        /// layout differs, and it is fully specified here: a 13 x 13 lattice spanning 114 units on
+        /// both axes (spacing 9.5, corners at +/-57), excluding any point within 2.0 of an active
+        /// food site, then taking the first 162 remaining points in row-major order.</para>
+        ///
+        /// <para>The span was calibrated, not guessed. Occupancy is a cliff in this parameter, not a
+        /// gradient: spacing 4 gives 0.833, spacing 8 gives 0.528, spacing 9.5 gives <b>0.311</b>,
+        /// spacing 11 gives 0.085 with 3/10 seeds extinct, and spacing 13.3 collapses the ecosystem
+        /// entirely (9/10 extinct). Only a narrow window reproduces the recorded 0.322-0.332 with
+        /// clean survival. See docs/experiments/p4-occupancy-calibration-2026-08-22.md.</para>
+        ///
+        /// <para><b>Known ecological difference:</b> at this spacing the outer targets sit beyond the
+        /// hard-coded creature arena of +/-25, so patches establishing there are never grazed. That
+        /// is a refugium the 24-site condition does not have, and it is not known whether the
+        /// original 168-site layout had one. Any trait conclusion drawn here must state it.</para>
         ///
         /// <para>Selecting a layout that achieves low occupancy is faithful to the original method -
         /// that writeup records discarding a 42-site version after a preflight because it stayed
@@ -423,12 +434,15 @@ namespace LifeSimulation.Simulation.Experiments
             }
 
             const int targetCount = 162;
+            const float span = 114f;
+            const float half = span / 2f;
+            const float step = span / 12f;
             int placed = 0;
             for (int row = 0; row < 13 && placed < targetCount; row++)
             {
                 for (int column = 0; column < 13 && placed < targetCount; column++)
                 {
-                    var candidate = new SimVector2(-24f + (column * 4f), -24f + (row * 4f));
+                    var candidate = new SimVector2(-half + (column * step), -half + (row * step));
                     bool tooCloseToActiveSite = false;
                     foreach (SimVector2 site in activeSites)
                     {

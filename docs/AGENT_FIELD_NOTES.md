@@ -731,6 +731,15 @@ matched the original's site count exactly (6 active plus 162 inactive) and produ
 within 0.006. Site count was never the mechanism; target *spacing* is. A dense regular lattice
 saturates. Any future attempt should spread targets far apart rather than add more of them.
 
+**2026-08-22 - Plant site occupancy is a cliff in target spacing, not a gradient.** Holding the six
+active sites, the config and the 162-target count fixed and varying only the lattice span: spacing 4
+gives occupancy 0.833, spacing 8 gives 0.528, spacing 9.5 gives 0.311, spacing 11 gives 0.085 with
+3/10 seeds extinct, and spacing 13.3 collapses the ecosystem (9/10 extinct, 3 plant generations).
+The window reproducing the recorded 0.32 operating point with clean survival is roughly spacing
+9.3-9.7 - about four percent of the swept range. **`DispersalRange` is `4 + 20 * Dispersal` and
+Dispersal evolves upward, so a mature patch throws seeds 14-24 units; any lattice tighter than that
+saturates.** Do not guess a spacing; sweep it and read occupancy before drawing any conclusion.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -912,6 +921,12 @@ saturates. Any future attempt should spread targets far apart rather than add mo
   conclusion and the six growth-rate nulls, because the committed replication geometry produces
   occupancy 0.84 rather than 0.32. Survival was clean throughout: 0/120 extinct, 0/120 frozen in all
   six combinations. `docs/experiments/p4-postfix-revalidation-2026-08-22.md`.
+- **`AbundantSiteReplicationModerate` is calibrated to span 114 / spacing 9.5, measuring occupancy
+  0.311 (recorded 0.322-0.332) at 0/10 extinct.** It is a replication *condition*, never a re-run:
+  the original's target coordinates are unrecoverable. **Known ecological difference: the lattice
+  spans +/-57 while the creature arena is hard-coded to +/-25, so outer patches are never grazed.**
+  Any trait result from this scenario must report `RealizedGrazingPressure` and state that
+  difference - it reproduces the recorded occupancy, not necessarily the recorded ecology.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

@@ -61,15 +61,23 @@ Identical to `ConsumerDefenseCalibrationModerate` in active sites, co-located wa
 regeneration, founder genome and founder placement. **Only the dispersal-target layout differs**, and
 it is fully specified:
 
-> a lattice over [-24, 24] on both axes in steps of 4 (13 x 13 = 169 points), excluding any point
-> within 2.0 of an active food site, taking the first 162 remaining points in row-major order.
+> a 13 x 13 lattice spanning **114 units** on both axes (spacing **9.5**, corners at +/-57),
+> excluding any point within 2.0 of an active food site, taking the first 162 remaining points in
+> row-major order.
+
+The span is calibrated, not chosen: see the Result section and
+`p4-occupancy-calibration-2026-08-22.md`. An earlier version of this document specified spacing 4;
+that layout produced occupancy 0.840 and is superseded.
 
 ### Relationship to the original
 
 - **Count: identical** — 6 active plus 162 inactive, 168 total.
-- **Geometry: different, and knowably so.** The original fanned targets around each active site; this
-  spreads them across the whole arena on a regular lattice. Both raise free-site availability, which
-  is the mechanism the occupancy change runs through, but they are not the same arrangement.
+- **Geometry: different, and knowably so.** The original fanned 27 targets around each active site;
+  this spreads them on a regular lattice at spacing 9.5, reaching +/-57. Both raise free-site
+  availability, which is the mechanism the occupancy change runs through, but they are not the same
+  arrangement - and this one places outer targets **outside the +/-25 creature arena**, so those
+  patches are never grazed. The original may or may not have had that refugium; its coordinates are
+  unrecoverable, so this cannot be checked.
 - **Selection criterion: the same one the original used.** The original discarded a 42-site layout
   for staying ~0.88 occupied, i.e. the layout was chosen to hit a low-occupancy condition. Judging
   this replication on whether it reproduces occupancy near **0.32–0.33** is faithful to that method.
@@ -95,5 +103,15 @@ Everything needed to reproduce this condition after a future fix:
 
 ## Result
 
-See `p4-postfix-revalidation-2026-08-22.md` for the measured occupancy this layout produces and
-whether the low-occupancy conclusions replicate under it on fixed code.
+The first layout (lattice spacing 4) **failed**: occupancy 0.840 against a recorded 0.322-0.332,
+while the 24-site arm in the same sweep reproduced its recorded occupancy to within 0.006. Site
+count was never the lever; target spacing is.
+
+The scenario was then calibrated. Occupancy turns out to be a **cliff**, not a gradient - 0.833 at
+spacing 4, 0.528 at 8, 0.311 at 9.5, 0.085 with extinctions at 11, ecosystem collapse by 13.3. The
+committed scenario now uses span 114 / spacing 9.5 and measures **occupancy 0.311 with 0/10 seeds
+extinct**. See `p4-occupancy-calibration-2026-08-22.md`, which also records the one known ecological
+difference this introduces: the lattice spans +/-57 while the creature arena is +/-25, so outer
+patches are never grazed.
+
+The low-occupancy conclusions are still not re-audited. A condition now exists to re-audit them in.
