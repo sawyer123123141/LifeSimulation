@@ -136,7 +136,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · H overlay");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · V shifting patches · H overlay");
             GUI.Label(new Rect(24f, 194f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt");
         }
 
@@ -154,7 +154,7 @@ namespace LifeSimulation.Presentation
             {
                 GUI.Label(new Rect(476f, 194f, 250f, 22f), $"P1 cohorts: hunters {stats.ViableHunterCount}  others {stats.NonHunterCount}");
             }
-            GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating · R home range");
+            GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating · R home range · V shifting");
             GUI.Label(new Rect(476f, 238f, 250f, 22f), _scenarioHint);
         }
 
@@ -298,6 +298,11 @@ namespace LifeSimulation.Presentation
             // R is the matched partner of 5: identical scenario, seed and config except for the
             // home-range flag, so the two can be watched back to back.
             if (Input.GetKeyDown(KeyCode.R)) ResetObservationScenario(Prototype4Scenarios.ObservationStable, foundersAreMature: false, mateSelectionEnabled: false, homeRangeAffinityEnabled: true);
+            // V is the only scenario whose food map changes while you watch: plant patches die and
+            // seedlings establish on dormant sites. It runs seed 45 rather than the usual 42
+            // because seed 42's founders are one of six cases in thirty that fail to establish in
+            // this layout - see docs/experiments/p4a-shifting-patches-2026-08-22.md.
+            if (Input.GetKeyDown(KeyCode.V)) ResetObservationScenario(Prototype4Scenarios.ObservationShiftingPatches, foundersAreMature: false, mateSelectionEnabled: false, plantMortalityEnabled: true, worldSeed: 45);
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
@@ -582,6 +587,7 @@ namespace LifeSimulation.Presentation
             if (scenarioId == "p4-observation-scarcity") return "Watch: local resources run low";
             if (scenarioId == "p4-observation-migration") return "Watch: travel toward richer patches";
             if (scenarioId == "p4-observation-mating") return "Watch: purple courtship and births";
+            if (scenarioId == "p4a-observation-shifting-patches") return "Watch: food patches die and regrow elsewhere";
             if (scenarioId == "p4-watchable-starter-habitat") return "Watch: a compact mixed habitat";
             return string.Empty;
         }
@@ -590,9 +596,11 @@ namespace LifeSimulation.Presentation
             SimulationScenario scenario,
             bool foundersAreMature,
             bool mateSelectionEnabled,
-            bool homeRangeAffinityEnabled = false)
+            bool homeRangeAffinityEnabled = false,
+            bool plantMortalityEnabled = false,
+            int worldSeed = 42)
         {
-            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed, initialPopulation: 4);
             var config = new SimulationConfig(
                 defaults.WorldSeed,
                 defaults.InitialPopulation,
@@ -612,6 +620,7 @@ namespace LifeSimulation.Presentation
                 kinRecognitionEnabled: true,
                 learnedResourceQualityEnabled: true,
                 mateSelectionEnabled: mateSelectionEnabled,
+                plantMortalityEnabled: plantMortalityEnabled,
                 homeRangeAffinityEnabled: homeRangeAffinityEnabled);
             ResetSimulation(scenario, config);
             if (homeRangeAffinityEnabled)

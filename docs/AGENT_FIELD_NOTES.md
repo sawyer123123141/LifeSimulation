@@ -808,17 +808,23 @@ itself.**
   9/30 seeds go extinct** even at matched productivity, because splitting the same output across
   eight sites is harder to live on than two co-located pairs. Use it as the harness for
   clustered/changing-patch work; never as a survival baseline.
-- **`Prototype4Scenarios.ObservationShiftingPatches` is the changing-map test bed, and it is NOT
-  watchable yet.** Three clusters 23-28 apart, each with a permanent water site at its centre, two
-  active food sites 7 units out, and four dormant food sites as dispersal targets. With
+- **`Prototype4Scenarios.ObservationShiftingPatches` is the changing-map scenario, on Play key `V`
+  at world seed 45.** Three clusters 23-28 apart, each with a permanent water site at its centre,
+  two active food sites 7 units out, and four dormant food sites as dispersal targets. With
   `plantMortalityEnabled: true` it sustains ~29 patch deaths and ~33 establishments per 6,000-tick
-  run at an equilibrium of 11.96 active food sites. **Do not bind a Play key to it as it stands:
-  seed 42 - the Play-mode seed - goes extinct in every arm measured.** Extinction across 30 seeds is
-  6-8/30 and the cause is founder establishment failure (0-3 births in extinct seeds against 48.2
-  in survivors), not ecosystem collapse. Mature founders do not fix it (5/30) and eight founders
-  make it much worse (14/30, final population 10.07 despite the most births of any arm - overshoot
-  then crash). Untested levers: founder *placement* (they currently start on the water centre,
-  7 units from the nearest food) and per-site regeneration.
+  run at an equilibrium of 11.96 active food sites. **Its honest extinction rate is 6/30 and the key
+  runs seed 45 because seed 42 is one of the six failures** - that is a demonstration choice, and
+  every published statistic comes from the full 30-seed sweeps, never from seed 45.
+- **Founder establishment under separated food and water is an unexplained failure mode.** Four
+  juvenile founders survive fine with co-located resources (`ObservationStable`, 0/30 extinct) and
+  fail in 6/30 to 11/30 of seeds once food sits 6-7 units from water (`ObservationShiftingPatches`,
+  `ObservationRouteRing`). Extinct runs show 0-3 births against a survivor mean of 48.2, so it is
+  establishment, not collapse. **Four levers are already refuted:** mature founders (5/30 vs 6/30),
+  eight founders (14/30 - overshoot then crash), founders placed on a food site (14/30, worse than
+  starting on water, which reverses the obvious intuition), and 1.5x capacity/regeneration (5/30).
+  Tightening the radius to 6 lets seed 42 establish but raises overall extinction to 14/30. Do not
+  spend another calibration sweep on placement or productivity; this is a juvenile survival
+  economics question and the natural home for the P4a "optional juvenile local-area bias" item.
 - **Plant dispersal does not need plant mortality, so "mortality off" is NOT a frozen map.** With
   mortality off, plants colonise every dormant site within ~20 ticks and stay there: 12
   activations, 0 deactivations, 17.37 of 18 sites active. Any experiment wanting a genuinely static

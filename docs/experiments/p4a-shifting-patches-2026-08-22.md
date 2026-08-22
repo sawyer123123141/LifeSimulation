@@ -192,3 +192,51 @@ until the measurement earns one, so no key is added.
   founders nor more founders is the answer, and the shortest untested lever is founder *placement*
   (founders currently start on the cluster's water centre, seven units from the nearest food)
   and per-site regeneration.
+
+## Addendum — calibration sweep, and the decision to bind key `V` to seed 45
+
+Raw rows: `p4a-shifting-patch-calibration-2026-08-22.csv` (6 variants x seeds 42-71 = 180 runs, all
+with `plantMortalityEnabled: true`). The production scenario was not modified; the probe built each
+variant locally.
+
+| variant | extinct | seed 42 final pop | seed 42 births | mean final pop | mean births |
+|---|---|---|---|---|---|
+| baseline (founders on the water centre) | 6/30 | 0 | 1 | 27.77 | 39.57 |
+| founders on an active food site | 14/30 | 0 | 1 | 14.83 | 26.90 |
+| founders midway between food and water | 10/30 | 0 | 1 | 19.43 | 29.80 |
+| regeneration and capacity x1.5 | 5/30 | 0 | 1 | 29.03 | 38.87 |
+| founders on food + x1.5 | 14/30 | 0 | 1 | 16.33 | 25.57 |
+| tight radius (food 6 units from water) | 14/30 | 0 | 46 | 10.93 | 40.07 |
+
+**Both remaining levers are refuted, and one result reverses the obvious intuition.** Moving
+founders onto a food site — the change I predicted would help most, since food is the binding need —
+more than doubles extinction, from 6/30 to 14/30. Starting on water is better. Raising productivity
+by half buys almost nothing (5/30 versus 6/30). Tightening the food-water radius to 6 lets seed 42
+establish properly for the first time (46 births rather than 1) but the population then collapses
+anyway, and extinction across seeds rises to 14/30.
+
+**Seed 42 goes extinct under every one of the six variants.** With five of them it produces exactly
+one birth. That consistency across placements and productivity levels says the limiting factor is
+seed 42's own four founders, not the layout — and no layout knob within this design is going to
+rescue it.
+
+### Decision
+
+Calibration was stopped and key **`V`** was bound to `ObservationShiftingPatches` with **world seed
+45** instead of the usual 42. Twenty-four of thirty seeds establish; seed 42 is simply one of the
+six that do not. Seed 45 was chosen from the survivors for having the most visible turnover: 36 site
+activations, 30 deactivations, 57 births, a population that reaches the cap of 40, and 12 patches
+still alive at the end, so the map is churning *and* still populated when a person is watching.
+
+This is a demonstration choice, and it is recorded rather than hidden: **the scenario's honest
+extinction rate is 6/30, and every statistic in this document comes from the full 30-seed sweeps,
+not from seed 45.** No science in this writeup rests on the demo seed.
+
+### Still open
+
+Why four founders fail to establish under food/water separation, when the same four survive with
+co-located resources in `ObservationStable`, is not explained. It reproduced in
+`ObservationRouteRing` (11/30) and here (6/30), so it is a property of separated geometry rather
+than of either scenario. That is a real question about juvenile survival economics and is the
+strongest candidate for the P4a "optional juvenile local-area bias" item, which exists precisely to
+help young creatures near their birth area.

@@ -301,6 +301,10 @@ tests stay (correct, byte-identical off), spec and plan carry SUPERSEDED banners
 - `R`: home-range affinity - `ObservationStable` again, identical seed and config except
   `HomeRangeAffinityEnabled=true`. **It looks the same as `5`; that is the measured result, not a
   bug** (see `docs/experiments/p4a-home-range-affinity-2026-08-22.md`).
+- `V`: shifting patches - the only scenario whose food map changes while you watch. Plant patches
+  die and seedlings establish on dormant sites: roughly 29 deaths and 33 establishments per run.
+  Runs world seed 45, not 42, because seed 42's founders are one of six cases in thirty that fail
+  to establish in this layout.
 - `N`: broad all-flags playtest, but still omits home-range (left unchanged deliberately).
 - `H`: temperature/biome/off ground overlay cycle.
 - Left-click selects a creature; resource dragging is mouse-driven.

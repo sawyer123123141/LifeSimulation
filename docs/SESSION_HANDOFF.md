@@ -36,7 +36,9 @@ Head is on `main`. Completed and pushed this session:
    existing plant dispersal/mortality machinery produces ~29 patch deaths and ~33 establishments
    per run: route permanence falls (pair repeat -0.0935, t -6.47) and distinct routes per creature
    rise 27% (+0.628, t +4.48) at no survival cost. No new mechanism was needed or added.
-   **No Play key is bound: seed 42 goes extinct in every arm.**
+   Bound to Play key **`V`** at world seed 45: the scenario's honest extinction rate is 6/30 and
+   seed 42 is one of the six failures, so the demo seed is a documented demonstration choice and no
+   published statistic rests on it.
 
 Experiment writeups and per-seed CSVs are in `docs/experiments/`:
 `p4a-home-range-affinity-2026-08-22.md`, `p4a-home-range-bonus-sensitivity-2026-08-22.csv`,
@@ -45,23 +47,28 @@ design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-pa
 
 ## Next task
 
-**Calibrate `ObservationShiftingPatches` until seed 42 establishes, then bind a Play key to it.**
-This is the only thing standing between the P4a clustered/changing-patch bullet and done. The
-mechanism is already demonstrated; do not design anything new for it.
+The P4a clustered/changing-patch bullet is **done**: key `V` runs `ObservationShiftingPatches` at
+world seed 45, the map churns visibly, and route variety rises at no survival cost.
 
-- The failure is founder establishment, not ecosystem collapse: extinct seeds record 0-3 births
-  against a survivor mean of 48.2.
-- Two levers are already ruled out. Mature founders barely help (5/30 versus 6/30 extinct). Eight
-  founders make it much worse (14/30 extinct, final population 10.07) — more founders graze the
-  patches down and the population overshoots then crashes.
-- Untested levers, in order of promise: **founder placement** (founders currently start on the
-  cluster's water centre, 7 units from the nearest food) and **per-site regeneration**.
-- Verify the fix on seed 42 individually *and* across seeds 42-71, then add the key, then run a
-  Unity batch compile because the key is a Presentation change.
+Remaining unfinished P4a items, in the order I would take them:
 
-After that, the next unfinished P4a items are the optional juvenile local-area bias and the
-selected-creature action/history feedback. Do not reopen soft home-range affinity: it is closed as
-a measured negative and its spec and plan carry SUPERSEDED banners.
+1. **Optional juvenile local-area bias.** This now has a concrete motivating measurement rather
+   than being a speculative nicety: four juvenile founders establish reliably with co-located
+   resources (0/30 extinct) and fail in 6/30 to 11/30 of seeds once food sits 6-7 units from water.
+   Extinct runs show 0-3 births against a survivor mean of 48.2. Four calibration levers are
+   already refuted — mature founders, eight founders, founders placed on food (worse), and 1.5x
+   productivity — so this is a juvenile survival economics question, which is exactly what the
+   backlog item is for. **Understand why juveniles fail before designing the bias**, and hold it to
+   the same standard that closed home-range: a matched flag-off/on measurement with predictions
+   registered first, and no claim of success from a mechanism story.
+2. **Selected-creature action/history feedback** — only where it helps a person distinguish
+   foraging, drinking, mating, fleeing, resting, births, deaths, depletion and recovery.
+3. Reassess safety-gated rendezvous. Its first ecological experiment was null; do not build pack
+   architecture to force it.
+
+Do not reopen soft home-range affinity — closed as a measured negative, spec and plan carry
+SUPERSEDED banners. Do not run another placement or productivity calibration on
+`ObservationShiftingPatches`; six variants are already recorded.
 
 ## Working-tree rules
 
