@@ -311,11 +311,6 @@ namespace LifeSimulation.Simulation.Core
                 TickReproduction();
             }
 
-            if (IsDue(nextTick, Config.Schedule.StatisticsHz))
-            {
-                Statistics = BuildStatistics(nextTick);
-            }
-
             for (int index = 0; index < _pendingDeathCount; index++)
             {
                 CreatureId deceased = _pendingDeaths[index];
@@ -347,6 +342,19 @@ namespace LifeSimulation.Simulation.Core
             }
 
             _pendingDeathCount = 0;
+
+            // Statistics are sampled AFTER the tick's deaths are committed. Sampling first
+            // reports a population that still contains creatures this tick removed and a death
+            // count that excludes them, which silently understates mortality and can report a
+            // surviving population on the tick a world went extinct. Moving the commit earlier
+            // changes only what the sample observes: nothing between here and the end of Step
+            // reads the creature set, so the simulation trajectory and event semantics are
+            // unchanged.
+            if (IsDue(nextTick, Config.Schedule.StatisticsHz))
+            {
+                Statistics = BuildStatistics(nextTick);
+            }
+
             CurrentTick = nextTick;
         }
 
@@ -1641,6 +1649,22 @@ namespace LifeSimulation.Simulation.Core
             {
                 Array.Resize(ref _foragingEnergyGained, Math.Max(required, _foragingEnergyGained.Length * 2));
             }
+        }
+
+        /// <summary>
+        /// Builds a statistics sample describing the world <i>right now</i>, at
+        /// <see cref="CurrentTick"/>, rather than returning the cached sample from the last
+        /// cadence tick.
+        ///
+        /// <para><see cref="Statistics"/> is only refreshed on statistics-cadence ticks, so a run
+        /// that stops on any other tick reports state up to a full cadence interval old, and the
+        /// constructor-time value predates any scenario the caller applied. Experiments and panels
+        /// that need the end-of-run truth must call this; per-tick simulation code must not, as it
+        /// walks every creature.</para>
+        /// </summary>
+        public SimulationStatistics CaptureStatistics()
+        {
+            return BuildStatistics(CurrentTick);
         }
 
         private SimulationStatistics BuildStatistics(long tick)

@@ -96,7 +96,10 @@ namespace LifeSimulation.Simulation.Experiments
                 scenario.Id,
                 config.WorldSeed,
                 world.CurrentTick,
-                world.Statistics,
+                // The end-of-run truth, not the cached cadence sample: a run whose tick count is
+                // not a multiple of the statistics interval would otherwise report state up to a
+                // full interval old, and a zero-tick run would report the pre-scenario world.
+                world.CaptureStatistics(),
                 world.ComputeStateHash(),
                 eventOverflowed,
                 populationCapReached,
