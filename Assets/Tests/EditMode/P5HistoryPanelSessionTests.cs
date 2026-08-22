@@ -87,6 +87,54 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void RoutineConfirmedContinuityIsHiddenFromThePanelButKeptInTheHistory()
+        {
+            SimulationWorld world = CreateWorld();
+            P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world);
+
+            StepAndAdvance(world, session, P5HistoryPanelSession.ObservationIntervalTicks * 6);
+
+            int routineCount = 0;
+            for (int index = 0; index < session.DisplayEventCount; index++)
+            {
+                if (P5HistoryPanelSession.IsRoutineContinuity(session.GetEventAt(index)))
+                {
+                    routineCount++;
+                }
+            }
+
+            Assert.That(routineCount, Is.GreaterThan(0), "the run must produce routine continuity for the filter to be exercised");
+            Assert.That(session.HiddenRoutineContinuityCount, Is.EqualTo(routineCount));
+            Assert.That(session.NotableEventCount, Is.EqualTo(session.DisplayEventCount - routineCount));
+            for (int index = 0; index < session.NotableEventCount; index++)
+            {
+                Assert.That(P5HistoryPanelSession.IsRoutineContinuity(session.GetNotableEventAt(index)), Is.False);
+            }
+        }
+
+        [Test]
+        public void NotableRecordsKeepTheirHistoryOrderAndUnresolvedContinuityStaysVisible()
+        {
+            SimulationWorld world = CreateWorld();
+            P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world);
+            AdvanceAtNextObservationWithIncompleteAncestry(world, session);
+            StepAndAdvance(world, session, P5HistoryPanelSession.ObservationIntervalTicks * 5);
+
+            Assert.That(session.NotableEventCount, Is.GreaterThan(0));
+            long previousTick = long.MinValue;
+            for (int index = 0; index < session.NotableEventCount; index++)
+            {
+                ClusterHistoryEvent notable = session.GetNotableEventAt(index);
+                Assert.That(notable.FirstObservedTick, Is.GreaterThanOrEqualTo(previousTick));
+                previousTick = notable.FirstObservedTick;
+                Assert.That(
+                    notable.Kind != ClusterHistoryEventKind.Continuity
+                        || notable.Status != ClusterHistoryEventStatus.Confirmed,
+                    Is.True);
+            }
+        }
+
+        [Test]
         public void SessionAnalysisDoesNotChangeTheSimulationHash()
         {
             SimulationWorld baseline = CreateWorld();

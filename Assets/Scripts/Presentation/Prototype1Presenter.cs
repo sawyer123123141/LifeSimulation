@@ -136,7 +136,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · H overlay");
+            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · H overlay");
             GUI.Label(new Rect(24f, 194f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt");
         }
 
@@ -154,7 +154,7 @@ namespace LifeSimulation.Presentation
             {
                 GUI.Label(new Rect(476f, 194f, 250f, 22f), $"P1 cohorts: hunters {stats.ViableHunterCount}  others {stats.NonHunterCount}");
             }
-            GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating");
+            GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating · R home range");
             GUI.Label(new Rect(476f, 238f, 250f, 22f), _scenarioHint);
         }
 
@@ -173,12 +173,18 @@ namespace LifeSimulation.Presentation
                 $"Ancestry {(_p5HistorySession.AncestryIsComplete ? "complete" : "incomplete")} through tick {_p5HistorySession.AncestryCompleteThroughTick} · output {_p5HistorySession.DisplayEventCount}/{_p5HistorySession.OutputCapacity}");
             GUI.Label(new Rect(panelX + 12f, panelY + 94f, 500f, lineHeight),
                 $"Analysis settings: current {policy.MinimumSupportedCurrentMembers}/{policy.MinimumCurrentSupportFraction:P0} · prior {policy.MinimumSupportingPreviousMembers}/{policy.MinimumPreviousSupportFraction:P0} · depth {policy.MaximumAncestorGenerations} · persistence {policy.RequiredSuccessorObservations}/{policy.RequiredAbsentObservations}");
-            GUI.Label(new Rect(panelX + 12f, panelY + 116f, 500f, lineHeight), "Latest evidence (newest first):");
+            int hiddenRoutineCount = _p5HistorySession.HiddenRoutineContinuityCount;
+            string routineNote = hiddenRoutineCount == 0
+                ? string.Empty
+                : $"    ({hiddenRoutineCount} routine continuities hidden)";
+            GUI.Label(new Rect(panelX + 12f, panelY + 116f, 500f, lineHeight), $"Latest evidence (newest first):{routineNote}");
 
-            int rowCount = Mathf.Min(maximumRows, _p5HistorySession.DisplayEventCount);
+            // Routine confirmed continuity is a heartbeat, not an event, and floods the bounded
+            // panel. It stays in the analytical history; only these eight rows are filtered.
+            int rowCount = Mathf.Min(maximumRows, _p5HistorySession.NotableEventCount);
             for (int row = 0; row < rowCount; row++)
             {
-                ClusterHistoryEvent historyEvent = _p5HistorySession.GetEventAt(_p5HistorySession.DisplayEventCount - 1 - row);
+                ClusterHistoryEvent historyEvent = _p5HistorySession.GetNotableEventAt(_p5HistorySession.NotableEventCount - 1 - row);
                 GUI.Label(new Rect(panelX + 12f, panelY + 138f + (row * lineHeight), 500f, lineHeight), FormatP5HistoryEvent(historyEvent));
             }
         }
@@ -289,6 +295,9 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.Alpha6)) ResetObservationScenario(Prototype4Scenarios.ObservationScarcity, foundersAreMature: false, mateSelectionEnabled: false);
             if (Input.GetKeyDown(KeyCode.Alpha7)) ResetObservationScenario(Prototype4Scenarios.ObservationMigration, foundersAreMature: false, mateSelectionEnabled: false);
             if (Input.GetKeyDown(KeyCode.Alpha9)) ResetObservationScenario(Prototype4Scenarios.ObservationMating, foundersAreMature: true, mateSelectionEnabled: true);
+            // R is the matched partner of 5: identical scenario, seed and config except for the
+            // home-range flag, so the two can be watched back to back.
+            if (Input.GetKeyDown(KeyCode.R)) ResetObservationScenario(Prototype4Scenarios.ObservationStable, foundersAreMature: false, mateSelectionEnabled: false, homeRangeAffinityEnabled: true);
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
@@ -577,7 +586,11 @@ namespace LifeSimulation.Presentation
             return string.Empty;
         }
 
-        private void ResetObservationScenario(SimulationScenario scenario, bool foundersAreMature, bool mateSelectionEnabled)
+        private void ResetObservationScenario(
+            SimulationScenario scenario,
+            bool foundersAreMature,
+            bool mateSelectionEnabled,
+            bool homeRangeAffinityEnabled = false)
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
             var config = new SimulationConfig(
@@ -598,8 +611,15 @@ namespace LifeSimulation.Presentation
                 parentalFollowingEnabled: true,
                 kinRecognitionEnabled: true,
                 learnedResourceQualityEnabled: true,
-                mateSelectionEnabled: mateSelectionEnabled);
+                mateSelectionEnabled: mateSelectionEnabled,
+                homeRangeAffinityEnabled: homeRangeAffinityEnabled);
             ResetSimulation(scenario, config);
+            if (homeRangeAffinityEnabled)
+            {
+                _scenarioId = scenario.Id + "-home-range";
+                _scenarioHint = "Watch: do they keep returning to one patch?";
+            }
+
             if (!foundersAreMature)
             {
                 return;

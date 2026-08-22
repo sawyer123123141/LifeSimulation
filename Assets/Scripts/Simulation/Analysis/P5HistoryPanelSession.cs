@@ -27,6 +27,7 @@ namespace LifeSimulation.Simulation.Analysis
         private readonly GeneticClusterHistory _history;
         private readonly ClusterHistoryEventBuffer _output;
         private readonly ClusterHistoryEvent[] _displayEvents;
+        private readonly int[] _notableEventIndices;
         private int _copiedOutputEventCount;
         private bool _observationCadenceWasMissed;
 
@@ -38,10 +39,22 @@ namespace LifeSimulation.Simulation.Analysis
             _output = new ClusterHistoryEventBuffer(outputCapacity);
             _history = new GeneticClusterHistory(DefaultPolicy, _output);
             _displayEvents = new ClusterHistoryEvent[outputCapacity];
+            _notableEventIndices = new int[outputCapacity];
             NextObservationTick = NextCadenceTickAfter(world.CurrentTick);
         }
 
         public int DisplayEventCount { get; private set; }
+
+        /// <summary>
+        /// Number of retained records that are not routine continuity heartbeats. The analytical
+        /// history keeps every record; this is a presentation filter so that rare split, merge and
+        /// extinction evidence is not flooded off a bounded panel by confirmed continuity.
+        /// </summary>
+        public int NotableEventCount { get; private set; }
+
+        /// <summary>Retained confirmed-continuity records that <see cref="GetNotableEventAt"/> skips.</summary>
+        public int HiddenRoutineContinuityCount => DisplayEventCount - NotableEventCount;
+
         public long NextObservationTick { get; private set; }
         public long AncestryCompleteThroughTick => _ancestry.CompleteThroughTick;
         public bool OutputOverflowed => _output.Overflowed;
@@ -104,11 +117,37 @@ namespace LifeSimulation.Simulation.Analysis
             return _displayEvents[index];
         }
 
+        /// <summary>
+        /// A confirmed continuity record means the same cluster track was supported again at the
+        /// next observation - a routine heartbeat rather than evidence of a change. Continuity that
+        /// is <see cref="ClusterHistoryEventStatus.Unresolved"/> is not routine: it reports missing
+        /// or incomplete evidence and stays visible.
+        /// </summary>
+        public static bool IsRoutineContinuity(ClusterHistoryEvent historyEvent)
+        {
+            return historyEvent.Kind == ClusterHistoryEventKind.Continuity
+                && historyEvent.Status == ClusterHistoryEventStatus.Confirmed;
+        }
+
+        /// <summary>Retained records with routine continuity filtered out, oldest first.</summary>
+        public ClusterHistoryEvent GetNotableEventAt(int index)
+        {
+            if ((uint)index >= (uint)NotableEventCount) throw new ArgumentOutOfRangeException(nameof(index));
+            return _displayEvents[_notableEventIndices[index]];
+        }
+
         private void CopyOutputEvents()
         {
             for (int index = _copiedOutputEventCount; index < _output.Count; index++)
             {
-                _displayEvents[DisplayEventCount] = _output.GetAt(index);
+                ClusterHistoryEvent copied = _output.GetAt(index);
+                _displayEvents[DisplayEventCount] = copied;
+                if (!IsRoutineContinuity(copied))
+                {
+                    _notableEventIndices[NotableEventCount] = DisplayEventCount;
+                    NotableEventCount++;
+                }
+
                 DisplayEventCount++;
             }
 
