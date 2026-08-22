@@ -616,6 +616,10 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
 
 ## 6. Standing project facts
 
+- **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
+  explicit clustering threshold and immutable snapshot provenance; confirmation requires the one
+  ancestry source bound to that segment to be complete through the observation. This does not
+  alter simulation state or hashes. UI and durable chunk storage for the analysis remain unbuilt.
 - Two decision policies exist: `Legacy` and `IntentUtilityV1`. **Every P4
   scenario, `CreatePrototype4Defaults`, and both playtest hotkeys use
   `IntentUtilityV1`.** Anything gated on `Legacy` is inert for P4. This asymmetry

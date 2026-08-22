@@ -111,6 +111,13 @@ Two things to be careful of, both learned the hard way:
     TraitNames, TraitCount, ComputeStateHash, and a transmission test. The animal genome
     once dropped a gene silently this exact way.
 
+=== P5 HISTORY BOUNDARY ===
+
+P5 ancestry-aware cluster history is now analysis-only: one segment is scoped to an explicit
+cluster threshold and immutable snapshot provenance, and confirmation requires the single bound
+ancestry source to be complete through the observation. It does not alter simulation state or
+hashes. Presentation/UI and durable chunk storage for this analysis are still unbuilt.
+
 === ALSO OPEN, LOWER VALUE ===
 
 A. Survivable predator-prey scenario. Prerequisite for adjudicating two config flags, and
@@ -131,6 +138,9 @@ D. foragingEconomicsEnabled and learnedResourceQualityEnabled are the genuine wi
    DecideIntentUtilityV1; DO NOT DELETE THEM, they are merely unexercised. See A.
 
 E. Place memory still unwired, deliberately, enforced-inert by test. Deferred to P5.
+
+F. P5 presentation/UI and durable chunk storage remain unbuilt. They are separate follow-on work
+   from the completed, host-triggered analysis history.
 
 === READING ORDER ===
 
