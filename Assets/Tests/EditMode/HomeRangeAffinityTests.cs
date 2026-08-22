@@ -39,6 +39,35 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void EnabledAffinityDoesNotMakeSatisfiedFoodOrWaterNeedsEligible()
+        {
+            Genome genome = Genome.Neutral;
+            Phenotype phenotype = Phenotype.FromGenome(genome);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            var resources = new ResourceStore(initialCapacity: 2);
+            ResourceId foodId = AddResource(resources, ResourceKind.Food, new SimVector2(1f, 0f));
+            ResourceId waterId = AddResource(resources, ResourceKind.Water, new SimVector2(-1f, 0f));
+            var foodCandidates = new ResourceCandidateBuffer();
+            foodCandidates.Consider(new ResourceObservation(foodId, resourceIndex: 0, distance: 1f, remainingAmount: 10f));
+            var waterCandidates = new ResourceCandidateBuffer();
+            waterCandidates.Consider(new ResourceObservation(waterId, resourceIndex: 1, distance: 1f, remainingAmount: 10f));
+            var homeRange = new HomeRangeState
+            {
+                Centre = new SimVector2(0f, 0f),
+                Familiarity = 1f,
+            };
+
+            CreatureDecision decision = Decide(
+                needs, genome, phenotype, resources, out DecisionDiagnostics diagnostics,
+                foodCandidates, homeRange: homeRange, homeRangeAffinityEnabled: true,
+                waterCandidates: waterCandidates);
+
+            Assert.That(decision.Action, Is.EqualTo(CreatureAction.Wander));
+            Assert.That(diagnostics.FoodScore, Is.EqualTo(0f));
+            Assert.That(diagnostics.WaterScore, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void ActiveThreatLeavesAffinityOutOfFoodAndFleeScores()
         {
             Genome genome = Genome.Neutral;
@@ -67,6 +96,89 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(disabled.Action, Is.EqualTo(CreatureAction.Flee));
             Assert.That(enabled.Action, Is.EqualTo(CreatureAction.Flee));
             Assert.That(enabled.Score, Is.EqualTo(disabled.Score));
+            Assert.That(enabledDiagnostics.FleeScore, Is.EqualTo(disabledDiagnostics.FleeScore));
+            Assert.That(enabledDiagnostics.FoodScore, Is.EqualTo(disabledDiagnostics.FoodScore));
+        }
+
+        [Test]
+        public void KinFilteredFromFleeScoringDoesNotSuppressAffinity()
+        {
+            Genome genome = Genome.Neutral;
+            Phenotype phenotype = Phenotype.FromGenome(genome);
+            CreatureNeeds needs = CreatureNeeds.Full(phenotype);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 2);
+            ResourceId fartherFromHome = AddResource(resources, ResourceKind.Food, new SimVector2(-2f, 0f));
+            ResourceId nearerHome = AddResource(resources, ResourceKind.Food, new SimVector2(2f, 0f));
+            var foodCandidates = new ResourceCandidateBuffer();
+            foodCandidates.Consider(new ResourceObservation(fartherFromHome, resourceIndex: 0, distance: 2f, remainingAmount: 10f));
+            foodCandidates.Consider(new ResourceObservation(nearerHome, resourceIndex: 1, distance: 2f, remainingAmount: 10f));
+            var parentId = new CreatureId(2);
+            var selfId = new CreatureId(3);
+            var threat = new CreatureObservation(parentId, creatureIndex: 1, distance: 1f);
+            var selfLineage = new CreatureLineage(selfId, parentId, default, generation: 1);
+            var parentLineage = new CreatureLineage(parentId, default, default, generation: 0);
+            var homeRange = new HomeRangeState
+            {
+                Centre = new SimVector2(2f, 0f),
+                Familiarity = 1f,
+            };
+
+            CreatureDecision enabled = Decide(
+                needs, genome, phenotype, resources, out DecisionDiagnostics diagnostics,
+                foodCandidates, threat, threatIntensity: 0.1f, predationEnabled: true,
+                homeRange: homeRange, homeRangeAffinityEnabled: true,
+                selfId: selfId, selfLineage: selfLineage, otherLineage: parentLineage,
+                kinRecognitionEnabled: true);
+
+            Assert.That(diagnostics.FleeScore, Is.EqualTo(0f));
+            Assert.That(enabled.TargetResourceIndex, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void MultiThreatFleeScoreSuppressesAffinityEvenWhenNearestCreatureIsHarmless()
+        {
+            var selfGenome = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                fear: 1f,
+                riskAversion: 1f);
+            var dangerousGenome = new Genome(
+                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                attack: 1f,
+                maneuverability: 1f,
+                aggression: 1f,
+                dietSpecialization: 1f);
+            Phenotype self = Phenotype.FromGenome(selfGenome);
+            CreatureNeeds needs = CreatureNeeds.Full(self);
+            needs.Energy = 0f;
+            var resources = new ResourceStore(initialCapacity: 1);
+            ResourceId foodId = AddResource(resources, ResourceKind.Food, new SimVector2(1f, 0f));
+            var foodCandidates = new ResourceCandidateBuffer();
+            foodCandidates.Consider(new ResourceObservation(foodId, resourceIndex: 0, distance: 1f, remainingAmount: 10f));
+            var nearestHarmless = new CreatureObservation(new CreatureId(2), creatureIndex: 1, distance: 0.5f);
+            var threats = new PredationCandidateBuffer();
+            threats.Add(nearestHarmless, Phenotype.FromGenome(Genome.Neutral), default);
+            threats.Add(
+                new CreatureObservation(new CreatureId(3), creatureIndex: 2, distance: 2f),
+                Phenotype.FromGenome(dangerousGenome),
+                default);
+            var homeRange = new HomeRangeState
+            {
+                Centre = new SimVector2(1f, 0f),
+                Familiarity = 1f,
+            };
+
+            Decide(
+                needs, selfGenome, self, resources, out DecisionDiagnostics disabledDiagnostics,
+                foodCandidates, nearestHarmless, predationEnabled: true, homeRange: homeRange,
+                otherCandidates: threats, multiThreatPerceptionEnabled: true);
+            Decide(
+                needs, selfGenome, self, resources, out DecisionDiagnostics enabledDiagnostics,
+                foodCandidates, nearestHarmless, predationEnabled: true,
+                homeRange: homeRange, homeRangeAffinityEnabled: true,
+                otherCandidates: threats, multiThreatPerceptionEnabled: true);
+
+            Assert.That(disabledDiagnostics.FleeScore, Is.GreaterThanOrEqualTo(0.1f));
             Assert.That(enabledDiagnostics.FleeScore, Is.EqualTo(disabledDiagnostics.FleeScore));
             Assert.That(enabledDiagnostics.FoodScore, Is.EqualTo(disabledDiagnostics.FoodScore));
         }
@@ -214,7 +326,8 @@ namespace LifeSimulation.Tests.EditMode
         [Test]
         public void DisabledPairedWorldsIgnoreHomeRangeStateAndRemainByteIdentical()
         {
-            var baseline = new SimulationWorld(CreateConfig(homeRangeAffinityEnabled: false));
+            var baseline = new SimulationWorld(CreateConfigWithoutHomeRangeAffinityArgument());
+            var explicitDisabled = new SimulationWorld(CreateConfig(homeRangeAffinityEnabled: false));
             var dirtyHomeRange = new SimulationWorld(CreateConfig(homeRangeAffinityEnabled: false));
             dirtyHomeRange.Creatures.GetHomeRangeRefAt(0) = new HomeRangeState
             {
@@ -222,11 +335,14 @@ namespace LifeSimulation.Tests.EditMode
                 Familiarity = 1f,
             };
 
+            Assert.That(explicitDisabled.ComputeStateHash(), Is.EqualTo(baseline.ComputeStateHash()));
             Assert.That(dirtyHomeRange.ComputeStateHash(), Is.EqualTo(baseline.ComputeStateHash()));
-            for (int tick = 0; tick < 5; tick++)
+            for (int tick = 0; tick < 20; tick++)
             {
                 baseline.Step(baseline.Config.FixedDeltaTime);
+                explicitDisabled.Step(explicitDisabled.Config.FixedDeltaTime);
                 dirtyHomeRange.Step(dirtyHomeRange.Config.FixedDeltaTime);
+                Assert.That(explicitDisabled.ComputeStateHash(), Is.EqualTo(baseline.ComputeStateHash()));
                 Assert.That(dirtyHomeRange.ComputeStateHash(), Is.EqualTo(baseline.ComputeStateHash()));
             }
         }
@@ -289,13 +405,23 @@ namespace LifeSimulation.Tests.EditMode
             float threatIntensity = 0f,
             bool predationEnabled = false,
             HomeRangeState homeRange = default,
-            bool homeRangeAffinityEnabled = false)
+            bool homeRangeAffinityEnabled = false,
+            ResourceCandidateBuffer waterCandidates = default,
+            CreatureId selfId = default,
+            CreatureLineage selfLineage = default,
+            CreatureLineage otherLineage = default,
+            bool kinRecognitionEnabled = false,
+            PredationCandidateBuffer otherCandidates = default,
+            bool multiThreatPerceptionEnabled = false)
         {
             return DecisionSystem.DecideIntentUtilityV1(
-                needs, genome, phenotype, resources, new SimVector2(0f, 0f), foodCandidates, default,
+                needs, genome, phenotype, resources, new SimVector2(0f, 0f), foodCandidates, waterCandidates,
                 carcass: default, memory: default, cognitionEnabled: false, threat: threat,
                 threatIntensity: threatIntensity, otherPhenotype: phenotype, predationEnabled: predationEnabled,
                 physiologyEnabled: false, tick: 1, diagnostics: out diagnostics,
+                otherCandidates: otherCandidates, multiThreatPerceptionEnabled: multiThreatPerceptionEnabled,
+                selfId: selfId, selfLineage: selfLineage, otherLineage: otherLineage,
+                kinRecognitionEnabled: kinRecognitionEnabled,
                 homeRange: homeRange, homeRangeAffinityEnabled: homeRangeAffinityEnabled);
         }
 
@@ -339,18 +465,33 @@ namespace LifeSimulation.Tests.EditMode
             return new SimulationConfig(
                 worldSeed: 701,
                 initialPopulation: initialPopulation,
-                schedule: new SimulationSchedule(
-                    baseFrequencyHz: 20,
-                    movementHz: 20,
-                    perceptionHz: 1,
-                    needsHz: needsHz,
-                    decisionsHz: 1,
-                    resourcesHz: 1,
-                    reproductionHz: reproductionHz,
-                    statisticsHz: 1),
+                schedule: CreateSchedule(needsHz, reproductionHz),
                 maximumPopulation: maximumPopulation,
                 decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
                 homeRangeAffinityEnabled: homeRangeAffinityEnabled);
+        }
+
+        private static SimulationConfig CreateConfigWithoutHomeRangeAffinityArgument()
+        {
+            return new SimulationConfig(
+                worldSeed: 701,
+                initialPopulation: 1,
+                schedule: CreateSchedule(needsHz: 1, reproductionHz: 1),
+                maximumPopulation: 1,
+                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1);
+        }
+
+        private static SimulationSchedule CreateSchedule(int needsHz, int reproductionHz)
+        {
+            return new SimulationSchedule(
+                baseFrequencyHz: 20,
+                movementHz: 20,
+                perceptionHz: 1,
+                needsHz: needsHz,
+                decisionsHz: 1,
+                resourcesHz: 1,
+                reproductionHz: reproductionHz,
+                statisticsHz: 1);
         }
 
         private static void PrepareResourceSuccess(

@@ -424,21 +424,13 @@ namespace LifeSimulation.Simulation.Behavior
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
             float bestWaterScore = -1f;
-            bool applyHomeRangeAffinity = homeRangeAffinityEnabled && (!threat.IsValid || threatIntensity <= 0f);
-
-            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestFoodScore);
-            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestWaterScore);
-            if (cognitionEnabled)
-            {
-                ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestFoodScore);
-                ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestWaterScore);
-            }
             float carcassScore = 0f;
             float fleeScore = 0f;
             float huntScore = 0f;
-            if (predationEnabled)
+            if (homeRangeAffinityEnabled && predationEnabled)
             {
-                ScoreCarcass(needs, phenotype, resources, carcass, ref candidates, out carcassScore);
+                // Affinity suppression must follow the same predation and kin filters as the
+                // flee candidate, including the multi-threat candidate set when it is enabled.
                 if (multiThreatPerceptionEnabled)
                 {
                     ScorePredationMulti(needs, genome, phenotype, otherCandidates, ref candidates, economicsEnabled, selfId, selfLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
@@ -446,6 +438,30 @@ namespace LifeSimulation.Simulation.Behavior
                 else
                 {
                     ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, selfId, selfLineage, otherLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
+                }
+            }
+
+            bool applyHomeRangeAffinity = homeRangeAffinityEnabled && fleeScore < 0.10f;
+            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestFoodScore);
+            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestWaterScore);
+            if (cognitionEnabled)
+            {
+                ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestFoodScore);
+                ScoreRememberedResource(CreatureIntent.SeekWater, needs, genome, phenotype, origin, memory.WaterPosition, memory.WaterConfidence, memory.WaterAge, memory.WaterOutcomeValue, memory.WaterExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestWaterScore);
+            }
+            if (predationEnabled)
+            {
+                ScoreCarcass(needs, phenotype, resources, carcass, ref candidates, out carcassScore);
+                if (!homeRangeAffinityEnabled)
+                {
+                    if (multiThreatPerceptionEnabled)
+                    {
+                        ScorePredationMulti(needs, genome, phenotype, otherCandidates, ref candidates, economicsEnabled, selfId, selfLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
+                    }
+                    else
+                    {
+                        ScorePredation(needs, genome, phenotype, otherPhenotype, threat, threatIntensity, ref candidates, economicsEnabled, selfId, selfLineage, otherLineage, kinRecognitionEnabled, out fleeScore, out huntScore);
+                    }
                 }
             }
             float thermalScore = 0f;
@@ -705,6 +721,7 @@ namespace LifeSimulation.Simulation.Behavior
                 ResourceState resource = resources.GetAt(observation.ResourceIndex);
                 float score = ResourceUtility(intent, needs, genome, phenotype, resource, observation.Distance, threat, threatIntensity, plantQualityPreferenceEnabled);
                 if (homeRangeAffinityEnabled
+                    && score >= MinimumUrgencyToSeekResource
                     && resource.IsActive
                     && resource.Amount > 0f
                     && ((intent == CreatureIntent.SeekFood && resource.Kind == ResourceKind.Food)
