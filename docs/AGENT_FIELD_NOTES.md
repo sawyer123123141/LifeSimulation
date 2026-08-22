@@ -843,12 +843,13 @@ cheap; the four refuted calibration arms were not.
   the binding hydration marginal; mature founders do nothing because age was never the constraint;
   eight founders are worse because more grazers depress both marginals; 1.5x productivity does
   almost nothing because refilling faster does not make two needs peak together.
-- **OPEN HUMAN DECISION: the joint 70%/70% reproduction gate makes every spatially separated world
-  sub-fertile.** Options are (1) keep it as realism and require separated scenarios to carry higher
-  productivity, (2) decouple the thresholds, (3) gate on a rolling average so a creature stays
-  eligible while walking between its two needs. **Do not change `CanReproduce` unilaterally** - it is
-  core biology on every scenario's hot path, and changing it invalidates every population baseline,
-  survival calibration and plant-selection result on record.
+- **DECIDED 2026-08-22: the joint 70%/70% reproduction gate STAYS. Do not change
+  `ReproductionSystem.CanReproduce`.** The user chose to treat reduced fertility while commuting
+  between separated resources as real ecology. No re-baseline is needed and every result on record
+  stands. The standing consequence: **a spatially separated scenario must be calibrated to be
+  viable under the gate** - more productivity, more founders, or accepted extinction - rather than
+  the gate being relaxed to suit the scenario. `ObservationStable`'s 0/30 extinct is the outlier,
+  not the norm. Do not re-open this as a bug; it is a decided design property.
 - **Plant dispersal does not need plant mortality, so "mortality off" is NOT a frozen map.** With
   mortality off, plants colonise every dormant site within ~20 ticks and stay there: 12
   activations, 0 deactivations, 17.37 of 18 sites active. Any experiment wanting a genuinely static

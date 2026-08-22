@@ -13,6 +13,7 @@ namespace LifeSimulation.Presentation
     public sealed class Prototype1Presenter : MonoBehaviour
     {
         private const int HeatmapResolution = 128;
+        private const float BreedingThresholdFraction = 0.7f;
         private const float HeatmapUpdateInterval = 2f;
         private const float ColdTemperature = 12f;
         private const float HotTemperature = 28f;
@@ -147,7 +148,8 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(476f, 62f, 250f, 22f), $"Hydration: {stats.MeanHydrationFraction:P0}");
             GUI.Label(new Rect(476f, 84f, 250f, 22f), $"Food eaten: {stats.CumulativeFoodConsumed:0.0}");
             GUI.Label(new Rect(476f, 106f, 250f, 22f), $"Water used: {stats.CumulativeWaterConsumed:0.0}");
-            GUI.Label(new Rect(476f, 128f, 250f, 22f), "M: mature mating demo");
+            CountFertileAdults(out int fertileAdults, out int adultCount);
+            GUI.Label(new Rect(476f, 128f, 250f, 22f), $"Ready to breed: {fertileAdults} of {adultCount} adults");
             GUI.Label(new Rect(476f, 150f, 250f, 22f), $"Deaths: food {stats.StarvationDeathCount}  water {stats.DehydrationDeathCount}");
             GUI.Label(new Rect(476f, 172f, 250f, 22f), _hasRecentEvent ? FormatRecentEvent() : "Latest event: waiting");
             if (_world.Config.FounderProfile == FounderProfile.PredationVariation)
@@ -857,10 +859,72 @@ namespace LifeSimulation.Presentation
                 _world.Arena.Clamp(new SimVector2(worldPosition.x, worldPosition.z)));
         }
 
+        /// <summary>
+        /// Reproduction needs energy, hydration and health simultaneously at or above 70% of this
+        /// creature's own capacity, plus adult age and no cooldown. Measurement on 2026-08-22 found
+        /// that joint window is the binding constraint in any world where food and water are apart
+        /// - satisfied 95% of adult ticks with co-located resources and 33.5% when food sits seven
+        /// units from water - and none of it was visible while watching. Report the first unmet
+        /// condition rather than a bare ready/not-ready flag, so the reason is legible.
+        /// </summary>
+        private static string DescribeBreedingReadiness(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction)
+        {
+            if (needs.Age < ReproductionSystem.AdultAgeSeconds)
+            {
+                return $"juvenile ({needs.Age:0.0}s of {ReproductionSystem.AdultAgeSeconds:0}s)";
+            }
+
+            if (reproduction.CooldownRemaining > 0f)
+            {
+                return $"resting after breeding ({reproduction.CooldownRemaining:0.0}s left)";
+            }
+
+            float energyFraction = phenotype.EnergyCapacity <= 0f ? 0f : needs.Energy / phenotype.EnergyCapacity;
+            float hydrationFraction = phenotype.HydrationCapacity <= 0f ? 0f : needs.Hydration / phenotype.HydrationCapacity;
+            float healthFraction = phenotype.HealthCapacity <= 0f ? 0f : needs.Health / phenotype.HealthCapacity;
+            if (energyFraction < BreedingThresholdFraction)
+            {
+                return $"too hungry ({energyFraction:P0} of the {BreedingThresholdFraction:P0} needed)";
+            }
+
+            if (hydrationFraction < BreedingThresholdFraction)
+            {
+                return $"too thirsty ({hydrationFraction:P0} of the {BreedingThresholdFraction:P0} needed)";
+            }
+
+            if (healthFraction < BreedingThresholdFraction)
+            {
+                return $"too hurt ({healthFraction:P0} of the {BreedingThresholdFraction:P0} needed)";
+            }
+
+            return "ready";
+        }
+
+        /// <summary>Adults that meet the full reproduction gate right now, and adults in total.</summary>
+        private void CountFertileAdults(out int fertile, out int adults)
+        {
+            fertile = 0;
+            adults = 0;
+            for (int index = 0; index < _world.CreatureCount; index++)
+            {
+                CreatureNeeds needs = _world.GetCreatureNeedsAt(index);
+                if (needs.Age < ReproductionSystem.AdultAgeSeconds)
+                {
+                    continue;
+                }
+
+                adults++;
+                if (ReproductionSystem.CanReproduce(needs, _world.Creatures.GetPhenotypeAt(index), _world.Creatures.GetReproductionRefAt(index)))
+                {
+                    fertile++;
+                }
+            }
+        }
+
         private void DrawSelectedCreatureInspector()
         {
             const float inspectorTop = 300f;
-            GUI.Box(new Rect(12f, inspectorTop, 440f, 292f), "Creature Inspector");
+            GUI.Box(new Rect(12f, inspectorTop, 440f, 324f), "Creature Inspector");
             if (!_hasSelectedCreature || !_world.TryGetCreatureIndex(_selectedCreature, out int index))
             {
                 GUI.Label(new Rect(24f, inspectorTop + 26f, 350f, 22f), "Click a creature to inspect it.");
@@ -881,7 +945,8 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, inspectorTop + 114f, 420f, 22f), $"Why: food {diagnostics.FoodScore:0.00} ({(diagnostics.FoodVisible ? "seen" : "unseen")}) | water {diagnostics.WaterScore:0.00} ({(diagnostics.WaterVisible ? "seen" : "unseen")})");
             GUI.Label(new Rect(24f, inspectorTop + 136f, 420f, 22f), $"Also: flee {diagnostics.FleeScore:0.00} | hunt {diagnostics.HuntScore:0.00} | carcass {diagnostics.CarcassScore:0.00} | warmth {diagnostics.ThermalScore:0.00}");
             GUI.Label(new Rect(24f, inspectorTop + 158f, 360f, 22f), $"Parents: {lineage.FirstParent.Value}, {lineage.SecondParent.Value}");
-            float optionalDetailY = inspectorTop + 180f;
+            GUI.Label(new Rect(24f, inspectorTop + 180f, 420f, 22f), $"Breeding: {DescribeBreedingReadiness(needs, phenotype, _world.Creatures.GetReproductionRefAt(index))}");
+            float optionalDetailY = inspectorTop + 202f;
             if (_world.Config.FounderProfile == FounderProfile.PredationVariation)
             {
                 GUI.Label(new Rect(24f, optionalDetailY, 420f, 22f), $"P1 traits: attack {genome.Attack:0.00} | defense {genome.Defense:0.00} | aggression {genome.Aggression:0.00} | diet {genome.DietSpecialization:0.00}");

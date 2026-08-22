@@ -47,36 +47,30 @@ design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-pa
 
 ## Next task
 
-**There is an open human design decision blocking the cleanest next step.** See
-`docs/experiments/p4a-founder-mortality-2026-08-22.md`.
+**The reproduction-gate question is DECIDED and closed.** The user chose to keep the joint
+70%/70% gate: reduced fertility while commuting between separated resources is accepted as real
+ecology. `ReproductionSystem.CanReproduce` must not be changed, no re-baseline is needed, and every
+result on record stands. The standing consequence is that a spatially separated scenario must be
+calibrated to be viable *under* the gate — more productivity, more founders, or accepted extinction
+— rather than the gate being relaxed. Do not reopen this as a bug.
 
-`ReproductionSystem.CanReproduce` requires energy AND hydration AND health each at or above 70% of
-capacity. Adults meet that joint gate 95.0% of the time when food and water are co-located and only
-33.5% when food sits 7 units from water. That makes **every spatially separated world systematically
-sub-fertile** — which is why `ObservationShiftingPatches` and `ObservationRouteRing` go extinct in
-6/30 and 11/30 seeds while `ObservationStable` never does. Nothing starves and nothing dehydrates;
-all four founders die of age at tick ~2500 in every arm. Extinction is failure to replace.
+Remaining P4a and P5 work, in the order I would take it:
 
-The three options are keep-as-realism (status quo, costs nothing), decouple the thresholds, or gate
-on a rolling average. **Do not change `CanReproduce` without an explicit decision:** it is core
-biology on every scenario's hot path and changing it invalidates every population baseline, survival
-calibration and plant-selection result on record. Ask the user.
-
-Work that does not depend on that decision, in order:
-
-1. **Selected-creature action/history feedback** — only where it helps a person distinguish
-   foraging, drinking, mating, fleeing, resting, births, deaths, depletion and recovery. Fully
-   independent of the reproduction question.
+1. **Continue selected-creature and population feedback.** The breeding-readiness line and the
+   "ready to breed" count landed on 2026-08-22 because measurement showed the joint gate was both
+   binding and invisible. The same test applies to anything added next: does it let a person see
+   something real that they currently cannot? Candidates are resource depletion/recovery feedback
+   and a short per-creature event history.
 2. **Reassess safety-gated rendezvous.** Its first ecological experiment was null; do not build pack
    architecture to force it.
-3. P5: durable chunk storage and a graphical evolutionary tree, and a behaviour-preserving
+3. **P5**: durable chunk storage and a graphical evolutionary tree, and a behaviour-preserving
    decomposition of the ~1,310-line `GeneticClusterHistory.cs` before adding classification logic.
 
 Do **not** build the "optional juvenile local-area bias" as a fix for separated-resource extinction
 — juveniles are not the failing class and mortality is not the failure mode. Do not reopen soft
-home-range affinity; it is closed as a measured negative. Do not run another placement or
-productivity calibration on `ObservationShiftingPatches`; six variants are already recorded and the
-joint gate explains why all of them failed.
+home-range affinity; it is closed as a measured negative with SUPERSEDED banners on its spec and
+plan. Do not run another placement or productivity calibration on `ObservationShiftingPatches`; six
+variants are recorded and the joint gate explains why all of them failed.
 
 ## Working-tree rules
 

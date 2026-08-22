@@ -158,4 +158,9 @@ survival calibration, and every plant-selection result on record, all of which w
 the current gate. Option 1 costs nothing and is the status quo. Options 2 and 3 need an explicit
 decision and then a full re-baseline.
 
-Recorded rather than acted on.
+**DECIDED 2026-08-22 by the user: option 1, keep the gate.** Reduced fertility while commuting
+between resources is accepted as real ecology. `ReproductionSystem.CanReproduce` is not to be
+changed, no re-baseline is needed, and every result on record stands. The consequence to carry
+forward is that **a spatially separated scenario must be calibrated to be viable under the joint
+gate** — with higher productivity, more founders, or accepted extinction — rather than the gate
+being relaxed to suit the scenario. `ObservationStable`'s 0/30 is the outlier, not the norm.
