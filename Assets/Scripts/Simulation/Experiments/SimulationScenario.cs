@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Environment;
@@ -219,6 +220,51 @@ namespace LifeSimulation.Simulation.Experiments
             "p4a-observation-route-ring",
             CreateRouteRingResources(),
             founderPlacement: new SimVector2(0f, 0f));
+
+        /// <summary>
+        /// Three local regions, each with a permanent Water site at its centre, two active Food
+        /// sites 7 units out on opposite sides, and four dormant Food sites as dispersal targets.
+        /// Cluster centres are 23-28 apart, beyond any creature's vision, so a cluster is a genuine
+        /// local region. Food sits 6-9 units from water inside a cluster, the separation that
+        /// produced repeatable shuttling in ObservationRouteRing.
+        ///
+        /// <para>The food map is allowed to change: with plant mortality enabled, a dying patch
+        /// calls <c>SetActive(false)</c> on its site and a successful dispersal calls
+        /// <c>SetActiveAt(true)</c> on a dormant one. Nothing new is required for that - this
+        /// scenario simply declares the dormant sites the existing mechanism needs.</para>
+        ///
+        /// <para>Simultaneously active founder productivity is matched to ObservationStable
+        /// (1200 food capacity at 60/s, 120 water at 6/s) so a survival difference is attributable
+        /// to turnover and layout rather than to a change in total output.</para>
+        /// </summary>
+        public static SimulationScenario ObservationShiftingPatches { get; } = new SimulationScenario(
+            "p4a-observation-shifting-patches",
+            CreateShiftingPatchResources(),
+            founderPlacement: new SimVector2(-14f, -9f));
+
+        private static ResourceDefinition[] CreateShiftingPatchResources()
+        {
+            var definitions = new List<ResourceDefinition>();
+            SimVector2[] clusterCentres =
+            {
+                new SimVector2(-14f, -9f),
+                new SimVector2(13f, -6f),
+                new SimVector2(-2f, 12f),
+            };
+
+            foreach (SimVector2 centre in clusterCentres)
+            {
+                definitions.Add(new ResourceDefinition(ResourceKind.Water, centre, 1.5f, 40f, 40f, 2f));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X - 7f, centre.Y), 1.5f, 200f, 200f, 10f));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X + 7f, centre.Y), 1.5f, 200f, 200f, 10f));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X, centre.Y + 7f), 1.5f, 0f, 200f, 0f, isActive: false));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X, centre.Y - 7f), 1.5f, 0f, 200f, 0f, isActive: false));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X + 5f, centre.Y + 5f), 1.5f, 0f, 200f, 0f, isActive: false));
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, new SimVector2(centre.X - 5f, centre.Y - 5f), 1.5f, 0f, 200f, 0f, isActive: false));
+            }
+
+            return definitions.ToArray();
+        }
 
         private static ResourceDefinition[] CreateRouteRingResources()
         {

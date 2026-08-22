@@ -666,6 +666,21 @@ that flatters the code. And note the general lesson about the mechanism: a bonus
 proximity-to-recent-success can only ever reward staying put; nothing in that shape rewards
 completing a circuit between complementary resources.
 
+**2026-08-22 - A changing map, not a smarter creature, is what varies routes.** With every
+optional behavior flag off, turning on plant mortality in a clustered layout with dormant dispersal
+sites left the *amount* of route behaviour statistically unchanged (445 versus 441 cross-kind legs)
+while cutting route permanence (pair repeat -0.0935, t -6.47, 3/30 seeds up) and raising distinct
+routes per creature by 27% (+0.628, t +4.48, 22/30 up) at no survival cost. The closed home-range
+mechanism was trying to do from inside the creature what the environment does for free. **Check
+whether an existing system can be placed in a scenario before designing a new one** - both halves
+of this backlog item turned out to be already implemented and merely never switched on together.
+
+**2026-08-22 - Extinction in a fixed-seed sweep is not a distribution when the demo runs one seed.**
+`ObservationShiftingPatches` looked acceptable at 6/30 extinct until seed 42 was checked
+individually: it dies in all four arms. Play mode runs seed 42, so the aggregate was irrelevant to
+the actual watchability decision. **Before binding a Play key to a scenario, check the Play seed by
+itself.**
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -793,6 +808,23 @@ completing a circuit between complementary resources.
   9/30 seeds go extinct** even at matched productivity, because splitting the same output across
   eight sites is harder to live on than two co-located pairs. Use it as the harness for
   clustered/changing-patch work; never as a survival baseline.
+- **`Prototype4Scenarios.ObservationShiftingPatches` is the changing-map test bed, and it is NOT
+  watchable yet.** Three clusters 23-28 apart, each with a permanent water site at its centre, two
+  active food sites 7 units out, and four dormant food sites as dispersal targets. With
+  `plantMortalityEnabled: true` it sustains ~29 patch deaths and ~33 establishments per 6,000-tick
+  run at an equilibrium of 11.96 active food sites. **Do not bind a Play key to it as it stands:
+  seed 42 - the Play-mode seed - goes extinct in every arm measured.** Extinction across 30 seeds is
+  6-8/30 and the cause is founder establishment failure (0-3 births in extinct seeds against 48.2
+  in survivors), not ecosystem collapse. Mature founders do not fix it (5/30) and eight founders
+  make it much worse (14/30, final population 10.07 despite the most births of any arm - overshoot
+  then crash). Untested levers: founder *placement* (they currently start on the water centre,
+  7 units from the nearest food) and per-site regeneration.
+- **Plant dispersal does not need plant mortality, so "mortality off" is NOT a frozen map.** With
+  mortality off, plants colonise every dormant site within ~20 ticks and stay there: 12
+  activations, 0 deactivations, 17.37 of 18 sites active. Any experiment wanting a genuinely static
+  resource map must declare no dormant sites at all, not merely leave mortality off. This
+  mis-specified a control on 2026-08-22 and inflated a scenario's real productivity from a declared
+  1200 food capacity to roughly 3600.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

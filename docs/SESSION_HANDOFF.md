@@ -30,26 +30,38 @@ Head is on `main`. Completed and pushed this session:
    delivers 90.6% decision opportunity. It is **not** a survival calibration: 11/30 and 9/30 seeds
    go extinct.
 
+5. **`Prototype4Scenarios.ObservationShiftingPatches`** — new scenario data (three clusters, each
+   with a permanent central water site, two active food sites 7 units out, and four dormant food
+   sites as dispersal targets) plus a 120-run measurement. With `plantMortalityEnabled: true` the
+   existing plant dispersal/mortality machinery produces ~29 patch deaths and ~33 establishments
+   per run: route permanence falls (pair repeat -0.0935, t -6.47) and distinct routes per creature
+   rise 27% (+0.628, t +4.48) at no survival cost. No new mechanism was needed or added.
+   **No Play key is bound: seed 42 goes extinct in every arm.**
+
 Experiment writeups and per-seed CSVs are in `docs/experiments/`:
 `p4a-home-range-affinity-2026-08-22.md`, `p4a-home-range-bonus-sensitivity-2026-08-22.csv`,
-`p4a-route-ring-home-range-2026-08-22.md`.
+`p4a-route-ring-home-range-2026-08-22.md`, `p4a-shifting-patches-2026-08-22.md`. The clustered-patch
+design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-patches-design.md`.
 
 ## Next task
 
-`docs/ROADMAP.md` P4a, next unfinished item: **clustered, changing plant/resource patches so travel
-creates recognizable routes rather than unstructured wandering.** `ObservationRouteRing` is the
-harness to build on. Write a new spec/plan in `docs/superpowers/` before implementing, following
-the existing format.
+**Calibrate `ObservationShiftingPatches` until seed 42 establishes, then bind a Play key to it.**
+This is the only thing standing between the P4a clustered/changing-patch bullet and done. The
+mechanism is already demonstrated; do not design anything new for it.
 
-Two live constraints carried forward from this session's measurements:
+- The failure is founder establishment, not ecosystem collapse: extinct seeds record 0-3 births
+  against a survivor mean of 48.2.
+- Two levers are already ruled out. Mature founders barely help (5/30 versus 6/30 extinct). Eight
+  founders make it much worse (14/30 extinct, final population 10.07) — more founders graze the
+  patches down and the population overshoots then crashes.
+- Untested levers, in order of promise: **founder placement** (founders currently start on the
+  cluster's water centre, 7 units from the nearest food) and **per-site regeneration**.
+- Verify the fix on seed 42 individually *and* across seeds 42-71, then add the key, then run a
+  Unity batch compile because the key is a Presentation change.
 
-- Splitting a fixed productivity across more sites materially raises extinction risk. Any clustered
-  patch design must report survival columns per arm, and must not be judged on the ring's
-  calibration.
-- Do not attempt to recover route behavior with another proximity-to-recent-success term. If route
-  behavior is wanted, it needs a mechanism that scores a *pair* of complementary resources, or a
-  need-anticipation term that begins travel before the need is urgent. That is a design decision
-  worth raising with the user before building.
+After that, the next unfinished P4a items are the optional juvenile local-area bias and the
+selected-creature action/history feedback. Do not reopen soft home-range affinity: it is closed as
+a measured negative and its spec and plan carry SUPERSEDED banners.
 
 ## Working-tree rules
 
