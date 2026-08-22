@@ -172,7 +172,7 @@ private void DrawP5HistoryPanel()
 }
 ```
 
-Call `_p5HistorySession.Advance(_world)` after `SynchronizePresentation`/recent-event capture and before the existing `_world.Events.Clear()`. Draw a panel outside the existing inspector/population boxes. Each row must start with candidate/confirmed/unresolved status and call confirmed extinction “lineage extinction evidence.” Show threshold, cadence, full mode, ancestry completeness, explicit policy settings, and overflow/dropped-record notice. Do not create keys for this slice.
+Inside the existing `while` loop, immediately after each `_world.Step`, call `_p5HistorySession.Advance(_world)`, capture the recent event, then clear `_world.Events`. Remove the once-per-frame event capture/clear that would otherwise replay prior ticks. This preserves every cadence boundary and drains each tick's event batch exactly once. Draw a panel outside the existing inspector/population boxes. Each row must start with candidate/confirmed/unresolved status and call confirmed extinction “lineage extinction evidence.” Show threshold, cadence, full mode, ancestry completeness, explicit policy settings, and overflow/dropped-record notice. Do not create keys for this slice.
 
 - [ ] **Step 4: Run focused and fast verification.**
 
