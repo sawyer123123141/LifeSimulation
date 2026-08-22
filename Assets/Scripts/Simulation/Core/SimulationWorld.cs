@@ -1661,9 +1661,27 @@ namespace LifeSimulation.Simulation.Core
         /// constructor-time value predates any scenario the caller applied. Experiments and panels
         /// that need the end-of-run truth must call this; per-tick simulation code must not, as it
         /// walks every creature.</para>
+        ///
+        /// <para><b>Valid only at a settled step boundary</b> - between completed <see cref="Step"/>
+        /// calls, with no queued deaths outstanding. Calling it after <see cref="RequestDeath"/> and
+        /// before the next <see cref="Step"/> throws, rather than quietly reporting the pending
+        /// state this method exists to exclude.</para>
         /// </summary>
         public SimulationStatistics CaptureStatistics()
         {
+            // Valid only at a settled step boundary. RequestDeath is public, so a caller can queue
+            // a death and then sample before the next Step commits it; the sample would count a
+            // creature already condemned and omit it from the death count - the exact defect this
+            // method exists to remove, reintroduced through the front door. Pending deaths are
+            // always empty between completed steps, so this can only fire on a genuine misuse.
+            if (_pendingDeathCount > 0)
+            {
+                throw new InvalidOperationException(
+                    "CaptureStatistics is only valid at a settled step boundary; "
+                    + _pendingDeathCount.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + " death(s) are queued and uncommitted. Call Step first.");
+            }
+
             return BuildStatistics(CurrentTick);
         }
 

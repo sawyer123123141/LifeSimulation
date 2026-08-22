@@ -67,8 +67,10 @@ Done and pushed:
 4. `docs/experiments/evidence-impact-audit-2026-08-22.md` — paired old-versus-fixed sweep, 85 runs,
    pre-fix worktree versus fixed main.
 
-**Audit outcome.** Everything with `PlantSiteCompetitionEnabled` off is **bit-identical** across the
-fix: home-range, route-ring and shifting-patch conclusions are cleared outright, no banner needed.
+**Audit outcome.** With `PlantSiteCompetitionEnabled` off, **trajectories and route metrics are
+identical** (state hashes match in every arm) while the statistics fix corrected at least one final
+death count without changing any trajectory. Home-range, route-ring and shifting-patch conclusions
+are cleared outright, no banner needed.
 Only the competition path moved (30/30 hashes), where `SeedlingResilience` drifts **down** (t -1.99)
 and plant generations fall by one (t -2.63). Three establishment/competition experiments carry
 **requires re-measurement** banners — not retractions, because those drift magnitudes do not

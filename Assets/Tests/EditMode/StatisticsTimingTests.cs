@@ -93,6 +93,35 @@ namespace LifeSimulation.Tests.EditMode
                 "an experiment's reported statistics must describe the tick the run actually ended on");
         }
 
+        [Test]
+        public void CaptureStatisticsRefusesToSampleWhileADeathIsQueued()
+        {
+            SimulationWorld world = CreateWorld();
+            StepTo(world, 5);
+            world.RequestDeath(world.GetCreatureIdAt(0), DeathCause.Starvation);
+
+            Assert.That(
+                () => world.CaptureStatistics(),
+                Throws.InstanceOf<System.InvalidOperationException>(),
+                "sampling between RequestDeath and the next Step would report the pending state this method exists to exclude");
+        }
+
+        [Test]
+        public void CaptureStatisticsSucceedsOnceTheQueuedDeathIsCommitted()
+        {
+            SimulationWorld world = CreateWorld();
+            StepTo(world, 5);
+            int populationBefore = world.CreatureCount;
+            world.RequestDeath(world.GetCreatureIdAt(0), DeathCause.Starvation);
+
+            world.Step(world.Config.FixedDeltaTime);
+            SimulationStatistics current = world.CaptureStatistics();
+
+            Assert.That(world.CreatureCount, Is.EqualTo(populationBefore - 1));
+            Assert.That(current.Population, Is.EqualTo(world.CreatureCount));
+            Assert.That(current.DeathCount, Is.EqualTo(1));
+        }
+
         private static SimulationWorld CreateWorld()
         {
             return new SimulationWorld(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4));

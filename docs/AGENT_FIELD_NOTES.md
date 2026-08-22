@@ -701,9 +701,10 @@ actually exercises the path.
 
 **2026-08-22 - Measure the blast radius before retracting anything.** The correctness fixes above
 could in principle have invalidated a season of plant conclusions. A paired old-versus-fixed run in a
-detached worktree at the pre-fix commit settled it in two probe runs: every competition-off result
-was **bit-identical** (home-range, route ring, shifting patches - cleared outright), and only the
-competition path moved. Retraction by assumption would have thrown away good evidence; clearing by
+detached worktree at the pre-fix commit settled it in two probe runs: every competition-off
+**trajectory** was identical - state hashes matched, and home-range, route ring and shifting patches
+were cleared outright - while the statistics fix corrected at least one final death count without
+changing any trajectory. Only the competition path moved. Retraction by assumption would have thrown away good evidence; clearing by
 assumption would have kept bad evidence. **Run the paired sweep.**
 
 **2026-08-22 - An experiment whose scenario was never committed cannot be re-audited.** The 168-site

@@ -22,7 +22,7 @@ The same probe file was run in two trees: a detached worktree at `15c7a5a` (pre-
 `ReplaceAt` is only reached on the competition path, so Battery A is the falsification check: any
 difference there would mean the fix has a reach nobody predicted.
 
-## Result 1 — everything with competition off is bit-identical
+## Result 1 — competition-off trajectories are identical; one reported death count was corrected
 
 | arm | seeds | state hashes differing |
 |---|---|---|
@@ -32,18 +32,22 @@ difference there would mean the fix has a reach nobody predicted.
 | route ring + home-range | 5 | **0/5** |
 | shifting patches + mortality | 5 | **0/5** |
 
-Every trajectory metric matches exactly: population, births, plant count, plant births, plant
-generations, and all seven mean plant traits.
+The precise claim, which must be stated this way everywhere: **competition-off trajectories and
+route metrics were identical, while the statistics fix corrected at least one final death count
+without changing any trajectory.** State hashes match in every arm, and population, plant count,
+plant births, plant generations and all seven mean plant traits match exactly. Reported **deaths**
+are the one exception: in `ring-homerange`, one seed of five reports **one extra death** (mean +0.2)
+with an **identical state hash**.
+
+That exception is the intended signature of the statistics fix, not a trajectory difference. The
+simulation ran identically; the old final sample dropped a death that occurred after the last
+cadence sample, and the new one includes it. Reported mortality at run boundaries was previously
+understated. It would be wrong to describe these arms as equal "on every metric" — they are equal on
+every metric except the one the second fix exists to correct.
 
 **The 2026-08-22 home-range, route-ring and shifting-patch conclusions are untouched.** They were
-measured with `PlantSiteCompetitionEnabled` off, so no takeover ever occurred in them. No banner,
-no retraction, no re-run needed.
-
-One informative exception proves the statistics fix behaves as designed: in `ring-homerange`, one
-seed of five reports **one extra death** (mean +0.2) while its **state hash is identical**. That is
-precisely the signature of a reporting-only change — the trajectory is bit-for-bit the same, and the
-final sample now includes a death the old sample dropped. Reported mortality was previously
-understated at run boundaries; the underlying simulation was not wrong.
+measured with `PlantSiteCompetitionEnabled` off, so no takeover ever occurred in them, and none of
+their conclusions rest on a boundary death count. No banner, no retraction, no re-run needed.
 
 ## Result 2 — the competition path genuinely moves
 
