@@ -1,5 +1,17 @@
 # Site abundance makes seed production selectable
 
+> **AFFECTED EVIDENCE — 2026-08-22.** This result was measured with both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled` on, before the
+> `PlantPatchStore.ReplaceAt` takeover-age defect was fixed in `4cc9a47`. Until that fix, a seedling
+> installed by a takeover carried the incumbent's accumulated age and was often aged out within a
+> tick or two, which changes plant lifetime accounting directly.
+>
+> **It has no impact assessment**, because the 168-site scenario it ran on was never committed and
+> cannot be recovered — see `p4-168-site-replication-2026-08-22.md` for the recovery attempt and the
+> replication condition committed in its place. Treat the conclusions here as unverified on current
+> code until that replication is measured. Nothing below has been edited or recomputed.
+
+
 ## Result
 
 This is a conditional positive. Adding inactive food targets reduced mean plant-site occupancy from 0.908/0.904 to 0.332/0.322 (flag off/on), and `SeedProductionRate` then rose +0.02022 at t +4.32, 79/120 seeds up. Its matched flag-disabled drift arm was only +0.00523, t +1.06, 66/120 up. It is therefore selected when sites are abundant; the 91%-occupancy null was an operating-point artifact.

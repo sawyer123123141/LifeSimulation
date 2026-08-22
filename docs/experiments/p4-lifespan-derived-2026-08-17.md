@@ -1,5 +1,15 @@
 # P4 — BaseLifespanSeconds Derived, and a Warning for Coevolution — 2026-08-17
 
+> **AFFECTED EVIDENCE — 2026-08-22.** This derives plant lifespan itself, which the fix bears on most directly of all - a takeover no longer shortens the replacement's life. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 Follows `p4-calibration-unblocked-carrying-capacity-2026-08-17.md`, which raised
 the calibration scenario to six spread plant sites. With the scenario fixed,
 `BaseLifespanSeconds` could finally be derived instead of guessed.

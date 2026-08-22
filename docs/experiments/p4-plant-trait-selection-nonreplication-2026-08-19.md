@@ -1,5 +1,15 @@
 # Plant Tolerance Selection Does Not Replicate; Dispersal Does — 2026-08-19
 
+> **AFFECTED EVIDENCE — 2026-08-22.** This carries the project's plant positive control (Dispersal at t +14 to +19.6), which every other plant null is read against, so its revalidation is load-bearing for the whole corpus. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 Follow-up to the unwritten 2026-08-18 measurement recorded in `docs/SESSION_HANDOFF.md`
 open item 1: procedural environment fields were reported to move both
 `MoistureTolerance` and `TemperatureTolerance` by **-0.086** (t -2.45 and -2.57, CIs

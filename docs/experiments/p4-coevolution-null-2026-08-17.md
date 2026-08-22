@@ -1,5 +1,15 @@
 # P4 Coevolution — Powered Null Result and Root Cause — 2026-08-17
 
+> **AFFECTED EVIDENCE — 2026-08-22.** This is a powered null measured on the calibration. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 Supersedes `p4-consumer-defense-calibration-2026-08-13.md`, which could not
 interpret its own result because every run went extinct. Extinction was fixed
 on 2026-08-16 (plant growth-rate conversion). This is the first calibration run

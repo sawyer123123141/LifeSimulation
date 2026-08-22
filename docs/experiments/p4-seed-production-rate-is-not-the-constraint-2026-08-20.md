@@ -1,5 +1,15 @@
 # Seed Production Rate Is Not the Constraint — 2026-08-20
 
+> **AFFECTED EVIDENCE — 2026-08-22.** Its central argument is a plant LIFETIME BUDGET (a ~95.8s patch spending 58.7s mature, off cooldown and unable to find a site). The age fix changes lifetime accounting directly, so this decomposition cannot be cleared by a trait sweep alone. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 The third and last route that skips the `(1 - Biomass/Capacity)` growth gate was seeding **rate**,
 capped by a hard-coded `ReproductionCooldownSeconds = 20f`. This wires an eleventh plant gene into
 it and measures the result.

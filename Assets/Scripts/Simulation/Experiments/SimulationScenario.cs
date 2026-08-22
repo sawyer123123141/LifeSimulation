@@ -380,6 +380,78 @@ namespace LifeSimulation.Simulation.Experiments
         // the spread arrangement survivable when a patch dies.
         //
         // Dispersal targets are placed per active site at (x-8, y), (x, y+8) and (x+4, y+4).
+        /// <summary>
+        /// REPLICATION CONDITION for the 168-site low-occupancy operating point. **This is not the
+        /// original scenario.** The original lived in a throwaway probe that was never committed
+        /// and cannot be recovered: git history contains no ZZZ probe, and the writeups record the
+        /// site *count* (6 active plus 162 inactive targets), the config, the seeds (42-161), the
+        /// tick count (12,000) and the resulting occupancy (0.322-0.332), but never the target
+        /// coordinates. See docs/experiments/p4-168-site-replication-2026-08-22.md.
+        ///
+        /// <para>Active sites, their water, capacities, regeneration and founder genome are
+        /// identical to <see cref="ConsumerDefenseCalibrationModerate"/>. Only the dispersal-target
+        /// layout differs, and it is fully specified here: a lattice over [-24, 24] on both axes in
+        /// steps of 4 (13 x 13 = 169 points), excluding any point within 2.0 of an active food
+        /// site, then taking the first 162 remaining points in row-major order.</para>
+        ///
+        /// <para>Selecting a layout that achieves low occupancy is faithful to the original method -
+        /// that writeup records discarding a 42-site version after a preflight because it stayed
+        /// ~0.88 occupied. Fidelity is therefore judged on reproducing the *condition* (occupancy
+        /// near 0.32-0.33), never on byte-equivalence, which is not achievable.</para>
+        /// </summary>
+        public static SimulationScenario AbundantSiteReplicationModerate { get; } =
+            CreateAbundantSiteReplicationScenario("p4-abundant-site-replication-moderate", defense: .3f);
+
+        private static SimulationScenario CreateAbundantSiteReplicationScenario(string id, float defense)
+        {
+            PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);
+            SimVector2[] activeSites =
+            {
+                new SimVector2(-12f, -8f),
+                new SimVector2(10f, 12f),
+                new SimVector2(10f, -8f),
+                new SimVector2(-12f, 12f),
+                new SimVector2(-1f, 2f),
+                new SimVector2(-1f, -18f),
+            };
+
+            var definitions = new List<ResourceDefinition>();
+            foreach (SimVector2 site in activeSites)
+            {
+                definitions.Add(new ResourceDefinition(ResourceKind.Food, site, 1.5f, 24f, 24f, 12f, nutritionMultiplier: 1f, plantGenome: genome));
+                definitions.Add(new ResourceDefinition(ResourceKind.Water, site, 1.5f, 24f, 24f, 1.5f));
+            }
+
+            const int targetCount = 162;
+            int placed = 0;
+            for (int row = 0; row < 13 && placed < targetCount; row++)
+            {
+                for (int column = 0; column < 13 && placed < targetCount; column++)
+                {
+                    var candidate = new SimVector2(-24f + (column * 4f), -24f + (row * 4f));
+                    bool tooCloseToActiveSite = false;
+                    foreach (SimVector2 site in activeSites)
+                    {
+                        if (SimVector2.Distance(candidate, site) < 2f)
+                        {
+                            tooCloseToActiveSite = true;
+                            break;
+                        }
+                    }
+
+                    if (tooCloseToActiveSite)
+                    {
+                        continue;
+                    }
+
+                    definitions.Add(new ResourceDefinition(ResourceKind.Food, candidate, 1.5f, 0f, 24f, 0f, isActive: false));
+                    placed++;
+                }
+            }
+
+            return new SimulationScenario(id, definitions.ToArray(), founderPlacement: new SimVector2(-12f, -8f));
+        }
+
         private static SimulationScenario CreateConsumerDefenseCalibrationScenario(string id, float defense)
         {
             PlantGenome genome = new PlantGenome(.55f, .5f, .5f, .65f, defense, .5f, .5f, .5f);

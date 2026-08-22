@@ -1,5 +1,15 @@
 # P4 — Defense Decline Is Grazing-Driven: Dose-Response — 2026-08-18
 
+> **AFFECTED EVIDENCE — 2026-08-22.** Its standing conclusion (defense decline is grazing-driven) rests on calibration runs. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 Confound removal for `p4-defense-selection-demonstrated-2026-08-18.md` (whose significance claim
 was retracted) and `defense-drift-report.html`.
 

@@ -1,5 +1,15 @@
 # P4 Calibration Unblocked — the Scenario Was Too Small — 2026-08-17
 
+> **AFFECTED EVIDENCE — 2026-08-22.** The site-count and arrangement calibration recorded here was measured through ExperimentRunner with mortality and site competition enabled, and downstream scenarios still depend on it. This document's runs used both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
+> `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
+> seedling installed by a takeover carried the incumbent's accumulated age and was frequently aged
+> out within a tick or two.
+>
+> Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
+> treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
+
+
 > **CORRECTED 2026-08-17.** The original sweep below varied site count and site
 > *geometry* together — its "sites" were successive points on a tight grid near
 > the founders — so attributing the effect to count alone was unjustified. A

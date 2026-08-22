@@ -1,5 +1,17 @@
 # Low-occupancy audit: mortality and establishment reverse; NutrientUptake remains null
 
+> **AFFECTED EVIDENCE — 2026-08-22.** This result was measured with both
+> `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled` on, before the
+> `PlantPatchStore.ReplaceAt` takeover-age defect was fixed in `4cc9a47`. Until that fix, a seedling
+> installed by a takeover carried the incumbent's accumulated age and was often aged out within a
+> tick or two, which changes plant lifetime accounting directly.
+>
+> **It has no impact assessment**, because the 168-site scenario it ran on was never committed and
+> cannot be recovered — see `p4-168-site-replication-2026-08-22.md` for the recovery attempt and the
+> replication condition committed in its place. Treat the conclusions here as unverified on current
+> code until that replication is measured. Nothing below has been edited or recomputed.
+
+
 > **Geometry confound.** The 168-site scenario changes both target count and geometry. These results establish a changed operating point, not site occupancy as the sole cause.
 
 ## Manipulation and survival first
