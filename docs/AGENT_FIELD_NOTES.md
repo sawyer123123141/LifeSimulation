@@ -35,6 +35,7 @@ to you within a week. Names below are stable.
 | `Behavior/DecisionSystem.cs` (~980 lines) | Both decision policies | `DecideIntentUtilityV1` (P4 uses this), `DecideFromLearnedOutcomes`, `Decide` (Legacy), `ScoreResourceCandidates`, `ScoreRememberedResource` |
 | `Behavior/MemorySystem.cs` | Scalar memory and the (dead) place memory | `RememberResource`, `RecordFailedSearch`, `LearnResourceOutcome`, `TickDecay` |
 | `Behavior/ForagingEconomics.cs` | Patch scoring, commitment, give-up | `PatchScore`, `ThreatAvoidance`, `CommitmentBonus`, `ShouldAbandon` |
+| `Behavior/HomeRangeSystem.cs` | P4a's dedicated, flag-gated soft home-range arithmetic. This is intentionally separate from inert place memory. | `RecordSuccess`, `TickDecay`, `GetCandidateBonus` |
 | `Behavior/PerceptionSystem.cs` | Vision queries against the uniform grid | `FindNearestAvailableResource`, `FindAvailableResources`, `FindNearestOtherCreature` |
 | `Biology/GenomePhenotype.cs` | The 24-gene genome and its derived phenotype | `Genome`, `Phenotype`, `PlantPhenotype` lives elsewhere |
 | `Biology/GenomeInheritance.cs` | Crossover and mutation | `CreateChild`, `InheritTrait` (trait indices are positional — see §5) |
@@ -54,11 +55,17 @@ to you within a week. Names below are stable.
 | `Diagnostics/FlagLivenessAnalysis.cs` | **The authority on whether a config flag does anything.** Reflection over the constructor, so new flags are covered without anyone remembering. | `Analyze`, `Report`, `FlagLivenessResult` |
 | `Diagnostics/PlantGeneLivenessAnalysis.cs` | Same perturbation method for `PlantGenome`. The animal harness does not cover plant genes. | `Analyze`, `Report`, `PlantGeneLivenessResult` |
 | `Diagnostics/LivenessRecorder.cs` | Runtime probe counters for code *paths*; covers the §4 "runs on empty data" class that perturbation cannot reach. Attach via `SimulationWorld.Liveness` (null by default); never touches any hash. | `LivenessProbe`, `RecordOutcome`, `IsInertlyExecuting` |
+| `Analysis/PopulationGenomeSnapshot.cs` | Immutable full/sample genome capture with explicit provenance. | `Capture`, `CaptureSample` |
+| `Analysis/GeneticClusters.cs` | Deterministic genetic-distance clustering for one snapshot and threshold. | `From` |
+| `Analysis/AncestryHistory.cs` | Host-fed ancestry ledger with completeness watermark and permanent overflow/discontinuity semantics. It reads event batches; it never clears the world's event buffer. | `RecordFounders`, `RecordCompleteBatch` |
+| `Analysis/GeneticClusterHistory.cs` (~1310 lines) | Conservative ancestry-supported cluster continuity/split/merge/extinction analysis. Analysis-only; never simulation truth. Known decomposition debt. | `Record` |
+| `Analysis/P5HistoryPanelSession.cs` | Pure host-triggered bridge that samples the world at a fixed cadence and feeds the P5 panel. Lives in Simulation so headless tests can cover it; the presenter owns and advances it. | `CreateForWorld`, `Advance` |
 
 ### Elsewhere
 
 - `Assets/Scripts/Presentation/Prototype1Presenter.cs` — Unity view, playtest
-  hotkeys (`N`, `E`), the creature inspector. `_world` is non-serialized;
+  hotkeys (`B/D/F/P/C/T/G/M/E`, `5/6/7/9`, `N`, `H`), the creature inspector,
+  and the P5 evidence panel. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
 - `Assets/Editor/PrototypeBatchEntry.cs` — batch experiment entry points.
 - `Assets/Tests/EditMode/*.cs` — 377 tests. `ResourceExperimentTests.cs` holds
@@ -614,12 +621,31 @@ disabled arm is the null distribution, so it is the comparison that matters, and
 came with worse directional agreement. Run the flag-disabled arm as a fourth arm on every trait
 sweep — it costs one arm and it calibrates what drift looks like for that trait in that harness.
 
+**2026-08-22 — A flag-gated behavior is not Play-testable merely because it compiles and has
+integration tests.** Soft home-range affinity passed its deterministic, flag-off, danger, and
+liveness checks, but every shipped Play-mode scenario still leaves the new flag false — including
+the `N` all-flags presenter constructor, which predates the new final optional parameter. The next
+step is not more tuning from prose: add an explicit ordinary-key scenario (recommended `R`) that
+differs from Stable only by enabling the flag, then measure and watch `5` versus `R`. Whenever a
+new behavior flag lands, audit both factory defaults and actual presenter/scenario constructors;
+an omitted optional argument silently produces a feature nobody can exercise.
+
+**2026-08-22 — Analysis correctness and watchability are separate acceptance gates.** The P5
+panel correctly reports confirmed continuity, but routine continuity can fill all eight visible
+rows and hide the split/merge/extinction evidence a person actually cares about. Keep continuity
+in the analysis record; presentation should hide routine continuity by default and report a compact
+count such as “N routine continuities hidden.” Never weaken the analytical stream to repair UI
+signal-to-noise.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
   explicit clustering threshold and immutable snapshot provenance; confirmation requires the one
   ancestry source bound to that segment to be complete through the observation. This does not
-  alter simulation state or hashes. UI and durable chunk storage for the analysis remain unbuilt.
+  alter simulation state or hashes. A host-triggered session and an eight-row Unity evidence panel
+  are built; durable chunk storage, a graphical evolutionary tree, and continuity filtering remain
+  unbuilt. `GeneticClusterHistory.cs` is ~1,310 lines and should receive a separately approved,
+  behavior-preserving decomposition before substantial new classification logic is added.
 - Two decision policies exist: `Legacy` and `IntentUtilityV1`. **Every P4
   scenario, `CreatePrototype4Defaults`, and both playtest hotkeys use
   `IntentUtilityV1`.** Anything gated on `Legacy` is inert for P4. This asymmetry
@@ -645,8 +671,10 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
   `docs/experiments/p4-defense-selection-demonstrated-2026-08-18.md`.
 - **Growth-rate traits are the wrong place to look for plant selection.** `growth` is gated by
   `(1 - Biomass/Capacity)`, measured mean **0.1711**. Everything through
-  `PlantPhenotype.GrowthRateMultiplier` measures null or weak; `SeedInvestmentFraction` and
-  `DispersalRange` skip the gate and are the only traits that move. Before wiring a new plant
+  `PlantPhenotype.GrowthRateMultiplier` measures null or weak even at the 168-site operating point;
+  all six dedicated rate traits were re-audited there. `Growth` is the exception only because it
+  also controls lifespan and moves downward when mortality has headroom. `SeedInvestmentFraction`
+  and `DispersalRange` skip the gate and are the strong positive controls. Before wiring a new plant
   trait, check which side of that gate it lands on.
 - **`ElevationFieldEnabled` defaults `false`** and is **inert under the standard P4 plant
   config**. It needs `maximumPopulation: 1000` *and* `PlantFertilityAdaptationEnabled` together
@@ -654,26 +682,24 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
   stop binding the `Min`. Requires `ProceduralEnvironmentFieldsEnabled`.
 - **`PlantFertilityAdaptationEnabled` defaults `false`** and gates `NutrientUptake`'s growth
   charge as well as its benefit, so flag-off is byte-identical to the world before the gene
-  existed. `PlantGenome.TraitCount` is now **9**; the ninth constructor parameter has a default,
-  which is the shape that once silently dropped `persistence`, so
+  existed. The constructor's optional positional parameters are the shape that once silently
+  dropped `persistence`, so
   `EveryPlantTraitTransmitsThroughCloneMutated` pins it.
-- **All three non-growth-rate plant routes are now measured, and reproduction is SITE-LIMITED.**
-  Establishment is **selectable** (`SeedlingResilience`, t +4.03, 76/120 up, with a real cost);
-  mortality has **no headroom** (a live 2x genetic span on `LifespanSeconds` converting at
-  R² = 0.024); seed production is **live but not selectable** (`SeedProductionRate`, full 2x
-  cooldown span moves births under 10%). The last two fail for the same reason — they buy TIME,
-  and a patch already spends 58.7 of its 95.8 seconds mature, off cooldown, and failing to find a
-  free site. Free sites are the scarce resource. Before proposing any new plant trait, ask whether
-  it changes a patch's access to SITES; if it only changes how fast or how long the patch lives,
-  it is already answered. `docs/experiments/p4-seed-production-rate-is-not-the-constraint-2026-08-20.md`
+- **All three non-growth-rate plant routes are operating-point dependent.** At the 24-site,
+  ~91%-occupied calibration, establishment is selected (`SeedlingResilience`, t +4.03, 76/120 up),
+  while lifespan and seed production lack free-site headroom. At the 168-site, ~27-33%-occupied
+  count-plus-geometry condition, lifespan comes alive (`Growth` moves down: t -2.65, 46/120 up),
+  `SeedProductionRate` becomes selected (t +4.32, 79/120 up versus 66/120 drift), and incumbent
+  `SeedlingResilience` reverses (t -2.56, 44/120 up). Do not call occupancy the sole mediator: the
+  168-site scenario also changes geometry. Keep 24 sites as calibration and 168 as an explicit
+  experimental operating point until the human resolves the design question.
 - **The liveness suite is the slow half and it grows with every flag and gene.** `dotnet test` is
-  ~49 s, of which the two liveness fixtures are ~35 s, and a single test —
+  dominated by simulation-per-gene/flag fixtures, and a single test —
   `LivenessTests.RiskAversionIsLiveOnlyWhenThreatsExist` — is **16 s** on its own, more than
-  tests 1-12 of that shard combined. `FlagLivenessAnalysis` runs a simulation pair per config
-  flag, so the cost rises every time a flag is added. In a throttled container this reads as a
-  hung runner. Shard it: `--filter "FullyQualifiedName!~LivenessTests"` covers 365 tests in ~12 s;
-  run the liveness fixtures separately with a long timeout. If the suite ever needs to shrink,
-  that one test is where to look first.
+  several preceding tests combined on the reference machine. `FlagLivenessAnalysis` runs a
+  simulation pair per config flag, so the cost rises every time a flag is added. In a throttled
+  container this reads as a hung runner. Build once, run the non-liveness shard, PlantLiveness,
+  liveness excluding RiskAversion, then RiskAversion alone with a generous timeout.
 - **`PlantEstablishmentContestEnabled` stays OUT of `CreatePrototype4Defaults`** (decided
   2026-08-20). That factory sets exactly one plant flag, `plantCohortsEnabled`; every other plant
   mechanism is opted into explicitly at each experiment's call site. Defaulting the contest on
@@ -693,8 +719,8 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
   `PlantEstablishmentContestEnabled` (default `false`) lets a seedling below
   `VulnerabilityFraction` resist takeover with `PlantGenome.SeedlingResilience`, the tenth plant
   trait. It rises at t +4.03, 76/120 seeds up, 0/120 extinct, paying a real `DispersalRange`
-  charge of 2. Requires `PlantSiteCompetitionEnabled`, which is what creates the contest.
-  `PlantGenome.TraitCount` is now **10**. See
+  charge of 2. Requires `PlantSiteCompetitionEnabled`, which is what creates the contest. This
+  is a 24-site conclusion and reverses at the 168-site operating point. See
   `docs/experiments/p4-establishment-contest-2026-08-20.md`.
 - **Site competition is infanticide, not competition between established patches.** Only patches
   below `VulnerabilityFraction = .25f` can be taken over, and newborns start at 1.5-9% of
@@ -719,6 +745,15 @@ sweep — it costs one arm and it calibrates what drift looks like for that trai
 - `SimulationStatistics.RealizedGrazingPressure` and the `PlantBiomassSeconds` /
   `PlantPatchSeconds` integrals behind it are read-only accumulators, deliberately
   absent from `ComputeStateHash`. Same rule applies to anything in `Diagnostics/`.
+- **Soft home-range affinity is implemented but not yet ecologically validated.**
+  `HomeRangeAffinityEnabled` defaults false; `HomeRangeState` is dedicated centre/familiarity
+  state and does not revive place memory. Successful food, water, or reproduction updates it;
+  familiarity decays; only already-valid, already-actionable ordinary food/water candidates get
+  a bounded bonus. Threat, mate, fallback, invalid-resource, and satisfied-needs paths cannot be
+  manufactured by the bonus. Flag-off omits the state from the hash and is byte-identical. No
+  presenter scenario enables it yet, so do not claim visible route formation. First add a matched
+  `5`-versus-`R` playtest scenario, then measure whether it creates useful route reuse rather than
+  merely making one food patch sticky.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
