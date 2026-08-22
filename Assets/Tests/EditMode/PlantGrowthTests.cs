@@ -363,6 +363,40 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void ReplaceAtResetsAgeSoATakeoverStartsANewPatchLife()
+        {
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(new ResourceId(7), new SimVector2(0f, 0f), 5f, 20f, .1f, 1f, 0f);
+            patches.AdvanceAge(index, 80f);
+            Assert.That(patches.GetAt(index).Age, Is.EqualTo(80f), "the incumbent must actually be old before the takeover");
+
+            patches.ReplaceAt(index, PlantGenome.Neutral, new PlantLineage(patches.GetAt(index).Id, new PlantPatchId(11), 3), biomass: 2f, growthRate: .1f, nutrition: 1f, defense: 0f);
+
+            Assert.That(patches.GetAt(index).Age, Is.EqualTo(0f),
+                "a takeover installs a new seedling; inheriting the incumbent's age makes it die on someone else's clock");
+        }
+
+        [Test]
+        public void ATakenOverSeedlingIsNotKilledByTheIncumbentsAccumulatedAge()
+        {
+            var resources = new ResourceStore(1);
+            ResourceId siteId = resources.Add(ResourceKind.Food, new SimVector2(0f, 0f), 1f, 5f, 20f, 0f);
+            var patches = new PlantPatchStore(1);
+            int index = patches.Add(siteId, new SimVector2(0f, 0f), 5f, 20f, .1f, 1f, 0f);
+
+            // Age the incumbent to just under its lifespan, then let a seedling take the site.
+            float lifespan = PlantPhenotype.FromGenome(PlantGenome.Neutral).LifespanSeconds;
+            patches.AdvanceAge(index, lifespan - 1f);
+            patches.ReplaceAt(index, PlantGenome.Neutral, new PlantLineage(patches.GetAt(index).Id, new PlantPatchId(11), 3), biomass: 2f, growthRate: .1f, nutrition: 1f, defense: 0f);
+
+            PlantMortalitySystem.Step(patches, resources, deltaTime: 2f);
+
+            Assert.That(patches.Count, Is.EqualTo(1),
+                "the replacement seedling is two seconds old and must not be aged out by the patch it replaced");
+            Assert.That(resources.GetAt(0).IsActive, Is.True);
+        }
+
+        [Test]
         public void ReplaceAtClampsBiomassToCapacity()
         {
             var patches = new PlantPatchStore(1);

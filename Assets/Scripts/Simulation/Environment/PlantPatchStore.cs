@@ -89,6 +89,12 @@ namespace LifeSimulation.Simulation.Environment
             _defense[index] = defense;
             _biomass[index] = Math.Max(0f, Math.Min(_capacities[index], biomass));
             _reproductionCooldowns[index] = 0f;
+
+            // A takeover installs a NEW seedling on an existing site. The site identity, position
+            // and capacity persist, but the occupant's life does not: without this reset the
+            // replacement inherits the incumbent's accumulated age and is aged out by
+            // PlantMortalitySystem on the dead patch's clock, often within a tick or two.
+            _ages[index] = 0f;
         }
 
         public int FindIndex(ResourceId foodResourceId)
