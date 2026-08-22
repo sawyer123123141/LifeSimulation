@@ -114,9 +114,8 @@ non-liveness shard passed 450 tests; PlantLiveness passed 19; Liveness excluding
 passed 33; and RiskAversion alone passed 1 in 18 seconds. Exact command output is in the ignored
 `TestResults/home-range-task3-verification-2026-08-21.txt` artifact.
 
-Unity 6000.2.14f1 batch compile is **unobserved**: `Library/ArtifactDB-lock` and
-`Library/SourceAssetDB-lock` were still present, so Task 3 did not launch Unity. Do not cite Unity
-compilation for this slice until the project lock is released and batch mode exits successfully.
+Unity 6000.2.14f1 batch compile passed after the project lock was released: batch mode exited `0`
+on 2026-08-21. The earlier lock prevented only the first verification attempt.
 
 Two things to be careful of, both learned the hard way:
   - A prediction stated as a mechanism story is not evidence. State it as a number.
