@@ -104,6 +104,20 @@ It stays on only in CreateFullEcosystemDefaults, which exists for liveness, not 
 P4's exit criterion is met: plant selection has a demonstrated route off the growth-rate
 gate. The remaining P4 items below are optional polish, not blockers.
 
+=== P4a HOME-RANGE AFFINITY ===
+
+At `77eb10a`, soft home-range affinity is a deterministic, disabled-by-default, non-genetic
+foraging/drinking tie-breaker. It retains dedicated centre/familiarity state only after successful
+food, water, or reproduction outcomes; newborns start blank, and place memory remains deliberately
+inert. The Task 3 headless verification completed: build succeeded (15 warnings, 0 errors); the
+non-liveness shard passed 450 tests; PlantLiveness passed 19; Liveness excluding RiskAversion
+passed 33; and RiskAversion alone passed 1 in 18 seconds. Exact command output is in the ignored
+`TestResults/home-range-task3-verification-2026-08-21.txt` artifact.
+
+Unity 6000.2.14f1 batch compile is **unobserved**: `Library/ArtifactDB-lock` and
+`Library/SourceAssetDB-lock` were still present, so Task 3 did not launch Unity. Do not cite Unity
+compilation for this slice until the project lock is released and batch mode exits successfully.
+
 Two things to be careful of, both learned the hard way:
   - A prediction stated as a mechanism story is not evidence. State it as a number.
   - Any new plant gene needs the eleventh-parameter treatment (see
