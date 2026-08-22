@@ -559,6 +559,14 @@ namespace LifeSimulation.Simulation.Core
                 hash = HashFloat(hash, memory.WaterOutcomeValue);
                 hash = Hash(hash, unchecked((ulong)memory.FoodExperienceCount));
                 hash = Hash(hash, unchecked((ulong)memory.WaterExperienceCount));
+
+                if (Config.HomeRangeAffinityEnabled)
+                {
+                    HomeRangeState homeRange = Creatures.GetHomeRangeRefAt(index);
+                    hash = HashFloat(hash, homeRange.Centre.X);
+                    hash = HashFloat(hash, homeRange.Centre.Y);
+                    hash = HashFloat(hash, homeRange.Familiarity);
+                }
             }
 
             hash = Hash(hash, unchecked((ulong)Resources.Count));
@@ -657,6 +665,11 @@ namespace LifeSimulation.Simulation.Core
                         ref Creatures.GetMemoryRefAt(index),
                         deltaTime,
                         Creatures.GetPhenotypeAt(index).MemoryConfidenceDecayPerSecond);
+                }
+
+                if (Config.HomeRangeAffinityEnabled)
+                {
+                    HomeRangeSystem.TickDecay(ref Creatures.GetHomeRangeRefAt(index), deltaTime);
                 }
             }
         }
@@ -999,7 +1012,9 @@ namespace LifeSimulation.Simulation.Core
                         other.IsValid ? Creatures.GetLineageAt(other.CreatureIndex) : default,
                         Config.KinRecognitionEnabled,
                         Config.PlantQualityPreferenceEnabled,
-                        Config.SafetyGatedMateRendezvousEnabled);
+                        Config.SafetyGatedMateRendezvousEnabled,
+                        Config.HomeRangeAffinityEnabled ? Creatures.GetHomeRangeRefAt(index) : default,
+                        Config.HomeRangeAffinityEnabled);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
@@ -1392,6 +1407,13 @@ namespace LifeSimulation.Simulation.Core
                             MemorySystem.ComputeIntakeOutcome(actualFoodIntakeRate, Config.ExpectedIntakeRate),
                             phenotype.LearningRate);
                     }
+
+                    if (Config.HomeRangeAffinityEnabled && resource.Kind == ResourceKind.Food)
+                    {
+                        HomeRangeSystem.RecordSuccess(
+                            ref Creatures.GetHomeRangeRefAt(request.CreatureIndex),
+                            Creatures.GetMovementAt(request.CreatureIndex).Position);
+                    }
                 }
                 else
                 {
@@ -1405,6 +1427,13 @@ namespace LifeSimulation.Simulation.Core
                             ResourceKind.Water,
                             MemorySystem.ComputeIntakeOutcome(actualWaterIntakeRate, Config.ExpectedIntakeRate),
                             Creatures.GetPhenotypeAt(request.CreatureIndex).LearningRate);
+                    }
+
+                    if (Config.HomeRangeAffinityEnabled)
+                    {
+                        HomeRangeSystem.RecordSuccess(
+                            ref Creatures.GetHomeRangeRefAt(request.CreatureIndex),
+                            Creatures.GetMovementAt(request.CreatureIndex).Position);
                     }
                 }
             }
@@ -1424,13 +1453,29 @@ namespace LifeSimulation.Simulation.Core
 
         private void TickReproduction()
         {
+            long reproductionTick = CurrentTick + 1;
             _birthCount += _reproduction.Step(
                 Config.WorldSeed,
                 1f / Config.Schedule.ReproductionHz,
                 ref _birthOrdinal,
-                CurrentTick + 1,
+                reproductionTick,
                 Config.MaximumPopulation,
                 Events);
+            if (!Config.HomeRangeAffinityEnabled)
+            {
+                return;
+            }
+
+            for (int index = 0; index < Creatures.Count; index++)
+            {
+                CreatureDecision decision = Creatures.GetDecisionAt(index);
+                if (decision.Action == CreatureAction.Reproduce && decision.DecisionTick == reproductionTick)
+                {
+                    HomeRangeSystem.RecordSuccess(
+                        ref Creatures.GetHomeRangeRefAt(index),
+                        Creatures.GetMovementAt(index).Position);
+                }
+            }
         }
 
         private void TickCombat(long tick)

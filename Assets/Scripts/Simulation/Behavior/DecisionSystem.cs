@@ -370,14 +370,17 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureLineage otherLineage = default,
             bool kinRecognitionEnabled = false,
             bool plantQualityPreferenceEnabled = false,
-            bool safetyGatedMateRendezvousEnabled = false)
+            bool safetyGatedMateRendezvousEnabled = false,
+            HomeRangeState homeRange = default,
+            bool homeRangeAffinityEnabled = false)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
                 cognitionEnabled, threat, threatIntensity, otherPhenotype, predationEnabled, physiologyEnabled,
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
                 threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled,
-                selfId, selfLineage, otherLineage, kinRecognitionEnabled, plantQualityPreferenceEnabled, safetyGatedMateRendezvousEnabled);
+                selfId, selfLineage, otherLineage, kinRecognitionEnabled, plantQualityPreferenceEnabled,
+                safetyGatedMateRendezvousEnabled, homeRange, homeRangeAffinityEnabled);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -414,14 +417,17 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureLineage otherLineage = default,
             bool kinRecognitionEnabled = false,
             bool plantQualityPreferenceEnabled = false,
-            bool safetyGatedMateRendezvousEnabled = false)
+            bool safetyGatedMateRendezvousEnabled = false,
+            HomeRangeState homeRange = default,
+            bool homeRangeAffinityEnabled = false)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
             float bestWaterScore = -1f;
+            bool applyHomeRangeAffinity = homeRangeAffinityEnabled && (!threat.IsValid || threatIntensity <= 0f);
 
-            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, ref candidates, ref bestFoodScore);
-            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, ref candidates, ref bestWaterScore);
+            ScoreResourceCandidates(CreatureIntent.SeekFood, needs, genome, phenotype, resources, foodCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestFoodScore);
+            ScoreResourceCandidates(CreatureIntent.SeekWater, needs, genome, phenotype, resources, waterCandidates, threat, threatIntensity, plantQualityPreferenceEnabled, homeRange, applyHomeRangeAffinity, ref candidates, ref bestWaterScore);
             if (cognitionEnabled)
             {
                 ScoreRememberedResource(CreatureIntent.SeekFood, needs, genome, phenotype, origin, memory.FoodPosition, memory.FoodConfidence, memory.FoodAge, memory.FoodOutcomeValue, memory.FoodExperienceCount, memory.ThreatPosition, memory.ThreatConfidence, threatFalloffDistance, ref candidates, ref bestFoodScore);
@@ -688,6 +694,8 @@ namespace LifeSimulation.Simulation.Behavior
             CreatureObservation threat,
             float threatIntensity,
             bool plantQualityPreferenceEnabled,
+            HomeRangeState homeRange,
+            bool homeRangeAffinityEnabled,
             ref DecisionCandidateBuffer candidates,
             ref float bestScore)
         {
@@ -696,6 +704,15 @@ namespace LifeSimulation.Simulation.Behavior
                 ResourceObservation observation = observations.GetAt(index);
                 ResourceState resource = resources.GetAt(observation.ResourceIndex);
                 float score = ResourceUtility(intent, needs, genome, phenotype, resource, observation.Distance, threat, threatIntensity, plantQualityPreferenceEnabled);
+                if (homeRangeAffinityEnabled
+                    && resource.IsActive
+                    && resource.Amount > 0f
+                    && ((intent == CreatureIntent.SeekFood && resource.Kind == ResourceKind.Food)
+                        || (intent == CreatureIntent.SeekWater && resource.Kind == ResourceKind.Water)))
+                {
+                    score += HomeRangeSystem.GetCandidateBonus(homeRange, resource.Position);
+                }
+
                 if (score > bestScore)
                 {
                     bestScore = score;
