@@ -740,6 +740,24 @@ The window reproducing the recorded 0.32 operating point with clean survival is 
 Dispersal evolves upward, so a mature patch throws seeds 14-24 units; any lattice tighter than that
 saturates.** Do not guess a spacing; sweep it and read occupancy before drawing any conclusion.
 
+**2026-08-22 - "Disabling the flag" is not always a clean control either.** The low-occupancy
+adjudication used `plantMortalityEnabled: false` as the matched control for the lifespan-headroom
+claim, on the reasoning that lifespan has no channel without mortality. True, and useless: the same
+comparison moved `Dispersal` +0.0834 (t +21.40, 118/120), `NutrientUptake` -0.0466 (t -7.62) and
+`WaterEfficiency` -0.0445 (t -8.61). Turning mortality off removes site turnover and rewrites the
+whole selective regime. **Check what else your control disables before reading its numbers** - a
+control is only clean if the manipulation is the *only* thing that changes.
+
+**2026-08-22 - Some conclusions are not recoverable, and saying so is the result.** The three
+low-occupancy plant conclusions cannot be audited. Their scenario was never committed; the
+occupancy condition was reproduced by calibration, but only by placing free sites outside the +/-25
+creature arena, where nothing grazes them (`RealizedGrazingPressure` 0.0026). Free sites no herbivore
+can reach are not the resource those claims are about. Putting 162 targets at non-saturating spacing
+*inside* the arena is geometrically impossible. **If the original achieved it in-arena, its layout
+was something a lattice cannot express, and it is gone.** The honest next move is to re-derive the
+underlying question as a new experiment with a committed scenario, not to keep auditing an
+unrecoverable one.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -927,6 +945,18 @@ saturates.** Do not guess a spacing; sweep it and read occupancy before drawing 
   spans +/-57 while the creature arena is hard-coded to +/-25, so outer patches are never grazed.**
   Any trait result from this scenario must report `RealizedGrazingPressure` and state that
   difference - it reproduces the recorded occupancy, not necessarily the recorded ecology.
+- **The three low-occupancy plant conclusions are UNVERIFIABLE, not merely unverified (2026-08-22).**
+  Measured at the calibrated replication condition (occupancy 0.28-0.35, 120 seeds, varying founders,
+  disabled-channel controls): `SeedProductionRate` is null (+0.00424, t +0.72, 64/120 against a
+  recorded +0.02022, t +4.32, 79/120); the `SeedlingResilience` reversal is not demonstrated
+  (-0.00248, t -0.34, 53/120) though the +0.0362 advantage measured at 24 sites is abolished; the
+  lifespan-headroom claim is not adjudicated because its only available control is confounded. The
+  six growth-rate nulls hold. **None of this refutes the recorded results**, because the replication
+  reproduces the recorded occupancy and not the recorded ecology - grazing pressure is 0.0026 with
+  the free-site pool outside the grazed arena. Banners stay.
+- **`PlantEstablishmentContestEnabled` costs 19/120 extinctions at low occupancy** against 4/120 in
+  the base arm, where at 24 sites it cost nothing. Any future use of the contest at low site
+  occupancy must report survival.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
