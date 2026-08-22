@@ -1,5 +1,10 @@
 # P4 invader-side establishment contest — 2026-08-21
 
+> **REVALIDATED ON FIXED CODE — 2026-08-22.** The establishment contest mechanism it builds on has been revalidated (contest-on minus contest-off: +0.0362, t +3.22, 72/120); this document's own closed-route conclusion was not separately re-run. Measured over 120 seeds with varying founders
+> after `4cc9a47`: see `p4-postfix-revalidation-2026-08-22.md`. The banner below is retained for the
+> record; the conclusion it questioned has been re-measured and holds.
+
+
 > **REQUIRES RE-MEASUREMENT — 2026-08-22.** This result was measured with
 > `PlantSiteCompetitionEnabled` on, before the `PlantPatchStore.ReplaceAt` takeover-age defect was
 > fixed in `4cc9a47`. Until that fix, a seedling installed by a takeover inherited the incumbent's

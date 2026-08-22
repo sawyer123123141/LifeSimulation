@@ -1,5 +1,10 @@
 # The Establishment Contest: A Plant Trait Selected Off the Growth-Rate Gate — 2026-08-20
 
+> **REVALIDATED ON FIXED CODE — 2026-08-22.** The contest manipulation replicates: enabling the establishment contest raises SeedlingResilience by +0.0362, t +3.22, 72/120 seeds up, against the recorded t +4.03, 76/120. Measured over 120 seeds with varying founders
+> after `4cc9a47`: see `p4-postfix-revalidation-2026-08-22.md`. The banner below is retained for the
+> record; the conclusion it questioned has been re-measured and holds.
+
+
 > **REQUIRES RE-MEASUREMENT — 2026-08-22.** This result was measured with
 > `PlantSiteCompetitionEnabled` on, before the `PlantPatchStore.ReplaceAt` takeover-age defect was
 > fixed in `4cc9a47`. Until that fix, a seedling installed by a takeover inherited the incumbent's

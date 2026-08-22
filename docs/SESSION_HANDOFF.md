@@ -80,25 +80,35 @@ files are preserved unedited.
 
 ## Next task
 
-Finish the audit, then resume the ROADMAP. In order:
+The evidence audit is **complete except for the low-occupancy conclusions**, which are blocked on
+geometry rather than on effort.
 
-1. **Re-run the establishment/contest experiments' original design** (120 seeds, *varying* plant
-   founder traits, the recorded dispersal charge) on fixed code, and either lift the banners or
-   retract. This is the only outstanding conclusion-level question.
-2. **Reconstruct the 168-site low-occupancy geometry as committed scenario data**, then re-audit the
-   three low-occupancy documents. They currently have no impact assessment at all because their
-   geometry lived in a deleted throwaway probe.
-3. Then the review's P1 queue, in its stated order: finite/range validation; experiment
-   manifest/provenance; allocation-free genetic distance with a measured P5 budget; benchmark
-   crowded resource allocation before optimising it.
-4. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
-   design questions, not automatic fixes. The stale-grid question is already scoped by the
-   fingerprint design's settled-tick validity rule.
+Revalidated and cleared on fixed code (120 seeds, varying founders, 0/120 extinct and 0/120 frozen
+throughout): the `Dispersal` and `SeedInvestment` positive controls, the establishment-contest
+manipulation, the 24-site `SeedProductionRate` null, and the entire plant lifetime decomposition
+(34% takeover / median 1.95s / R² 0.516 / lifespan R² ≈ 0).
 
-Implementing State fingerprint V2 is queued behind those; the design is written and its acceptance
-criteria include that `FlagLivenessAnalysis` must still report exactly the known inert set.
+Still open, in order:
 
-Resume the ROADMAP only after items 1 and 2 above.
+1. **Reproduce the low-occupancy operating point.** The committed
+   `AbundantSiteReplicationModerate` matches the original's site count exactly and produces
+   occupancy **0.84, not 0.32**, while the 24-site arm in the same sweep reproduced its recorded
+   occupancy to within 0.006 — so the harness is right and the geometry is wrong. Site count is not
+   the lever; **target spacing** is. Try targets spread far apart rather than a dense lattice, and
+   confirm occupancy near 0.32 *before* drawing any trait conclusions from it. Until then the three
+   low-occupancy documents and the six growth-rate nulls stay un-auditable, and the
+   mortality/lifespan-headroom conclusion with them.
+2. Then the P1 queue in its stated order: finite/range validation; mandatory experiment
+   manifest/provenance (this audit is the argument for it); allocation-free genetic distance with a
+   measured P5 budget; benchmark crowded resource allocation before optimising it.
+3. Then resume the ROADMAP.
+
+Two method rules this audit produced, both in the field notes: a control that does not disable the
+trait is not a control, and compare the manipulation the conclusion is about rather than the
+absolute delta.
+
+State fingerprint V2 remains designed but unimplemented
+(`docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`).
 
 ## Working-tree rules
 

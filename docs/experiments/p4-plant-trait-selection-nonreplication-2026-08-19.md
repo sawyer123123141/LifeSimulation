@@ -1,5 +1,10 @@
 # Plant Tolerance Selection Does Not Replicate; Dispersal Does — 2026-08-19
 
+> **REVALIDATED ON FIXED CODE — 2026-08-22.** The Dispersal positive control reproduces at +0.1119, t +15.63, 110/120 (recorded t +14 to +19.6, 105-119/120), and SeedInvestment at +0.0872, t +7.10, 91/120 (recorded t +4.8 to +6.8). Measured over 120 seeds with varying founders
+> after `4cc9a47`: see `p4-postfix-revalidation-2026-08-22.md`. The banner below is retained for the
+> record; the conclusion it questioned has been re-measured and holds.
+
+
 > **AFFECTED EVIDENCE — 2026-08-22.** This carries the project's plant positive control (Dispersal at t +14 to +19.6), which every other plant null is read against, so its revalidation is load-bearing for the whole corpus. This document's runs used both
 > `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
 > `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a

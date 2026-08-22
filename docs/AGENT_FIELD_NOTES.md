@@ -712,6 +712,25 @@ low-occupancy geometry lived in a deleted throwaway probe, so when a correctness
 no way to assess its impact on those conclusions. Promote any geometry a conclusion depends on into
 committed scenario data.
 
+**2026-08-22 - A "control" that does not disable the trait is not a control.** A revalidation sweep
+labelled its competition-off arm `drift`. Turning site competition off disables no plant trait:
+dispersal, seed investment and the rest keep acting, so `Dispersal` read *larger* there (t +26.7)
+than with competition on (t +15.6). Read naively that says the project's strongest positive control
+is not selected. It says nothing of the kind. **A drift control must disable the trait's channel** -
+as the seed-production sweeps did with a charge of zero - not merely change the ecology.
+
+**2026-08-22 - Compare the manipulation the conclusion is about, not the absolute delta.** Absolute
+`SeedlingResilience` fell in every arm of the post-fix sweep, which looks like a refutation of the
+establishment result. The establishment claim is about what *enabling the contest* does, and the
+paired contest-on-minus-contest-off comparison replicates it closely: +0.0362, t +3.22, 72/120
+against the recorded t +4.03, 76/120. Match the comparison to the claim before concluding anything.
+
+**2026-08-22 - More sites is not the same lever as lower occupancy.** The 168-site replication
+matched the original's site count exactly (6 active plus 162 inactive) and produced occupancy
+**0.84, not 0.32**, while the 24-site arm in the same sweep reproduced its recorded occupancy to
+within 0.006. Site count was never the mechanism; target *spacing* is. A dense regular lattice
+saturates. Any future attempt should spread targets far apart rather than add more of them.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -885,6 +904,14 @@ committed scenario data.
   taken from a pre-`9763374` run understates deaths at run boundaries and can report a surviving
   population on an extinction tick. Trajectories are unaffected: the audit found a seed whose death
   count changed while its state hash stayed identical.
+- **Post-fix revalidation status of the plant corpus (2026-08-22).** Confirmed on fixed code with
+  varying founders over 120 seeds: the `Dispersal` positive control (t +15.63, 110/120),
+  `SeedInvestment` (t +7.10, 91/120), the establishment-contest manipulation (+0.0362, t +3.22,
+  72/120 versus recorded t +4.03, 76/120), the 24-site `SeedProductionRate` null (43/120 up), and
+  the whole plant lifetime decomposition. **Still un-auditable:** every 168-site low-occupancy
+  conclusion and the six growth-rate nulls, because the committed replication geometry produces
+  occupancy 0.84 rather than 0.32. Survival was clean throughout: 0/120 extinct, 0/120 frozen in all
+  six combinations. `docs/experiments/p4-postfix-revalidation-2026-08-22.md`.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
