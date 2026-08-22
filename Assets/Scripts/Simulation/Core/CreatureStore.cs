@@ -19,6 +19,7 @@ namespace LifeSimulation.Simulation.Core
         private CombatState[] _combat;
         private MemoryState[] _memory;
         private ForagingState[] _foraging;
+        private HomeRangeState[] _homeRanges;
         private PlaceMemory[] _placeMemories;
         private readonly int _maximumMemorySlots;
         private readonly Dictionary<CreatureId, int> _indexById;
@@ -48,6 +49,7 @@ namespace LifeSimulation.Simulation.Core
             _combat = new CombatState[_identities.Length];
             _memory = new MemoryState[_identities.Length];
             _foraging = new ForagingState[_identities.Length];
+            _homeRanges = new HomeRangeState[_identities.Length];
             _maximumMemorySlots = maximumMemorySlots;
             _placeMemories = new PlaceMemory[_identities.Length * _maximumMemorySlots];
             _indexById = new Dictionary<CreatureId, int>(initialCapacity);
@@ -116,6 +118,12 @@ namespace LifeSimulation.Simulation.Core
             return ref _foraging[index];
         }
 
+        public ref HomeRangeState GetHomeRangeRefAt(int index)
+        {
+            ValidateIndex(index);
+            return ref _homeRanges[index];
+        }
+
         public ref PlaceMemory GetPlaceMemoryRefAt(int index, int slot)
         {
             ValidateIndex(index);
@@ -149,6 +157,7 @@ namespace LifeSimulation.Simulation.Core
             _combat[Count] = default;
             _memory[Count] = default;
             _foraging[Count] = default;
+            _homeRanges[Count] = default;
             if (_maximumMemorySlots > 0)
             {
                 Array.Clear(_placeMemories, Count * _maximumMemorySlots, _maximumMemorySlots);
@@ -271,6 +280,7 @@ namespace LifeSimulation.Simulation.Core
                 _combat[removedIndex] = _combat[lastIndex];
                 _memory[removedIndex] = _memory[lastIndex];
                 _foraging[removedIndex] = _foraging[lastIndex];
+                _homeRanges[removedIndex] = _homeRanges[lastIndex];
                 if (_maximumMemorySlots > 0)
                 {
                     Array.Copy(_placeMemories, lastIndex * _maximumMemorySlots, _placeMemories, removedIndex * _maximumMemorySlots, _maximumMemorySlots);
@@ -303,6 +313,7 @@ namespace LifeSimulation.Simulation.Core
             Array.Resize(ref _combat, nextCapacity);
             Array.Resize(ref _memory, nextCapacity);
             Array.Resize(ref _foraging, nextCapacity);
+            Array.Resize(ref _homeRanges, nextCapacity);
             if (_maximumMemorySlots > 0)
             {
                 Array.Resize(ref _placeMemories, nextCapacity * _maximumMemorySlots);

@@ -298,6 +298,12 @@ namespace LifeSimulation.Simulation.Core
         public float RecentIntakeRate;
     }
 
+    public struct HomeRangeState
+    {
+        public SimVector2 Centre;
+        public float Familiarity;
+    }
+
     public struct PlaceMemory
     {
         public SimVector2 Position;

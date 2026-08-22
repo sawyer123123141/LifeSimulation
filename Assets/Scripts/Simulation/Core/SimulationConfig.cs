@@ -94,6 +94,21 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Dispersal-range charge at maximum SeedProductionRate when its route is enabled.</summary>
         public const float DefaultPlantSeedProductionRateDispersalCharge = 2f;
 
+        /// <summary>Fraction of the distance toward a successful position retained by the home-range centre.</summary>
+        public const float DefaultHomeRangeLearningFraction = 0.25f;
+
+        /// <summary>Familiarity added by each successful food, water, or reproduction event.</summary>
+        public const float DefaultHomeRangeFamiliarityGain = 0.25f;
+
+        /// <summary>Familiarity lost per second while the home-range feature is enabled.</summary>
+        public const float DefaultHomeRangeFamiliarityDecayPerSecond = 0.01f;
+
+        /// <summary>Largest affinity score adjustment available to an ordinary resource candidate.</summary>
+        public const float DefaultHomeRangeBonusMaximum = 0.1f;
+
+        /// <summary>Distance beyond which home-range familiarity contributes no candidate bonus.</summary>
+        public const float DefaultHomeRangeBonusFalloffDistance = 10f;
+
         public SimulationConfig(
             int worldSeed,
             int initialPopulation,
@@ -137,7 +152,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantInvaderEstablishmentContestEnabled = false,
             float plantSeedProductionRateDispersalCharge = DefaultPlantSeedProductionRateDispersalCharge,
             bool plantSeedProductionRateEnabled = false,
-            bool safetyGatedMateRendezvousEnabled = false)
+            bool safetyGatedMateRendezvousEnabled = false,
+            bool homeRangeAffinityEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -182,6 +198,7 @@ namespace LifeSimulation.Simulation.Core
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
             PlantSeedProductionRateEnabled = plantSeedProductionRateEnabled;
             SafetyGatedMateRendezvousEnabled = safetyGatedMateRendezvousEnabled;
+            HomeRangeAffinityEnabled = homeRangeAffinityEnabled;
         }
 
         public int WorldSeed { get; }
@@ -215,6 +232,7 @@ namespace LifeSimulation.Simulation.Core
         public bool PlantSiteCompetitionEnabled { get; }
         public bool PlantMortalityEnabled { get; }
         public bool SafetyGatedMateRendezvousEnabled { get; }
+        public bool HomeRangeAffinityEnabled { get; }
 
         /// <summary>
         /// When set, plant Defense reduces the biomass a grazer can actually remove per bite,
