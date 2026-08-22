@@ -7,23 +7,19 @@ namespace LifeSimulation.Tests.EditMode
     public sealed class P5HistoryPanelSessionTests
     {
         [Test]
-        public void AdvanceRecordsEventsBeforeTheHostBufferIsCleared()
+        public void AdvanceRecordsOverflowedHostEventsAsIncompleteAncestryEvidence()
         {
             SimulationWorld world = CreateWorld();
             P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world);
-            world.Step(world.Config.FixedDeltaTime);
-            Assert.That(world.Events.TryWrite(new SimulationEvent(
-                world.CurrentTick,
-                SimulationEventKind.Birth,
-                new CreatureId(1000),
-                default,
-                default,
-                DeathCause.None)), Is.True);
+            int writtenEventCount = OverflowHostEvents(world);
 
             session.Advance(world);
 
-            Assert.That(world.Events.Count, Is.EqualTo(1));
-            Assert.That(session.AncestryCompleteThroughTick, Is.EqualTo(world.CurrentTick));
+            Assert.That(world.Events.Overflowed, Is.True);
+            Assert.That(world.Events.Count, Is.EqualTo(writtenEventCount));
+            Assert.That(session.AncestryCompleteThroughTick, Is.EqualTo(-1));
+            Assert.That(session.AncestryIsComplete, Is.False);
+            Assert.That(session.StatusText, Does.Contain("incomplete"));
         }
 
         [Test]
@@ -40,11 +36,33 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void MissedObservationCadenceIsVisibleInsteadOfCreatingAnOutOfCadenceSnapshot()
+        {
+            SimulationWorld world = CreateWorld();
+            P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world);
+
+            for (int step = 0; step < P5HistoryPanelSession.ObservationIntervalTicks + 1; step++)
+            {
+                world.Step(world.Config.FixedDeltaTime);
+            }
+
+            session.Advance(world);
+
+            Assert.That(session.ObservationCount, Is.EqualTo(0));
+            Assert.That(session.NextObservationTick, Is.EqualTo(P5HistoryPanelSession.ObservationIntervalTicks * 2));
+            Assert.That(session.StatusText, Does.Contain("missed"));
+        }
+
+        [Test]
         public void FreshSessionCannotCarryTracksOrDisplayedEventsAcrossAReset()
         {
             SimulationWorld firstWorld = CreateWorld();
             P5HistoryPanelSession first = P5HistoryPanelSession.CreateForWorld(firstWorld);
+            OverflowHostEvents(firstWorld);
+            first.Advance(firstWorld);
+            firstWorld.Events.Clear();
             StepAndAdvance(firstWorld, first, P5HistoryPanelSession.ObservationIntervalTicks * 2);
+            Assert.That(first.DisplayEventCount, Is.GreaterThan(0));
 
             SimulationWorld resetWorld = CreateWorld();
             P5HistoryPanelSession reset = P5HistoryPanelSession.CreateForWorld(resetWorld);
@@ -86,6 +104,23 @@ namespace LifeSimulation.Tests.EditMode
                 session.Advance(world);
                 world.Events.Clear();
             }
+        }
+
+        private static int OverflowHostEvents(SimulationWorld world)
+        {
+            int eventIndex = 0;
+            while (world.Events.TryWrite(new SimulationEvent(
+                world.CurrentTick,
+                SimulationEventKind.Birth,
+                new CreatureId(1000 + eventIndex),
+                default,
+                default,
+                DeathCause.None)))
+            {
+                eventIndex++;
+            }
+
+            return eventIndex;
         }
     }
 }

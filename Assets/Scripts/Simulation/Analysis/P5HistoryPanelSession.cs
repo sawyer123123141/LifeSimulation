@@ -28,6 +28,7 @@ namespace LifeSimulation.Simulation.Analysis
         private readonly ClusterHistoryEventBuffer _output;
         private readonly ClusterHistoryEvent[] _displayEvents;
         private int _copiedOutputEventCount;
+        private bool _observationCadenceWasMissed;
 
         private P5HistoryPanelSession(SimulationWorld world, int outputCapacity)
         {
@@ -46,6 +47,7 @@ namespace LifeSimulation.Simulation.Analysis
         public bool OutputOverflowed => _output.Overflowed;
         public int ObservationCount { get; private set; }
         public bool LastObservationWasSampled { get; private set; }
+        public bool ObservationCadenceWasMissed => _observationCadenceWasMissed;
         public bool AncestryIsComplete => _ancestry.IsComplete;
         public int OutputCapacity => _output.Capacity;
         public ClusterHistoryPolicy Policy => _history.Policy;
@@ -55,6 +57,7 @@ namespace LifeSimulation.Simulation.Analysis
             get
             {
                 if (OutputOverflowed) return "P5 analysis output overflowed; records were dropped.";
+                if (ObservationCadenceWasMissed) return "P5 observation cadence was missed; call Advance after every simulation step.";
                 if (!AncestryIsComplete) return "P5 ancestry evidence is incomplete.";
                 if (ObservationCount == 0) return $"Awaiting first full P5 observation at tick {NextObservationTick}.";
                 if (DisplayEventCount == 0) return "No P5 history evidence records have been produced.";
@@ -114,6 +117,11 @@ namespace LifeSimulation.Simulation.Analysis
 
         private void SkipMissedCadenceTicks(long currentTick)
         {
+            if (NextObservationTick < currentTick)
+            {
+                _observationCadenceWasMissed = true;
+            }
+
             while (NextObservationTick < currentTick)
             {
                 NextObservationTick += ObservationIntervalTicks;
