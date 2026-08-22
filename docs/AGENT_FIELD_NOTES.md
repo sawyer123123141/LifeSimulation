@@ -681,6 +681,16 @@ individually: it dies in all four arms. Play mode runs seed 42, so the aggregate
 the actual watchability decision. **Before binding a Play key to a scenario, check the Play seed by
 itself.**
 
+**2026-08-22 - "They keep dying" was a reproduction bug, not a mortality bug, and the death causes
+proved it in one run.** Founder extinction under separated food and water was assumed for two
+sessions to be a survival problem, and four calibration levers were spent on it. Tallying the actual
+`DeathCause` values showed **zero dehydration deaths and 0.07 starvation deaths per run** - all four
+founders died of age at tick ~2500 in every arm including the healthy one. The real cause was the
+joint 70%-energy-AND-70%-hydration reproduction gate, satisfied 95% of the time with co-located
+resources and 33.5% when food sits 7 units from water. **When a population fails, tally death causes
+and check the reproduction eligibility window before tuning the environment.** Both numbers are
+cheap; the four refuted calibration arms were not.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -815,16 +825,30 @@ itself.**
   run at an equilibrium of 11.96 active food sites. **Its honest extinction rate is 6/30 and the key
   runs seed 45 because seed 42 is one of the six failures** - that is a demonstration choice, and
   every published statistic comes from the full 30-seed sweeps, never from seed 45.
-- **Founder establishment under separated food and water is an unexplained failure mode.** Four
-  juvenile founders survive fine with co-located resources (`ObservationStable`, 0/30 extinct) and
-  fail in 6/30 to 11/30 of seeds once food sits 6-7 units from water (`ObservationShiftingPatches`,
-  `ObservationRouteRing`). Extinct runs show 0-3 births against a survivor mean of 48.2, so it is
-  establishment, not collapse. **Four levers are already refuted:** mature founders (5/30 vs 6/30),
-  eight founders (14/30 - overshoot then crash), founders placed on a food site (14/30, worse than
-  starting on water, which reverses the obvious intuition), and 1.5x capacity/regeneration (5/30).
-  Tightening the radius to 6 lets seed 42 establish but raises overall extinction to 14/30. Do not
-  spend another calibration sweep on placement or productivity; this is a juvenile survival
-  economics question and the natural home for the P4a "optional juvenile local-area bias" item.
+- **Separated food and water does not kill creatures, it STERILISES them (explained 2026-08-22).**
+  `ReproductionSystem.CanReproduce` requires energy AND hydration AND health each at or above 70% of
+  that creature's own capacity. Adults satisfy that joint gate **95.0% of adult-ticks in
+  `ObservationStable`** (co-located) and only **33.5% in `ObservationShiftingPatches`** and 56.8% in
+  `ObservationRouteRing`. Two effects: the marginals collapse (energy above 0.7 falls from 95.1% to
+  46.3%) and a genuine simultaneity penalty of 8.6-12.8 points sits on top, because a creature tops
+  one need up while the other drains. **Nothing starves and nothing dehydrates**: all four founders
+  die of age at tick ~2500 in every arm, and the minimum hydration fraction reached averages 0.445
+  even in the worst arm. Extinction is failure to replace, not mortality.
+  `docs/experiments/p4a-founder-mortality-2026-08-22.md`.
+- **The P4a "optional juvenile local-area bias" item is NOT the fix for separated-resource
+  extinction.** Juveniles are not the failing class and mortality is not the failure mode. A bias
+  keeping young creatures near their birth area cannot raise the joint reproduction window and might
+  lower it by keeping them beside whichever single resource they were born next to. Every refuted
+  calibration lever is explained by the joint gate: founders on food are worse because that lowers
+  the binding hydration marginal; mature founders do nothing because age was never the constraint;
+  eight founders are worse because more grazers depress both marginals; 1.5x productivity does
+  almost nothing because refilling faster does not make two needs peak together.
+- **OPEN HUMAN DECISION: the joint 70%/70% reproduction gate makes every spatially separated world
+  sub-fertile.** Options are (1) keep it as realism and require separated scenarios to carry higher
+  productivity, (2) decouple the thresholds, (3) gate on a rolling average so a creature stays
+  eligible while walking between its two needs. **Do not change `CanReproduce` unilaterally** - it is
+  core biology on every scenario's hot path, and changing it invalidates every population baseline,
+  survival calibration and plant-selection result on record.
 - **Plant dispersal does not need plant mortality, so "mortality off" is NOT a frozen map.** With
   mortality off, plants colonise every dormant site within ~20 ticks and stay there: 12
   activations, 0 deactivations, 17.37 of 18 sites active. Any experiment wanting a genuinely static

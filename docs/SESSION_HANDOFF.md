@@ -47,28 +47,36 @@ design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-pa
 
 ## Next task
 
-The P4a clustered/changing-patch bullet is **done**: key `V` runs `ObservationShiftingPatches` at
-world seed 45, the map churns visibly, and route variety rises at no survival cost.
+**There is an open human design decision blocking the cleanest next step.** See
+`docs/experiments/p4a-founder-mortality-2026-08-22.md`.
 
-Remaining unfinished P4a items, in the order I would take them:
+`ReproductionSystem.CanReproduce` requires energy AND hydration AND health each at or above 70% of
+capacity. Adults meet that joint gate 95.0% of the time when food and water are co-located and only
+33.5% when food sits 7 units from water. That makes **every spatially separated world systematically
+sub-fertile** — which is why `ObservationShiftingPatches` and `ObservationRouteRing` go extinct in
+6/30 and 11/30 seeds while `ObservationStable` never does. Nothing starves and nothing dehydrates;
+all four founders die of age at tick ~2500 in every arm. Extinction is failure to replace.
 
-1. **Optional juvenile local-area bias.** This now has a concrete motivating measurement rather
-   than being a speculative nicety: four juvenile founders establish reliably with co-located
-   resources (0/30 extinct) and fail in 6/30 to 11/30 of seeds once food sits 6-7 units from water.
-   Extinct runs show 0-3 births against a survivor mean of 48.2. Four calibration levers are
-   already refuted — mature founders, eight founders, founders placed on food (worse), and 1.5x
-   productivity — so this is a juvenile survival economics question, which is exactly what the
-   backlog item is for. **Understand why juveniles fail before designing the bias**, and hold it to
-   the same standard that closed home-range: a matched flag-off/on measurement with predictions
-   registered first, and no claim of success from a mechanism story.
-2. **Selected-creature action/history feedback** — only where it helps a person distinguish
-   foraging, drinking, mating, fleeing, resting, births, deaths, depletion and recovery.
-3. Reassess safety-gated rendezvous. Its first ecological experiment was null; do not build pack
+The three options are keep-as-realism (status quo, costs nothing), decouple the thresholds, or gate
+on a rolling average. **Do not change `CanReproduce` without an explicit decision:** it is core
+biology on every scenario's hot path and changing it invalidates every population baseline, survival
+calibration and plant-selection result on record. Ask the user.
+
+Work that does not depend on that decision, in order:
+
+1. **Selected-creature action/history feedback** — only where it helps a person distinguish
+   foraging, drinking, mating, fleeing, resting, births, deaths, depletion and recovery. Fully
+   independent of the reproduction question.
+2. **Reassess safety-gated rendezvous.** Its first ecological experiment was null; do not build pack
    architecture to force it.
+3. P5: durable chunk storage and a graphical evolutionary tree, and a behaviour-preserving
+   decomposition of the ~1,310-line `GeneticClusterHistory.cs` before adding classification logic.
 
-Do not reopen soft home-range affinity — closed as a measured negative, spec and plan carry
-SUPERSEDED banners. Do not run another placement or productivity calibration on
-`ObservationShiftingPatches`; six variants are already recorded.
+Do **not** build the "optional juvenile local-area bias" as a fix for separated-resource extinction
+— juveniles are not the failing class and mortality is not the failure mode. Do not reopen soft
+home-range affinity; it is closed as a measured negative. Do not run another placement or
+productivity calibration on `ObservationShiftingPatches`; six variants are already recorded and the
+joint gate explains why all of them failed.
 
 ## Working-tree rules
 
