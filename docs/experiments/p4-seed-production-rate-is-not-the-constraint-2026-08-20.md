@@ -1,5 +1,6 @@
 # Seed Production Rate Is Not the Constraint — 2026-08-20
 
+
 > **AFFECTED EVIDENCE — 2026-08-22.** Its central argument is a plant LIFETIME BUDGET (a ~95.8s patch spending 58.7s mature, off cooldown and unable to find a site). The age fix changes lifetime accounting directly, so this decomposition cannot be cleared by a trait sweep alone. This document's runs used both
 > `PlantSiteCompetitionEnabled` and `PlantMortalityEnabled`, so they are on the path the
 > `PlantPatchStore.ReplaceAt` takeover-age defect changed (fixed in `4cc9a47`): before the fix, a
@@ -9,6 +10,14 @@
 > Revalidation on fixed code is tracked in `p4-postfix-revalidation-2026-08-22.md`. Until it lands,
 > treat the figures here as unverified on current code. Nothing below has been edited or recomputed.
 
+
+> **PARTIALLY CLEARED — 2026-08-22.** The plant lifetime accounting in this document was
+> re-measured on fixed code and on a pre-fix worktree with a version-independent detector: takeover
+> fraction 0.347 (recorded 34%), median takeover lifetime 1.95 s (recorded ~2 s), R²(takeover,
+> offspring) 0.516 (recorded 51.9%), and R² of realised lifespan on offspring among patches that
+> died of age 0.0039 (recorded 0.024 — same claim, essentially nothing). The fix moves each by under
+> two points. **The lifetime decomposition stands.** The banner above applies only to this document's
+> trait-selection content. See `p4-postfix-lifetime-accounting-2026-08-22.md`.
 
 The third and last route that skips the `(1 - Biomass/Capacity)` growth gate was seeding **rate**,
 capped by a hard-coded `ReproductionCooldownSeconds = 20f`. This wires an eleventh plant gene into

@@ -1,5 +1,6 @@
 # Where Plant Lineage Success Is Actually Decided — 2026-08-20
 
+
 > **REQUIRES RE-MEASUREMENT — 2026-08-22.** This result was measured with
 > `PlantSiteCompetitionEnabled` on, before the `PlantPatchStore.ReplaceAt` takeover-age defect was
 > fixed in `4cc9a47`. Until that fix, a seedling installed by a takeover inherited the incumbent's
@@ -17,6 +18,14 @@
 
 
 > **SUPERSEDED IN PART 2026-08-20.** “Mortality has no headroom” applies to the 24-site, 91%-occupancy scenario only. At the 168-site operating point, the lifespan-linked `Growth` trait declines (t −2.65, 46/120 up). See `p4-low-occupancy-plant-route-audit-2026-08-20.md`.
+
+> **PARTIALLY CLEARED — 2026-08-22.** The plant lifetime accounting in this document was
+> re-measured on fixed code and on a pre-fix worktree with a version-independent detector: takeover
+> fraction 0.347 (recorded 34%), median takeover lifetime 1.95 s (recorded ~2 s), R²(takeover,
+> offspring) 0.516 (recorded 51.9%), and R² of realised lifespan on offspring among patches that
+> died of age 0.0039 (recorded 0.024 — same claim, essentially nothing). The fix moves each by under
+> two points. **The lifetime decomposition stands.** The banner above applies only to this document's
+> trait-selection content. See `p4-postfix-lifetime-accounting-2026-08-22.md`.
 
 The P4 exit gate is "give plant selection a route that is not growth rate", and the three
 candidate routes that skip the `(1 - Biomass/Capacity)` gate are **establishment**, **mortality**
