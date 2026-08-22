@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LifeSimulation.Simulation.Analysis;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
@@ -54,6 +55,7 @@ namespace LifeSimulation.Presentation
         private bool _hasSelectedCreature;
         private SimulationEvent _recentEvent;
         private bool _hasRecentEvent;
+        private P5HistoryPanelSession _p5HistorySession;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateIfNeeded()
@@ -75,7 +77,15 @@ namespace LifeSimulation.Presentation
             // resets non-serialized fields like _world to their defaults without re-invoking
             // Awake() on GameObjects that already existed in the scene. Without this guard,
             // every subsequent Update/OnGUI throws a NullReferenceException on _world forever.
-            if (_world != null) return;
+            if (_world != null)
+            {
+                if (_p5HistorySession == null)
+                {
+                    _p5HistorySession = P5HistoryPanelSession.CreateForWorld(_world);
+                }
+
+                return;
+            }
             CreateEnvironment();
             ResetSimulation(Prototype1Scenarios.Baseline);
         }
@@ -91,6 +101,9 @@ namespace LifeSimulation.Presentation
                 while (_accumulator >= _world.Config.FixedDeltaTime && stepLimit-- > 0)
                 {
                     _world.Step(_world.Config.FixedDeltaTime);
+                    _p5HistorySession.Advance(_world);
+                    CaptureRecentEvent();
+                    _world.Events.Clear();
                     _accumulator -= _world.Config.FixedDeltaTime;
                     _heatmapUpdateAccumulator += _world.Config.FixedDeltaTime;
                 }
@@ -98,8 +111,6 @@ namespace LifeSimulation.Presentation
 
             UpdateTemperatureHeatmapIfNeeded();
             SynchronizePresentation();
-            CaptureRecentEvent();
-            _world.Events.Clear();
         }
 
         private void OnGUI()
@@ -111,6 +122,7 @@ namespace LifeSimulation.Presentation
             DrawSelectedCreatureInspector();
             var stats = _world.Statistics;
             DrawPopulationCondition(stats);
+            DrawP5HistoryPanel();
             GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
             GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 216f, 400f, 22f), $"Predation: {stats.AttackHitCount} hits  {stats.PredationDeathCount} kills  {stats.CumulativeCarcassConsumed:0.0} meat");
@@ -144,6 +156,94 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(476f, 216f, 250f, 22f), "Watch: 5 stable · 6 scarce · 7 migration · 9 mating");
             GUI.Label(new Rect(476f, 238f, 250f, 22f), _scenarioHint);
+        }
+
+        private void DrawP5HistoryPanel()
+        {
+            const int maximumRows = 8;
+            const float panelX = 756f;
+            const float panelY = 12f;
+            const float lineHeight = 22f;
+            ClusterHistoryPolicy policy = _p5HistorySession.Policy;
+            GUI.Box(new Rect(panelX, panelY, 520f, 340f), "P5 history evidence");
+            GUI.Label(new Rect(panelX + 12f, panelY + 28f, 500f, lineHeight), _p5HistorySession.StatusText);
+            GUI.Label(new Rect(panelX + 12f, panelY + 50f, 500f, lineHeight),
+                $"Threshold {P5HistoryPanelSession.GeneticThreshold:0.00} · cadence {P5HistoryPanelSession.ObservationIntervalTicks} ticks · mode full population");
+            GUI.Label(new Rect(panelX + 12f, panelY + 72f, 500f, lineHeight),
+                $"Ancestry {(_p5HistorySession.AncestryIsComplete ? "complete" : "incomplete")} through tick {_p5HistorySession.AncestryCompleteThroughTick} · output {_p5HistorySession.DisplayEventCount}/{_p5HistorySession.OutputCapacity}");
+            GUI.Label(new Rect(panelX + 12f, panelY + 94f, 500f, lineHeight),
+                $"Analysis settings: current {policy.MinimumSupportedCurrentMembers}/{policy.MinimumCurrentSupportFraction:P0} · prior {policy.MinimumSupportingPreviousMembers}/{policy.MinimumPreviousSupportFraction:P0} · depth {policy.MaximumAncestorGenerations} · persistence {policy.RequiredSuccessorObservations}/{policy.RequiredAbsentObservations}");
+            GUI.Label(new Rect(panelX + 12f, panelY + 116f, 500f, lineHeight), "Latest evidence (newest first):");
+
+            int rowCount = Mathf.Min(maximumRows, _p5HistorySession.DisplayEventCount);
+            for (int row = 0; row < rowCount; row++)
+            {
+                ClusterHistoryEvent historyEvent = _p5HistorySession.GetEventAt(_p5HistorySession.DisplayEventCount - 1 - row);
+                GUI.Label(new Rect(panelX + 12f, panelY + 138f + (row * lineHeight), 500f, lineHeight), FormatP5HistoryEvent(historyEvent));
+            }
+        }
+
+        private static string FormatP5HistoryEvent(ClusterHistoryEvent historyEvent)
+        {
+            string status = historyEvent.Status == ClusterHistoryEventStatus.Candidate
+                ? "candidate"
+                : historyEvent.Status == ClusterHistoryEventStatus.Confirmed
+                    ? "confirmed"
+                    : "unresolved";
+            string kind = historyEvent.Kind == ClusterHistoryEventKind.ConfirmedLineageExtinction
+                ? "lineage extinction evidence"
+                : historyEvent.Kind.ToString();
+            string tickRange = historyEvent.FirstObservedTick == historyEvent.LastObservedTick
+                ? $"tick {historyEvent.FirstObservedTick}"
+                : $"ticks {historyEvent.FirstObservedTick}-{historyEvent.LastObservedTick}";
+            string evidenceNote = GetP5EvidenceNote(historyEvent);
+            return $"{status}: {kind} · {tickRange} · {FormatP5Tracks(historyEvent)}{evidenceNote}";
+        }
+
+        private static string FormatP5Tracks(ClusterHistoryEvent historyEvent)
+        {
+            string tracks = "tracks";
+            for (int index = 0; index < historyEvent.PreviousTrackCount; index++)
+            {
+                tracks += $" #{historyEvent.GetPreviousTrackIdAt(index)}";
+            }
+
+            if (historyEvent.PreviousTrackCount > 0 && historyEvent.CurrentTrackCount > 0)
+            {
+                tracks += " →";
+            }
+
+            for (int index = 0; index < historyEvent.CurrentTrackCount; index++)
+            {
+                tracks += $" #{historyEvent.GetCurrentTrackIdAt(index)}";
+            }
+
+            return tracks;
+        }
+
+        private static string GetP5EvidenceNote(ClusterHistoryEvent historyEvent)
+        {
+            if (!historyEvent.EventHistoryIsComplete || !historyEvent.AncestryCoverageIsComplete)
+            {
+                return " · ancestry incomplete";
+            }
+
+            if (historyEvent.IsSampled)
+            {
+                return " · sampled observation";
+            }
+
+            if (historyEvent.UnresolvedReason == ClusterHistoryUnresolvedReason.LivingDescendant)
+            {
+                return " · living descendant";
+            }
+
+            if (historyEvent.UnresolvedReason == ClusterHistoryUnresolvedReason.AmbiguousStrongRelations)
+            {
+                return " · ambiguous reorganisation";
+            }
+
+            return string.Empty;
         }
 
         private void CaptureRecentEvent()
@@ -239,6 +339,7 @@ namespace LifeSimulation.Presentation
             _resourceViews.Clear();
             _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
+            _p5HistorySession = P5HistoryPanelSession.CreateForWorld(_world);
             _scenarioId = scenario.Id;
             _scenarioHint = GetScenarioHint(scenario.Id);
             _accumulator = 0f;

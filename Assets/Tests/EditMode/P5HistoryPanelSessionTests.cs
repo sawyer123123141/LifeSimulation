@@ -23,6 +23,20 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void SessionStatusMakesOutputOverflowVisibleWithoutInventingHistory()
+        {
+            SimulationWorld world = CreateWorld();
+            P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world, outputCapacity: 1);
+
+            AdvanceAtNextObservationWithIncompleteAncestry(world, session);
+            AdvanceAtNextObservationWithIncompleteAncestry(world, session);
+
+            Assert.That(session.OutputOverflowed, Is.True);
+            Assert.That(session.StatusText, Does.Contain("dropped"));
+            Assert.That(session.StatusText, Does.Not.Contain("species"));
+        }
+
+        [Test]
         public void ObservationCadenceCapturesAFullPopulationAtTheDeclaredTick()
         {
             SimulationWorld world = CreateWorld();
@@ -104,6 +118,16 @@ namespace LifeSimulation.Tests.EditMode
                 session.Advance(world);
                 world.Events.Clear();
             }
+        }
+
+        private static void AdvanceAtNextObservationWithIncompleteAncestry(SimulationWorld world, P5HistoryPanelSession session)
+        {
+            int stepsBeforeObservation = (int)(session.NextObservationTick - world.CurrentTick - 1);
+            StepAndAdvance(world, session, stepsBeforeObservation);
+            world.Step(world.Config.FixedDeltaTime);
+            OverflowHostEvents(world);
+            session.Advance(world);
+            world.Events.Clear();
         }
 
         private static int OverflowHostEvents(SimulationWorld world)
