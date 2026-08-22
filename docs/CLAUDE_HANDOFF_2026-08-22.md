@@ -278,11 +278,14 @@ Two real review bugs were already caught and fixed: the first version could make
 creature seek a familiar resource from zero utility, and it gated affinity using a nearest-creature
 shortcut inconsistent with filtered threat scoring. Do not reintroduce either.
 
-Unproven contract: recognisable routes. No presenter scenario enables the flag—not `5`, and not
-`N`, whose explicit `SimulationConfig` constructor omits the final optional home-range argument.
-Therefore the user has never visually tested the behavior. Even after adding `R`, do not infer
-ecological success from “creatures return to food”; quantify whether it is useful home-range
-formation or simple patch stickiness.
+**Route formation was measured on 2026-08-22 and the answer is no.** Key `R` now enables the flag
+on `ObservationStable`. Across 30 paired seeds in stable, scarcity and migration, same-site
+fidelity changed by +0.0000 (and +0.0001 at a 10x bonus), while stable and scarcity already sit at
+fidelity 1.0000 with the flag off because food and water are co-located and the second cluster is
+outside vision range. The only effect a large bonus produces is patch clinging at a food-intake
+cost. The blockers are scenario geometry and a bonus term collinear with the existing travel
+burden — not the constants. Do not re-run this sweep or tune the constants; read
+`docs/experiments/p4a-home-range-affinity-2026-08-22.md` and fix the geometry first.
 
 ## Play-mode controls and what they mean
 
@@ -291,12 +294,16 @@ formation or simple patch stickiness.
 - `B`: baseline; `D`: drought; `F`: food scarcity; `P`: predator/prey; `C`: cognition;
   `T`: physiology; `G`: foraging-memory demo; `M`: mating demo; `E`: starter habitat.
 - `5`: observation stable; `6`: scarcity; `7`: migration; `9`: mating.
-- `N`: broad all-flags playtest, but currently omits home-range.
+- `R`: home-range affinity - `ObservationStable` again, identical seed and config except
+  `HomeRangeAffinityEnabled=true`. **It looks the same as `5`; that is the measured result, not a
+  bug** (see `docs/experiments/p4a-home-range-affinity-2026-08-22.md`).
+- `N`: broad all-flags playtest, but still omits home-range (left unchanged deliberately).
 - `H`: temperature/biome/off ground overlay cycle.
 - Left-click selects a creature; resource dragging is mouse-driven.
 
-For P5 history, press `5`, then `8`, and watch after tick 600. Continuity flooding is expected
-until the pending filter lands. For home-range there is currently no correct key; add `R` first.
+For P5 history, press `5`, then `8`, and watch after tick 600. Routine confirmed-continuity rows
+are now hidden and counted as "N routine continuities hidden"; the analytical history still keeps
+them. For home-range, press `R`.
 
 ## Test and verification workflow
 
@@ -402,9 +409,9 @@ presentation changes.
 
 ## Recommended queue after the immediate home-range task
 
-1. Add `R` matched home-range Play mode and measure/watch it. If it only makes food patches sticky,
-   tune or redesign before calling the P4a bullet complete.
-2. Filter routine P5 continuity in the presenter while preserving the analysis stream.
+1. ~~Add `R` matched home-range Play mode and measure it.~~ **Done 2026-08-22. Result: null for
+   route formation, and not a tuning problem.** Do not re-run it; read the experiment writeup.
+2. ~~Filter routine P5 continuity in the presenter.~~ **Done 2026-08-22.**
 3. Design clustered, changing resource patches as scenario data, with fixed-seed route/travel/
    survival measurements. This is likely the largest remaining visual-ecology gain.
 4. Reassess whether safety-gated rendezvous plus existing two-parent mating produces any local

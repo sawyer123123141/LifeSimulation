@@ -72,7 +72,7 @@ This is the bridge between a scientifically valid survival simulation and a simu
 
 - reliable multi-generation baseline under declared resource conditions
 - explicit resource-intent execution: remembered targets must resolve to a real visible resource before eating or drinking (**already implemented** in `SimulationWorld.ResolveResourceInteractions`)
-- soft home-range affinity: creatures prefer familiar successful areas but can leave under need, danger, scarcity, mating opportunity, or exploration pressure
+- soft home-range affinity: creatures prefer familiar successful areas but can leave under need, danger, scarcity, mating opportunity, or exploration pressure (**implemented, flag-gated, Play-testable on key `R`, and measured null for route formation** - see `experiments/p4a-home-range-affinity-2026-08-22.md`; this bullet stays open until a scenario geometry exists that a route can be expressed in)
 - clustered, changing plant/resource patches so travel creates recognizable routes rather than unstructured wandering
 - safety-gated rendezvous and two-parent reproduction, creating short-lived family/local groups without hardcoded species packs
 - optional juvenile local-area bias; offspring remain fully simulated individuals and do not become follower GameObjects

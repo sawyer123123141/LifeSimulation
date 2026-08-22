@@ -637,6 +637,24 @@ in the analysis record; presentation should hide routine continuity by default a
 count such as “N routine continuities hidden.” Never weaken the analytical stream to repair UI
 signal-to-noise.
 
+**2026-08-22 - A tie-break bonus built on distance-from-recent-position cannot beat a travel
+burden that already charges distance.** Soft home-range affinity was measured off/on across 30
+paired seeds in stable, scarcity and migration. The learning half works (familiarity 0.80-0.89,
+hashes diverge), but same-site fidelity moved by **+0.0000** in migration where 20.8% of
+creature-ticks held two visible food patches, and by **+0.0001** at ten times the bonus. The
+centre is dragged toward wherever the creature just fed, so distance-to-centre is nearly collinear
+with distance-to-candidate, and `ResourceUtility` already penalises that. At 10x the only real
+effect is clinging: stable loses 7.6% of site re-entries and 2.7% of food intake for no births.
+**Before adding a term to a utility function, ask what information it carries that the existing
+terms do not.** `docs/experiments/p4a-home-range-affinity-2026-08-22.md`
+
+**2026-08-22 - Two of the three observation scenarios cannot contain a route, by geometry.**
+Stable and scarcity co-locate food and water at each cluster and place the two clusters 28.8 apart
+against a maximum `Phenotype.VisionRange` of 16. Measured patch fidelity is **1.0000 with the flag
+off**: a creature picks one cluster at birth and never visits the other. No affinity mechanism can
+improve on 1.0000. Scarcity additionally goes **30/30 extinct in both arms**, so it judges nothing.
+Check that a scenario can physically express the behavior before measuring a mechanism in it.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
@@ -745,15 +763,16 @@ signal-to-noise.
 - `SimulationStatistics.RealizedGrazingPressure` and the `PlantBiomassSeconds` /
   `PlantPatchSeconds` integrals behind it are read-only accumulators, deliberately
   absent from `ComputeStateHash`. Same rule applies to anything in `Diagnostics/`.
-- **Soft home-range affinity is implemented but not yet ecologically validated.**
-  `HomeRangeAffinityEnabled` defaults false; `HomeRangeState` is dedicated centre/familiarity
-  state and does not revive place memory. Successful food, water, or reproduction updates it;
-  familiarity decays; only already-valid, already-actionable ordinary food/water candidates get
-  a bounded bonus. Threat, mate, fallback, invalid-resource, and satisfied-needs paths cannot be
-  manufactured by the bonus. Flag-off omits the state from the hash and is byte-identical. No
-  presenter scenario enables it yet, so do not claim visible route formation. First add a matched
-  `5`-versus-`R` playtest scenario, then measure whether it creates useful route reuse rather than
-  merely making one food patch sticky.
+- **Soft home-range affinity is implemented, Play-testable on key `R`, and MEASURED NULL for its
+  stated purpose (2026-08-22).** `HomeRangeAffinityEnabled` still defaults false. The state and
+  learning work (familiarity 0.80-0.89 in play, flag-off byte-identical, state excluded from the
+  off hash). What it does **not** do is create routes: same-site fidelity delta +0.0000 in
+  migration, +0.0001 at a 10x bonus, and stable/scarcity already sit at fidelity 1.0000 with the
+  flag off. At 10x the only effect is patch clinging that costs 2.7% food intake for no births.
+  Do not mark the P4a bullet complete, do not tune the constants, and do not re-run this
+  experiment: the blockers are scenario geometry (food and water co-located, clusters beyond
+  vision range) and a bonus term collinear with the existing travel burden. Full numbers and the
+  recommended redesign: `docs/experiments/p4a-home-range-affinity-2026-08-22.md`.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
