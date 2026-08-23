@@ -1,132 +1,251 @@
-# Session Handoff — 2026-08-22 (updated)
+# Session Handoff — 2026-08-22
 
-The complete architecture, scientific context, testing rules and preferences brief is still:
+**Head at handoff: `c197061`** (`docs: benchmark resource allocation and decline to optimise it`),
+pushed to `origin/main`.
 
-`docs/CLAUDE_HANDOFF_2026-08-22.md`
+Read this first, then `docs/CLAUDE_HANDOFF_2026-08-22.md` for architecture, scientific context,
+testing rules and user preferences. `docs/ROADMAP.md` is the backlog. `docs/superpowers/plans/` is
+an archive, not a backlog.
 
-Read that after this file. `docs/ROADMAP.md` is the backlog. `docs/superpowers/plans/` is an
-archive, not a backlog.
+---
 
-## Current state
+## 1. What was completed this session
 
-Head is on `main`. Completed and pushed this session:
+Twenty commits, `f0a691d` through `c197061`. Three phases.
 
-1. **Key `R`** — matched Play-mode home-range scenario: `ObservationStable` with the same seed and
-   config as `5` except `HomeRangeAffinityEnabled=true`. `5`, `6`, `7`, `9`, `N`, the factory
-   defaults and the inert place-memory system are unchanged.
-2. **P5 panel continuity filter** — `P5HistoryPanelSession` exposes `NotableEventCount`,
-   `GetNotableEventAt` and `HiddenRoutineContinuityCount`. Routine confirmed continuity is kept in
-   the analytical history but hidden from the eight visible rows, which now carry
-   "(N routine continuities hidden)". `Unresolved` continuity is not routine and stays visible.
-3. **Soft home-range affinity is CLOSED as a measured negative.** Two experiments, five conditions,
-   240 fixed-seed runs. It does not create routes; on purpose-built route-capable geometry it made
-   routes *less* repeatable (t -2.87, 8/30 up) while increasing same-site clinging (t +4.93, 26/30
-   up). The flag stays default `false`, the implementation and tests stay in the tree, and the
-   design spec and plan carry SUPERSEDED banners. **Do not tune the constants or reopen it.**
-4. **`Prototype4Scenarios.ObservationRouteRing`** — new scenario data: eight sites on a radius-8
-   ring alternating Food and Water (adjacent opposite-kind separation 6.12, same-kind 11.31,
-   founders at the centre, capacity and regeneration matched to `ObservationStable`). It is the
-   only geometry in the repository in which a food/water route can physically exist, and it
-   delivers 90.6% decision opportunity. It is **not** a survival calibration: 11/30 and 9/30 seeds
-   go extinct.
+### Phase A — P4a feature work
 
-5. **`Prototype4Scenarios.ObservationShiftingPatches`** — new scenario data (three clusters, each
-   with a permanent central water site, two active food sites 7 units out, and four dormant food
-   sites as dispersal targets) plus a 120-run measurement. With `plantMortalityEnabled: true` the
-   existing plant dispersal/mortality machinery produces ~29 patch deaths and ~33 establishments
-   per run: route permanence falls (pair repeat -0.0935, t -6.47) and distinct routes per creature
-   rise 27% (+0.628, t +4.48) at no survival cost. No new mechanism was needed or added.
-   Bound to Play key **`V`** at world seed 45: the scenario's honest extinction rate is 6/30 and
-   seed 42 is one of the six failures, so the demo seed is a documented demonstration choice and no
-   published statistic rests on it.
+| commit | what |
+|---|---|
+| `f0a691d` | key `R` home-range playtest; P5 panel hides routine continuity rows |
+| `a817ccb` | home-range measured null for route formation |
+| `173f3a3` | `ObservationRouteRing` scenario; home-range **closed as a measured negative** |
+| `c528ced` | `ObservationShiftingPatches` scenario; map-turnover measurement |
+| `6d64df0` | key `V` shifting-patches playtest at world seed 45 |
+| `0b0387c` | founder mortality diagnosis: separation **sterilises**, does not kill |
+| `15c7a5a` | inspector shows *why* a creature cannot breed; "ready to breed" count |
 
-Experiment writeups and per-seed CSVs are in `docs/experiments/`:
-`p4a-home-range-affinity-2026-08-22.md`, `p4a-home-range-bonus-sensitivity-2026-08-22.csv`,
-`p4a-route-ring-home-range-2026-08-22.md`, `p4a-shifting-patches-2026-08-22.md`. The clustered-patch
-design spec is `docs/superpowers/specs/2026-08-22-clustered-changing-resource-patches-design.md`.
+### Phase B — evidence-integrity audit (triggered by an external code review)
 
-## Current state — evidence-integrity audit (2026-08-22)
+| commit | what |
+|---|---|
+| `4cc9a47` | **fix:** `PlantPatchStore.ReplaceAt` did not reset plant age |
+| `9763374` | **fix:** statistics sampled before deaths committed; `CaptureStatistics()` added |
+| `c97efe9` | paired old-vs-fixed blast-radius audit |
+| `0fbb7f8` | `CaptureStatistics` guarded to a settled step boundary; corrected an overclaim |
+| `1eb801c` | affected-evidence ledger widened to 9 docs; 168-site replication committed |
+| `3f3b77c` | plant lifetime accounting **survives** the fix |
+| `c19c1a5` | plant corpus revalidated on fixed code |
+| `8f55b6e` | low-occupancy replication calibrated (occupancy is a cliff) |
+| `06d80a8` | low-occupancy conclusions are **unverifiable** |
+| `bbd7a76` | grazing deficit quantified |
 
-The P4a/P5 queue is **paused** for an evidence-integrity audit prompted by a deep code review. Three
-review findings were independently confirmed on `main` and handled in order, tests first. The
-review's blanket claim that all evidence is unreliable was **not** accepted, and the paired audit
-shows why it would have been wrong.
+### Phase C — P1 queue (all four items complete)
 
-Done and pushed:
+| commit | what |
+|---|---|
+| `c751a13` | finite/range validation at config and scenario boundaries |
+| `b8a61a7` | mandatory experiment manifest + scenario layout fingerprint |
+| `d3fac12` | P5 clustering allocation made linear in population |
+| `c197061` | resource allocation benchmarked and **deliberately not optimised** |
 
-1. `4cc9a47` — `PlantPatchStore.ReplaceAt` now resets plant age. Takeovers previously installed
-   seedlings carrying the incumbent's age, killed on the dead patch's clock. Two failing tests
-   first.
-2. `9763374` — statistics are sampled after the tick's deaths are committed, and
-   `SimulationWorld.CaptureStatistics()` gives an explicit end-of-run snapshot that
-   `ExperimentRunner` now uses. Five failing tests first.
-3. `docs/superpowers/specs/2026-08-22-state-fingerprint-design.md` — design only, deliberately not
-   implemented. Three separate hashes (frozen V1, versioned complete V2 including config,
-   config-free BehaviorHash), plus an omissions audit that found `_birthOrdinal` and
-   `_plantSeedOrdinal` — two RNG stream counters the review did not name.
-4. `docs/experiments/evidence-impact-audit-2026-08-22.md` — paired old-versus-fixed sweep, 85 runs,
-   pre-fix worktree versus fixed main.
+---
 
-**Audit outcome.** With `PlantSiteCompetitionEnabled` off, **trajectories and route metrics are
-identical** (state hashes match in every arm) while the statistics fix corrected at least one final
-death count without changing any trajectory. Home-range, route-ring and shifting-patch conclusions
-are cleared outright, no banner needed.
-Only the competition path moved (30/30 hashes), where `SeedlingResilience` drifts **down** (t -1.99)
-and plant generations fall by one (t -2.63). Three establishment/competition experiments carry
-**requires re-measurement** banners — not retractions, because those drift magnitudes do not
-overturn a t +4.03 selection result measured under standing variance, and not clearance either,
-because they move the mechanism those conclusions rest on in the unfavourable direction. Original
-files are preserved unedited.
+## 2. Verified numeric results — do not re-derive these
 
-## Next task
+### Home range (CLOSED — do not reopen, do not tune)
 
-**The evidence audit and the whole P1 queue are complete.**
+- `ObservationRouteRing` gives **90.6%** of creature-ticks a genuine equidistant choice at **0.88**
+  mean familiarity, with an unsaturated off-arm route metric of **0.7955**.
+- Flag on: route repeatability **fell −0.0345 (t −2.87, 8/30 up)**; same-site clinging **rose
+  +0.0594 (t +4.93, 26/30 up)**.
+- In shipped scenarios the route metric is saturated at **1.0000** flag-off; delta **+0.0000**, and
+  **+0.0001** at a 10x bonus. The 10x arm cost **2.7%** food intake for no births.
 
-P1 outcomes:
+### Shifting patches (`V`, world seed 45)
 
-1. **Finite/range validation** (`c751a13`) - `SimulationConfig.Validate()` requires all ten float
-   tuning values finite; `ResourceDefinition` rejects non-finite geometry and amounts at
-   construction. Clamping is not a NaN filter, which is why the boundary is the only cheap place.
-2. **Experiment manifest/provenance** (`b8a61a7`) - `ExperimentManifest` + `ExperimentCsv`, which
-   **refuses to compose a CSV without provenance**, plus
-   `SimulationScenario.ComputeLayoutFingerprint()`. **Use these for every new experiment CSV.**
-3. **Genetic distance** (`d3fac12`) - measured at a constant 240 bytes per pair (120 MB and 126 ms
-   per observation at 1,000 creatures), fixed to flatten traits once per snapshot: 1,151x less
-   allocation, 2.5x faster.
-4. **Resource allocation** - benchmarked and **deliberately not optimised**. Cost is
-   O(requests x distinct resources), so crowding is the *cheap* case, and a 12,000-tick run at 523
-   creatures takes 2.72 s end to end. Optimising would risk a deterministic path for an
-   unmeasurable gain. See `docs/experiments/p1-resource-allocation-benchmark-2026-08-22.md`.
+- ~**29** patch deaths and ~**33** establishments per 6,000-tick run; equilibrium **11.96** active
+  food sites.
+- Route permanence **−0.0935 (t −6.47)**; distinct routes per creature **+0.628 (t +4.48, 22/30)**;
+  cross-kind legs unchanged (445 vs 441). **No survival cost.**
+- Honest extinction rate **6/30**. Seed 42 dies; seed 45 chosen from the 24/30 that establish.
 
-Remaining, in order:
+### The reproduction gate (DECIDED — keep as-is)
 
-1. **State fingerprint V2** - designed, unimplemented:
-   `docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`. Three hashes with three jobs;
-   the acceptance criterion that matters is that `FlagLivenessAnalysis` must still report exactly
-   the known inert set afterwards.
-2. **Resume the ROADMAP.** Next unfinished P4a items are the selected-creature action/history
-   feedback and reassessing safety-gated rendezvous (its first ecological experiment was null - do
-   not build pack architecture to force it).
+- `ReproductionSystem.CanReproduce` needs energy AND hydration AND health each **≥70%** of capacity.
+- Adults satisfy it **95.0%** of adult-ticks with co-located resources, **56.8%** on the route ring,
+  **33.5%** when food sits 7 units from water.
+- Marginals collapse (energy above 0.7: 95.1% → 46.3%) **plus** a simultaneity penalty of **8.6–12.8
+  points**.
+- **Nothing starves or dehydrates**: 0 dehydration deaths, 0.07 starvations per run; all four
+  founders die of **age** at tick ~2500 in every arm. Minimum hydration reached averages **0.445**.
+
+### Plant lifetime accounting (CONFIRMED on fixed code)
+
+Pre-fix → post-fix, same probe, version-independent detector:
+
+- takeover fraction **0.3409 → 0.3471** (recorded 34%)
+- median takeover lifetime **1.95 s → 1.95 s** (recorded ~2 s)
+- R²(takeover, offspring) **0.5013 → 0.5164** (recorded 51.9%)
+- R²(realised lifespan, offspring) among patches that **died of age**: **0.0039** (recorded 0.024 —
+  same claim). Pooled with right-censored survivors it reads 0.14; **that is an artefact.**
+
+### Plant corpus revalidation (120 seeds, varying founders, fixed code)
+
+- `Dispersal` **+0.1119, t +15.63, 110/120** (recorded t +14→+19.6, 105–119/120) — confirmed
+- `SeedInvestment` **+0.0872, t +7.10, 91/120** (recorded t +4.8→+6.8) — confirmed
+- Establishment contest, paired on−off: **+0.0362, t +3.22, 72/120** (recorded t +4.03, 76/120) —
+  **replicates**
+- `SeedProductionRate` at 24 sites: **t −2.80, 43/120 up** — null, as recorded
+- Survival: **0/120 extinct, 0/120 frozen** in all six combinations
+
+### Occupancy is a cliff in target spacing
+
+| spacing | occupancy | extinct |
+|---|---|---|
+| 4 | 0.833 | 0/10 |
+| 8 | 0.528 | 0/10 |
+| **9.5** | **0.311** | **0/10** |
+| 11 | 0.085 | 3/10 |
+| 13.3 | 0.023 | 9/10 |
+
+`DispersalRange = 4 + 20 × Dispersal` and Dispersal evolves upward, so a mature patch throws seeds
+14–24 units; any tighter lattice saturates. Viable window ≈ spacing 9.3–9.7, ~4% of the swept range.
+
+### P1 measurements
+
+- Genetic distance: **240 bytes/pair** before → 187 KB / 4.8 MB / **120 MB and 126 ms** at 40 / 200 /
+  1,000 creatures. After: 4.3 KB / 21 KB / **104 KB and 50 ms**. **1,151x** less, **2.5x** faster.
+- Resource allocation: cost is **O(requests × distinct resources)**, not O(requests²). 1,000 requests
+  on 1 resource = **16.9 µs**; on 24 resources = **165 µs**. Full 12,000-tick runs: **0.012 /
+  0.090 / 0.227 ms per tick** at peak populations 38 / 48 / 523.
+
+---
+
+## 3. Unresolved findings
+
+### The three low-occupancy plant conclusions are UNVERIFIABLE
+
+`p4-site-abundance-seed-production-rate-2026-08-20.md`,
+`p4-low-occupancy-plant-route-audit-2026-08-20.md`,
+`p4-low-occupancy-growth-trait-reaudit-2026-08-20.md` — banners stay.
+
+Their scenario was never committed and cannot be recovered (no ZZZ probe was ever committed, so
+none was ever deleted; the CSV and writeups give count, config, seeds, ticks and occupancy but never
+coordinates). The calibrated replication reproduces occupancy **0.311** but grazes at
+**0.00261 vs 0.00699 — a ratio of 0.373** — because its free-site pool sits outside the ±25 creature
+arena and is never grazed. Placing 162 targets at non-saturating spacing *inside* the arena is
+geometrically impossible.
+
+Measured at that condition, for the record: `SeedProductionRate` **+0.00424, t +0.72, 64/120** (does
+not replicate); `SeedlingResilience` contest-on−off **−0.00248, t −0.34, 53/120** (reversal not
+demonstrated, but the +0.0362 advantage seen at 24 sites is **abolished**); the six growth-rate nulls
+**hold**. `PlantEstablishmentContestEnabled` costs **19/120 extinctions** at low occupancy against
+4/120 base.
+
+**Do not attempt a fourth reconstruction.** If free-site abundance matters, re-derive it as a NEW
+experiment with a committed scenario, in a geometry that fits inside the grazed arena.
+
+### Lifespan-headroom claim: not adjudicated, control was confounded
+
+`mortality-off` gives lifespan no channel but also removes site turnover and rewrites the regime:
+the same comparison moved `Dispersal` **+0.0834 (t +21.40, 118/120)**, `NutrientUptake` **−0.0466
+(t −7.62)**, `WaterEfficiency` **−0.0445 (t −8.61)**. Needs a lifespan-specific control that does
+not exist.
+
+### Unverified by me
+
+The breeding-readiness inspector UI (`15c7a5a`) compiles and passes tests but was **never seen in
+Play mode**. Layout at 324px with all optional trait rows showing is untested.
+
+### Not measured
+
+Per-tick resource request counts were never instrumented. The do-not-optimise decision uses
+population as an upper bound — sound for that decision, but it is a bound, not an attribution.
+
+---
+
+## 4. Decisions that must NOT be reopened
+
+1. **Soft home-range affinity is closed as a measured negative.** Flag stays default `false`; code,
+   tests and key `R` stay; spec and plan carry SUPERSEDED banners. Do not tune
+   `DefaultHomeRangeBonusMaximum`, the falloff distance or the learning fraction — the **sign** of
+   the effect is wrong, not its size.
+2. **The joint 70%/70% reproduction gate stays** (user decision). Reduced fertility while commuting
+   is accepted as real ecology. Do not change `ReproductionSystem.CanReproduce`. No re-baseline is
+   needed and every result on record stands. Separated scenarios must be calibrated to be viable
+   *under* the gate.
+3. **Resource allocation is not to be optimised** at current scales. Revisit only if populations in
+   the thousands and site counts in the hundreds coincide.
+4. **`ObservationShiftingPatches` needs no further placement or productivity calibration** — six
+   variants are recorded and the joint gate explains why all failed.
+5. **Do not build the P4a juvenile local-area bias as a fix for separated-resource extinction.**
+   Juveniles are not the failing class and mortality is not the failure mode.
+6. **Place memory stays inert.** Never wire `MemorySystem.ObservePlace`.
+7. **Do not use the competition-off arm as a drift control.** It disables no trait.
+
+---
+
+## 5. Next task
+
+1. **State fingerprint V2** — designed, unimplemented:
+   `docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`. Three hashes with three jobs
+   (frozen V1; versioned complete V2 including config; config-free `BehaviorHash`). The acceptance
+   criterion that matters: **`FlagLivenessAnalysis` must still report exactly the known inert set** —
+   if adding configuration makes an extra flag read live, the change is wrong, not the pinned set.
+   Omissions the audit found beyond the review's list: `_birthOrdinal`, `_plantSeedOrdinal` (both
+   feed RNG streams), plant `Age` and `ReproductionCooldownRemaining`, the three store `_nextId`
+   counters, `PlantSiteRegistry` contents/order, and configuration beyond `WorldSeed`.
+2. **Resume `docs/ROADMAP.md`.** Next unfinished P4a items: selected-creature action/history
+   feedback, and reassessing safety-gated rendezvous (first ecological experiment was null — do not
+   build pack architecture to force it).
 3. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
-   design questions, not automatic fixes. The stale-grid question is already scoped by the
-   fingerprint design's settled-tick validity rule.
+   design questions, not automatic fixes.
 
-Do **not** attempt a fourth reconstruction of the 168-site condition. If free-site abundance matters
-scientifically, re-derive it as a new experiment with a committed scenario, in a geometry that fits
-inside the +/-25 grazed arena.
+**Use `ExperimentManifest` + `ExperimentCsv` for every new experiment CSV.** `ExperimentCsv.Compose`
+refuses without provenance; that is deliberate.
 
-**Unverified by me:** the breeding-readiness inspector UI (`15c7a5a`) compiles and passes tests but
-was never seen in Play mode; its layout at 324px with all optional trait rows showing is untested.
+---
 
-## Working-tree rules
+## 6. Test commands
+
+From `tools/HeadlessTests`:
+
+```powershell
+dotnet build
+dotnet test --no-build --filter "FullyQualifiedName!~LivenessTests"
+dotnet test --no-build --filter "FullyQualifiedName~PlantLivenessTests"
+dotnet test --no-build --filter "FullyQualifiedName~LivenessTests&FullyQualifiedName!~RiskAversionIsLiveOnlyWhenThreatsExist"
+dotnet test --no-build --filter "FullyQualifiedName~RiskAversionIsLiveOnlyWhenThreatsExist"
+```
+
+**Green at handoff: 480 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
+
+Presentation changes additionally need a Unity compile — the headless project excludes
+`Assets/Scripts/Presentation`:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath 'C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim' -logFile '.\Logs\compile.log'
+```
+
+Then check `grep -c "error CS"` on the log and confirm `Exiting batchmode successfully`.
+
+---
+
+## 7. Play-mode keys
+
+`Space` pause · `1`/`2`/`4`/`8` speed · `H` overlay · left-click select, drag resources.
+
+Scenarios: **`V` shifting patches (best — the map changes as you watch)** · `5` stable · `6` scarcity
+· `7` migration · `9` mating · `E` starter habitat · `R` home range (looks identical to `5` — that
+is the measured result, not a bug) · `N` all-flags playtest · `B`/`D`/`F`/`P`/`C`/`T`/`G`/`M` older
+demos.
+
+---
+
+## 8. Working-tree rules
 
 Intentionally untracked: Unity `.meta` files, `Assets/_Recovery/`, and
-`ProjectSettings/PackageManagerSettings.asset`. Do not stage or delete them. Add named files only;
-never `git add -A`. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before committing.
-
-## Verification workflow
-
-From `tools/HeadlessTests`: `dotnet build`, then the non-liveness shard, `PlantLivenessTests`,
-liveness excluding `RiskAversionIsLiveOnlyWhenThreatsExist`, then that test alone. Presentation
-changes additionally need a Unity 6000.2.14f1 batch compile; the headless project does not compile
-`Assets/Scripts/Presentation`.
+`ProjectSettings/PackageManagerSettings.asset`. **Never stage or delete them. Never `git add -A`** —
+add named files only. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before committing; none exist at
+handoff.

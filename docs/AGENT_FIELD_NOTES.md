@@ -758,6 +758,27 @@ was something a lattice cannot express, and it is gone.** The honest next move i
 underlying question as a new experiment with a committed scenario, not to keep auditing an
 unrecoverable one.
 
+**2026-08-22 - Measure the thing before optimising it, and be willing to decline.** Two P1
+performance items, same discipline, opposite outcomes. Genetic distance was a real hot spot with a
+number attached - a constant **240 bytes per pair**, 120 MB and 126 ms per observation at 1,000
+creatures - and got fixed (1,151x less allocation). Resource allocation was benchmarked and
+**declined**: its cost is O(requests x distinct resources) so crowding is the *cheap* case (1,000
+requests on one resource = 16.9 us), and a full 12,000-tick run at the largest reachable population
+takes 2.72 s end to end. Optimising it would have risked a deterministic path that decides who eats
+when resources run short, for an unmeasurable gain. **A review calling something a hot spot is a
+hypothesis; the benchmark is the result, including when it says do nothing.**
+
+**2026-08-22 - Pin a scaling property, not a magic number.** The regression guard for the clustering
+fix asserts that allocation grows under 8x when pairs grow 16x, rather than asserting a byte count.
+A byte threshold rots the moment anything else in the path changes; the scaling assertion fails
+exactly when someone reintroduces per-pair allocation, which is the thing worth catching.
+
+**2026-08-22 - A single source of truth for trait order, or inheritance and the hash will drift.**
+`Genome.WriteTraits(destination, offset)` now writes the fields and `ToTraits()` is a wrapper around
+it. Trait order feeds `FromTraits`, inheritance and analysis; two hand-maintained copies of that
+order is a silent-corruption bug waiting to happen. If a trait is added, there is one place to
+change.
+
 ## 6. Standing project facts
 
 - **P5 ancestry-aware cluster history is analysis-only.** Each segment is scoped to its
