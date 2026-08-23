@@ -443,6 +443,15 @@ Move the flag out of `LivenessTests.KnownInertFlags`; do not "fix" the test.
 
 ## 10. Terrain (P6 groundwork) — where it actually stands
 
+**Read `docs/terrain-brainstorm-2-2026-08-23.md` and `docs/reference-implementations.md` before
+touching terrain.** The first explains why the original design was structurally wrong rather than
+under-tuned; the second lists the reference implementations worth reading and what each maps to on
+this roadmap. Hydraulic erosion is the highest-value one and is already specified as T2.
+
+**The lesson that cost the most this session: read the reference implementation before writing the
+system, not after.** Fifteen rounds of first-principles tuning gave six wrong diagnoses; twenty
+minutes of reading gave the architecture.
+
 **Far more existed than "not started".** The elevation field has been in the repo since 2026-08-19:
 ridged multifractal (`1 - |2n-1|`, squared, octave-weighted so ridges connect into chains) plus a
 lapse rate `temperature - 0.45 * elevation`, behind `ElevationFieldEnabled`. Moisture, fertility and
