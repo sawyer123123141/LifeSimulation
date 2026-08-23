@@ -1259,3 +1259,21 @@ change.
 - **A global statistic and a local view answer different questions, and the local one is what a
   person sees.** Ice at 0.116 of the surface is true and was no help; ice at 0.00 of the window in
   front of the user is the fact that mattered.
+- **Ranking is a lookup, and a lookup is a cliff (2026-08-23).** Blending the shelf between the two
+  nearest plates fixed the seam, and a wall survived it: boundary **kind and intensity belong to a
+  pair of plates**, so they change discontinuously the moment a different plate becomes
+  second-nearest - along a line through the cell interior, far from any seam, where the seam blend
+  has already saturated to 1.000 and smooths nothing. Measured at latitude 48.7: elevation stepped
+  **0.277 to 0.528 across 1.04 metres, a grade of 7.24 - an 82 degree wall** - with identical shelf
+  and identical seam distance on both sides, reading Divergent on one and ContinentalCollision on the
+  other. Carrying both candidate neighbours and crossfading on how close they are to swapping fixed
+  it: max grade 7.24 to 2.80, medians and biome mix unchanged to within a point.
+- **A median cannot see a wall.** Land grade median at that latitude was 0.069 - the smoothest window
+  measured anywhere - while it contained an 82 degree cliff. Report a maximum alongside every median,
+  and when the maximum is bad, print what the lookup was doing on each side of it rather than
+  guessing. The first guess here was wrong (a suspected off-by-one in the seam smoothstep) and the
+  measurement took two minutes.
+- **Fix the discontinuity, not the symptom.** The crossfade only acts where the ranking is close to
+  changing hands, so away from those lines the field is bit-for-bit what it was. That is why the
+  biome mix survived a change to the plate machinery - worth aiming for deliberately, because a
+  global retune would have invalidated every window measurement taken this session.
