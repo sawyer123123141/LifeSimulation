@@ -150,7 +150,7 @@ namespace LifeSimulation.Presentation
 
             // Drawn before the hidden-HUD early return: tuning terrain is exactly when the rest of
             // the HUD is in the way, so the panel has to survive H.
-            _terrainTuningPanel.Draw(RebuildTerrainViews);
+            _terrainTuningPanel.Draw(_terrainPreview, RebuildTerrainViews);
 
             if (_hudHidden)
             {

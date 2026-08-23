@@ -54,6 +54,7 @@ namespace LifeSimulation.Presentation
         private int _plateRevision = int.MinValue;
         private double _centreLatitude;
         private double _centreLongitude;
+        private bool _centreChosenByCaller;
 
         public TerrainPreview()
         {
@@ -66,6 +67,56 @@ namespace LifeSimulation.Presentation
         }
 
         public Mode Current { get; private set; } = Mode.Off;
+
+        /// <summary>
+        /// Where the flat views are centred, in radians.
+        ///
+        /// <para>Movable because a 400-unit window spans about one plate, so the default coastline
+        /// shows whatever biomes happen to be there and no others. The planet has ice, tundra,
+        /// desert, marsh, scrub and grassland; a single fixed window is not evidence about any of
+        /// them except its own.</para>
+        ///
+        /// <para>Setting either one pins the centre, so a later plate rebuild does not drag the view
+        /// back to the computed coast. <see cref="ResetCentreToCoast"/> releases it.</para>
+        /// </summary>
+        public double CentreLatitude
+        {
+            get { return _centreLatitude; }
+            set
+            {
+                _centreLatitude = value;
+                _centreChosenByCaller = true;
+            }
+        }
+
+        public double CentreLongitude
+        {
+            get { return _centreLongitude; }
+            set
+            {
+                _centreLongitude = value;
+                _centreChosenByCaller = true;
+            }
+        }
+
+        /// <summary>World seed the current plates and terrain were built from.</summary>
+        public int Seed
+        {
+            get { return _plateSeed; }
+        }
+
+        /// <summary>The plate structure behind the current view, for a caller that wants to walk it.</summary>
+        public PlateStructure Plates
+        {
+            get { return _plates; }
+        }
+
+        /// <summary>Return to the computed coastline: a continental plate meeting an oceanic one.</summary>
+        public void ResetCentreToCoast()
+        {
+            _centreChosenByCaller = false;
+            if (_plates != null) _plates.GetCoastalCentre(out _centreLatitude, out _centreLongitude);
+        }
 
         /// <summary>Vertical exaggeration, relative to the shared default. Tunable at runtime.</summary>
         public float HeightScale { get; set; } = 14f;
@@ -175,7 +226,13 @@ namespace LifeSimulation.Presentation
             _plates = PlateStructure.CreateActive(seed);
             _plateSeed = seed;
             _plateRevision = revision;
-            _plates.GetCoastalCentre(out _centreLatitude, out _centreLongitude);
+
+            // A caller-chosen centre survives a plate rebuild. Otherwise moving a plate slider would
+            // snap the view back to the computed coast and look like the control did nothing.
+            if (!_centreChosenByCaller)
+            {
+                _plates.GetCoastalCentre(out _centreLatitude, out _centreLongitude);
+            }
         }
 
         /// <summary>

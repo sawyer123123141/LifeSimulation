@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace LifeSimulation.Presentation
@@ -24,10 +26,21 @@ namespace LifeSimulation.Presentation
     {
         private const float Width = 296f;
 
-        private static readonly string[] TabNames = { "Relief", "Scale", "Climate", "Plates" };
+        private static readonly string[] TabNames = { "Relief", "Scale", "Climate", "Plates", "View" };
+
+        /// <summary>Matches <see cref="TerrainMeshBuilder"/>: one radian of arc is 500 metres.</summary>
+        private const double SphereRadius = 500d;
+
+        /// <summary>Grid used for the biome readout. Coarse: it is a summary, not a render.</summary>
+        private const int MixSamples = 48;
 
         private Vector2 _scroll;
         private int _tab;
+
+        // The biome readout is a few thousand terrain samples, so it is computed when the view or the
+        // settings move rather than every frame the panel is open.
+        private string _mixText;
+        private string _mixKey;
 
         /// <summary>
         /// Style for the line under each slider. Built on first draw rather than in a field, because
@@ -46,7 +59,7 @@ namespace LifeSimulation.Presentation
         /// Draw the panel. <paramref name="onChanged"/> runs once per frame in which any value moved,
         /// and should rebuild whatever the caller draws terrain into.
         /// </summary>
-        public void Draw(Action onChanged)
+        public void Draw(TerrainPreview preview, Action onChanged)
         {
             if (!Visible) return;
 
@@ -158,7 +171,7 @@ namespace LifeSimulation.Presentation
                         showWavelength: true);
                     break;
 
-                default:
+                case 3:
                     GUILayout.Label(
                         "Land comes from tectonic plates, not from noise. These decide where "
                         + "continents are at all, so they change the world rather than tune it.", _hint);
@@ -181,6 +194,10 @@ namespace LifeSimulation.Presentation
                         "Wander scale", ref settings.WarpFrequency, 0.5d, 8d, 0d,
                         "Length of one meander in that wander.", showWavelength: true);
                     break;
+
+                default:
+                    changed |= DrawViewTab(preview);
+                    break;
             }
 
             GUILayout.EndScrollView();
@@ -199,6 +216,167 @@ namespace LifeSimulation.Presentation
             if (!changed) return;
             PlanetTerrain.MarkSettingsChanged();
             onChanged?.Invoke();
+        }
+
+
+        /// <summary>
+        /// Where the flat views look.
+        ///
+        /// <para><b>Why this is a control and not a constant.</b> A 400-unit window spans about one
+        /// plate. Parked on one coastline it shows that coastline's biomes and no others, however
+        /// many the planet has - and it had been parked on the same one for the whole of this work.
+        /// Moving it is the difference between "the generator makes grass and ice" and knowing what
+        /// it actually makes.</para>
+        ///
+        /// <para>The biome mix underneath is the honest version of the same question: a colour is a
+        /// judgement, a count is not.</para>
+        /// </summary>
+        private bool DrawViewTab(TerrainPreview preview)
+        {
+            if (preview == null || preview.Current == TerrainPreview.Mode.Off)
+            {
+                GUILayout.Label("Press K to open a terrain view, then come back here.", _hint);
+                return false;
+            }
+
+            if (preview.Current == TerrainPreview.Mode.Planet)
+            {
+                GUILayout.Label("The globe shows the whole planet already. These move the two flat views.", _hint);
+            }
+
+            bool changed = false;
+            double latitude = preview.CentreLatitude;
+            double longitude = preview.CentreLongitude;
+
+            GUILayout.Label($"Latitude  {latitude * Mathf.Rad2Deg:0.0} degrees");
+            var movedLatitude = (double)GUILayout.HorizontalSlider((float)latitude, -1.4f, 1.4f);
+            GUILayout.Label("Toward a pole for ice and tundra, toward the equator for desert.", _hint);
+
+            GUILayout.Label($"Longitude  {longitude * Mathf.Rad2Deg:0.0} degrees");
+            var movedLongitude = (double)GUILayout.HorizontalSlider((float)longitude, -3.15f, 3.15f);
+            GUILayout.Label("Travels around the planet at this latitude.", _hint);
+
+            if (Math.Abs(movedLatitude - latitude) > 1e-5d)
+            {
+                preview.CentreLatitude = movedLatitude;
+                changed = true;
+            }
+
+            if (Math.Abs(movedLongitude - longitude) > 1e-5d)
+            {
+                preview.CentreLongitude = movedLongitude;
+                changed = true;
+            }
+
+            GUILayout.Space(6f);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Coastline"))
+            {
+                preview.ResetCentreToCoast();
+                changed = true;
+            }
+
+            if (GUILayout.Button("Next continent"))
+            {
+                changed |= MoveToNextContinent(preview);
+            }
+
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Coastline is the computed default: a land plate meeting an ocean one.", _hint);
+
+            GUILayout.Space(8f);
+            GUILayout.Label("Biomes in this view");
+            GUILayout.Label(BiomeMix(preview), _hint);
+            return changed;
+        }
+
+        /// <summary>
+        /// Centre the view on the next continental plate after the current one, wrapping round.
+        /// Walking the plates beats a random jump, which lands in open ocean three times in four.
+        /// </summary>
+        private static bool MoveToNextContinent(TerrainPreview preview)
+        {
+            PlateStructure plates = preview.Plates;
+            if (plates == null) return false;
+
+            // Start after whichever plate the view is sitting on, so repeated presses tour the
+            // planet rather than snapping between the same two.
+            int start = 0;
+            for (int index = 0; index < plates.Count; index++)
+            {
+                plates.GetSeedLatLon(index, out double seedLatitude, out double seedLongitude);
+                if (Math.Abs(seedLatitude - preview.CentreLatitude) < 1e-6d
+                    && Math.Abs(seedLongitude - preview.CentreLongitude) < 1e-6d)
+                {
+                    start = index + 1;
+                    break;
+                }
+            }
+
+            for (int step = 0; step < plates.Count; step++)
+            {
+                int index = (start + step) % plates.Count;
+                if (!plates.IsContinental(index)) continue;
+
+                plates.GetSeedLatLon(index, out double latitude, out double longitude);
+                preview.CentreLatitude = latitude;
+                preview.CentreLongitude = longitude;
+                return true;
+            }
+
+            // Every plate oceanic - possible at a low continental share.
+            return false;
+        }
+
+        /// <summary>
+        /// What is actually in frame, by count. Recomputed only when the view or the settings move.
+        /// </summary>
+        private string BiomeMix(TerrainPreview preview)
+        {
+            float halfWidth = preview.CurrentHalfWidth;
+            string key = $"{preview.CentreLatitude:0.0000}|{preview.CentreLongitude:0.0000}|{halfWidth}|{PlanetTerrain.SettingsRevision}";
+            if (key == _mixKey && _mixText != null) return _mixText;
+
+            PlateStructure plates = preview.Plates;
+            if (plates == null) return "no plates yet";
+
+            double angularWidth = 2d * halfWidth / SphereRadius;
+            double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
+                (int)(MixSamples * (2d * Math.PI) / angularWidth));
+
+            var counts = new Dictionary<BiomeKind, int>();
+            for (int row = 0; row < MixSamples; row++)
+            {
+                double z = -halfWidth + (2d * halfWidth * row / (MixSamples - 1));
+                for (int column = 0; column < MixSamples; column++)
+                {
+                    double x = -halfWidth + (2d * halfWidth * column / (MixSamples - 1));
+                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(
+                        preview.Seed, plates,
+                        preview.CentreLatitude + (z / SphereRadius),
+                        preview.CentreLongitude + (x / SphereRadius),
+                        maximumFrequency);
+
+                    BiomeKind kind = PlanetBiome.Classify(sample);
+                    counts.TryGetValue(kind, out int existing);
+                    counts[kind] = existing + 1;
+                }
+            }
+
+            var ordered = new List<KeyValuePair<BiomeKind, int>>(counts);
+            ordered.Sort((left, right) => right.Value.CompareTo(left.Value));
+
+            var text = new StringBuilder();
+            double total = MixSamples * MixSamples;
+            foreach (KeyValuePair<BiomeKind, int> entry in ordered)
+            {
+                if (text.Length > 0) text.Append("   ");
+                text.Append($"{entry.Key} {entry.Value / total:0.0%}");
+            }
+
+            _mixKey = key;
+            _mixText = text.ToString();
+            return _mixText;
         }
 
         /// <summary>

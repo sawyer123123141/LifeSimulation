@@ -199,6 +199,20 @@ namespace LifeSimulation.EditorTools
             AppendWindow(report, plates, "arena (50u)", centreLatitude, centreLongitude, 25d);
             AppendWindow(report, plates, "origin-centred 400u", 0d, 0d, 200d);
 
+            // The same window walked toward a pole. The global biome counts say the planet has ice,
+            // tundra and desert; the shipped view centre is at latitude -15 degrees and shows none of
+            // them. A biome that exists globally and never appears in any view is, for every purpose
+            // anyone has, absent - so the sweep is the check that the palette is reachable rather
+            // than merely present.
+            report.AppendLine();
+            report.AppendLine("THE SAME WINDOW AT OTHER LATITUDES (same longitude, 400u)");
+            foreach (double latitude in new[] { -1.30d, -1.00d, -0.70d, -0.40d, 0d, 0.40d, 0.70d, 1.00d, 1.30d })
+            {
+                AppendWindow(
+                    report, plates, $"lat {latitude * 180d / Math.PI,6:0.0} deg",
+                    latitude, centreLongitude, 200d);
+            }
+
             // Contrast() clamps, so an over-strong setting pins whole regions to 0 or 1. Saturated
             // ground is flat ground with a hard edge where it crosses - banding, not variety.
             int moistureLow = 0, moistureHigh = 0, temperatureLow = 0, temperatureHigh = 0;
@@ -302,6 +316,7 @@ namespace LifeSimulation.EditorTools
             double minimum = double.MaxValue;
             double maximum = double.MinValue;
             var biomes = new HashSet<BiomeKind>();
+            var biomeCounts = new Dictionary<BiomeKind, int>();
             for (int row = 0; row < side; row++)
             {
                 double z = -halfWidth + (2d * halfWidth * row / (side - 1));
@@ -317,7 +332,10 @@ namespace LifeSimulation.EditorTools
                     if (sample.Elevation > 0f) land++;
                     if (sample.Elevation < minimum) minimum = sample.Elevation;
                     if (sample.Elevation > maximum) maximum = sample.Elevation;
-                    biomes.Add(PlanetBiome.Classify(sample));
+                    BiomeKind kind = PlanetBiome.Classify(sample);
+                    biomes.Add(kind);
+                    biomeCounts.TryGetValue(kind, out int seen);
+                    biomeCounts[kind] = seen + 1;
                 }
             }
 
@@ -341,6 +359,19 @@ namespace LifeSimulation.EditorTools
                 $"{string.Empty,-22} land grade  median {Quantile(landGrades, 0.5):0.000}  " +
                 $"p90 {Quantile(landGrades, 0.9):0.000}  p99 {Quantile(landGrades, 0.99):0.000}  " +
                 $"max {Quantile(landGrades, 1d):0.000}");
+
+            // Named, not counted. "biomes 5" says the window is varied; it does not say whether any
+            // of the five is the one somebody reported never seeing.
+            var ordered = new List<KeyValuePair<BiomeKind, int>>(biomeCounts);
+            ordered.Sort((left, right) => right.Value.CompareTo(left.Value));
+            var mix = new StringBuilder();
+            foreach (KeyValuePair<BiomeKind, int> entry in ordered)
+            {
+                if (mix.Length > 0) mix.Append("  ");
+                mix.Append($"{entry.Key} {entry.Value / (double)(side * side):0.00%}");
+            }
+
+            report.AppendLine($"{string.Empty,-22} {mix}");
         }
 
         /// <summary>Value at a quantile of an already sorted list.</summary>

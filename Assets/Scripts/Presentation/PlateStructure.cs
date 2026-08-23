@@ -204,6 +204,23 @@ namespace LifeSimulation.Presentation
         /// <para>Prefers a margin that subducts, since that is the landform with the strongest
         /// measured lift (0.346) and therefore supplies relief as well as shoreline.</para>
         /// </summary>
+        /// <summary>Whether plate <paramref name="index"/> carries land.</summary>
+        public bool IsContinental(int index)
+        {
+            return _continental[index];
+        }
+
+        /// <summary>
+        /// Where plate <paramref name="index"/> is centred. Lets a viewer hop from continent to
+        /// continent, which is the only practical way to see biomes that exist somewhere other than
+        /// wherever the default view happens to sit.
+        /// </summary>
+        public void GetSeedLatLon(int index, out double latitude, out double longitude)
+        {
+            latitude = Math.Asin(Math.Max(-1d, Math.Min(1d, _seedY[index])));
+            longitude = Math.Atan2(_seedX[index], _seedZ[index]);
+        }
+
         public void GetCoastalCentre(out double latitude, out double longitude)
         {
             int bestContinental = -1;
