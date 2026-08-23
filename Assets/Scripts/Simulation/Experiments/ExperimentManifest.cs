@@ -82,6 +82,7 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "PlantFertilityAdaptationEnabled", config.PlantFertilityAdaptationEnabled);
             Line(builder, "ProceduralEnvironmentFieldsEnabled", config.ProceduralEnvironmentFieldsEnabled);
             Line(builder, "ElevationFieldEnabled", config.ElevationFieldEnabled);
+            Line(builder, "TerrainDrivenEnvironmentEnabled", config.TerrainDrivenEnvironmentEnabled);
             Line(builder, "PlantEstablishmentContestEnabled", config.PlantEstablishmentContestEnabled);
             Line(builder, "PlantInvaderEstablishmentContestEnabled", config.PlantInvaderEstablishmentContestEnabled);
             Line(builder, "PlantSeedProductionRateEnabled", config.PlantSeedProductionRateEnabled);

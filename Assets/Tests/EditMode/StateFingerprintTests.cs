@@ -269,7 +269,7 @@ namespace LifeSimulation.Tests.EditMode
             // MaximumMemorySlots are excluded because both are derived from already-hashed
             // properties (BaseFrequencyHz, and MinimumMemorySlots + AdditionalMemorySlots,
             // respectively) rather than independent configuration.
-            const int PinnedConfigurationPropertyCount = 44;
+            const int PinnedConfigurationPropertyCount = 45;
 
             PropertyInfo[] properties = typeof(SimulationConfig)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)

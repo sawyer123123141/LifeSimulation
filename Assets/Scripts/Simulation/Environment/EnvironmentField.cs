@@ -1,4 +1,5 @@
 using System;
+using LifeSimulation.Simulation.World;
 using LifeSimulation.Simulation.Core;
 
 namespace LifeSimulation.Simulation.Environment
@@ -52,6 +53,31 @@ namespace LifeSimulation.Simulation.Environment
         private readonly bool _usesPlanetScaleClimate;
         private readonly int _worldSeed;
 
+        // Terrain-driven mode. Built once, because a plate structure is a fixed cost and the coastal
+        // centre is where the arena window sits - both are deterministic in the world seed alone.
+        private readonly bool _usesTerrain;
+        private readonly TerrainSettings _terrainSettings;
+        private readonly PlateStructure _plates;
+        private readonly double _terrainCentreLatitude;
+        private readonly double _terrainCentreLongitude;
+
+        /// <summary>Samples per side of the arena mesh - matches <c>TerrainMeshBuilder.PatchResolution</c>.</summary>
+        private const int TerrainSampleResolution = 193;
+
+        /// <summary>Half-width of the arena window - matches <c>Prototype1Presenter.TerrainHalfWidth</c>.</summary>
+        private const double TerrainWindowHalfWidth = 25d;
+
+        /// <summary>
+        /// Finest terrain detail the simulation reads, derived exactly as
+        /// <c>TerrainMeshBuilder.BuildPatch</c> derives it for the same window.
+        ///
+        /// <para>It has to match, or the simulation reads a sharper or blunter field than the one on
+        /// screen and the join is a lie in the small: a creature would climb a bump nobody drew, or
+        /// walk through one they can see.</para>
+        /// </summary>
+        private static readonly double TerrainMaximumFrequency = PlanetTerrain.MaximumFrequencyFor(
+            (int)(TerrainSampleResolution * (2d * Math.PI) / (2d * TerrainWindowHalfWidth / SphereRadius)));
+
         /// <summary>
         /// How much of the temperature range the full height of the terrain removes. 0.45 is chosen
         /// so a ridge crest is decisively colder than the valley beside it without driving
@@ -79,7 +105,52 @@ namespace LifeSimulation.Simulation.Environment
             _worldSeed = worldSeed;
         }
 
+        private EnvironmentField(int worldSeed, TerrainSettings terrainSettings)
+        {
+            _constantSample = new EnvironmentSample(1f, 1f, 1f);
+            _usesProceduralFields = true;
+            _usesElevation = true;
+            _usesTerrain = true;
+            _worldSeed = worldSeed;
+            _terrainSettings = terrainSettings;
+            _plates = PlateStructure.Create(worldSeed, terrainSettings);
+            _plates.GetCoastalCentre(out _terrainCentreLatitude, out _terrainCentreLongitude);
+        }
+
         public static EnvironmentField CreateMoistureGradient() { return new EnvironmentField(true); }
+
+        /// <summary>
+        /// The terrain settings the <b>simulation</b> generates with.
+        ///
+        /// <para>The shipped defaults, and not the tuning panel's instance: the panel is a live
+        /// control over what is drawn, and a live control over what is simulated would be behaviour
+        /// outside <c>SimulationConfig</c> - invisible to the configuration hash, so two worlds with
+        /// equal hashes could diverge. Making terrain tunable per world means putting these values
+        /// into the config and hashing them, which is a deliberate later step.</para>
+        /// </summary>
+        public static TerrainSettings CreateTerrainSettings()
+        {
+            return new TerrainSettings();
+        }
+
+        /// <summary>
+        /// Moisture, temperature and elevation taken from the <b>terrain generator</b> - the same
+        /// function, seed, window and detail limit the arena mesh is built from.
+        ///
+        /// <para><b>This is the join.</b> Until now the ground a creature was drawn standing on and
+        /// the ground the simulation read were two unrelated fields, so a hill cost a creature
+        /// nothing. Here a ridge is genuinely colder, a rain shadow is genuinely drier, and the coast
+        /// in the picture is the coast in the model.</para>
+        ///
+        /// <para>Output ranges are deliberately the same as the procedural field's - moisture
+        /// .15 to 1, temperature .20 to 1 before lapse, fertility .20 to 1 - so plant systems see
+        /// magnitudes they were calibrated against and any measured difference is the shape of the
+        /// field changing rather than its scale.</para>
+        /// </summary>
+        public static EnvironmentField CreateTerrainDriven(int worldSeed)
+        {
+            return new EnvironmentField(worldSeed, CreateTerrainSettings());
+        }
 
         /// <summary>
         /// Procedural moisture, fertility and temperature, sampled on a sphere. Deterministic in
@@ -130,10 +201,54 @@ namespace LifeSimulation.Simulation.Environment
 
         public EnvironmentSample Sample(SimVector2 position)
         {
+            if (_usesTerrain) return SampleTerrain(position);
             if (_usesProceduralFields) return SampleProcedural(position);
             if (!_usesMoistureGradient) return _constantSample;
             float moisture = .25f + (.75f * Clamp01((position.X + 25f) / 50f));
             return new EnvironmentSample(moisture, 1f, 1f);
+        }
+
+        /// <summary>
+        /// The arena as a window on the planet, at the coastline the renderer centres on.
+        ///
+        /// <para>Same centre, same seed, same detail limit as the mesh - so the elevation here is the
+        /// elevation drawn, to the last decimal.</para>
+        /// </summary>
+        private EnvironmentSample SampleTerrain(SimVector2 position)
+        {
+            PlanetSample terrain = PlanetTerrain.SampleAtLatLon(
+                _worldSeed, _plates,
+                _terrainCentreLatitude + (position.Y / SphereRadius),
+                _terrainCentreLongitude + (position.X / SphereRadius),
+                TerrainMaximumFrequency, _terrainSettings);
+
+            // Height above sea level, normalised against the palette's high-ground reference. Sea bed
+            // reads as zero rather than negative: elevation is a lapse-rate input here, and ground
+            // below the waterline being *warmer* than the shore is not a claim this wants to make.
+            double land = EnvironmentNoise.Clamp01(terrain.Elevation / PlanetTerrain.HighGround);
+
+            double moisture = .15d + (.85d * EnvironmentNoise.Clamp01(terrain.Moisture));
+            double temperature = .20d + (.80d * EnvironmentNoise.Clamp01(terrain.Temperature));
+
+            // Fertility keeps the shape the procedural field established - independent noise ridged
+            // at moderate moisture, so waterlogged and arid ground are both poor and the best soil is
+            // contested. Only its moisture input changes, which is the point: fertility now follows
+            // the rain shadows the terrain actually has.
+            SpherePoint(position, out double x, out double y, out double z);
+            double fertilityNoise = EnvironmentNoise.Contrast(
+                EnvironmentNoise.WarpedFbm(
+                    _worldSeed, channel: 96, x, y, z,
+                    octaves: 3, lacunarity: 2d, gain: .5d, warpStrength: .2d),
+                strength: 2.0d);
+            double moistureBalance = 1d - EnvironmentNoise.Clamp01(Math.Abs(moisture - .55d) * 1.8d);
+            double fertility = .20d + (.80d * EnvironmentNoise.Clamp01(fertilityNoise * (.35d + (.65d * moistureBalance))));
+
+            // Lapse rate, as in the procedural field: height costs warmth, floored rather than zeroed,
+            // because temperature 0 stops growth outright and a dead crest is less interesting than a
+            // cold one.
+            temperature = Math.Max(.02d, temperature - (LapseRate * land));
+
+            return new EnvironmentSample((float)moisture, (float)fertility, (float)temperature, (float)land);
         }
 
         private EnvironmentSample SampleProcedural(SimVector2 position)

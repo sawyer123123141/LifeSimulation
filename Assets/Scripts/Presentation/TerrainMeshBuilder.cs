@@ -57,8 +57,14 @@ namespace LifeSimulation.Presentation
         public static void BuildPatch(
             int seed, PlateStructure plates, double centreLatitude, double centreLongitude,
             float halfWidth, float heightScale,
-            out Vector3[] vertices, out Color[] colors, out int[] triangles)
+            out Vector3[] vertices, out Color[] colors, out int[] triangles,
+            TerrainSettings settings = null)
         {
+            // Defaults to what the viewer is tuned to. The arena passes the SIMULATION's settings
+            // when terrain drives the ecology, because a picture that disagrees with the model is the
+            // failure this project exists to avoid - and the tuning panel would otherwise desync them
+            // the moment anyone moved a slider.
+            settings = settings ?? TerrainView.Settings;
             int side = PatchResolution;
             double angularWidth = 2d * halfWidth / SphereRadius;
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
@@ -78,7 +84,7 @@ namespace LifeSimulation.Presentation
                         seed, plates,
                         centreLatitude + (z / SphereRadius),
                         centreLongitude + (x / SphereRadius),
-                        maximumFrequency, TerrainView.Settings);
+                        maximumFrequency, settings);
 
                     int vertex = (row * side) + column;
 

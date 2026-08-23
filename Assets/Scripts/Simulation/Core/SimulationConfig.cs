@@ -153,7 +153,8 @@ namespace LifeSimulation.Simulation.Core
             float plantSeedProductionRateDispersalCharge = DefaultPlantSeedProductionRateDispersalCharge,
             bool plantSeedProductionRateEnabled = false,
             bool safetyGatedMateRendezvousEnabled = false,
-            bool homeRangeAffinityEnabled = false)
+            bool homeRangeAffinityEnabled = false,
+            bool terrainDrivenEnvironmentEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -193,6 +194,7 @@ namespace LifeSimulation.Simulation.Core
             ProceduralEnvironmentFieldsEnabled = proceduralEnvironmentFieldsEnabled;
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
             ElevationFieldEnabled = elevationFieldEnabled;
+            TerrainDrivenEnvironmentEnabled = terrainDrivenEnvironmentEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -313,6 +315,21 @@ namespace LifeSimulation.Simulation.Core
         public bool ElevationFieldEnabled { get; }
 
         /// <summary>
+        /// Whether moisture, temperature and elevation come from the terrain generator rather than
+        /// from <see cref="EnvironmentField"/>'s own noise.
+        ///
+        /// <para><b>This is the join.</b> Until it is on, the ground a creature is drawn standing on
+        /// and the ground the simulation reads are two unrelated fields: the arena mesh comes from
+        /// <c>PlanetTerrain</c> and the ecology from independent fBm, so a hill costs a creature
+        /// nothing and the visible world is decoration.</para>
+        ///
+        /// <para><b>Every plant result on record was measured with this off</b> and is scoped to the
+        /// old field. Turning it on for a scenario invalidates nothing by itself, but any result
+        /// carried over from a scenario that has it on is a new measurement, not a comparison.</para>
+        /// </summary>
+        public bool TerrainDrivenEnvironmentEnabled { get; }
+
+        /// <summary>
         /// Lets a vulnerable seedling resist takeover with its own <c>SeedlingResilience</c>,
         /// turning the single largest non-heritable term in plant fitness into a selectable one -
         /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md. Requires
@@ -412,6 +429,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, ProceduralEnvironmentFieldsEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantFertilityAdaptationEnabled ? 1UL : 0UL);
             hash = Hash(hash, ElevationFieldEnabled ? 1UL : 0UL);
+            hash = Hash(hash, TerrainDrivenEnvironmentEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

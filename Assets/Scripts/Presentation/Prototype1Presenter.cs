@@ -883,7 +883,8 @@ namespace LifeSimulation.Presentation
             TerrainMeshBuilder.BuildPatch(
                 _world.Config.WorldSeed, _arenaPlates, _arenaCentreLatitude, _arenaCentreLongitude,
                 TerrainHalfWidth, heightScale,
-                out Vector3[] vertices, out Color[] colors, out int[] triangles);
+                out Vector3[] vertices, out Color[] colors, out int[] triangles,
+                ArenaTerrainSettings());
 
             CacheArenaHeights(vertices);
 
@@ -916,13 +917,29 @@ namespace LifeSimulation.Presentation
             }
         }
 
+        /// <summary>
+        /// Which terrain settings the arena is drawn from.
+        ///
+        /// <para>Once terrain drives the ecology the arena must be drawn from the settings the
+        /// <b>simulation</b> generates with, not the viewer's - otherwise moving a tuning slider
+        /// changes the hill on screen without changing the hill a creature climbs. The K viewer stays
+        /// on the panel's settings, because it is a look at the generator rather than at this
+        /// world.</para>
+        /// </summary>
+        private TerrainSettings ArenaTerrainSettings()
+        {
+            return _world != null && _world.Config.TerrainDrivenEnvironmentEnabled
+                ? EnvironmentField.CreateTerrainSettings()
+                : TerrainView.Settings;
+        }
+
         private void EnsureArenaPlates()
         {
             int seed = _world.Config.WorldSeed;
             int revision = TerrainView.SettingsRevision;
             if (_arenaPlates != null && _arenaPlateSeed == seed && _arenaPlateRevision == revision) return;
 
-            _arenaPlates = TerrainView.CreatePlates(seed);
+            _arenaPlates = PlateStructure.Create(seed, ArenaTerrainSettings());
             _arenaPlateSeed = seed;
             _arenaPlateRevision = revision;
             _arenaPlates.GetCoastalCentre(out _arenaCentreLatitude, out _arenaCentreLongitude);
