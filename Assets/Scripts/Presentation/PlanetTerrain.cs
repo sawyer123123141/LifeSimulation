@@ -105,6 +105,13 @@ namespace LifeSimulation.Presentation
         /// </summary>
         public static PlanetSample Sample(int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency)
         {
+            if (plates == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(plates),
+                    "PlanetTerrain needs a PlateStructure; structure comes from plates, not from noise.");
+            }
+
             // --- 1. Structure comes from plates, not from noise.
             //
             // The world-generation design is explicit that noise cannot produce continents: every

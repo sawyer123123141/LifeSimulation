@@ -211,6 +211,12 @@ namespace LifeSimulation.Presentation
             }
 
             _root.SetActive(true);
+
+            // Every view needs the plate structure, and only the planet path used to ask for it -
+            // so the patch modes dereferenced a null PlateStructure. Ensured once here rather than
+            // per branch, which is what let the two paths disagree in the first place.
+            FieldFor(world);
+
             if (Current == Mode.Planet)
             {
                 BuildPlanet(world);
