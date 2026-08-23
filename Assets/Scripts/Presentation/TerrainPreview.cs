@@ -70,8 +70,6 @@ namespace LifeSimulation.Presentation
         /// 192x96 lat/lon grid it replaces, without the polar singularity or the equatorial stretch.
         /// </summary>
         private const int PlanetSubdivisions = 5;
-        private const int TextureWidth = 384;
-        private const int TextureHeight = 192;
 
         /// <summary>Drawn planet radius in world units. Unrelated to the field's sampling radius.</summary>
         private const float PlanetDrawRadius = 60f;
@@ -83,7 +81,6 @@ namespace LifeSimulation.Presentation
         private readonly MeshFilter _meshFilter;
         private readonly MeshRenderer _renderer;
         private readonly Mesh _mesh;
-        private Texture2D _texture;
 
         /// <summary>
         /// The preview samples <b>its own</b> procedural field with elevation always enabled, rather
@@ -116,8 +113,6 @@ namespace LifeSimulation.Presentation
         // warped-fBm evaluations per call, and a full texture was ~131,000 of them, which is the
         // pause felt on every keypress. Everything sampled is cached and keyed by what it depends
         // on, so changing the height scale rebuilds geometry from cached numbers and never resamples.
-        private Mode _texturedMode = Mode.Off;
-        private int _texturedSeed = int.MinValue;
 
         public TerrainPreview()
         {
@@ -233,8 +228,7 @@ namespace LifeSimulation.Presentation
 
             _fieldSeed = seed;
             _plates = new PlateStructure(seed);
-            _plates.GetContinentalCentre(out _centreLatitude, out _centreLongitude);
-            _texturedMode = Mode.Off;
+            _plates.GetCoastalCentre(out _centreLatitude, out _centreLongitude);
         }
 
         public Mode Advance(SimulationWorld world)
@@ -284,29 +278,26 @@ namespace LifeSimulation.Presentation
         {
             int side = PatchResolution;
             var vertices = new Vector3[side * side];
-            var uv = new Vector2[side * side];
+            var colors = new Color[side * side];
             var triangles = new int[(side - 1) * (side - 1) * 6];
 
             for (int row = 0; row < side; row++)
             {
-                float v = row / (float)(side - 1);
-                float z = Mathf.Lerp(-halfWidth, halfWidth, v);
+                float z = Mathf.Lerp(-halfWidth, halfWidth, row / (float)(side - 1));
                 for (int column = 0; column < side; column++)
                 {
-                    float u = column / (float)(side - 1);
-                    float x = Mathf.Lerp(-halfWidth, halfWidth, u);
+                    float x = Mathf.Lerp(-halfWidth, halfWidth, column / (float)(side - 1));
                     PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
                     float elevation = sample.Elevation;
                     float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * PatchHeightScale;
                     vertices[vertex] = new Vector3(x, height, z);
-                    uv[vertex] = new Vector2(u, v);
+                    colors[vertex] = PlanetBiome.Shade(sample);
                 }
             }
 
             WriteQuads(triangles, side);
-            Commit(vertices, uv, triangles);
-            if (NeedsTexture(world)) ApplyTexture(BuildPatchTexture(world, halfWidth));
+            CommitColored(vertices, colors, triangles);
         }
 
         /// <summary>
@@ -348,41 +339,6 @@ namespace LifeSimulation.Presentation
             CommitColored(vertices, colors, indices);
         }
 
-        /// <summary>
-        /// True when the colour map is stale. Height tuning does not invalidate it, which is most of
-        /// what made adjusting a setting take a visible pause: the texture is tens of thousands of
-        /// field evaluations and none of them depend on the height scale.
-        /// </summary>
-        private bool NeedsTexture(SimulationWorld world)
-        {
-            if (_texture != null && _texturedMode == Current && _texturedSeed == world.Config.WorldSeed) return false;
-            _texturedMode = Current;
-            _texturedSeed = world.Config.WorldSeed;
-            return true;
-        }
-
-        private Texture2D BuildPatchTexture(SimulationWorld world, float halfWidth)
-        {
-            var pixels = new Color[TextureWidth * TextureHeight];
-            for (int y = 0; y < TextureHeight; y++)
-            {
-                float worldZ = Mathf.Lerp(-halfWidth, halfWidth, (y + 0.5f) / TextureHeight);
-                for (int x = 0; x < TextureWidth; x++)
-                {
-                    float worldX = Mathf.Lerp(-halfWidth, halfWidth, (x + 0.5f) / TextureWidth);
-                    PlanetSample sample = SamplePatch(world, worldX, worldZ);
-                    pixels[(y * TextureWidth) + x] = Shade(sample, 1f);
-                }
-            }
-
-            return MakeTexture(pixels);
-        }
-
-        private static Color Shade(PlanetSample sample, float elevationScale)
-        {
-            return PlanetBiome.Shade(sample);
-        }
-
         /// <summary>Two triangles per grid cell, wound consistently across the patch.</summary>
         private static void WriteQuads(int[] triangles, int side)
         {
@@ -404,49 +360,6 @@ namespace LifeSimulation.Presentation
         }
 
         /// <summary>
-        /// Commit the mesh <b>flat shaded</b>: every triangle gets its own three vertices, so each
-        /// face carries one normal and renders as a distinct facet.
-        ///
-        /// <para>This is the low-poly look in the reference art, and it is not only decorative -
-        /// faceting makes slope legible. A smooth-shaded heightfield at this resolution reads as an
-        /// undifferentiated blob, which is part of why the terrain was hard to judge.</para>
-        /// </summary>
-        private void Commit(Vector3[] vertices, Vector2[] uv, int[] triangles)
-        {
-            var flatVertices = new Vector3[triangles.Length];
-            var flatUv = new Vector2[triangles.Length];
-            var flatTriangles = new int[triangles.Length];
-            for (int index = 0; index < triangles.Length; index++)
-            {
-                flatVertices[index] = vertices[triangles[index]];
-                flatUv[index] = uv[triangles[index]];
-                flatTriangles[index] = index;
-            }
-
-            _root.transform.position = Vector3.zero;
-            _mesh.Clear();
-            _mesh.vertices = flatVertices;
-            _mesh.uv = flatUv;
-            _mesh.triangles = flatTriangles;
-            _mesh.RecalculateNormals();
-            _mesh.RecalculateBounds();
-        }
-
-        private Texture2D MakeTexture(Color[] pixels)
-        {
-            if (_texture == null)
-            {
-                _texture = new Texture2D(TextureWidth, TextureHeight, TextureFormat.RGBA32, false);
-                _texture.wrapMode = TextureWrapMode.Clamp;
-                _texture.filterMode = FilterMode.Bilinear;
-            }
-
-            _texture.SetPixels(pixels);
-            _texture.Apply();
-            return _texture;
-        }
-
-        /// <summary>
         /// Sample the patch as a window on the sphere, so the flat views and the globe show the same
         /// world at different zooms rather than unrelated fields.
         ///
@@ -455,7 +368,7 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private PlanetSample SamplePatch(SimulationWorld world, float x, float z)
         {
-            float offset = Current == Mode.Island ? RegionOffset : 0f;
+            const float offset = 0f;
             double longitude = _centreLongitude + ((x + offset) / EnvironmentField.SphereRadius);
             double latitude = _centreLatitude + (z / EnvironmentField.SphereRadius);
             return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PatchMaximumFrequency);
@@ -498,13 +411,5 @@ namespace LifeSimulation.Presentation
             _renderer.material.color = Color.white;
         }
 
-        private void ApplyTexture(Texture2D texture)
-        {
-            // Back to the textured path after the planet may have swapped the shader out.
-            Shader standard = Shader.Find("Standard");
-            if (standard != null && _renderer.material.shader != standard) _renderer.material.shader = standard;
-            _renderer.material.mainTexture = texture;
-            _renderer.material.color = Color.white;
-        }
     }
 }

@@ -182,7 +182,7 @@ namespace LifeSimulation.EditorTools
             // What the flat views actually see. The global land fraction is true and useless for
             // this: a 400-unit patch spans about one plate, so where it is centred decides whether
             // it shows a continent or an empty ocean.
-            plates.GetContinentalCentre(out double centreLatitude, out double centreLongitude);
+            plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
             report.AppendLine();
             report.AppendLine($"FLAT VIEW CENTRE  lat {centreLatitude:0.000} lon {centreLongitude:0.000}");
             AppendWindow(report, plates, "wide patch (400u)", centreLatitude, centreLongitude, 200d, maximumFrequency);

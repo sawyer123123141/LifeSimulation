@@ -159,6 +159,61 @@ namespace LifeSimulation.Presentation
         /// units of open sea was rendered while the planet as a whole was 30% land. A global land
         /// fraction says nothing about where the camera is parked.</para>
         /// </summary>
+        /// <summary>
+        /// Latitude and longitude of a <b>coastline</b>: the midpoint between a continental plate and
+        /// an adjacent oceanic one, which is where land meets sea by construction.
+        ///
+        /// <para>Centring the flat views on a plate centre swung them from 99.9% ocean to 100% land -
+        /// measured land fraction 1.000 with a single biome across the close view, a flat green
+        /// plateau. A coast puts water, beach, lowland and whatever the margin raises in the same
+        /// frame, which is what makes a view worth judging.</para>
+        ///
+        /// <para>Prefers a margin that subducts, since that is the landform with the strongest
+        /// measured lift (0.346) and therefore supplies relief as well as shoreline.</para>
+        /// </summary>
+        public void GetCoastalCentre(out double latitude, out double longitude)
+        {
+            int bestContinental = -1;
+            int bestOceanic = -1;
+            double bestScore = double.NegativeInfinity;
+
+            for (int index = 0; index < Count; index++)
+            {
+                if (!_continental[index]) continue;
+                for (int other = 0; other < Count; other++)
+                {
+                    if (_continental[other]) continue;
+
+                    double dot = (_seedX[index] * _seedX[other]) + (_seedY[index] * _seedY[other]) + (_seedZ[index] * _seedZ[other]);
+                    if (dot < 0.2d) continue; // not neighbours
+
+                    // Adjacency first, then how much relief the margin carries.
+                    double score = dot + _baseElevation[index];
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestContinental = index;
+                        bestOceanic = other;
+                    }
+                }
+            }
+
+            if (bestContinental < 0 || bestOceanic < 0)
+            {
+                GetContinentalCentre(out latitude, out longitude);
+                return;
+            }
+
+            // Midpoint of the two seeds lies on the Voronoi edge between them - the coast.
+            double x = (_seedX[bestContinental] + _seedX[bestOceanic]) * 0.5d;
+            double y = (_seedY[bestContinental] + _seedY[bestOceanic]) * 0.5d;
+            double z = (_seedZ[bestContinental] + _seedZ[bestOceanic]) * 0.5d;
+            Normalize(ref x, ref y, ref z);
+
+            latitude = Math.Asin(Math.Max(-1d, Math.Min(1d, y)));
+            longitude = Math.Atan2(x, z);
+        }
+
         public void GetContinentalCentre(out double latitude, out double longitude)
         {
             int best = -1;
