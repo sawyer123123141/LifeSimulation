@@ -1,7 +1,7 @@
 using System;
 using LifeSimulation.Simulation.Environment;
 
-namespace LifeSimulation.Presentation
+namespace LifeSimulation.Simulation.World
 {
     /// <summary>One point on the planet surface.</summary>
     public readonly struct PlanetSample
@@ -49,8 +49,17 @@ namespace LifeSimulation.Presentation
     /// masked by earlier ones, and clamping happens per layer where a flat basin is actually wanted,
     /// never as a global squash of the composed result.</para>
     ///
-    /// <para><b>Presentation only.</b> Nothing under <c>Assets/Scripts/Simulation</c> reads this, so
-    /// it moves no hash and affects no recorded result.</para>
+    /// <para><b>This lives in Simulation now.</b> It was prototyped in Presentation, where fifteen
+    /// rounds of iteration moved no hash and needed no re-measure. It moved because the simulation
+    /// cannot read Presentation: for a hill to cost a creature anything, the elevation the creature
+    /// experiences and the elevation the renderer draws have to come from the same function.</para>
+    ///
+    /// <para><b>There is no ambient default here, and there must not be.</b> While this was in
+    /// Presentation a mutable static held the active settings, which was the right trade for a
+    /// tuning panel. In Simulation it would be state outside <c>SimulationConfig</c> that changes
+    /// behaviour - invisible to the configuration hash, so two worlds with identical hashes could
+    /// diverge. Settings are passed explicitly; the panel's mutable instance stays in Presentation,
+    /// in <c>TerrainView</c>.</para>
     /// </summary>
     public static class PlanetTerrain
     {
@@ -61,45 +70,8 @@ namespace LifeSimulation.Presentation
         public const float HighGround = 0.55f;
 
         /// <summary>
-        /// The settings every caller uses unless it passes its own.
-        ///
-        /// <para>These were <c>private const</c> fields here. They moved to
-        /// <see cref="TerrainSettings"/> so the runtime panel can drive them, which is the only way
-        /// to tune relief that is judged by eye against a one-metre creature.</para>
-        ///
-        /// <para><b>Deliberately mutable static state.</b> The alternative was threading a settings
-        /// argument through every mesh builder, preview and editor entry point, for a value that is
-        /// global by nature - there is one terrain. The explicit parameter on <see cref="Sample"/>
-        /// still exists so a test or an offline probe can sweep values without touching this.</para>
-        ///
-        /// <para>Presentation-only, like everything here: no simulation code reads it, so nothing it
-        /// changes can move a hash or invalidate a recorded result.</para>
+        /// Highest safely renderable frequency for a view with this many samples around a full turn.
         /// </summary>
-        public static TerrainSettings Active { get; set; } = new TerrainSettings();
-
-        /// <summary>
-        /// Incremented whenever <see cref="Active"/> changes. Anything holding derived state - a
-        /// plate structure, a built mesh - caches against this as well as the seed, because plate
-        /// count and continental fraction are settings and a cache keyed on the seed alone would
-        /// keep serving the old planet.
-        /// </summary>
-        public static int SettingsRevision { get; private set; }
-
-        /// <summary>Call after editing <see cref="Active"/>, so caches rebuild.</summary>
-        public static void MarkSettingsChanged()
-        {
-            SettingsRevision++;
-        }
-
-        /// <summary>Restore every tunable to the value the generator ships with.</summary>
-        public static void ResetSettings()
-        {
-            Active = new TerrainSettings();
-            MarkSettingsChanged();
-        }
-
-
-        /// <summary>Highest safely renderable frequency for a view with this many samples around a full turn.</summary>
         public static double MaximumFrequencyFor(int samplesAroundEquator)
         {
             return samplesAroundEquator / (4d * Math.PI);
@@ -152,9 +124,9 @@ namespace LifeSimulation.Presentation
 
         public static PlanetSample Sample(
             int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency,
-            TerrainSettings settings = null)
+            TerrainSettings settings)
         {
-            TerrainSettings s = settings ?? Active;
+            TerrainSettings s = settings ?? throw new ArgumentNullException(nameof(settings));
             if (plates == null)
             {
                 throw new ArgumentNullException(
@@ -312,9 +284,9 @@ namespace LifeSimulation.Presentation
         /// the one it is diagnosing.</para>
         /// </summary>
         public static PlateSample SamplePlate(
-            int seed, PlateStructure plates, double dx, double dy, double dz, TerrainSettings settings = null)
+            int seed, PlateStructure plates, double dx, double dy, double dz, TerrainSettings settings)
         {
-            TerrainSettings s = settings ?? Active;
+            TerrainSettings s = settings ?? throw new ArgumentNullException(nameof(settings));
             double warpX = 0d, warpY = 0d, warpZ = 0d;
             AddWarp(seed, 500, dx, dy, dz, s.WarpFrequency, s.WarpStrength, ref warpX, ref warpY, ref warpZ);
             AddWarp(seed, 503, dx, dy, dz, s.WarpFrequency * 3.7d, s.WarpStrength * 0.35d, ref warpX, ref warpY, ref warpZ);
@@ -323,7 +295,7 @@ namespace LifeSimulation.Presentation
 
         public static PlanetSample SampleAtLatLon(
             int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency,
-            TerrainSettings settings = null)
+            TerrainSettings settings)
         {
             double cosLatitude = Math.Cos(latitude);
             return Sample(

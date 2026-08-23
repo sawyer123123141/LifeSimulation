@@ -2,6 +2,7 @@ using System.IO;
 using LifeSimulation.Presentation;
 using UnityEditor;
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.EditorTools
 {
@@ -39,7 +40,7 @@ namespace LifeSimulation.EditorTools
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "terrain");
             Directory.CreateDirectory(directory);
 
-            PlateStructure plates = PlateStructure.CreateActive(Seed);
+            PlateStructure plates = TerrainView.CreatePlates(Seed);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
 
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);

@@ -21,9 +21,6 @@
 
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="..\..\Assets\Scripts\Presentation\PlanetTerrain.cs" />
-    <Compile Include="..\..\Assets\Scripts\Presentation\PlateStructure.cs" />
-    <Compile Include="..\..\Assets\Scripts\Presentation\TerrainSettings.cs" />
     <Compile Include="..\..\Assets\Scripts\Presentation\PlanetBiome.Classification.cs" />
     <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
   </ItemGroup>

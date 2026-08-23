@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.Presentation
 {
     /// <summary>
-    /// A runtime panel over <see cref="PlanetTerrain.Active"/>.
+    /// A runtime panel over <see cref="TerrainView.Settings"/>.
     ///
     /// <para><b>Why this exists.</b> Terrain is judged by eye, against a one-metre creature, at three
     /// zoom levels that show different bands. That is not a judgement anything can make from source,
@@ -63,7 +64,7 @@ namespace LifeSimulation.Presentation
         {
             if (!Visible) return;
 
-            TerrainSettings settings = PlanetTerrain.Active;
+            TerrainSettings settings = TerrainView.Settings;
             if (_hint == null)
             {
                 // Every control says what it does in a few words. A slider labelled only
@@ -206,7 +207,7 @@ namespace LifeSimulation.Presentation
             GUILayout.Label(settings.IsDefault() ? "defaults" : "modified");
             if (GUILayout.Button("Reset", GUILayout.Width(70f)))
             {
-                PlanetTerrain.ResetSettings();
+                TerrainView.Reset();
                 changed = true;
             }
 
@@ -214,7 +215,7 @@ namespace LifeSimulation.Presentation
             GUILayout.EndArea();
 
             if (!changed) return;
-            PlanetTerrain.MarkSettingsChanged();
+            TerrainView.MarkSettingsChanged();
             onChanged?.Invoke();
         }
 
@@ -334,7 +335,7 @@ namespace LifeSimulation.Presentation
         private string BiomeMix(TerrainPreview preview)
         {
             float halfWidth = preview.CurrentHalfWidth;
-            string key = $"{preview.CentreLatitude:0.0000}|{preview.CentreLongitude:0.0000}|{halfWidth}|{PlanetTerrain.SettingsRevision}";
+            string key = $"{preview.CentreLatitude:0.0000}|{preview.CentreLongitude:0.0000}|{halfWidth}|{TerrainView.SettingsRevision}";
             if (key == _mixKey && _mixText != null) return _mixText;
 
             PlateStructure plates = preview.Plates;
@@ -355,7 +356,7 @@ namespace LifeSimulation.Presentation
                         preview.Seed, plates,
                         preview.CentreLatitude + (z / SphereRadius),
                         preview.CentreLongitude + (x / SphereRadius),
-                        maximumFrequency);
+                        maximumFrequency, TerrainView.Settings);
 
                     BiomeKind kind = PlanetBiome.Classify(sample);
                     counts.TryGetValue(kind, out int existing);

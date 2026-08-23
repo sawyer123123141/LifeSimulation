@@ -8,6 +8,7 @@ using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Resources;
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.Presentation
 {
@@ -60,7 +61,7 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private TerrainPreview _terrainPreview;
 
-        /// <summary>Runtime tuning over <see cref="PlanetTerrain.Active"/>. Presentation only.</summary>
+        /// <summary>Runtime tuning over <see cref="TerrainView.Settings"/>. Presentation only.</summary>
         private readonly TerrainTuningPanel _terrainTuningPanel = new TerrainTuningPanel();
         private Color[] _temperaturePixels;
         private Color _terrainColor;
@@ -918,10 +919,10 @@ namespace LifeSimulation.Presentation
         private void EnsureArenaPlates()
         {
             int seed = _world.Config.WorldSeed;
-            int revision = PlanetTerrain.SettingsRevision;
+            int revision = TerrainView.SettingsRevision;
             if (_arenaPlates != null && _arenaPlateSeed == seed && _arenaPlateRevision == revision) return;
 
-            _arenaPlates = PlateStructure.CreateActive(seed);
+            _arenaPlates = TerrainView.CreatePlates(seed);
             _arenaPlateSeed = seed;
             _arenaPlateRevision = revision;
             _arenaPlates.GetCoastalCentre(out _arenaCentreLatitude, out _arenaCentreLongitude);

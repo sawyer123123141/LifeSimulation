@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using LifeSimulation.Presentation;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.TerrainProbe
 {
@@ -46,12 +47,12 @@ namespace LifeSimulation.TerrainProbe
 
         private static void Main()
         {
-            PlateStructure plates = PlateStructure.CreateActive(Seed);
+            var current = new TerrainSettings();
+            PlateStructure plates = PlateStructure.Create(Seed, current);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
             Console.WriteLine($"seed {Seed}   default centre lat {centreLatitude:0.0000} lon {centreLongitude:0.0000}");
             Console.WriteLine("grade is |dh| between adjacent samples, metres per metre, over land only");
 
-            var current = new TerrainSettings();
             var withoutFineBands = new TerrainSettings { LocalAmplitude = 0d, MicroAmplitude = 0d };
 
             foreach (double halfWidth in Views)
@@ -112,7 +113,7 @@ namespace LifeSimulation.TerrainProbe
                     double x = -halfWidth + (2d * halfWidth * column / (Side - 1));
                     double longitude = centreLongitude + (x / SphereRadius);
                     double elevation = PlanetTerrain
-                        .SampleAtLatLon(Seed, plates, latitude, longitude, maximumFrequency)
+                        .SampleAtLatLon(Seed, plates, latitude, longitude, maximumFrequency, new TerrainSettings())
                         .Elevation * ElevationToMetres;
 
                     if (!double.IsNaN(previous) && previous > 0d && elevation > 0d)
@@ -148,8 +149,8 @@ namespace LifeSimulation.TerrainProbe
             double dy = Math.Sin(latitude);
             double dz = cosLatitude * Math.Cos(longitude);
 
-            PlateSample plate = PlanetTerrain.SamplePlate(Seed, plates, dx, dy, dz);
-            PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency);
+            PlateSample plate = PlanetTerrain.SamplePlate(Seed, plates, dx, dy, dz, new TerrainSettings());
+            PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency, new TerrainSettings());
             Console.WriteLine(
                 $"  {label}  elevation {sample.Elevation,7:0.000}  shelf {sample.Continent,7:0.000}  " +
                 $"kind {plate.Boundary,-21} intensity {plate.Intensity:0.000}  " +

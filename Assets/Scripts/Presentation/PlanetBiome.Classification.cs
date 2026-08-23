@@ -1,3 +1,5 @@
+using LifeSimulation.Simulation.World;
+
 namespace LifeSimulation.Presentation
 {
     public enum BiomeKind

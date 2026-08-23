@@ -6,6 +6,7 @@ using System.Text;
 using LifeSimulation.Presentation;
 using UnityEditor;
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.EditorTools
 {
@@ -37,7 +38,7 @@ namespace LifeSimulation.EditorTools
         public static void Dump()
         {
             var report = new StringBuilder();
-            PlateStructure plates = PlateStructure.CreateActive(Seed);
+            PlateStructure plates = TerrainView.CreatePlates(Seed);
 
             // Sample at the resolution the globe view draws at, so the numbers describe what is
             // actually rendered rather than a sharper field nobody sees.
@@ -73,7 +74,7 @@ namespace LifeSimulation.EditorTools
                     double dy = Math.Sin(latitude);
                     double dz = cosLatitude * Math.Cos(longitude);
 
-                    PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency);
+                    PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency, TerrainView.Settings);
                     elevations.Add(sample.Elevation);
                     moistures.Add(sample.Moisture);
                     temperatures.Add(sample.Temperature);
@@ -104,7 +105,7 @@ namespace LifeSimulation.EditorTools
                     PlateSample plate = plates.Sample(dx, dy, dz);
                     if (!plate.Continental) continue;
 
-                    PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency);
+                    PlanetSample sample = PlanetTerrain.Sample(Seed, plates, dx, dy, dz, maximumFrequency, TerrainView.Settings);
                     int bucket = Math.Min(
                         distanceBuckets - 1,
                         (int)(plate.BoundaryDistance / Math.Max(1e-6d, maximumBoundaryDistance) * distanceBuckets));
@@ -263,7 +264,7 @@ namespace LifeSimulation.EditorTools
                 {
                     double t = step / (double)line;
                     double lat = centreLatitude + ((t - 0.5d) * 0.8d);
-                    double value = PlanetTerrain.SampleAtLatLon(Seed, plates, lat, centreLongitude, maximumFrequency).Elevation;
+                    double value = PlanetTerrain.SampleAtLatLon(Seed, plates, lat, centreLongitude, maximumFrequency, TerrainView.Settings).Elevation;
                     if (!double.IsNaN(previous))
                     {
                         double jump = Math.Abs(value - previous);
@@ -333,7 +334,7 @@ namespace LifeSimulation.EditorTools
                     PlanetSample sample = PlanetTerrain.SampleAtLatLon(
                         Seed, plates,
                         centreLatitude + (z / SphereRadius), centreLongitude + (x / SphereRadius),
-                        maximumFrequency);
+                        maximumFrequency, TerrainView.Settings);
 
                     height[row, column] = sample.Elevation * TerrainMeshBuilder.ElevationToWorldUnits;
                     if (sample.Elevation > 0f) land++;

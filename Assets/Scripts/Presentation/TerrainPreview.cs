@@ -1,5 +1,6 @@
 using LifeSimulation.Simulation.Core;
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.Presentation
 {
@@ -220,10 +221,10 @@ namespace LifeSimulation.Presentation
         private void EnsurePlates(SimulationWorld world)
         {
             int seed = world.Config.WorldSeed;
-            int revision = PlanetTerrain.SettingsRevision;
+            int revision = TerrainView.SettingsRevision;
             if (_plates != null && _plateSeed == seed && _plateRevision == revision) return;
 
-            _plates = PlateStructure.CreateActive(seed);
+            _plates = TerrainView.CreatePlates(seed);
             _plateSeed = seed;
             _plateRevision = revision;
 

@@ -1,4 +1,4 @@
-namespace LifeSimulation.Presentation
+namespace LifeSimulation.Simulation.World
 {
     /// <summary>
     /// Every tunable of the terrain generator, in one mutable object.

@@ -1,4 +1,5 @@
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.Presentation
 {

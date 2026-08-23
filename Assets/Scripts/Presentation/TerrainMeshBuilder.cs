@@ -1,4 +1,5 @@
 using UnityEngine;
+using LifeSimulation.Simulation.World;
 
 namespace LifeSimulation.Presentation
 {
@@ -77,7 +78,7 @@ namespace LifeSimulation.Presentation
                         seed, plates,
                         centreLatitude + (z / SphereRadius),
                         centreLongitude + (x / SphereRadius),
-                        maximumFrequency);
+                        maximumFrequency, TerrainView.Settings);
 
                     int vertex = (row * side) + column;
 
@@ -123,7 +124,7 @@ namespace LifeSimulation.Presentation
             {
                 Vector3 direction = directions[index];
                 PlanetSample sample = PlanetTerrain.Sample(
-                    seed, plates, direction.x, direction.y, direction.z, maximumFrequency);
+                    seed, plates, direction.x, direction.y, direction.z, maximumFrequency, TerrainView.Settings);
 
                 vertices[index] = direction * (PlanetDrawRadius * (1f + (sample.Elevation * PlanetReliefFraction)));
                 colors[index] = PlanetBiome.Shade(sample);
