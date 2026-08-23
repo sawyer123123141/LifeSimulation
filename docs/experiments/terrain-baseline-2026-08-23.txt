@@ -1,0 +1,30 @@
+=== TERRAIN STATISTICS ===
+seed 42, 512x256 samples, maxFrequency 40.7
+sea level 0.380
+
+elevation       min 0.000  p10 0.151  p20 0.171  p30 0.185  p40 0.199  p50 0.216  p60 0.239  p70 0.320  p80 0.598  p90 0.667  max 1.000
+moisture        min 0.476  p10 0.611  p20 0.636  p30 0.657  p40 0.680  p50 0.702  p60 0.722  p70 0.741  p80 0.760  p90 0.789  max 0.889
+temperature     min 0.000  p10 0.010  p20 0.083  p30 0.131  p40 0.199  p50 0.310  p60 0.425  p70 0.532  p80 0.647  p90 0.759  max 0.938
+
+LAND FRACTION 0.296  (target ~0.30)
+land elevation  min 0.380  p10 0.546  p20 0.575  p30 0.593  p40 0.612  p50 0.632  p60 0.652  p70 0.684  p80 0.733  p90 0.804  max 1.000
+land elevation uses 1.000 of the range above sea level
+
+ELEVATION BY DISTANCE FROM PLATE BOUNDARY (continental only)
+bucket | mean elevation | samples
+     0 |         0.6844 |    1938
+     1 |         0.6738 |    1816
+     2 |         0.6646 |    1697
+     3 |         0.6473 |    1527
+     4 |         0.6274 |     999
+     5 |         0.6192 |     685
+     6 |         0.6104 |     422
+     7 |         0.6258 |     152
+
+BIOME COUNTS
+Ocean           92286  0.704
+Ice             30690  0.234
+Tundra           4240  0.032
+Beach             266  0.002
+Marsh             270  0.002
+Grassland        3320  0.025

@@ -496,28 +496,14 @@ namespace LifeSimulation.Presentation
         /// rather than "what does one channel look like?". Water first, then cold ground, then the
         /// moisture/fertility classification that decides the rest.
         /// </summary>
+        /// <summary>
+        /// Colour comes from <see cref="PlanetBiome"/>, so the renderer and the terrain statistics
+        /// dump classify with the same code. Two implementations would let the numbers describe a
+        /// different world than the one on screen.
+        /// </summary>
         private static Color Shade(PlanetSample sample, float elevationScale)
         {
-            float elevation = sample.Elevation * elevationScale;
-
-            if (sample.Elevation > 0f && elevation <= SeaLevel)
-            {
-                float depth = Mathf.Clamp01(elevation / SeaLevel);
-                return Color.Lerp(new Color(0.035f, 0.106f, 0.235f), new Color(0.180f, 0.451f, 0.647f), depth);
-            }
-
-            float land = sample.Elevation <= 0f ? 0f : Mathf.Clamp01((elevation - SeaLevel) / (1f - SeaLevel));
-
-            // Beach: a narrow sand band just above the waterline. Cheap, and it is most of what makes
-            // a coastline read as a coastline rather than as grass meeting blue.
-            if (sample.Elevation > 0f && land < 0.045f) return new Color(0.902f, 0.831f, 0.639f);
-
-            if (sample.Temperature < 0.24f) return Color.Lerp(new Color(0.86f, 0.90f, 0.93f), Color.white, land);
-            if (sample.Temperature < 0.40f) return Color.Lerp(new Color(0.498f, 0.584f, 0.659f), new Color(0.62f, 0.66f, 0.68f), land);
-            if (sample.Moisture < 0.34f) return Color.Lerp(new Color(0.878f, 0.769f, 0.478f), new Color(0.706f, 0.588f, 0.376f), land);
-            if (sample.Moisture > 0.72f && land < 0.14f) return new Color(0.259f, 0.435f, 0.388f);
-            if (sample.Moisture > 0.46f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
-            return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
+            return PlanetBiome.Shade(sample);
         }
 
         /// <summary>Two triangles per grid cell, wound consistently across the patch.</summary>
