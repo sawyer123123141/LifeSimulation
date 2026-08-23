@@ -43,6 +43,7 @@ namespace LifeSimulation.Presentation
         private Texture2D _temperatureHeatmap;
         private MeshFilter _terrainMeshFilter;
         private Mesh _terrainMesh;
+        private GameObject _waterSurface;
         private Color[] _temperaturePixels;
         private Color _terrainColor;
         private float _accumulator;
@@ -131,6 +132,11 @@ namespace LifeSimulation.Presentation
             GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
+            if (_world != null && _world.Config.ElevationFieldEnabled)
+            {
+                GUI.Label(new Rect(24f, 84f, 420f, 22f),
+                    $"Terrain: height [ ] {_terrainHeightScale:0.0}    smoothing , . {_terrainSmoothingRadius:0.0}");
+            }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
             var stats = _world.Statistics;
@@ -322,6 +328,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.Y)) ResetTerrainPlaytest();
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
+            HandleTerrainTuningInput();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
             if (Input.GetMouseButton(0)) UpdateResourceDrag();
             if (Input.GetMouseButtonUp(0)) _isDraggingResource = false;
@@ -337,6 +344,7 @@ namespace LifeSimulation.Presentation
             _terrainMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             _terrainMeshFilter.sharedMesh = _terrainMesh;
             BuildTerrainMesh();
+            CreateWaterSurface();
             _terrainColor = new Color(0.16f, 0.28f, 0.16f);
             _terrainRenderer.material.color = _terrainColor;
             _temperatureHeatmap = new Texture2D(HeatmapResolution, HeatmapResolution, TextureFormat.RGBA32, false);
@@ -377,6 +385,7 @@ namespace LifeSimulation.Presentation
             // The relief is a function of this world's seed and flags, so it is rebuilt per scenario
             // rather than once at startup.
             BuildTerrainMesh();
+            UpdateWaterSurface();
             _p5HistorySession = P5HistoryPanelSession.CreateForWorld(_world);
             _scenarioId = scenario.Id;
             _scenarioHint = GetScenarioHint(scenario.Id);
@@ -462,8 +471,33 @@ namespace LifeSimulation.Presentation
         /// <summary>Vertices per side of the ground mesh. 129 gives 0.39-unit quads across the arena.</summary>
         private const int TerrainResolution = 129;
 
-        /// <summary>World units of relief between sea level and the highest ground.</summary>
-        private const float TerrainHeightScale = 5f;
+        /// <summary>
+        /// World units of relief between sea level and the highest ground. <b>Tunable at runtime</b>
+        /// with <c>[</c> and <c>]</c>, because the right value cannot be reasoned out - it depends on
+        /// how the relief reads next to a 1-unit creature, which only looking at it can settle.
+        ///
+        /// <para>Starts at 14 rather than the original 5. A landform here is roughly 16.7 units wide
+        /// (<c>FeaturesAcrossArena = 3</c> over a 50-unit arena), so at height 5 a "mountain" was
+        /// 17 wide and 5 tall - a squat lump beside a creature 1 unit tall. 14 gives a slope that
+        /// reads as terrain rather than as a bump.</para>
+        /// </summary>
+        private float _terrainHeightScale = 14f;
+
+        /// <summary>
+        /// Radius, in world units, of the box filter applied to elevation before displacing the
+        /// mesh. <b>Tunable at runtime</b> with <c>,</c> and <c>.</c>
+        ///
+        /// <para>This exists because the elevation field carries detail below creature scale: five
+        /// octaves at lacunarity 2.15 put the finest features at 16.7 / 2.15^4 = <b>0.78 units</b>,
+        /// smaller than a creature, and a 0.39-unit mesh resolves that perfectly - so the ground
+        /// renders visibly noisy. Filtering is done <b>here rather than in the field</b> because the
+        /// field is simulation state that feeds the lapse rate; smoothing it there would change
+        /// ecology, while smoothing the mesh changes only what you see.</para>
+        /// </summary>
+        private float _terrainSmoothingRadius = 1.2f;
+
+        /// <summary>Samples per side of the smoothing filter. 3 means a 3x3 box, 9 samples.</summary>
+        private const int TerrainSmoothingTaps = 3;
 
         /// <summary>
         /// Ground height under a simulation position, in Unity units.
@@ -481,8 +515,89 @@ namespace LifeSimulation.Presentation
         {
             if (_world == null || !_world.Config.ElevationFieldEnabled) return 0f;
 
-            float elevation = _world.Environment.Sample(new SimVector2(x, z)).Elevation;
-            return Mathf.Max(0f, elevation - OverlaySeaLevel) / (1f - OverlaySeaLevel) * TerrainHeightScale;
+            return Mathf.Max(0f, SmoothedElevationAt(x, z) - OverlaySeaLevel) / (1f - OverlaySeaLevel) * _terrainHeightScale;
+        }
+
+        /// <summary>
+        /// Elevation averaged over a small box, which removes the sub-creature-scale octaves without
+        /// touching the field itself. A radius of zero returns the raw field.
+        /// </summary>
+        private float SmoothedElevationAt(float x, float z)
+        {
+            if (_terrainSmoothingRadius <= 0f)
+            {
+                return _world.Environment.Sample(new SimVector2(x, z)).Elevation;
+            }
+
+            float total = 0f;
+            int taps = 0;
+            for (int row = 0; row < TerrainSmoothingTaps; row++)
+            {
+                float offsetZ = Mathf.Lerp(-_terrainSmoothingRadius, _terrainSmoothingRadius, row / (float)(TerrainSmoothingTaps - 1));
+                for (int column = 0; column < TerrainSmoothingTaps; column++)
+                {
+                    float offsetX = Mathf.Lerp(-_terrainSmoothingRadius, _terrainSmoothingRadius, column / (float)(TerrainSmoothingTaps - 1));
+                    total += _world.Environment.Sample(new SimVector2(x + offsetX, z + offsetZ)).Elevation;
+                    taps++;
+                }
+            }
+
+            return total / taps;
+        }
+
+        /// <summary>
+        /// A flat water surface at sea level.
+        ///
+        /// <para>Deliberately its <b>own</b> mesh object rather than part of the ground, so that
+        /// animating it later - per-frame vertex displacement, or a shader - is purely additive and
+        /// touches nothing else. Water is presentation only; nothing under
+        /// <c>Assets/Scripts/Simulation</c> will ever know it exists, so no amount of animation can
+        /// affect a hash, a test or determinism.</para>
+        /// </summary>
+        private void CreateWaterSurface()
+        {
+            if (_waterSurface != null) return;
+
+            _waterSurface = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            _waterSurface.name = "Water Surface";
+            Destroy(_waterSurface.GetComponent<Collider>());
+            _waterSurface.transform.localScale = new Vector3(5f, 1f, 5f);
+
+            var material = _waterSurface.GetComponent<Renderer>().material;
+            material.color = new Color(0.157f, 0.408f, 0.616f, 0.78f);
+            UpdateWaterSurface();
+        }
+
+        /// <summary>
+        /// Water sits just above y=0, which is where the ground sits once everything at or below sea
+        /// level has been flattened. Hidden entirely when there is no elevation field, since a sea
+        /// over a flat world would be covering the whole arena.
+        /// </summary>
+        private void UpdateWaterSurface()
+        {
+            if (_waterSurface == null) return;
+
+            bool hasTerrain = _world != null && _world.Config.ElevationFieldEnabled;
+            _waterSurface.SetActive(hasTerrain);
+            _waterSurface.transform.position = new Vector3(0f, 0.06f, 0f);
+        }
+
+        /// <summary>
+        /// Live terrain tuning. The correct height and smoothing cannot be derived - they depend on
+        /// how the relief reads beside a 1-unit creature - so they are dialled here rather than
+        /// guessed in source and recompiled.
+        /// </summary>
+        private void HandleTerrainTuningInput()
+        {
+            bool changed = false;
+            if (Input.GetKeyDown(KeyCode.LeftBracket)) { _terrainHeightScale = Mathf.Max(0f, _terrainHeightScale - 2f); changed = true; }
+            if (Input.GetKeyDown(KeyCode.RightBracket)) { _terrainHeightScale += 2f; changed = true; }
+            if (Input.GetKeyDown(KeyCode.Comma)) { _terrainSmoothingRadius = Mathf.Max(0f, _terrainSmoothingRadius - 0.3f); changed = true; }
+            if (Input.GetKeyDown(KeyCode.Period)) { _terrainSmoothingRadius += 0.3f; changed = true; }
+            if (!changed) return;
+
+            BuildTerrainMesh();
+            UpdateWaterSurface();
         }
 
         /// <summary>
