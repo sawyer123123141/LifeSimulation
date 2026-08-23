@@ -20,6 +20,9 @@ namespace LifeSimulation.Simulation.Environment
         private float[] _reproductionCooldowns;
         private int _nextId = 1;
 
+        /// <summary>Read-only peek at the next id to be assigned. Exists only for state fingerprinting; never set.</summary>
+        public int NextIdPeek => _nextId;
+
         public PlantPatchStore(int initialCapacity)
         {
             int capacity = Math.Max(1, initialCapacity);

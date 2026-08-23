@@ -25,6 +25,9 @@ namespace LifeSimulation.Simulation.Core
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
 
+        /// <summary>Read-only peek at the next id to be assigned. Exists only for state fingerprinting; never set.</summary>
+        public long NextIdPeek => _nextId;
+
         public CreatureStore(int initialCapacity, int maximumMemorySlots = 0)
         {
             if (initialCapacity < 0)

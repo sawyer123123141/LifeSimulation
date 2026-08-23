@@ -19,6 +19,9 @@ namespace LifeSimulation.Simulation.Resources
         private readonly Dictionary<ResourceId, int> _indexById;
         private long _nextId;
 
+        /// <summary>Read-only peek at the next id to be assigned. Exists only for state fingerprinting; never set.</summary>
+        public long NextIdPeek => _nextId;
+
         public ResourceStore(int initialCapacity)
         {
             if (initialCapacity < 0)

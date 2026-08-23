@@ -347,6 +347,88 @@ namespace LifeSimulation.Simulation.Core
             return minimumMemorySlots + bonusSlots;
         }
 
+        /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
+        public const int ConfigurationHashVersion = 1;
+
+        /// <summary>
+        /// FNV-1a hash of every configuration value that can affect future simulation behavior:
+        /// schedule, population and founder settings, every tuning constant, and every feature
+        /// flag, in declaration order. Used by <c>SimulationWorld.ComputeStateFingerprint</c> so
+        /// that two worlds with identical entity state but different configuration are correctly
+        /// reported as divergent.
+        /// </summary>
+        public ulong ComputeConfigurationHash()
+        {
+            ulong hash = 14695981039346656037UL;
+            hash = Hash(hash, unchecked((ulong)ConfigurationHashVersion));
+
+            hash = Hash(hash, unchecked((ulong)Schedule.BaseFrequencyHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.MovementHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.PerceptionHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.NeedsHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.DecisionsHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.ResourcesHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.ReproductionHz));
+            hash = Hash(hash, unchecked((ulong)Schedule.StatisticsHz));
+
+            hash = Hash(hash, unchecked((ulong)WorldSeed));
+            hash = Hash(hash, unchecked((ulong)InitialPopulation));
+            hash = Hash(hash, unchecked((ulong)MaximumPopulation));
+            hash = Hash(hash, unchecked((ulong)(int)FounderProfile));
+            hash = Hash(hash, unchecked((ulong)(int)DecisionPolicyVersion));
+            hash = HashFloat(hash, HandlingSeconds);
+            hash = HashFloat(hash, ReferenceGain);
+            hash = HashFloat(hash, CommitmentStrength);
+            hash = HashFloat(hash, CommitmentHalfLifeSeconds);
+            hash = HashFloat(hash, GiveUpSensitivity);
+            hash = Hash(hash, unchecked((ulong)MinimumMemorySlots));
+            hash = Hash(hash, unchecked((ulong)AdditionalMemorySlots));
+            hash = HashFloat(hash, SamePlaceRadius);
+            hash = HashFloat(hash, ExpectedIntakeRate);
+            hash = HashFloat(hash, ThreatFalloffDistance);
+            hash = HashFloat(hash, PlantDefenseDeterrenceStrength);
+            hash = HashFloat(hash, PlantSeedProductionRateDispersalCharge);
+
+            hash = Hash(hash, CognitionEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PhysiologyEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantCohortsEnabled ? 1UL : 0UL);
+            hash = Hash(hash, ForagingEconomicsEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PredationEconomicsEnabled ? 1UL : 0UL);
+            hash = Hash(hash, DecisionStaggerEnabled ? 1UL : 0UL);
+            hash = Hash(hash, MultiThreatPerceptionEnabled ? 1UL : 0UL);
+            hash = Hash(hash, RestBehaviorEnabled ? 1UL : 0UL);
+            hash = Hash(hash, JuvenileCapabilityEnabled ? 1UL : 0UL);
+            hash = Hash(hash, ParentalFollowingEnabled ? 1UL : 0UL);
+            hash = Hash(hash, KinRecognitionEnabled ? 1UL : 0UL);
+            hash = Hash(hash, LearnedResourceQualityEnabled ? 1UL : 0UL);
+            hash = Hash(hash, MateSelectionEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantSiteCompetitionEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantMortalityEnabled ? 1UL : 0UL);
+            hash = Hash(hash, SafetyGatedMateRendezvousEnabled ? 1UL : 0UL);
+            hash = Hash(hash, HomeRangeAffinityEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantDefenseDeterrenceEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantQualityPreferenceEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantTemperatureAdaptationEnabled ? 1UL : 0UL);
+            hash = Hash(hash, ProceduralEnvironmentFieldsEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantFertilityAdaptationEnabled ? 1UL : 0UL);
+            hash = Hash(hash, ElevationFieldEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
+            hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
+
+            return hash;
+        }
+
+        private static ulong Hash(ulong hash, ulong value)
+        {
+            return (hash ^ value) * 1099511628211UL;
+        }
+
+        private static ulong HashFloat(ulong hash, float value)
+        {
+            return Hash(hash, unchecked((ulong)(uint)BitConverter.SingleToInt32Bits(value)));
+        }
+
         public static SimulationConfig CreatePrototype1Defaults(int worldSeed, int initialPopulation)
         {
             return new SimulationConfig(
