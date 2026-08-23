@@ -190,6 +190,26 @@ namespace LifeSimulation.EditorTools
             AppendWindow(report, plates, "arena (50u)", centreLatitude, centreLongitude, 25d, maximumFrequency);
             AppendWindow(report, plates, "origin-centred 400u", 0d, 0d, 200d, maximumFrequency);
 
+            // Contrast() clamps, so an over-strong setting pins whole regions to 0 or 1. Saturated
+            // ground is flat ground with a hard edge where it crosses - banding, not variety.
+            int moistureLow = 0, moistureHigh = 0, temperatureLow = 0, temperatureHigh = 0;
+            foreach (double value in moistures)
+            {
+                if (value <= 0.001d) moistureLow++;
+                if (value >= 0.999d) moistureHigh++;
+            }
+
+            foreach (double value in temperatures)
+            {
+                if (value <= 0.001d) temperatureLow++;
+                if (value >= 0.999d) temperatureHigh++;
+            }
+
+            report.AppendLine();
+            report.AppendLine("SATURATION (clamped to 0 or 1 - flat regions with hard edges)");
+            report.AppendLine($"moisture     at 0 {moistureLow / (double)total:0.0000}   at 1 {moistureHigh / (double)total:0.0000}");
+            report.AppendLine($"temperature  at 0 {temperatureLow / (double)total:0.0000}   at 1 {temperatureHigh / (double)total:0.0000}");
+
             report.AppendLine();
             report.AppendLine("BIOME COUNTS");
             foreach (KeyValuePair<BiomeKind, int> pair in biomeCounts)

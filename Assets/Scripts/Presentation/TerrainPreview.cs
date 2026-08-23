@@ -384,15 +384,17 @@ namespace LifeSimulation.Presentation
             var flatVertices = new Vector3[indices.Length];
             var flatColors = new Color[indices.Length];
             var flatTriangles = new int[indices.Length];
-            for (int index = 0; index < indices.Length; index += 3)
+            for (int index = 0; index < indices.Length; index++)
             {
-                Color face = colors[indices[index]];
-                for (int corner = 0; corner < 3; corner++)
-                {
-                    flatVertices[index + corner] = vertices[indices[index + corner]];
-                    flatColors[index + corner] = face;
-                    flatTriangles[index + corner] = index + corner;
-                }
+                flatVertices[index] = vertices[indices[index]];
+
+                // Each corner keeps its OWN colour. Painting the whole face with the first corner's
+                // colour quantised the palette to one value per triangle - a 2.5-unit block of flat
+                // colour on the wide patch - which is the blocky banding, not the palette. Unshared
+                // vertices still give one normal per face, so the faceted low-poly lighting is
+                // unaffected: flat shading and flat colour are separate choices.
+                flatColors[index] = colors[indices[index]];
+                flatTriangles[index] = index;
             }
 
             _root.transform.position = Vector3.zero;

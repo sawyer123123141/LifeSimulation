@@ -75,6 +75,12 @@ namespace LifeSimulation.Presentation
         private const double MoistureFrequency = 1.9d;
         private const double ClimateNoiseFrequency = 2.4d;
 
+        /// <summary>
+        /// High-frequency perturbation applied to climate for biome-edge raggedness only. Above the
+        /// biome scale, below the detail scale.
+        /// </summary>
+        private const double JitterFrequency = 16d;
+
         private const double Lacunarity = 2d;
         private const double Gain = 0.5d;
 
@@ -244,12 +250,24 @@ namespace LifeSimulation.Presentation
                     seed, channel: 400,
                     dx * MoistureFrequency, dy * MoistureFrequency, dz * MoistureFrequency,
                     OctavesUnder(MoistureFrequency, maximumFrequency, 4), Lacunarity, Gain, warpStrength: 0.4d),
-                strength: 3.0d);
+                strength: 2.2d);
 
             // Continental interiors dry out. Widened from 0.65 to 0.9 so high inland ground can
             // genuinely reach arid rather than merely damp.
             double continentality = 1d - (0.9d * EnvironmentNoise.Clamp01((continent - SeaLevel) / (1d - SeaLevel)));
-            double moisture = EnvironmentNoise.Clamp01((0.62d * moistureNoise) + (0.38d * continentality));
+            // Boundary jitter. Without it, every biome edge is a smooth level set of a low-frequency
+            // field - a clean arc, which reads as drawn rather than grown. A small high-frequency
+            // term makes edges ragged at a scale below the biomes themselves, which is what natural
+            // boundaries look like. Amplitude is deliberately small: this perturbs where a boundary
+            // falls, it does not create regions of its own.
+            double jitter = EnvironmentNoise.Fbm(
+                seed, channel: 440,
+                dx * JitterFrequency, dy * JitterFrequency, dz * JitterFrequency,
+                OctavesUnder(JitterFrequency, maximumFrequency, 2), Lacunarity, Gain) - 0.5d;
+
+            double moisture = EnvironmentNoise.Clamp01(
+                (0.62d * moistureNoise) + (0.38d * continentality) + (0.07d * jitter));
+            temperature = EnvironmentNoise.Clamp01(temperature + (0.05d * jitter));
 
             return new PlanetSample(
                 (float)elevation,
