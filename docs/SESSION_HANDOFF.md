@@ -643,6 +643,22 @@ half-built — these are *unstarted* items, not loose ends.
     attempt a fourth reconstruction.**
 11. **Place memory stays inert.** Never wire `MemorySystem.ObservePlace`.
 
+### D2. Caves and rivers — asked for, and blocked on architecture
+
+**Read `docs/terrain-caves-and-rivers.md`.** Both were requested; neither is a coefficient.
+
+- **`PlanetTerrain.Sample` is a pure function of one direction.** Rivers and erosion depend on the
+  ground *uphill*, which is a computation over the surface, not at a point. They need a pass over a
+  finite region, which is the same chunk machinery adaptive level of detail needs.
+- **A heightfield stores one surface per direction**, so it cannot express an overhang at any setting.
+  Caves need a volumetric density field and marching cubes, with density seeded as
+  `surfaceElevation - height` so the zero isosurface reproduces exactly the terrain that exists now.
+
+Order: the join, then painted rivers (additive, cheap, no new machinery), then chunked regions, then
+flow accumulation and erosion on that machinery, then caves. **Keep generation a pure function of
+position and settings** - the probe, the statistics instrument and headless determinism all depend on
+it, and it is why terrain could be iterated fifteen times without re-measuring anything.
+
 ### E. Large
 
 12. **P5 — species and history.** Genetic distance, lineage ids, cluster history and the P5 panel
