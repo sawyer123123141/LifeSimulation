@@ -1,5 +1,16 @@
 # P4 safety-gated mate rendezvous — 2026-08-21
 
+> **SUPERSEDED IN PART, 2026-08-22.** The survival conclusion here is not a measurement: **all 240
+> runs ended at exactly 48**, the population cap, with zero variance, so survival could not have
+> differed in either direction. The birth null (285.93 vs 286.77, t +0.93) had real variance and
+> stands at this operating point. Re-measured with survival free to move in
+> `p4a-rendezvous-headroom-2026-08-22.md`, which finds the gate **does** cut predation deaths
+> (t −4.64) — a real effect that does not propagate to survival or birth rate.
+>
+> The configuration behind this file **could not be recovered** (probe never committed; 81
+> candidates tried against the recorded state hash and births, none matched), so the 2026-08-22 run
+> is a **new condition**, not a rerun of this one.
+
 ## Question
 
 Does declining mate rendezvous while a nearby creature is an actual perceived threat improve

@@ -1,7 +1,7 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `32900de`** (`feat: show what the selected creature has been doing`),
-pushed to `origin/main`.
+**Head at handoff: the rendezvous documentation commit** on `origin/main`. Phase D below lists the
+commits after the previous handoff state.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
@@ -58,6 +58,7 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 |---|---|
 | `7343653` | `ComputeStateFingerprint` (V2) + `SimulationConfig.ComputeConfigurationHash`; `BehaviorHash` extended with plant age/cooldown after measuring it changes no verdict |
 | `32900de` | selected-creature action history — an outside observer, testable headlessly |
+| (docs) | safety-gated rendezvous reassessed at an operating point with survival headroom |
 
 ---
 
@@ -189,6 +190,41 @@ which is already at full height with all optional trait rows showing.
 
 ---
 
+### Safety-gated rendezvous (CLOSED — "works, buys nothing")
+
+The 2026-08-21 null was partly unmeasurable: **all 240 of its runs ended at exactly 48**, the
+population cap, zero variance. Its birth null stands; its survival null was a ceiling.
+
+**The population cap is load-bearing ecology, not a guard rail.** Extinct 0/8 at cap 72, **5/8 at
+84**, 8/8 at 96 and above, where runs boom to ~293 births and collapse on starvation. Cap 84 is the
+only point where survival is free to move, so the rerun used it.
+
+Re-measured, 120 paired seeds, cap 84 (`p4a-rendezvous-headroom-2026-08-22.md`):
+
+| | delta | t | sign |
+|---|---:|---:|---|
+| flee rate per creature-tick | −0.0285 | **−5.07** | 80/120 down |
+| **predation deaths** | **−2.275** | **−4.64** | 70/120 down |
+| births, raw | +12.81 | +2.04 | 72/120 up |
+| births per creature-tick | +0.00001 | +1.24 | not significant |
+| births, both-survived seeds (n=28) | +11.71 | +1.01 | not significant |
+| starvation deaths | +1.15 | +0.85 | null |
+
+Extinction 75/120 vs 66/120 **does not survive pairing**: discordant 26 vs 17, McNemar χ² 1.49.
+The raw birth gain is **exposure, not fertility**.
+
+**Verdict: the mechanism works and the ecology declines to reward it.** Starvation, not predation,
+limits this population. Flag stays default `false`. Do not build pack architecture to force an
+effect; do not tune the gate. Reopen only in a predation-limited habitat — a scenario question, not
+a mechanism question. **This is not the home-range case**: home range was closed for the wrong sign,
+this for a right-signed effect that reaches no outcome that matters.
+
+**Provenance:** the 2026-08-21 configuration could not be recovered — 81 candidates tried against its
+recorded state hash and births, none matched. The rerun is a **new condition**, not a rerun, and its
+CSV carries an `ExperimentManifest`.
+
+---
+
 ## 3. Unresolved findings
 
 ### The three low-occupancy plant conclusions are UNVERIFIABLE
@@ -253,7 +289,10 @@ population as an upper bound — sound for that decision, but it is a bound, not
    Juveniles are not the failing class and mortality is not the failure mode.
 6. **Place memory stays inert.** Never wire `MemorySystem.ObservePlace`.
 7. **Do not use the competition-off arm as a drift control.** It disables no trait.
-8. **The three hashes stay three hashes.** V1 stays frozen and incomplete; V2 carries configuration;
+8. **Safety-gated rendezvous is closed as "works, buys nothing."** Flag stays default `false`. Its
+   effect is real and correctly signed; the ecology is starvation-limited, so it does not propagate.
+   No pack architecture, no tuning. Reopen only in a predation-limited habitat.
+9. **The three hashes stay three hashes.** V1 stays frozen and incomplete; V2 carries configuration;
    `BehaviorHash` never carries configuration. Merging any two of them breaks either a recorded
    baseline or `FlagLivenessAnalysis`, which would then report every flag as live.
 
@@ -261,13 +300,13 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-1. **Reassess safety-gated rendezvous** — the last unfinished P4a mechanism. Flag
-   `SafetyGatedMateRendezvousEnabled` exists; the first ecological experiment was null. Measure
-   before building. **Do not build pack architecture to force it**, and be willing to close it as a
-   measured negative the way home-range affinity was closed.
-2. **Then the rest of `docs/ROADMAP.md`.** Still open under the visible-feedback item:
-   resource depletion/recovery feedback and lineage display.
-3. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
+1. **Audit other cap-pinned conclusions.** The rendezvous survival null was a ceiling artefact.
+   Any recorded result whose outcome variable sat against a clamp deserves the same check — look for
+   arms reporting an identical final population across every seed.
+2. **Finish the P4a visible-feedback item**: resource depletion/recovery feedback and lineage
+   display are the two parts still open.
+3. **Then P5** (species and history), which is the large remaining phase before P6 terrain.
+4. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
    design questions, not automatic fixes.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never

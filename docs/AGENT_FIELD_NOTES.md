@@ -1079,4 +1079,29 @@ change.
 - **Show the need delta across an episode, not just the action.** "SeekFood 12.4s, food -6%" reads
   as a failed trip; "SeekFood" alone reads as normal behavior. The instantaneous inspector cannot
   show this, which is why the reproduction gate stayed invisible for so long.
+- **A population pinned at its cap cannot measure survival (2026-08-22).** The 2026-08-21 rendezvous
+  experiment reported "0/120 extinct, both arms 48/48" — and **all 240 runs ended at exactly 48**,
+  zero variance. That is a ceiling, not a null. Before believing any survival result, check the
+  spread of the outcome variable; if it has none, the experiment answered a different question than
+  it claimed. The same check applies to any metric sitting against a clamp.
+- **The population cap is load-bearing ecology in this project, not a guard rail.** Raising it does
+  not free growth, it causes overshoot and collapse: extinct 0/8 at cap 72, 5/8 at 84, 8/8 at 96+
+  (≈293 births then starvation). Pick an operating point where the outcome is partial — cap 84 —
+  when the outcome under test *is* survival.
+- **Normalise decision-tick counts by creature-ticks before calling them a manipulation check.** An
+  arm whose population survives longer accumulates more of every count. Raw rendezvous births rose
+  t +2.04; per creature-tick the same difference is t +1.24, and among seeds where both arms survived
+  it is t +1.01. The raw number measured exposure, not fertility.
+- **Use McNemar, not a proportion comparison, for paired binary outcomes.** Extinction 75/120 versus
+  66/120 looks like a benefit; the discordant pairs are 26 versus 17, χ² 1.49, not significant. The
+  aggregate hid the pairing that the design deliberately created.
+- **"Wrong sign" and "right sign, no payoff" are different verdicts — record them differently.**
+  Home-range affinity was closed because its effect ran backwards. Safety-gated rendezvous was closed
+  because its effect is real, correctly signed and well powered (predation deaths t −4.64) but
+  reaches no outcome that matters, since starvation rather than predation limits the population.
+  Filing both as "measured negative" would lose the fact that one mechanism works and is waiting for
+  a habitat that rewards it.
+- **A mechanism that does not pay off may be limited by the scenario, not broken.** Before tuning a
+  mechanism or building architecture around it, ask what actually limits the population. Saving 2.3
+  creatures per run from predators changes nothing when the binding constraint is food.
 
