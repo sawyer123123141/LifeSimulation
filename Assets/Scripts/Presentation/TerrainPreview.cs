@@ -81,6 +81,9 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private int _fieldSeed = int.MinValue;
 
+        /// <summary>Tectonic structure for the current seed. Rebuilt only when the seed changes.</summary>
+        private PlateStructure _plates;
+
         // Sampling is the expensive half - EnvironmentField.Sample runs several multi-octave
         // warped-fBm evaluations per call, and a full texture was ~131,000 of them, which is the
         // pause felt on every keypress. Everything sampled is cached and keyed by what it depends
@@ -181,6 +184,7 @@ namespace LifeSimulation.Presentation
             if (_fieldSeed == seed) return;
 
             _fieldSeed = seed;
+            _plates = new PlateStructure(seed);
             _planetElevation = null;
             _texturedMode = Mode.Off;
         }
@@ -277,7 +281,7 @@ namespace LifeSimulation.Presentation
                     float u = longitudeIndex / (float)longitudeSteps;
                     double longitude = (u - 0.5d) * 2d * Math.PI;
 
-                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PlanetMaximumFrequency);
+                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PlanetMaximumFrequency);
                     float relief = 1f + (Mathf.Max(0f, PlanetElevation(latitudeIndex, longitudeIndex, sample.Elevation) - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
                     float radius = PlanetDrawRadius * relief;
 
@@ -337,7 +341,7 @@ namespace LifeSimulation.Presentation
                 {
                     double longitude = ((longitudeIndex / (double)SphereLongitudeSteps) - 0.5d) * 2d * Math.PI;
                     _planetElevation[(latitudeIndex * width) + longitudeIndex] =
-                        PlanetTerrain.SampleAtLatLon(_fieldSeed, latitude, longitude, PlanetMaximumFrequency).Elevation;
+                        PlanetTerrain.SampleAtLatLon(_fieldSeed, _plates, latitude, longitude, PlanetMaximumFrequency).Elevation;
                 }
             }
         }
@@ -423,7 +427,7 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     double longitude = (((x + 0.5d) / TextureWidth) - 0.5d) * 2d * Math.PI;
-                    pixels[(y * TextureWidth) + x] = Shade(PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PlanetMaximumFrequency), 1f);
+                    pixels[(y * TextureWidth) + x] = Shade(PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PlanetMaximumFrequency), 1f);
                 }
             }
 
@@ -457,11 +461,11 @@ namespace LifeSimulation.Presentation
         /// simulation's own field maps arena positions - so the patch and the globe show the same
         /// world at different zooms rather than two unrelated noise fields.
         /// </summary>
-        private static PlanetSample SamplePatch(SimulationWorld world, float x, float z)
+        private PlanetSample SamplePatch(SimulationWorld world, float x, float z)
         {
             double longitude = x / EnvironmentField.SphereRadius;
             double latitude = z / EnvironmentField.SphereRadius;
-            return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PatchMaximumFrequency);
+            return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PatchMaximumFrequency);
         }
 
         /// <summary>

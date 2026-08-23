@@ -103,71 +103,74 @@ namespace LifeSimulation.Presentation
         /// Sample the surface at a unit direction. <paramref name="maximumFrequency"/> comes from
         /// <see cref="MaximumFrequencyFor"/> for the view being drawn.
         /// </summary>
-        public static PlanetSample Sample(int seed, double dx, double dy, double dz, double maximumFrequency)
+        public static PlanetSample Sample(int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency)
         {
-            // --- 1. Continents. Heavily warped so coastlines are lobed and irregular rather than
-            // circular blobs. This band alone decides land from ocean.
-            int continentOctaves = OctavesUnder(ContinentFrequency, maximumFrequency, 4);
-            double continentNoise = EnvironmentNoise.WarpedFbm(
+            // --- 1. Structure comes from plates, not from noise.
+            //
+            // The world-generation design is explicit that noise cannot produce continents: every
+            // feature in a noise field is independent of every other, so nothing explains anything
+            // else and it reads as splatter however it is tuned. Land is where continental plates
+            // are, and relief is where plates meet - which is why ranges form chains, why trenches
+            // sit offshore of coastal ranges, and why island arcs curve.
+            PlateSample plate = plates.Sample(dx, dy, dz);
+
+            // Coastlines follow plate edges exactly if left alone, which reads as polygonal. A
+            // warped noise band perturbs the land/sea threshold so the coast wanders across the
+            // boundary without moving the plate itself.
+            int coastOctaves = OctavesUnder(ContinentFrequency, maximumFrequency, 4);
+            double coastNoise = EnvironmentNoise.WarpedFbm(
                 seed, channel: 200,
                 dx * ContinentFrequency, dy * ContinentFrequency, dz * ContinentFrequency,
-                continentOctaves, Lacunarity, Gain, warpStrength: 0.55d);
+                coastOctaves, Lacunarity, Gain, warpStrength: 0.55d);
 
-            // Land covers roughly a third of the surface, as on Earth. SmoothStep rather than a hard
-            // cut so the coast has a shelf instead of a cliff.
-            double continent = SmoothStep(0.46d, 0.62d, continentNoise);
+            double continent = EnvironmentNoise.Clamp01(plate.BaseElevation + (0.22d * (coastNoise - 0.5d)));
 
-            // --- 2. Mountain belts. Ridged, so peaks form connected chains. Multiplied by a belt
-            // mask - itself low frequency - so ranges occupy part of a continent rather than
-            // covering all of it, which is what makes plains exist.
+            // --- 2. Boundary contribution. Each kind of margin makes its own landform, at a width
+            // that suits it: collisions raise broad interior ranges, subduction raises a narrow
+            // coastal range with a trench on the oceanic side, arcs are narrow and offshore, rifts
+            // cut down rather than up.
+            double distance = plate.BoundaryDistance;
+            double boundaryEffect = 0d;
+            switch (plate.Boundary)
+            {
+                case BoundaryKind.ContinentalCollision:
+                    boundaryEffect = 0.42d * plate.Intensity * Falloff(distance, 0.26d);
+                    break;
+                case BoundaryKind.Subduction:
+                    boundaryEffect = plate.OnOceanicSide
+                        ? -0.30d * plate.Intensity * Falloff(distance, 0.07d)
+                        : 0.36d * plate.Intensity * Falloff(distance, 0.13d);
+                    break;
+                case BoundaryKind.IslandArc:
+                    boundaryEffect = 0.34d * plate.Intensity * Falloff(distance, 0.05d);
+                    break;
+                case BoundaryKind.Divergent:
+                    boundaryEffect = -0.16d * plate.Intensity * Falloff(distance, 0.09d);
+                    break;
+                case BoundaryKind.Transform:
+                    boundaryEffect = 0.05d * plate.Intensity * Falloff(distance, 0.04d);
+                    break;
+            }
+
+            // --- 3. Ridged detail, concentrated where the boundary is already raising ground, so
+            // foothills gather around ranges instead of scattering across plains.
             int mountainOctaves = OctavesUnder(MountainFrequency, maximumFrequency, 5);
             double ridges = EnvironmentNoise.RidgedFbm(
                 seed, channel: 240,
                 dx * MountainFrequency, dy * MountainFrequency, dz * MountainFrequency,
                 mountainOctaves, Lacunarity, Gain, ridgeWeighting: 1.6d);
 
-            double beltMask = EnvironmentNoise.Fbm(
-                seed, channel: 280,
-                dx * 1.6d, dy * 1.6d, dz * 1.6d,
-                OctavesUnder(1.6d, maximumFrequency, 2), Lacunarity, Gain);
-            beltMask = SmoothStep(0.42d, 0.78d, beltMask);
-
-            // --- 3. Local relief. Small amplitude: texture, not shape.
             int detailOctaves = OctavesUnder(DetailFrequency, maximumFrequency, 3);
-            double detail = detailOctaves <= 0
-                ? 0.5d
-                : EnvironmentNoise.Fbm(
-                    seed, channel: 320,
-                    dx * DetailFrequency, dy * DetailFrequency, dz * DetailFrequency,
-                    detailOctaves, Lacunarity, Gain);
+            double detail = EnvironmentNoise.Fbm(
+                seed, channel: 320,
+                dx * DetailFrequency, dy * DetailFrequency, dz * DetailFrequency,
+                detailOctaves, Lacunarity, Gain);
 
-            // --- Combine multiplicatively. Ocean depth follows the continent mask so there are
-            // shelves and trenches rather than a flat floor; land rises from the coast, with ranges
-            // where the belt mask allows and gentle ground where it does not.
-            // Land has to occupy most of the range above the waterline, or the mesh is flat however
-            // it is displaced. An earlier version put typical land at about 0.51 against a 0.38
-            // waterline - a thirteenth of the available range - which rendered as a coloured plane.
-            //
-            // The shape wanted here: coastal plains only just above sea level, broad uplands over
-            // most of a continent, and ranges reaching the top of the range where belts allow.
-            double elevation;
-            if (continent <= 0d)
-            {
-                // Ocean: deep basins far from land, shallow shelves near it.
-                elevation = 0.04d + (0.30d * continentNoise);
-            }
-            else
-            {
-                // Rises from the shore, so coasts are low and interiors high regardless of ranges.
-                double upland = SeaLevel + (0.30d * continent);
-
-                // Ranges. Squared so that ridge lines dominate and the ground between them stays
-                // comparatively flat, which is what separates mountains from general lumpiness.
-                double range = ridges * ridges * beltMask;
-
-                double relief = (0.52d * range) + (0.09d * (detail - 0.5d));
-                elevation = upland + (continent * relief);
-            }
+            double relief = Math.Max(0d, boundaryEffect);
+            double elevation = continent
+                + boundaryEffect
+                + (0.30d * ridges * relief)
+                + (0.045d * (detail - 0.5d));
 
             elevation = EnvironmentNoise.Clamp01(elevation);
 
@@ -190,7 +193,7 @@ namespace LifeSimulation.Presentation
                 seed, channel: 400,
                 dx * MoistureFrequency, dy * MoistureFrequency, dz * MoistureFrequency,
                 OctavesUnder(MoistureFrequency, maximumFrequency, 4), Lacunarity, Gain, warpStrength: 0.4d);
-            double continentality = 1d - (0.65d * continent);
+            double continentality = 1d - (0.65d * EnvironmentNoise.Clamp01((continent - SeaLevel) / (1d - SeaLevel)));
             double moisture = EnvironmentNoise.Clamp01((0.55d * moistureNoise) + (0.45d * continentality));
 
             return new PlanetSample(
@@ -201,22 +204,29 @@ namespace LifeSimulation.Presentation
         }
 
         /// <summary>Sample from a latitude and longitude in radians.</summary>
-        public static PlanetSample SampleAtLatLon(int seed, double latitude, double longitude, double maximumFrequency)
+        public static PlanetSample SampleAtLatLon(int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency)
         {
             double cosLatitude = Math.Cos(latitude);
             return Sample(
                 seed,
+                plates,
                 cosLatitude * Math.Sin(longitude),
                 Math.Sin(latitude),
                 cosLatitude * Math.Cos(longitude),
                 maximumFrequency);
         }
 
-        private static double SmoothStep(double edge0, double edge1, double value)
+        /// <summary>
+        /// Influence of a boundary at an angular distance from it. Exponential rather than linear so
+        /// a range has a crest and shoulders rather than a triangular profile, and so a distant plate
+        /// interior is genuinely unaffected instead of faintly tilted.
+        /// </summary>
+        private static double Falloff(double distance, double width)
         {
-            if (edge1 <= edge0) return value < edge0 ? 0d : 1d;
-            double t = EnvironmentNoise.Clamp01((value - edge0) / (edge1 - edge0));
-            return t * t * (3d - (2d * t));
+            if (width <= 0d) return 0d;
+            double t = distance / width;
+            return Math.Exp(-t * t);
         }
+
     }
 }
