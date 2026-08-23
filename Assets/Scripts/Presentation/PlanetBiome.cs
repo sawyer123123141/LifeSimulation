@@ -35,8 +35,8 @@ namespace LifeSimulation.Presentation
 
             float land = Mathf.Clamp01((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel));
             if (land < 0.045f) return BiomeKind.Beach;
-            if (sample.Temperature < 0.24f) return BiomeKind.Ice;
-            if (sample.Temperature < 0.40f) return BiomeKind.Tundra;
+            if (sample.Temperature < 0.18f) return BiomeKind.Ice;
+            if (sample.Temperature < 0.33f) return BiomeKind.Tundra;
             if (sample.Moisture < 0.34f) return BiomeKind.Desert;
             if (sample.Moisture > 0.72f && land < 0.14f) return BiomeKind.Marsh;
             if (sample.Moisture > 0.46f) return BiomeKind.Grassland;

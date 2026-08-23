@@ -147,18 +147,18 @@ namespace LifeSimulation.Presentation
             switch (plate.Boundary)
             {
                 case BoundaryKind.ContinentalCollision:
-                    boundaryEffect = 0.42d * plate.Intensity * Falloff(distance, 0.26d);
+                    boundaryEffect = 0.62d * plate.Intensity * Falloff(distance, 0.26d);
                     break;
                 case BoundaryKind.Subduction:
                     boundaryEffect = plate.OnOceanicSide
-                        ? -0.30d * plate.Intensity * Falloff(distance, 0.07d)
-                        : 0.36d * plate.Intensity * Falloff(distance, 0.13d);
+                        ? -0.42d * plate.Intensity * Falloff(distance, 0.07d)
+                        : 0.54d * plate.Intensity * Falloff(distance, 0.13d);
                     break;
                 case BoundaryKind.IslandArc:
-                    boundaryEffect = 0.34d * plate.Intensity * Falloff(distance, 0.05d);
+                    boundaryEffect = 0.50d * plate.Intensity * Falloff(distance, 0.05d);
                     break;
                 case BoundaryKind.Divergent:
-                    boundaryEffect = -0.16d * plate.Intensity * Falloff(distance, 0.09d);
+                    boundaryEffect = -0.24d * plate.Intensity * Falloff(distance, 0.09d);
                     break;
                 case BoundaryKind.Transform:
                     boundaryEffect = 0.05d * plate.Intensity * Falloff(distance, 0.04d);
@@ -182,10 +182,12 @@ namespace LifeSimulation.Presentation
             // valleys and undulating plains are: terrain that exists because the surface is not a
             // plane, not because two plates met.
             int hillOctaves = OctavesUnder(HillFrequency, maximumFrequency, 4);
-            double hills = EnvironmentNoise.WarpedFbm(
-                seed, channel: 300,
-                dx * HillFrequency, dy * HillFrequency, dz * HillFrequency,
-                hillOctaves, Lacunarity, Gain, warpStrength: 0.25d);
+            double hills = EnvironmentNoise.Contrast(
+                EnvironmentNoise.WarpedFbm(
+                    seed, channel: 300,
+                    dx * HillFrequency, dy * HillFrequency, dz * HillFrequency,
+                    hillOctaves, Lacunarity, Gain, warpStrength: 0.25d),
+                strength: 1.8d);
 
             int detailOctaves = OctavesUnder(DetailFrequency, maximumFrequency, 3);
             double detail = EnvironmentNoise.Fbm(
@@ -202,7 +204,7 @@ namespace LifeSimulation.Presentation
 
             double elevation = continent
                 + boundaryEffect
-                + (hillAmplitude * (hills - 0.42d))
+                + (hillAmplitude * (hills - 0.5d))
                 + (0.34d * ridges * boundaryRelief)
                 + (0.05d * (detail - 0.5d));
 
@@ -210,7 +212,11 @@ namespace LifeSimulation.Presentation
 
             // --- Climate. Latitude is the structure; noise only perturbs the bands so they do not
             // read as stripes. dy is sin(latitude) for a unit direction.
-            double latitudeTerm = 1d - Math.Abs(dy);
+            // cos(latitude), not 1 - |sin(latitude)|. dy is sin(latitude) for a unit direction, so
+            // the old term fell linearly in sin and was down to 0.29 by 45 degrees - measured
+            // temperature median 0.310, below the tundra threshold, and 79% of all land rendered as
+            // ice. Insolation goes as cos(latitude), which is 0.707 at 45 degrees.
+            double latitudeTerm = Math.Sqrt(Math.Max(0d, 1d - (dy * dy)));
             double climateNoise = EnvironmentNoise.Fbm(
                 seed, channel: 360,
                 dx * ClimateNoiseFrequency, dy * ClimateNoiseFrequency, dz * ClimateNoiseFrequency,
@@ -222,16 +228,28 @@ namespace LifeSimulation.Presentation
             // 0.55 put every range past the snow threshold, so the only raised ground on the
             // planet also rendered white. High ground should read colder than the valley beside it,
             // not become an ice cap the moment it rises.
-            temperature = EnvironmentNoise.Clamp01(temperature - (0.32d * land01));
+            // Measured: with cos(latitude) the temperature median is 0.625, yet 38% of land still
+            // rendered as ice - because the lapse rate cools land specifically, and land is where
+            // biomes are. 0.32 dropped high ground by 0.26. High ground should be colder than the
+            // valley, not glaciated.
+            temperature = EnvironmentNoise.Clamp01(temperature - (0.18d * land01));
 
             // --- Moisture. Wet near the ocean and dry in continental interiors, which is what puts
             // deserts inland instead of scattering them, plus a warped band for regional variety.
-            double moistureNoise = EnvironmentNoise.WarpedFbm(
-                seed, channel: 400,
-                dx * MoistureFrequency, dy * MoistureFrequency, dz * MoistureFrequency,
-                OctavesUnder(MoistureFrequency, maximumFrequency, 4), Lacunarity, Gain, warpStrength: 0.4d);
-            double continentality = 1d - (0.65d * EnvironmentNoise.Clamp01((continent - SeaLevel) / (1d - SeaLevel)));
-            double moisture = EnvironmentNoise.Clamp01((0.55d * moistureNoise) + (0.45d * continentality));
+            // Contrast expansion, which was missing everywhere. Raw fBm spans about .37-.82 rather
+            // than 0-1, so moisture measured 0.476 to 0.889 and could never reach the desert
+            // threshold of 0.34 - deserts were unreachable by construction, not by tuning.
+            double moistureNoise = EnvironmentNoise.Contrast(
+                EnvironmentNoise.WarpedFbm(
+                    seed, channel: 400,
+                    dx * MoistureFrequency, dy * MoistureFrequency, dz * MoistureFrequency,
+                    OctavesUnder(MoistureFrequency, maximumFrequency, 4), Lacunarity, Gain, warpStrength: 0.4d),
+                strength: 3.0d);
+
+            // Continental interiors dry out. Widened from 0.65 to 0.9 so high inland ground can
+            // genuinely reach arid rather than merely damp.
+            double continentality = 1d - (0.9d * EnvironmentNoise.Clamp01((continent - SeaLevel) / (1d - SeaLevel)));
+            double moisture = EnvironmentNoise.Clamp01((0.62d * moistureNoise) + (0.38d * continentality));
 
             return new PlanetSample(
                 (float)elevation,

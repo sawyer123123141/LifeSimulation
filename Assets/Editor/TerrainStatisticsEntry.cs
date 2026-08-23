@@ -50,6 +50,8 @@ namespace LifeSimulation.EditorTools
             // mean elevation must fall as distance grows. If it does not, the boundary machinery is
             // not reaching the output.
             const int distanceBuckets = 8;
+            var kindNear = new Dictionary<BoundaryKind, double[]>();
+            var kindFar = new Dictionary<BoundaryKind, double[]>();
             var bucketTotals = new double[distanceBuckets];
             var bucketCounts = new int[distanceBuckets];
             double maximumBoundaryDistance = 0d;
@@ -105,6 +107,23 @@ namespace LifeSimulation.EditorTools
                         (int)(plate.BoundaryDistance / Math.Max(1e-6d, maximumBoundaryDistance) * distanceBuckets));
                     bucketTotals[bucket] += sample.Elevation;
                     bucketCounts[bucket]++;
+
+                    // Near means within a quarter of the widest boundary influence, far beyond half.
+                    Dictionary<BoundaryKind, double[]> target =
+                        plate.BoundaryDistance < maximumBoundaryDistance * 0.15d ? kindNear
+                        : plate.BoundaryDistance > maximumBoundaryDistance * 0.5d ? kindFar
+                        : null;
+                    if (target != null)
+                    {
+                        if (!target.TryGetValue(plate.Boundary, out double[] accumulator))
+                        {
+                            accumulator = new double[2];
+                            target[plate.Boundary] = accumulator;
+                        }
+
+                        accumulator[0] += sample.Elevation;
+                        accumulator[1]++;
+                    }
                 }
             }
 
@@ -139,6 +158,25 @@ namespace LifeSimulation.EditorTools
             {
                 double mean = bucketCounts[bucket] == 0 ? 0d : bucketTotals[bucket] / bucketCounts[bucket];
                 report.AppendLine($"{bucket,6} | {mean,14:0.0000} | {bucketCounts[bucket],7}");
+            }
+
+            report.AppendLine();
+            report.AppendLine("ELEVATION NEAR vs FAR, BY BOUNDARY KIND (continental only)");
+            report.AppendLine("Averaging across kinds hides the signal: a collision raising ground is");
+            report.AppendLine("diluted by transforms that raise none and rifts that lower it.");
+            report.AppendLine("kind                 | near  | far   | lift");
+            foreach (BoundaryKind kind in Enum.GetValues(typeof(BoundaryKind)))
+            {
+                if (!kindNear.ContainsKey(kind)) kindNear[kind] = new double[2];
+                if (!kindFar.ContainsKey(kind)) kindFar[kind] = new double[2];
+            }
+
+            foreach (KeyValuePair<BoundaryKind, double[]> pair in kindNear)
+            {
+                double near = pair.Value[1] <= 0 ? 0d : pair.Value[0] / pair.Value[1];
+                double[] far = kindFar[pair.Key];
+                double farMean = far[1] <= 0 ? 0d : far[0] / far[1];
+                report.AppendLine($"{pair.Key,-20} | {near,5:0.000} | {farMean,5:0.000} | {near - farMean,5:0.000}");
             }
 
             report.AppendLine();

@@ -1,0 +1,42 @@
+=== TERRAIN STATISTICS ===
+seed 42, 512x256 samples, maxFrequency 40.7
+sea level 0.380
+
+elevation       min 0.000  p10 0.133  p20 0.157  p30 0.174  p40 0.191  p50 0.209  p60 0.234  p70 0.359  p80 0.585  p90 0.672  max 1.000
+moisture        min 0.232  p10 0.431  p20 0.512  p30 0.565  p40 0.614  p50 0.658  p60 0.709  p70 0.765  p80 0.825  p90 0.906  max 1.000
+temperature     min 0.000  p10 0.161  p20 0.295  p30 0.417  p40 0.525  p50 0.648  p60 0.738  p70 0.803  p80 0.847  p90 0.874  max 0.942
+
+LAND FRACTION 0.298  (target ~0.30)
+land elevation  min 0.380  p10 0.527  p20 0.556  p30 0.578  p40 0.603  p50 0.626  p60 0.649  p70 0.696  p80 0.782  p90 0.880  max 1.000
+land elevation uses 1.000 of the range above sea level
+
+ELEVATION BY DISTANCE FROM PLATE BOUNDARY (continental only)
+bucket | mean elevation | samples
+     0 |         0.6953 |    1938
+     1 |         0.6892 |    1816
+     2 |         0.6782 |    1697
+     3 |         0.6541 |    1527
+     4 |         0.6260 |     999
+     5 |         0.6155 |     685
+     6 |         0.6014 |     422
+     7 |         0.6115 |     152
+
+ELEVATION NEAR vs FAR, BY BOUNDARY KIND (continental only)
+Averaging across kinds hides the signal: a collision raising ground is
+diluted by transforms that raise none and rifts that lower it.
+kind                 | near  | far   | lift
+Divergent            | 0.445 | 0.639 | -0.193
+Transform            | 0.631 | 0.581 | 0.050
+Subduction           | 0.981 | 0.635 | 0.346
+ContinentalCollision | 0.887 | 0.722 | 0.164
+IslandArc            | 0.000 | 0.000 | 0.000
+
+BIOME COUNTS
+Ocean           91966  0.702
+Marsh             311  0.002
+Grassland       16592  0.127
+Beach             326  0.002
+Scrub            3580  0.027
+Desert           1805  0.014
+Tundra           6738  0.051
+Ice              9754  0.074
