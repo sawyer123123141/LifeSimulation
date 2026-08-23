@@ -34,11 +34,14 @@ namespace LifeSimulation.Presentation
             /// <summary>Off: the normal arena-sized ground.</summary>
             Off = 0,
 
-            /// <summary>A wide flat patch, many landforms across.</summary>
+            /// <summary>A wide flat patch, many landforms across: what the raw field looks like.</summary>
             WidePatch = 1,
 
+            /// <summary>The same field shaped into a landmass ringed by ocean.</summary>
+            Island = 2,
+
             /// <summary>The whole planet, as an actual sphere.</summary>
-            Planet = 2,
+            Planet = 3,
         }
 
         /// <summary>Half-width of the wide patch, in simulation units. 200 shows ~24 landforms across.</summary>
@@ -86,6 +89,8 @@ namespace LifeSimulation.Presentation
             {
                 case Mode.WidePatch:
                     return $"wide patch, {WidePatchHalfWidth * 2f:0} units across (arena is 50)";
+                case Mode.Island:
+                    return "island - same field, shaped by a radial falloff";
                 case Mode.Planet:
                     return "whole planet - the VIEW is spherical, the simulation is still flat";
                 default:
@@ -95,7 +100,7 @@ namespace LifeSimulation.Presentation
 
         public Mode Advance(SimulationWorld world)
         {
-            Current = (Mode)(((int)Current + 1) % 3);
+            Current = (Mode)(((int)Current + 1) % 4);
             Rebuild(world);
             return Current;
         }
@@ -115,13 +120,13 @@ namespace LifeSimulation.Presentation
             }
 
             _root.SetActive(true);
-            if (Current == Mode.WidePatch)
+            if (Current == Mode.Planet)
             {
-                BuildWidePatch(world);
+                BuildPlanet(world);
             }
             else
             {
-                BuildPlanet(world);
+                BuildWidePatch(world, island: Current == Mode.Island);
             }
         }
 
@@ -130,7 +135,7 @@ namespace LifeSimulation.Presentation
         /// once. This is the view that makes "is the scale right?" answerable, because scale is a
         /// comparison and a single landform cannot be compared with anything.
         /// </summary>
-        private void BuildWidePatch(SimulationWorld world)
+        private void BuildWidePatch(SimulationWorld world, bool island)
         {
             int side = PatchResolution;
             var vertices = new Vector3[side * side];
@@ -147,7 +152,8 @@ namespace LifeSimulation.Presentation
                     float x = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, u);
                     EnvironmentSample sample = world.Environment.Sample(new SimVector2(x, z));
                     int vertex = row * side + column;
-                    float height = Mathf.Max(0f, sample.Elevation - SeaLevel) / (1f - SeaLevel) * HeightScale;
+                    float elevation = island ? sample.Elevation * IslandFalloff(x, z) : sample.Elevation;
+                    float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * HeightScale;
                     vertices[vertex] = new Vector3(x, height, z);
                     uv[vertex] = new Vector2(u, v);
                 }
@@ -155,7 +161,7 @@ namespace LifeSimulation.Presentation
 
             WriteQuads(triangles, side);
             Commit(vertices, uv, triangles);
-            ApplyTexture(BuildPatchTexture(world));
+            ApplyTexture(BuildPatchTexture(world, island));
         }
 
         /// <summary>
@@ -231,7 +237,7 @@ namespace LifeSimulation.Presentation
             return world.Environment.Sample(position);
         }
 
-        private Texture2D BuildPatchTexture(SimulationWorld world)
+        private Texture2D BuildPatchTexture(SimulationWorld world, bool island)
         {
             var pixels = new Color[TextureWidth * TextureHeight];
             for (int y = 0; y < TextureHeight; y++)
@@ -240,7 +246,8 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     float worldX = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, (x + 0.5f) / TextureWidth);
-                    pixels[(y * TextureWidth) + x] = Shade(world.Environment.Sample(new SimVector2(worldX, worldZ)));
+                    EnvironmentSample sample = world.Environment.Sample(new SimVector2(worldX, worldZ));
+                    pixels[(y * TextureWidth) + x] = Shade(sample, island ? IslandFalloff(worldX, worldZ) : 1f);
                 }
             }
 
@@ -256,7 +263,7 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     double longitude = (((x + 0.5d) / TextureWidth) - 0.5d) * 2d * Math.PI;
-                    pixels[(y * TextureWidth) + x] = Shade(SampleAtLatLon(world, latitude, longitude));
+                    pixels[(y * TextureWidth) + x] = Shade(SampleAtLatLon(world, latitude, longitude), 1f);
                 }
             }
 
@@ -271,22 +278,39 @@ namespace LifeSimulation.Presentation
         /// rather than "what does one channel look like?". Water first, then cold ground, then the
         /// moisture/fertility classification that decides the rest.
         /// </summary>
-        private static Color Shade(EnvironmentSample sample)
+        private static Color Shade(EnvironmentSample sample, float elevationScale)
         {
-            if (sample.Elevation > 0f && sample.Elevation <= SeaLevel)
+            float elevation = sample.Elevation * elevationScale;
+
+            if (sample.Elevation > 0f && elevation <= SeaLevel)
             {
-                float depth = Mathf.Clamp01(sample.Elevation / SeaLevel);
-                return Color.Lerp(new Color(0.035f, 0.106f, 0.235f), new Color(0.153f, 0.376f, 0.573f), depth);
+                float depth = Mathf.Clamp01(elevation / SeaLevel);
+                return Color.Lerp(new Color(0.035f, 0.106f, 0.235f), new Color(0.180f, 0.451f, 0.647f), depth);
             }
 
-            float land = sample.Elevation <= 0f ? 0f : Mathf.Clamp01((sample.Elevation - SeaLevel) / (1f - SeaLevel));
+            float land = sample.Elevation <= 0f ? 0f : Mathf.Clamp01((elevation - SeaLevel) / (1f - SeaLevel));
+
+            // Beach: a narrow sand band just above the waterline. Cheap, and it is most of what makes
+            // a coastline read as a coastline rather than as grass meeting blue.
+            if (sample.Elevation > 0f && land < 0.045f) return new Color(0.902f, 0.831f, 0.639f);
 
             if (sample.Temperature < 0.24f) return Color.Lerp(new Color(0.86f, 0.90f, 0.93f), Color.white, land);
             if (sample.Temperature < 0.40f) return Color.Lerp(new Color(0.498f, 0.584f, 0.659f), new Color(0.62f, 0.66f, 0.68f), land);
-            if (sample.Moisture < 0.34f) return Color.Lerp(new Color(0.816f, 0.706f, 0.443f), new Color(0.647f, 0.545f, 0.361f), land);
+            if (sample.Moisture < 0.34f) return Color.Lerp(new Color(0.878f, 0.769f, 0.478f), new Color(0.706f, 0.588f, 0.376f), land);
             if (sample.Moisture > 0.74f && sample.Fertility < 0.48f) return new Color(0.259f, 0.435f, 0.388f);
-            if (sample.Fertility > 0.58f) return Color.Lerp(new Color(0.235f, 0.529f, 0.216f), new Color(0.318f, 0.435f, 0.251f), land);
+            if (sample.Fertility > 0.58f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
             return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
+        }
+
+        /// <summary>
+        /// Radial falloff that turns an endless field into a landmass ringed by ocean, as in the
+        /// reference art. Flat across the interior, then dropping to zero before the edge, so the
+        /// coastline is produced by the shape of the field rather than cut off by the mesh boundary.
+        /// </summary>
+        private static float IslandFalloff(float x, float z)
+        {
+            float distance = Mathf.Sqrt((x * x) + (z * z)) / WidePatchHalfWidth;
+            return 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.35f, 0.92f, distance));
         }
 
         private static void WriteQuads(int[] triangles, int side)
@@ -308,13 +332,31 @@ namespace LifeSimulation.Presentation
             }
         }
 
+        /// <summary>
+        /// Commit the mesh <b>flat shaded</b>: every triangle gets its own three vertices, so each
+        /// face carries one normal and renders as a distinct facet.
+        ///
+        /// <para>This is the low-poly look in the reference art, and it is not only decorative -
+        /// faceting makes slope legible. A smooth-shaded heightfield at this resolution reads as an
+        /// undifferentiated blob, which is part of why the terrain was hard to judge.</para>
+        /// </summary>
         private void Commit(Vector3[] vertices, Vector2[] uv, int[] triangles)
         {
+            var flatVertices = new Vector3[triangles.Length];
+            var flatUv = new Vector2[triangles.Length];
+            var flatTriangles = new int[triangles.Length];
+            for (int index = 0; index < triangles.Length; index++)
+            {
+                flatVertices[index] = vertices[triangles[index]];
+                flatUv[index] = uv[triangles[index]];
+                flatTriangles[index] = index;
+            }
+
             _root.transform.position = Vector3.zero;
             _mesh.Clear();
-            _mesh.vertices = vertices;
-            _mesh.uv = uv;
-            _mesh.triangles = triangles;
+            _mesh.vertices = flatVertices;
+            _mesh.uv = flatUv;
+            _mesh.triangles = flatTriangles;
             _mesh.RecalculateNormals();
             _mesh.RecalculateBounds();
         }
