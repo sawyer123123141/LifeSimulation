@@ -987,6 +987,17 @@ unrecoverable one.
   1,151x reduction and 2.5x faster at 1,000. `Genome.WriteTraits(destination, offset)` is the single
   source of trait order; `ToTraits()` is now the allocating wrapper around it. A test pins that
   allocation grows under 8x when pairs grow 16x, so a regression to per-pair allocation fails.
+- **Resource allocation is NOT a hot spot, and its cost shape is the opposite of the obvious one
+  (measured 2026-08-22).** `ResourceAllocationSystem.Resolve` costs
+  **O(requests x distinct resources)**, not O(requests^2): the expensive branch runs once per
+  distinct resource, so **crowding is the cheap case**. 1,000 requests on one resource resolve in
+  16.9 us; the same 1,000 across 24 resources cost 165 us. End to end, a 12,000-tick run at the
+  largest population a committed scenario reaches (523 creatures) takes **2.72 s total, 0.227
+  ms/tick including every other system**. **Do not optimise this** - it would mean touching a
+  deterministic path that decides who eats when resources run short, for an unmeasurable gain.
+  Revisit only if populations in the thousands and site counts in the hundreds coincide; the fix is
+  then to bucket requests by resource index in one pass.
+  `docs/experiments/p1-resource-allocation-benchmark-2026-08-22.md`.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
