@@ -165,6 +165,8 @@ namespace LifeSimulation.Presentation
             GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
+            GUI.Label(new Rect(300f, 40f, 300f, 22f),
+                $"O: {(_sphericalArena ? "on the planet" : "flat patch")}");
             if (_world != null && _world.Config.ElevationFieldEnabled)
             {
                 GUI.Label(new Rect(24f, 84f, 430f, 22f),
@@ -173,8 +175,7 @@ namespace LifeSimulation.Presentation
                     $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
                 GUI.Label(new Rect(24f, 128f, 430f, 22f),
                     $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}   |   J tuning panel");
-                GUI.Label(new Rect(24f, 150f, 430f, 22f),
-                    $"O world shape: {(_sphericalArena ? "on the planet" : "flat patch")}");
+
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
@@ -372,10 +373,14 @@ namespace LifeSimulation.Presentation
             {
                 _sphericalArena = !_sphericalArena;
 
-                // Set here rather than only in the mesh path: a scenario with the elevation field off
-                // never reaches that path, and creatures would then be projected onto a planet whose
-                // ground was never curved to meet them.
+                // Everything the toggle needs is driven from here, not from the terrain mesh path.
+                // That path early-returns to a flat arena whenever the elevation field is off - which
+                // most scenarios are - so hanging the planet off it meant pressing this key did
+                // nothing at all except sag the creatures by the sagitta, which is invisible on
+                // purpose.
                 ArenaProjection.Spherical = _sphericalArena;
+                EnsureArenaPlates();
+                UpdatePlanetBackdrop();
                 RebuildTerrainViews();
                 ApplyCameraRange();
             }
@@ -1077,6 +1082,10 @@ namespace LifeSimulation.Presentation
                     vertices[(row * side) + column] = new Vector3(x, 0f, z);
                 }
             }
+
+            // Featureless ground is still a piece of the planet's surface, so it curves too.
+            // Without this the sea-level plane stayed flat and cut through the globe behind it.
+            ArenaProjection.ProjectVertices(vertices);
 
             int triangle = 0;
             for (int row = 0; row + 1 < side; row++)
