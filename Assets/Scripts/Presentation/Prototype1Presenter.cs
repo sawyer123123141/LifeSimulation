@@ -41,6 +41,8 @@ namespace LifeSimulation.Presentation
         private Camera _simulationCamera;
         private Renderer _terrainRenderer;
         private Texture2D _temperatureHeatmap;
+        private MeshFilter _terrainMeshFilter;
+        private Mesh _terrainMesh;
         private Color[] _temperaturePixels;
         private Color _terrainColor;
         private float _accumulator;
@@ -327,10 +329,14 @@ namespace LifeSimulation.Presentation
 
         private void CreateEnvironment()
         {
-            var terrain = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            terrain.name = "Prototype Terrain";
-            terrain.transform.localScale = new Vector3(5f, 1f, 5f);
-            _terrainRenderer = terrain.GetComponent<Renderer>();
+            var terrain = new GameObject("Prototype Terrain");
+            _terrainMeshFilter = terrain.AddComponent<MeshFilter>();
+            _terrainRenderer = terrain.AddComponent<MeshRenderer>();
+            _terrainRenderer.material = new Material(Shader.Find("Standard"));
+            _terrainMesh = new Mesh { name = "Prototype Terrain Mesh" };
+            _terrainMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            _terrainMeshFilter.sharedMesh = _terrainMesh;
+            BuildTerrainMesh();
             _terrainColor = new Color(0.16f, 0.28f, 0.16f);
             _terrainRenderer.material.color = _terrainColor;
             _temperatureHeatmap = new Texture2D(HeatmapResolution, HeatmapResolution, TextureFormat.RGBA32, false);
@@ -368,6 +374,9 @@ namespace LifeSimulation.Presentation
             _resourceViews.Clear();
             _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
+            // The relief is a function of this world's seed and flags, so it is rebuilt per scenario
+            // rather than once at startup.
+            BuildTerrainMesh();
             _p5HistorySession = P5HistoryPanelSession.CreateForWorld(_world);
             _scenarioId = scenario.Id;
             _scenarioHint = GetScenarioHint(scenario.Id);
@@ -448,6 +457,84 @@ namespace LifeSimulation.Presentation
             if (land < 0.45f) return Color.Lerp(new Color(0.573f, 0.678f, 0.376f), new Color(0.353f, 0.478f, 0.278f), (land - 0.08f) / 0.37f);
             if (land < 0.78f) return Color.Lerp(new Color(0.353f, 0.478f, 0.278f), new Color(0.478f, 0.451f, 0.412f), (land - 0.45f) / 0.33f);
             return Color.Lerp(new Color(0.478f, 0.451f, 0.412f), Color.white, (land - 0.78f) / 0.22f);
+        }
+
+        /// <summary>Vertices per side of the ground mesh. 129 gives 0.39-unit quads across the arena.</summary>
+        private const int TerrainResolution = 129;
+
+        /// <summary>World units of relief between sea level and the highest ground.</summary>
+        private const float TerrainHeightScale = 5f;
+
+        /// <summary>
+        /// Ground height under a simulation position, in Unity units.
+        ///
+        /// <para><b>Cosmetic only.</b> The simulation is a flat plane: every position is a
+        /// <c>SimVector2</c>, distance is 2D, and nothing in <c>Assets/Scripts/Simulation</c> knows
+        /// this function exists. Creatures are drawn standing on the relief; they do not walk up it,
+        /// and a hill costs them nothing. Making elevation affect movement is a simulation change -
+        /// flag, tests and an experiment - not a presentation one.</para>
+        ///
+        /// <para>Everything at or below sea level is flattened to sea level, so water reads as a
+        /// surface rather than as a bowl.</para>
+        /// </summary>
+        private float GroundHeightAt(float x, float z)
+        {
+            if (_world == null || !_world.Config.ElevationFieldEnabled) return 0f;
+
+            float elevation = _world.Environment.Sample(new SimVector2(x, z)).Elevation;
+            return Mathf.Max(0f, elevation - OverlaySeaLevel) / (1f - OverlaySeaLevel) * TerrainHeightScale;
+        }
+
+        /// <summary>
+        /// Rebuild the ground as a displaced grid over the arena. Flat when the elevation flag is
+        /// off, which keeps every existing scenario looking exactly as it did.
+        /// </summary>
+        private void BuildTerrainMesh()
+        {
+            if (_terrainMesh == null) return;
+
+            const float halfWidth = 25f;
+            int side = TerrainResolution;
+            var vertices = new Vector3[side * side];
+            var uv = new Vector2[side * side];
+            var triangles = new int[(side - 1) * (side - 1) * 6];
+
+            for (int row = 0; row < side; row++)
+            {
+                float v = row / (float)(side - 1);
+                float z = Mathf.Lerp(-halfWidth, halfWidth, v);
+                for (int column = 0; column < side; column++)
+                {
+                    float u = column / (float)(side - 1);
+                    float x = Mathf.Lerp(-halfWidth, halfWidth, u);
+                    int vertex = row * side + column;
+                    vertices[vertex] = new Vector3(x, GroundHeightAt(x, z), z);
+                    uv[vertex] = new Vector2(u, v);
+                }
+            }
+
+            int triangle = 0;
+            for (int row = 0; row + 1 < side; row++)
+            {
+                for (int column = 0; column + 1 < side; column++)
+                {
+                    int bottomLeft = row * side + column;
+                    int topLeft = bottomLeft + side;
+                    triangles[triangle++] = bottomLeft;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = topLeft + 1;
+                }
+            }
+
+            _terrainMesh.Clear();
+            _terrainMesh.vertices = vertices;
+            _terrainMesh.uv = uv;
+            _terrainMesh.triangles = triangles;
+            _terrainMesh.RecalculateNormals();
+            _terrainMesh.RecalculateBounds();
         }
 
         private void UpdateTemperatureHeatmapIfNeeded()
@@ -769,7 +856,7 @@ namespace LifeSimulation.Presentation
                 : resource.Kind == ResourceKind.Water ? PrimitiveType.Cube : PrimitiveType.Sphere;
             var view = GameObject.CreatePrimitive(primitive);
             view.name = resource.Kind.ToString();
-            view.transform.position = new Vector3(resource.Position.X, 0.25f, resource.Position.Y);
+            view.transform.position = new Vector3(resource.Position.X, GroundHeightAt(resource.Position.X, resource.Position.Y) + 0.25f, resource.Position.Y);
             view.transform.localScale = new Vector3(2f, 0.5f, 2f);
             view.GetComponent<Renderer>().material.color = GetResourceColor(resource.Kind);
             _resourceViews.Add(view.transform);
@@ -799,7 +886,7 @@ namespace LifeSimulation.Presentation
                 Transform view = _resourceViews[index];
                 float fraction = resource.Capacity <= 0f ? 0f : resource.Amount / resource.Capacity;
                 float height = Mathf.Lerp(0.08f, 0.5f, fraction);
-                view.position = new Vector3(resource.Position.X, height * 0.5f, resource.Position.Y);
+                view.position = new Vector3(resource.Position.X, GroundHeightAt(resource.Position.X, resource.Position.Y) + height * 0.5f, resource.Position.Y);
                 view.localScale = new Vector3(2f, height, 2f);
                 Color baseColor = GetResourceColor(resource.Kind);
                 view.GetComponent<Renderer>().material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
@@ -831,7 +918,7 @@ namespace LifeSimulation.Presentation
 
                 var movement = _world.GetCreatureMovementAt(index);
                 CreatureAction action = _world.GetCreatureDecisionAt(index).Action;
-                view.position = new Vector3(movement.Position.X, 0.55f, movement.Position.Y);
+                view.position = new Vector3(movement.Position.X, GroundHeightAt(movement.Position.X, movement.Position.Y) + 0.55f, movement.Position.Y);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
                 view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale);
