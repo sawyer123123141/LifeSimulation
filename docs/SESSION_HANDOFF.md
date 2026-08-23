@@ -1,7 +1,7 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: the rendezvous documentation commit** on `origin/main`. Phase D below lists the
-commits after the previous handoff state.
+**Head at handoff: `e6ce068`** (`experiment: reassess safety-gated rendezvous where survival can
+actually move`), pushed to `origin/main`.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
@@ -58,7 +58,7 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 |---|---|
 | `7343653` | `ComputeStateFingerprint` (V2) + `SimulationConfig.ComputeConfigurationHash`; `BehaviorHash` extended with plant age/cooldown after measuring it changes no verdict |
 | `32900de` | selected-creature action history — an outside observer, testable headlessly |
-| (docs) | safety-gated rendezvous reassessed at an operating point with survival headroom |
+| `e6ce068` | safety-gated rendezvous reassessed at an operating point with survival headroom |
 
 ---
 
