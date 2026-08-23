@@ -291,6 +291,31 @@ Land fraction **0.296–0.298** against a 0.30 target throughout.
 **Resolvable frequency:** planet **13.3** cycles/radian (icosphere subdivision 5, ~167 triangles
 around the equator); patch **120.6**. That 9x gap is real level of detail, not a defect.
 
+**Creature-scale relief, retuned (2026-08-23).** Reported bumpy in the 200-unit view and acceptable
+in the 400-unit one. The difference is which bands the view can resolve: patch resolution is fixed at
+193 samples, so the resolvable frequency is **120.6** at 400 units and **241.2** at 200 units, and the
+micro band at 150 cycles/radian switches on between them.
+
+Both fine bands were **clipped by the slope ceiling rather than chosen**: `min(0.16, 6/55) = 0.109`
+and `min(0.08, 6/150) = 0.040`, so two bands rode the ceiling and summed. Adjacent-sample grade over
+land, in metres per metre:
+
+| local / micro amplitude | 400u median | 200u median | 200u p90 | 50u median |
+|---|---:|---:|---:|---:|
+| 0.16 / 0.08 (was clipped to 0.109 / 0.040) | 0.169 | **0.243** | 0.611 | 0.283 |
+| 0.060 / 0.020 | 0.113 | 0.155 | 0.388 | 0.208 |
+| **0.036 / 0.012 (now)** | **0.088** | **0.119** | **0.306** | **0.172** |
+| 0.024 / 0.008 | 0.077 | 0.103 | 0.278 | 0.156 |
+| planet-scale bands only | 0.063 | 0.085 | 0.253 | 0.160 |
+
+The chosen values are both **under** the ceiling, so they are now decisions rather than clamps.
+Nothing else in the field moved: at these three views the new band fade evaluates to weight 1 or 0
+exactly as the old `if` did, and the retuned numbers reproduce the sweep row for row.
+
+**A hard band gate is a pop.** `if (maximumFrequency >= MicroFrequency)` gives a band **full**
+amplitude the instant the camera crosses the threshold, so zooming changed the character of the
+ground rather than its detail. Now faded across half an octave (`BandWeight`).
+
 **Three scale errors, each worth remembering:**
 - `MaximumSlope` 0.55 was a **3% grade** — wrong by 20x, and it crushed every band above ~10
   cycles/radian to centimetres. Now 6 (a 36% grade).
@@ -400,6 +425,15 @@ population as an upper bound — sound for that decision, but it is a bound, not
     nobody was looking at.
 11. **Measure before changing a terrain coefficient.** Reasoning about the field produced six wrong
     diagnoses; the instruments produced every answer.
+12. **A band amplitude must sit under the slope ceiling, not on it.** `SlopeLimited` is a safety
+    ceiling. Two bands both clipped to it sum to relief no ground has - measured median land grade
+    0.243 against 0.085 for the planet bands alone. If a chosen amplitude is above the ceiling, the
+    number in the source is fiction.
+13. **Terrain tunables live in `TerrainSettings`, not in `const` fields.** They are judged by eye
+    against a one-metre creature at three zoom levels; that judgement cannot be made from source, and
+    an edit-and-reload loop is why the previous round took fifteen passes. `PlanetTerrain.Active` is
+    deliberately mutable global state - there is one terrain - and the explicit parameter on
+    `Sample` exists so probes and tests can sweep without touching it.
 12. **Safety-gated rendezvous is closed as "works, buys nothing."** Flag stays default `false`. Its
    effect is real and correctly signed; the ecology is starvation-limited, so it does not propagate.
    No pack architecture, no tuning. Reopen only in a predation-limited habitat.
@@ -499,6 +533,16 @@ Unity menu, or headless `-executeMethod`:
 Statistics land in `Logs/terrain-statistics.txt`; PNGs in `Logs/terrain/`. **The render needs
 graphics — `-nographics` disables it.** Both fail while the Unity editor holds the project lock;
 either close the editor or run the menu items.
+
+**Neither needs Unity closed if the question is about the field itself:**
+
+```powershell
+dotnet run --project tools\TerrainProbe -c Release
+```
+
+That compiles `PlanetTerrain`, `PlateStructure` and `TerrainSettings` directly - they are pure C# -
+and prints the adjacent-sample grade for each flat view at **its own** resolvable frequency, with and
+without the creature-scale bands.
 
 **A field statistic cannot see a rendering defect and a render cannot see a field discontinuity.**
 Both exist because each missed something the other caught.
@@ -612,6 +656,9 @@ reading gave the architecture.
 | `TerrainPreview` | the `K` viewer |
 | `TerrainRenderEntry` | offline PNG capture (`Life Simulation > Render Terrain Views`) |
 | `TerrainStatisticsEntry` | field statistics (`Life Simulation > Dump Terrain Statistics`) |
+| `TerrainSettings` | **every tunable, in one object.** Pure C#, no Unity types, so an offline probe can compile it |
+| `TerrainTuningPanel` | the `J` panel: live sliders over `PlanetTerrain.Active` |
+| `tools/TerrainProbe` | **field measurement without Unity** - the editor instruments cannot run while the editor holds the lock |
 
 ### Defects found and fixed, with the measurement that found each
 
@@ -646,15 +693,20 @@ diagnoses:
    **planet-marked** image tinting exactly the region the flat views show. That answers "are these
    the same world?", and it has already refuted one confident explanation.
 
+3. `dotnet run` in **`tools/TerrainProbe`** - the same gradient measurement, compiled straight
+   against `PlanetTerrain`, with **no Unity in the loop**. The editor instruments cannot run while
+   the editor holds the project lock, which is exactly when terrain is being looked at.
+
 **A field statistic cannot see a rendering defect and a render cannot see a field discontinuity.**
-Both instruments exist because each missed something the other caught.
+Every instrument here exists because each missed something another caught.
 
 ### Known open
 
 - **The planet has no adaptive LOD.** Subdivision is fixed at 5 (~20k triangles, ~19 m each), so
   zooming in never adds detail. That is T6 (chunk streaming, geometry level of detail), not tuning.
 - A small stepped comb remains on some steep ridges.
-- Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement.
+- Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement. The `J` panel
+  has an **altitude cooling** slider, which is the coefficient that decides it.
 
 ### THE OPEN DECISION — terrain is still cosmetic
 

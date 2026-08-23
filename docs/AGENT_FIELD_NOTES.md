@@ -67,6 +67,13 @@ to you within a week. Names below are stable.
   hotkeys (`B/D/F/P/C/T/G/M/E`, `5/6/7/9`, `N`, `H`), the creature inspector,
   and the P5 evidence panel. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
+- `Assets/Scripts/Presentation/TerrainSettings.cs` — every terrain tunable, in one object.
+  Pure C#, no UnityEngine types, so `tools/TerrainProbe` can compile the generator without Unity.
+  `PlanetTerrain.Active` is the instance everything uses; `ResetSettings()` restores the shipped
+  values.
+- `Assets/Scripts/Presentation/TerrainTuningPanel.cs` — the `J` panel of live sliders over it.
+- `tools/TerrainProbe/` — `dotnet run` field measurement with no Unity in the loop. Use this when
+  the editor is open, since both editor instruments fail on the project lock.
 - `Assets/Editor/PrototypeBatchEntry.cs` — batch experiment entry points.
 - `Assets/Tests/EditMode/*.cs` — 377 tests. `ResourceExperimentTests.cs` holds
   the scenario/calibration tests; `CoreSimulationTests.cs` is the big one;
@@ -1208,3 +1215,34 @@ change.
   wrong call anyway: it revealed the finite sea bed patch as a lighter rectangle mid-ocean, an
   artefact worse than the one it solved.
 
+- **A slope ceiling is not an amplitude (2026-08-23).** `SlopeLimited` clips a band to the steepest
+  slope the mesh can represent. Two bands whose chosen amplitudes were both **above** that ceiling
+  were therefore both clipped to it and summed - measured median land grade **0.243** in the 200-unit
+  view against **0.085** for the planet-scale bands alone. When a limiter is doing the choosing, the
+  number written in the source is fiction. Check whether any amplitude is above its own limit before
+  believing it.
+- **"Bumpy at one zoom, fine at another" is a band-gating question, not a noise-quality one.** Patch
+  resolution is fixed at 193 samples, so the resolvable frequency is set entirely by how wide the
+  window is: **120.6** cycles/radian at 400 units, **241.2** at 200 units. A band at 150 is therefore
+  absent from one view and present at full strength in the next. Before tuning noise, work out which
+  bands each view can actually carry.
+- **A hard resolution gate is a pop.** `if (maximumFrequency >= BandFrequency)` gives a band full
+  amplitude the instant the camera crosses the threshold, so zooming changes the *character* of the
+  ground rather than its detail - the world appears to be rebuilt rather than approached. Fade the
+  band in across half an octave instead.
+- **Build the instrument that does not need the editor.** Both terrain instruments are Unity menu
+  items, and both fail while the editor holds the project lock - which is exactly when someone is
+  looking at terrain and wants a number. `PlanetTerrain`, `PlateStructure` and `TerrainSettings` are
+  pure C# by design, so `tools/TerrainProbe` compiles them directly and answers in two seconds with
+  nothing closed. Keeping generation free of engine types is what made that possible; it is worth
+  protecting.
+- **An instrument must sample at the resolution of the thing it describes.** The flat-view statistics
+  passed the *globe's* maximum frequency to every window, which silenced the two creature-scale bands
+  completely. It was therefore reporting on a field that no flat view renders, and could not have
+  seen the relief that turned out to be the complaint. Same failure as the capture-versus-runtime
+  drift, one level down: the instrument had quietly become a description of something else.
+- **Put the tunables behind sliders once a thing is judged by eye.** Terrain is judged against a
+  one-metre creature at three zoom levels. That is not a judgement anything makes from source, and
+  edit-recompile-look is why the previous round took fifteen passes. Mutable global settings are the
+  right trade here - there is one terrain - as long as an explicit parameter survives for probes and
+  tests, and a Reset restores the shipped values exactly.
