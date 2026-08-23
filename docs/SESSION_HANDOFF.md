@@ -445,134 +445,76 @@ Move the flag out of `LivenessTests.KnownInertFlags`; do not "fix" the test.
 
 **Read `docs/terrain-brainstorm-2-2026-08-23.md` and `docs/reference-implementations.md` before
 touching terrain.** The first explains why the original design was structurally wrong rather than
-under-tuned; the second lists the reference implementations worth reading and what each maps to on
-this roadmap. Hydraulic erosion is the highest-value one and is already specified as T2.
+under-tuned; the second lists reference implementations and what each maps to.
 
-**The lesson that cost the most this session: read the reference implementation before writing the
-system, not after.** Fifteen rounds of first-principles tuning gave six wrong diagnoses; twenty
-minutes of reading gave the architecture.
+**The lesson that cost the most: read the reference implementation before writing the system, not
+after.** Fifteen rounds of first-principles tuning gave six wrong diagnoses; twenty minutes of
+reading gave the architecture.
 
-**Far more existed than "not started".** The elevation field has been in the repo since 2026-08-19:
-ridged multifractal (`1 - |2n-1|`, squared, octave-weighted so ridges connect into chains) plus a
-lapse rate `temperature - 0.45 * elevation`, behind `ElevationFieldEnabled`. Moisture, fertility and
-temperature fields shipped before it. What was missing was any way to *see* it.
+### Architecture as it now stands
 
-### Done 2026-08-22
-
-- **`529abdd` — elevation overlay and terrain playtest key.** `H` now cycles
-  None → Temperature → Biome → **Elevation**. `Y` opens a terrain scenario directly on that overlay.
-  The overlay is **banded** (water / beach / grass / rock / snow), not a smooth ramp, because a
-  continuous gradient hides the ridge structure the field exists to produce. With the flag off it
-  renders a flat sea rather than inventing terrain the simulation does not have.
-- **`be4dd63` — real relief.** The ground is a 129×129 mesh displaced by the elevation field.
-  Creatures and resources are drawn standing on it. Flat when the flag is off, so every existing
-  scenario looks unchanged. Rebuilt per scenario, since relief is a function of seed and flags.
-
-### The terrain playtest key `Y`, and why cap 96
-
-Two measured constraints from opposite directions. Elevation needs grazing pressure to have anything
-to act on — growth is multiplied by `(1 - Biomass/Capacity)`, so near capacity a change to the growth
-*limit* does nothing. But the cap cannot simply be raised: the herbivore configuration is 0/6 extinct
-at cap 96 and 5/6 at 200. **96 is the highest cap measured to survive.** Verified elevation is
-actually live there — 3/3 seeds at 12,000 ticks — so the key does not show terrain the ecology
-ignores.
-
-### What is cosmetic and what is not — do not confuse these
-
-| | status |
+| file | role |
 |---|---|
-| elevation as a **field** (feeds temperature via lapse rate) | **real**, flag-gated, live |
-| ground **geometry** (displaced mesh, creatures drawn on it) | **cosmetic only** |
-| elevation affecting **movement** (uphill costs, 3D distance, slope) | **not built** |
-| **spherical** world | **not built**, large |
+| `PlateStructure` | T0 tectonics: Fibonacci plate seeds, spherical Voronoi, boundary classification by relative motion, and **blending between the two nearest plates** |
+| `PlanetTerrain` | signed elevation composed from layered bands, plus moisture and temperature |
+| `PlanetBiome` | Whittaker-style temperature x moisture palette, blended; `Classify` buckets the same fields for counting |
+| `IcoSphere` | pole-free sphere |
+| `TerrainMeshBuilder` | **the single mesh/material/lighting path**, shared by the live preview and the offline capture |
+| `TerrainPreview` | the `K` viewer |
+| `TerrainRenderEntry` | offline PNG capture (`Life Simulation > Render Terrain Views`) |
+| `TerrainStatisticsEntry` | field statistics (`Life Simulation > Dump Terrain Statistics`) |
 
-`GroundHeightAt` lives in `Prototype1Presenter` and nothing under `Assets/Scripts/Simulation` knows
-it exists. The simulation is still a flat plane: every position is a `SimVector2` and distance is 2D.
-Creatures are *drawn* on hills; they do not walk up them and a hill costs them nothing.
+### Defects found and fixed, with the measurement that found each
 
-Making elevation affect movement is a **simulation** change — flag, tests, experiment, and it moves
-every hash. A spherical world is a spatial-model refactor: `SimVector2` everywhere, arena hardcoded
-`(-25, 25)`, uniform 2D perception grid, and movement / distance / dispersal / site placement /
-spatial hashing all assume a plane.
+These are recorded because most were invisible to reasoning and several survived multiple wrong
+diagnoses:
 
-### Terrain generation was rebuilt (2026-08-23)
+- **Elevation was a bounded 0..1 field with sea level at 0.38 inside it.** That forces a clamp, the
+  clamp forces a knee, and an interior threshold forces a branch at the waterline - three slope
+  discontinuities, and a terrace *is* a slope discontinuity. Now **signed displacement**; the coast
+  is the zero crossing.
+- **The Voronoi plate lookup was piecewise constant.** Measured a jump of **0.825 between samples one
+  unit apart against a median of 0.00093 - a ratio of 885**. Every plate boundary was a vertical
+  cliff. Blending the two nearest plates took it to 0.0417, ratio 34.
+- **`MaximumSlope` was wrong by 20x.** Elevation 1.0 is ~30 m and a radian is 500 m, so 0.55 was a
+  **3% grade** and it crushed every band above ~10 cycles/radian to centimetres. Now 6.
+- **Height scale was proportional to view width**, so the same ground rendered **eight times flatter
+  the closer you looked**. Now a constant 30 world units per elevation unit.
+- **Nothing existed at creature scale.** The hill band is a 77 m wavelength, so **less than one hill
+  spanned the 50 m arena**. Added local (9 m) and micro (3 m) bands, sampled only when resolvable.
+- **The striped combs were lighting, not geometry.** An **unlit render removed them entirely** - the
+  test that should have been first, not seventh.
+- **The preview had no water**, so the "sea with hills" was sea *bed*. The capture had water and the
+  runtime did not, which is why the PNGs looked right and Play mode did not.
+- **The capture and runtime had drifted** (321 vs 161 samples, jitter offline only, different
+  camera). Now one path, so a PNG is evidence about the Play view.
 
-The first attempt produced a uniform gravel field and a globe that rendered as static. Two causes,
-both arithmetic, and neither fixable by smoothing:
+### Instruments — use these before changing a coefficient
 
-1. **No large-scale structure.** Elevation, moisture and fertility were all 3-5 octave fBm at
-   roughly one base frequency, sized so three features span the 50-unit arena. Correct for a 50-unit
-   world; rendered wide it is one band of noise doing everything, so every peak is the same size and
-   biomes speckle.
-2. **Sampling ~20x past Nyquist.** The globe draws 192 columns, resolving frequencies to
-   192/4pi ~ 15. It was handed a field whose finest octave carried ~4,000 features around the
-   equator. Octaves finer than the sample spacing do not add detail, they add aliasing.
+1. `Life Simulation > Dump Terrain Statistics` — deciles, land fraction, biome counts, saturation,
+   **adjacent-sample gradient** (the one that found the 885x step), and per-window land fraction.
+2. `Life Simulation > Render Terrain Views` — PNGs at 976x752 into `Logs/terrain`, including a
+   **planet-marked** image tinting exactly the region the flat views show. That answers "are these
+   the same world?", and it has already refuted one confident explanation.
 
-**`Assets/Scripts/Presentation/PlanetTerrain.cs`** replaces it with three explicitly separated bands,
-about 3x apart, combined **multiplicatively**: a heavily warped low-frequency **continent mask**
-deciding where land exists; **ridged mountain belts** modulated by that mask *and* a second
-low-frequency belt mask, so ranges occupy part of a continent rather than all of it (**this is what
-makes plains exist**); and a small-amplitude **detail** band. Ocean depth follows the continent
-field, giving shelves and trenches. Moisture carries a **continentality** term, putting deserts
-inland. Every band derives its octave count from the caller's render resolution
-(`PlanetTerrain.OctavesUnder`), so the globe takes fewer octaves than the patch.
+**A field statistic cannot see a rendering defect and a render cannot see a field discontinuity.**
+Both instruments exist because each missed something the other caught.
 
-Two later fixes worth keeping in mind, because both were "the structure reads correctly, the numbers
-do not":
+### Known open
 
-- Land sat at ~0.51 against a 0.38 waterline - a thirteenth of the range - because the belt mask is
-  zero across most of a continent by design. Land now rises to `SeaLevel + 0.30 * continent` before
-  any ranges, and the range term is **squared** so ridges dominate and ground between them stays
-  flat.
-- Patch relief is a fraction of patch **width**. Reusing the arena's 14 units for a 400-unit patch is
-  flat by construction.
+- **The planet has no adaptive LOD.** Subdivision is fixed at 5 (~20k triangles, ~19 m each), so
+  zooming in never adds detail. That is T6 (chunk streaming, geometry level of detail), not tuning.
+- A small stepped comb remains on some steep ridges.
+- Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement.
 
-Other fixed defects: the smoothing filter was **aliasing rather than blurring** (three taps at any
-radius, so more smoothing meant more roughness); the sphere was **wound inside-out**, so every
-outward face was backface-culled; the preview sampled the **loaded scenario** rather than the
-generator, so it drew a flat green plane whenever elevation was off; and the camera could not frame
-anything larger than the arena.
+### THE OPEN DECISION — terrain is still cosmetic
 
-**Performance:** sampling and scaling are now separated and everything sampled is cached. The colour
-map alone was ~131,000 `EnvironmentField.Sample` calls being redone on every keypress, though nothing
-about it depends on the height scale.
+`PlanetTerrain` is **presentation only**. The arena ground is now built from it, so creatures are
+*drawn* standing on real relief - but the simulation still samples its own `EnvironmentField` for
+moisture, fertility and temperature, and **a hill costs a creature nothing**.
 
-### THE OPEN DECISION - read before continuing terrain
-
-**`PlanetTerrain` is presentation only. Nothing under `Assets/Scripts/Simulation` reads it.** The
-viewer shows good terrain; the actual game world still runs the old arena-scaled field.
-
-**Do not simply point the arena ground at `PlanetTerrain`.** That would make the visuals and the
-simulation disagree - creatures walking over a mountain the ecology does not know exists. Appearance
-diverging from measurement is the failure mode this whole project is disciplined against.
-
-The blocker is a **scale mismatch**: the arena is 50 units, planet continents are ~500. The whole
-playable area fits inside a fraction of one continent, where planet-scale terrain is uniformly flat.
-Three honest options:
-
-| option | meaning | cost |
-|---|---|---|
-| shrink the features | terrain varies within 50 units | cheap, but it is a hilly field, not a world |
-| **grow the arena** | hundreds of units, so continents fit | large: movement, perception grid, resource placement, and every result is scoped to a 50-unit arena |
-| two scales | planet generates the world, simulation runs a movable window into it | most flexible, most work |
-
-**Recommended: grow the arena** - and note this is not only a terrain argument. The 2026-08-22 cap
-audit found the population cap is *load-bearing*: remove it and the world collapses. Four resource
-sites in a 50-unit box is a tiny artificial ecosystem, and a larger world is the most plausible route
-to the **carrying-capacity-limited habitat** that audit named as missing. Growing the arena may fix
-the ecology problem as well as the terrain one.
-
-### Promotion path, when the decision is made
-
-1. Port the generator into `Assets/Scripts/Simulation/Environment` behind a new flag, default false.
-2. Prove flag-off is **byte-identical** - the project's standing rule for any new behaviour.
-3. Enable it in the terrain playtest scenario only.
-4. Re-measure every procedural-field result; they are scoped to the old field.
-
-### Expect this failure when terrain varies temperature
-
-`LivenessTests` will fail on `plantTemperatureAdaptationEnabled`. That flag is pinned inert **only**
-because `EnvironmentField` returns Temperature = 1.0 everywhere and the adaptation expression
-collapses to the raw value at 1.0. The failure is the **designed signal** — it already happened once
-when the procedural fields landed. Move the flag out of `KnownInertFlags`; do not "fix" the test.
+The join the integration design describes - "world generation produces a fertility field; plants turn
+that field into food; creatures eat food" - has not been made. Making it is a **simulation** change:
+new flag defaulting false, prove flag-off byte-identical, then **re-measure every plant result**,
+because all of them are scoped to the old field.
 
