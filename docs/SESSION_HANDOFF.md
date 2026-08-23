@@ -301,26 +301,44 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-1. ~~Audit other cap-pinned conclusions~~ — **DONE**, `p4-cap-pinning-audit-2026-08-22.md`.
-   Eleven CSVs / 4,080 runs are cap-pinned, but exactly **one** conclusion was a ceiling artefact
-   (the rendezvous survival null, already corrected). In the other ten, zero extinction was a
-   *control against differential survival* and is valid as stated. **No banners added, no conclusion
-   retracted.** The corpus carries a new **scope qualification**: every plant trait result was
-   measured under a herbivore population pinned at 48, i.e. constant grazing pressure.
-2. **TERRAIN (P6 groundwork), by user decision.** Resume the paused environment-fields design and
-   build the generator **behind its existing default-false flags** (`ProceduralEnvironmentFieldsEnabled`,
-   `ElevationFieldEnabled`), with a Play-mode key for tuning. Keep ecology on flat fields so every
-   recorded result stays valid. **Expect `LivenessTests` to fail when temperature genuinely varies** —
-   `plantTemperatureAdaptationEnabled` is pinned inert *only* because `EnvironmentField` returns
-   Temperature = 1.0 everywhere, and at 1.0 the adaptation expression collapses to the raw value.
-   That failure is the designed signal, not a breakage; move the flag out of `KnownInertFlags` when
-   it fires.
-3. **Still open under the P4a visible-feedback item**: resource depletion/recovery feedback and
-   lineage display.
-4. **A carrying-capacity-limited habitat** would lift the plant corpus's scope qualification. Not an
-   audit task — scenario design. Raising the cap does **not** achieve it (boom then collapse).
-5. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
-   design questions, not automatic fixes.
+**User decision, 2026-08-23: next session is either the terrain/ecology join or terrain tuning.
+Nothing else.** Both are described below. Do not start LOD, erosion, or the P4a/P5 backlog without
+asking - they were considered and deliberately not chosen.
+
+### Option A — the join: make terrain drive the ecology
+
+Terrain is currently **cosmetic**. The arena ground is built from `PlanetTerrain`, so creatures are
+drawn standing on real relief, but the simulation samples its own `EnvironmentField` for moisture,
+fertility and temperature, and **a hill costs a creature nothing**.
+
+`2026-08-14-system-integration-design.md` describes the join: *world generation produces a fertility
+field; plants turn that field into food; creatures eat food.* Making it is what turns two systems
+into one simulation.
+
+**Do it in this order, and do not shortcut it:**
+
+1. New `SimulationConfig` flag, default false, last optional constructor parameter.
+2. **Prove flag-off is byte-identical.** Standing rule for any new behaviour here.
+3. Enable it in the terrain scenario only.
+4. **Re-measure every plant result.** All of them are scoped to the old field - see the plant corpus
+   in §2 and the revalidation docs. This is the expensive part and it is not optional.
+
+Expect `LivenessTests` to fail on `plantTemperatureAdaptationEnabled` once temperature genuinely
+varies: it is pinned inert *only* because `EnvironmentField` returns Temperature = 1.0 everywhere.
+That failure is the designed signal - move the flag out of `KnownInertFlags`, do not "fix" the test.
+
+### Option B — terrain tuning
+
+Presentation only, no re-measure. Known open items, in the order they are likely to matter:
+
+- **Ice cover looks high** - 0.074 of surface at the last measurement.
+- **A small stepped comb** remains on some steep ridges.
+- **Water swell** amplitude and wavelength have never been judged against a creature.
+- **Biome palette** balance, now that the Whittaker blend works.
+
+**Measure before changing a coefficient.** Both instruments are in §10, and the history of this work
+is that reasoning about the field produced six wrong diagnoses while the instruments produced the
+answers.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
 `ComputeStateHash` — V1 is a frozen historical identifier and is deliberately incomplete. Never
