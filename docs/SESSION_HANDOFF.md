@@ -280,6 +280,31 @@ read as +0.09.
 
 Land fraction **0.296–0.298** against a 0.30 target throughout.
 
+**The whole palette exists; the view could not reach it (2026-08-23).** Reported as "never really
+saw ice, just green and some sand and water" - which is an accurate description of latitude -15
+degrees, and not a description of the generator. The same 400-unit window, walked along one meridian:
+
+| latitude | biome mix |
+|---:|---|
+| **-15 (the shipped centre)** | Ocean 61.1%, **Grassland 34.9%**, Scrub 1.6%, Beach 1.2%, Marsh 0.8%, Desert 0.5% |
+| +23 | Ocean 75.8%, Grassland 10.7%, **Scrub 7.5%**, **Desert 4.7%** |
+| +40 | Ocean 42.1%, Grassland 18.2%, Scrub 14.5%, **Tundra 14.2%**, Desert 4.9%, **Ice 4.6%** |
+| +57 | **Ice 41.5%**, Grassland 17.4%, Tundra 14.6%, Scrub 12.5%, Ocean 11.6% |
+| +75 | **Ice 78.8%**, Tundra 13.6%, Scrub 3.5%, Grassland 2.7% |
+
+All seven biomes appear. **A biome that exists globally and appears in no view is absent for every
+purpose anyone has**, so the flat-view centre is now a control (`J`, View tab) with a live biome
+readout, and the statistics instrument names biomes per window instead of counting them.
+
+Land is also strongly asymmetric - the south pole window is 100% ocean and the north 99.3% land -
+which is plate placement, not climate. High-latitude land is nearly flat: median land grade 0.015 at
++75 against 0.088 at the coast, because it is plate interior far from any boundary.
+
+**Correction: ice is 0.116 of the surface, not the 0.074 recorded earlier.** Land is 0.241, so ice is
+close to half of all land. Not caused by the creature-scale retune: the globe samples at 40.7
+cycles/radian, so the local and micro bands are gated off there and cannot move a global count. The
+earlier figure is stale against a later terrain commit.
+
 **Flat-view windows** — the measurement that showed the views were parked in the wrong place:
 
 | centre | land | biomes |

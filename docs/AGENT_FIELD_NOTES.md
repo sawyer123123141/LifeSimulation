@@ -1246,3 +1246,16 @@ change.
   edit-recompile-look is why the previous round took fifteen passes. Mutable global settings are the
   right trade here - there is one terrain - as long as an explicit parameter survives for probes and
   tests, and a Reset restores the shipped values exactly.
+- **A biome that exists globally and appears in no view is absent (2026-08-23).** Global counts said
+  the planet had ice, tundra, desert, marsh and scrub. The flat views had been parked on one computed
+  coastline at latitude -15 degrees for the whole of the terrain work, where the mix is 61% ocean and
+  35% grassland and **contains no ice or tundra at all**. "Just green and some sand and water" was an
+  accurate report about the view and said nothing about the generator. Walk the viewpoint before
+  concluding anything about variety - at +75 degrees the same window is 79% ice.
+- **Name the categories, do not count them.** The window statistics reported "biomes 5", which says
+  a window is varied and cannot say whether any of the five is the one somebody reported never
+  seeing. Counting distinct kinds is the cheapest possible summary and it hid a reachability problem
+  for days.
+- **A global statistic and a local view answer different questions, and the local one is what a
+  person sees.** Ice at 0.116 of the surface is true and was no help; ice at 0.00 of the window in
+  front of the user is the fact that mattered.
