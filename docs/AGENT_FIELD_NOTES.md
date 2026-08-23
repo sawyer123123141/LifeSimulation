@@ -1149,4 +1149,62 @@ change.
   Continents are ~500 units; the arena fits inside a fraction of one. The same smallness is the
   likeliest reason the population cap is load-bearing (2026-08-22 cap audit). Growing the arena is a
   terrain decision *and* the most plausible route to a carrying-capacity-limited habitat.
+- **Read the reference implementation BEFORE writing the system (2026-08-23).** Fifteen rounds of
+  first-principles tuning on terrain produced six wrong diagnoses; twenty minutes reading
+  SebLague/Procedural-Planets from source produced the architectural answer. The user asked three
+  times for research before it was done. Read the SOURCE, not only the explanation: the video gives
+  intent, the source gives composition order, masks and clamps - which is where every defect was.
+  `docs/reference-implementations.md` lists what is worth reading and what each maps to.
+- **A bounded field with an interior threshold is a terrace generator.** Elevation as 0..1 with sea
+  level at 0.38 inside it forces a clamp, the clamp forces a knee, and the threshold forces a branch
+  at the waterline. Three slope discontinuities, and a terrace *is* a slope discontinuity. Signed
+  displacement from the threshold has none of them, and the coast becomes the zero crossing rather
+  than a tuning problem.
+- **Any piecewise-constant lookup is a cliff in whatever it feeds.** A spherical Voronoi plate lookup
+  stepped elevation by **0.825 between samples one unit apart against a median of 0.00093 - a ratio
+  of 885**. Blending the two nearest cells took it to 0.0417. If a field reads a cell property,
+  interpolate across the seam or accept a wall there.
+- **Measure CONTINUITY, not just distribution.** Deciles, land fraction, biome counts and saturation
+  were all identical whether the field was smooth or cliffed. The instrument that found the 885x step
+  was adjacent-sample gradient along a line. Distribution statistics cannot see a discontinuity.
+- **A render and a field statistic are blind to different things.** A statistic cannot see colour
+  quantised per triangle, unlit faces, or z-fighting; a render cannot see a step discontinuity in a
+  field. Build both, and expect each to catch what the other missed.
+- **When a symptom is invariant under every change, stop changing things and run a splitting test.**
+  Six terrain diagnoses were wrong and four changed nothing at all. Rendering the same mesh **unlit**
+  separated shading from geometry in one image and should have been the first move, not the seventh.
+- **Check units on any "maximum" constant.** `MaximumSlope = 0.55` in elevation-per-radian was a
+  **3% grade** - I had capped terrain at "gently sloping field" and crushed every band above ~10
+  cycles/radian to centimetres. Elevation 1.0 is 30 m and a radian is 500 m; the conversion has to be
+  written down or the constant is meaningless.
+- **A view-relative scale silently breaks physical quantities.** Height scale as a fraction of view
+  width rendered the same ground **eight times flatter the closer you looked**. Thirty metres does
+  not shrink because the camera moved: make physical scales constant and put artistic exaggeration
+  in a separately named factor.
+- **Terrain needs bands at the scale of the thing living on it.** Every band was planet-scale - the
+  hill band is a 77 m wavelength, so **less than one hill spanned the 50 m arena** and terrain was
+  flat everywhere a creature could walk. Add local bands, gate them on whether the view can resolve
+  them, and slope-limit their amplitude rather than picking it.
+- **Never sample noise finer than the render resolution, and cap amplitude by SLOPE not frequency.**
+  Octaves below the sample spacing add aliasing, not detail - a globe drawn with 192 columns was fed
+  a band carrying ~4,000 features around the equator and rendered as television static. Separately,
+  doubling mesh resolution DOUBLED the stripe count without removing it, proving the binding limit
+  was representable slope.
+- **A capture that cannot reproduce the runtime is a second implementation, not an instrument.** The
+  offline PNG tool and the live preview drifted - different resolution, different triangulation,
+  water in one and not the other - so the diagnostics described a mesh nobody was looking at, and
+  missed a reported bug entirely. One shared build path, and anything that differs must differ there
+  visibly.
+- **"Are these two views the same world?" is worth a marker, not an argument.** Tinting the vertices
+  inside the flat views window on the globe refuted a confident explanation of mine in one image: the
+  two views were showing different parts of the planet, which looks exactly like a level-of-detail
+  difference and is not one.
+- **Prototype generation in Presentation, promote deliberately.** `PlanetTerrain`, `PlateStructure`,
+  `IcoSphere` and `TerrainMeshBuilder` all live in Presentation, so fifteen rounds of iteration moved
+  no hash and needed no re-measure. Promotion into Simulation is a flag defaulting false, proof that
+  flag-off is byte-identical, then re-measuring every result scoped to the old behaviour.
+- **Transparency is not an alpha value.** A Unity Standard material stays opaque however low its
+  alpha until it is switched to the transparent blend path explicitly. And transparent water was the
+  wrong call anyway: it revealed the finite sea bed patch as a lighter rectangle mid-ocean, an
+  artefact worse than the one it solved.
 

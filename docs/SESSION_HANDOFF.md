@@ -63,6 +63,24 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 
 ---
 
+### Phase E — terrain (2026-08-23)
+
+| commit | what |
+|---|---|
+| `94b2686` | terrain statistics instrument; baseline recorded |
+| `e40eb7d` | planet was too cold and too wet to have biomes |
+| `9ab9a2a` | icosphere planet, blended biomes, flat views centred on land |
+| `e189ccf` | striped combs were lighting and z-fighting, not terrain |
+| `02579d5` | **second brainstorm: the bounded 0..1 range was the defect** |
+| `2cbedcb` | **signed elevation and plate blending, from the reference implementation** |
+| `8da9b72` | live preview and offline capture unified onto one build path |
+| `e6da13d` | planet-marked render: are the two views the same world? |
+| `eead1b1` | creature-scale terrain; the arena now stands on the planet |
+| `29fb83e` | the sea was a flat primitive plane |
+| `6136493`, `c326d72` | terrain handoff rewritten; next-session decision recorded |
+
+---
+
 ## 2. Verified numeric results — do not re-derive these
 
 ### Home range (CLOSED — do not reopen, do not tune)
@@ -226,6 +244,63 @@ CSV carries an `ExperimentManifest`.
 
 ---
 
+### Terrain (2026-08-23) — measured, do not re-derive
+
+**Scale, settled:** elevation 1.0 is about **30 metres**; one radian is **500 metres**; 1 unit = 1
+metre. A slope value `s` in elevation-per-radian is a real grade of `s * 30 / 500`.
+
+**The Voronoi step — the defect fifteen rounds of tuning missed.** Adjacent-sample elevation along a
+meridian, 1-unit spacing:
+
+| | median | p90 | max | ratio |
+|---|---:|---:|---:|---:|
+| nearest-plate only | 0.00093 | 0.00213 | **0.825** | **885** |
+| blended across the seam | 0.00122 | 0.01463 | 0.0417 | 34 |
+
+Every plate boundary was a vertical cliff in the field. That is what the terraces tracing closed
+contours were.
+
+**Boundary lift, per kind** (continental only, near minus far): subduction **+0.346**, continental
+collision **+0.164**, divergent **−0.193**, transform **+0.050**, island arc never continental.
+Measured only after breaking out by kind — averaging across kinds let rifts cancel collisions and
+read as +0.09.
+
+**Climate and biomes**, before → after:
+
+| | before | after |
+|---|---:|---:|
+| ice (fraction of surface) | 0.234 | **0.074** |
+| grassland | 0.025 | **0.139** |
+| desert | absent | 0.007 |
+| scrub | absent | 0.023 |
+| temperature median | 0.310 | 0.648 |
+| moisture minimum | 0.476 | 0.232 |
+| moisture saturated at 1.0 | 0.0356 | 0.0039 |
+| elevation pinned at 1.000 | 0.0081 | 0.0000 |
+
+Land fraction **0.296–0.298** against a 0.30 target throughout.
+
+**Flat-view windows** — the measurement that showed the views were parked in the wrong place:
+
+| centre | land | biomes |
+|---|---:|---:|
+| origin (as shipped for days) | **0.001** | 2 |
+| continental plate centre | **1.000** | **1** |
+| coastline (current) | 0.451 / 0.514 / 0.503 | 6 / 4 / 3 |
+
+**Resolvable frequency:** planet **13.3** cycles/radian (icosphere subdivision 5, ~167 triangles
+around the equator); patch **120.6**. That 9x gap is real level of detail, not a defect.
+
+**Three scale errors, each worth remembering:**
+- `MaximumSlope` 0.55 was a **3% grade** — wrong by 20x, and it crushed every band above ~10
+  cycles/radian to centimetres. Now 6 (a 36% grade).
+- Height scale was proportional to view width: 28 units per elevation unit at 400, **3.5 at 50** —
+  the same ground **eight times flatter the closer you looked**. Now a constant 30.
+- The hill band is a **77 m wavelength**, so **less than one hill spanned the 50 m arena**. Local
+  (9 m) and micro (3 m) bands added.
+
+---
+
 ## 3. Unresolved findings
 
 ### The three low-occupancy plant conclusions are UNVERIFIABLE
@@ -256,6 +331,30 @@ experiment with a committed scenario, in a geometry that fits inside the grazed 
 the same comparison moved `Dispersal` **+0.0834 (t +21.40, 118/120)**, `NutrientUptake` **−0.0466
 (t −7.62)**, `WaterEfficiency` **−0.0445 (t −8.61)**. Needs a lifespan-specific control that does
 not exist.
+
+### Terrain — open
+
+- **The planet has no adaptive LOD.** Subdivision fixed at 5 (~20k triangles, ~19 m each), so
+  zooming never adds detail. T6 work (chunk streaming, geometry LOD), not tuning.
+- A small **stepped comb** remains on some steep ridges.
+- **Ice cover looks high** at 0.074 of surface.
+- **Terrain is cosmetic.** Creatures are drawn on relief; a hill costs them nothing.
+
+### Terrain — hypotheses tried and REFUTED, do not retry
+
+Each of these was a confident diagnosis of the striped combs, and each changed nothing visible:
+
+1. **Elevation clamping producing mesas** — fixed (0.81% pinned at 1.0 → 0.00%), render identical.
+2. **Mesh-edge tapering** — the combs were not at the patch boundary.
+3. **Vertex jitter** — made it visibly worse (shredded slivers at 0.75 cell); reverted, then deleted.
+4. **Boundary landform width** — widened 3x, no change.
+5. **Ambient light** — set and probe regenerated, no change.
+6. **Self-shadowing** — shadows disabled, no change.
+7. **"It is just level of detail"** — refuted by the planet-marked render: the two views were showing
+   **different parts of the planet**.
+
+The test that actually worked: **render the same mesh unlit.** The stripes vanished completely,
+which separated shading from geometry in one image. It should have been first, not seventh.
 
 ### Unverified by me
 
@@ -290,7 +389,18 @@ population as an upper bound — sound for that decision, but it is a bound, not
    Juveniles are not the failing class and mortality is not the failure mode.
 6. **Place memory stays inert.** Never wire `MemorySystem.ObservePlace`.
 7. **Do not use the competition-off arm as a drift control.** It disables no trait.
-8. **Safety-gated rendezvous is closed as "works, buys nothing."** Flag stays default `false`. Its
+8. **Elevation is SIGNED DISPLACEMENT from sea level, never a bounded 0..1 field.** A bounded range
+   forces a clamp, a clamp forces a knee, and an interior sea level forces a branch at the waterline
+   - three slope discontinuities, and a terrace is a slope discontinuity. Do not reintroduce
+   `SoftSaturate`, `Clamp01` on composed elevation, or a `SeaLevel` constant inside the field.
+9. **Plate properties must be blended between the two nearest plates.** A Voronoi lookup is
+   piecewise constant; taking only the nearest plate puts a measured 0.825 step in the field.
+10. **`TerrainMeshBuilder` is the single mesh/material/lighting path.** The capture and the runtime
+    must not build scenes separately again - they drifted, and the PNGs became evidence about a mesh
+    nobody was looking at.
+11. **Measure before changing a terrain coefficient.** Reasoning about the field produced six wrong
+    diagnoses; the instruments produced every answer.
+12. **Safety-gated rendezvous is closed as "works, buys nothing."** Flag stays default `false`. Its
    effect is real and correctly signed; the ecology is starvation-limited, so it does not propagate.
    No pack architecture, no tuning. Reopen only in a predation-limited habitat.
 9. **The three hashes stay three hashes.** V1 stays frozen and incomplete; V2 carries configuration;
@@ -371,6 +481,27 @@ Presentation changes additionally need a Unity compile — the headless project 
 ```
 
 Then check `grep -c "error CS"` on the log and confirm `Exiting batchmode successfully`.
+
+---
+
+### Terrain instruments
+
+Unity menu, or headless `-executeMethod`:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath 'C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim' -executeMethod LifeSimulation.EditorTools.TerrainStatisticsEntry.Dump -logFile '.\Logs\stats.log'
+```
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe' -batchmode -quit -projectPath 'C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim' -executeMethod LifeSimulation.EditorTools.TerrainRenderEntry.Render -logFile '.\Logs\render.log'
+```
+
+Statistics land in `Logs/terrain-statistics.txt`; PNGs in `Logs/terrain/`. **The render needs
+graphics — `-nographics` disables it.** Both fail while the Unity editor holds the project lock;
+either close the editor or run the menu items.
+
+**A field statistic cannot see a rendering defect and a render cannot see a field discontinuity.**
+Both exist because each missed something the other caught.
 
 ---
 
