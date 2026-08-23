@@ -116,7 +116,6 @@ namespace LifeSimulation.Presentation
         // warped-fBm evaluations per call, and a full texture was ~131,000 of them, which is the
         // pause felt on every keypress. Everything sampled is cached and keyed by what it depends
         // on, so changing the height scale rebuilds geometry from cached numbers and never resamples.
-        private float[] _planetElevation;
         private Mode _texturedMode = Mode.Off;
         private int _texturedSeed = int.MinValue;
 
@@ -133,6 +132,20 @@ namespace LifeSimulation.Presentation
         }
 
         public Mode Current { get; private set; } = Mode.Off;
+
+        /// <summary>Waterline, shared with the generator so shading and geometry agree.</summary>
+        private const float SeaLevel = PlanetTerrain.SeaLevel;
+
+        /// <summary>Angular width of the wide patch on the unit sphere, in radians.</summary>
+        private const double PatchAngularWidth = 2d * WidePatchHalfWidth / EnvironmentField.SphereRadius;
+
+        /// <summary>
+        /// Highest feature density the flat views can draw without aliasing. The patch covers a small
+        /// angular window at high sample density, so it resolves far more than the globe does - which
+        /// is why the same generator legitimately gives it more octaves.
+        /// </summary>
+        private static readonly double PatchMaximumFrequency =
+            PlanetTerrain.MaximumFrequencyFor((int)(PatchResolution * (2d * System.Math.PI) / PatchAngularWidth));
 
         /// <summary>Vertical exaggeration of the wide patch, shared with the arena ground for consistency.</summary>
         public float HeightScale { get; set; } = 14f;
@@ -221,7 +234,6 @@ namespace LifeSimulation.Presentation
             _fieldSeed = seed;
             _plates = new PlateStructure(seed);
             _plates.GetContinentalCentre(out _centreLatitude, out _centreLongitude);
-            _planetElevation = null;
             _texturedMode = Mode.Off;
         }
 
@@ -432,6 +444,21 @@ namespace LifeSimulation.Presentation
             _texture.SetPixels(pixels);
             _texture.Apply();
             return _texture;
+        }
+
+        /// <summary>
+        /// Sample the patch as a window on the sphere, so the flat views and the globe show the same
+        /// world at different zooms rather than unrelated fields.
+        ///
+        /// <para>Centred on a continental plate, not the origin: a flat view spans about one plate,
+        /// and the plate at the origin is oceanic, so both flat views rendered as open sea.</para>
+        /// </summary>
+        private PlanetSample SamplePatch(SimulationWorld world, float x, float z)
+        {
+            float offset = Current == Mode.Island ? RegionOffset : 0f;
+            double longitude = _centreLongitude + ((x + offset) / EnvironmentField.SphereRadius);
+            double latitude = _centreLatitude + (z / EnvironmentField.SphereRadius);
+            return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PatchMaximumFrequency);
         }
 
         /// <summary>
