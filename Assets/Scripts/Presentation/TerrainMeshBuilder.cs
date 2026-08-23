@@ -132,6 +132,97 @@ namespace LifeSimulation.Presentation
             triangles = indices;
         }
 
+        /// <summary>How far past the terrain the sea extends, so its edge is never in frame.</summary>
+        public const float WaterOverhang = 1.8f;
+
+        /// <summary>Samples per side of the water mesh. Enough for a swell to read as a curve.</summary>
+        private const int WaterResolution = 65;
+
+        /// <summary>
+        /// A sea surface: gently displaced, and larger than the land it surrounds.
+        ///
+        /// <para>Replaces a flat primitive plane, which read as a sheet of plastic for two reasons.
+        /// Its edges were visible - a finite quad the same size as the terrain, so the rectangle
+        /// border cut across the view - and its surface had no variation at all, which no real water
+        /// has at any scale.</para>
+        ///
+        /// <para>The swell is two crossed waves plus a noise term, all in world space, so it tiles
+        /// with nothing and repeats at no obvious interval. Amplitude is a few centimetres against a
+        /// creature of one metre: enough to catch the light and break the mirror, not enough to look
+        /// like a storm.</para>
+        ///
+        /// <para><b>Deliberately a mesh rather than a plane primitive</b>, and deliberately built from
+        /// a phase parameter. Animating it later is then a matter of advancing the phase per frame -
+        /// purely presentation, touching no hash and no determinism guarantee, exactly as discussed
+        /// when the water question first came up.</para>
+        /// </summary>
+        public static void BuildWaterSurface(
+            float halfWidth, float phase,
+            out Vector3[] vertices, out int[] triangles)
+        {
+            int side = WaterResolution;
+            float extent = halfWidth * WaterOverhang;
+            vertices = new Vector3[side * side];
+            triangles = new int[(side - 1) * (side - 1) * 6];
+
+            // Swell sized to the view: a wavelength of about a fifth of the visible water, so a few
+            // crests cross the frame rather than a single dome or a rippled carpet.
+            float wavelength = Mathf.Max(6f, extent * 0.22f);
+            float k = 2f * Mathf.PI / wavelength;
+            float amplitude = Mathf.Clamp(halfWidth * 0.004f, 0.03f, 0.35f);
+
+            for (int row = 0; row < side; row++)
+            {
+                float z = Mathf.Lerp(-extent, extent, row / (float)(side - 1));
+                for (int column = 0; column < side; column++)
+                {
+                    float x = Mathf.Lerp(-extent, extent, column / (float)(side - 1));
+
+                    float primary = Mathf.Sin((x * k) + phase);
+                    float secondary = Mathf.Sin((((x * 0.42f) + (z * 0.91f)) * k * 0.63f) - (phase * 0.7f));
+                    float chop = Mathf.PerlinNoise((x * 0.05f) + phase * 0.05f, (z * 0.05f) - phase * 0.03f) - 0.5f;
+
+                    float height = amplitude * ((0.55f * primary) + (0.30f * secondary) + (0.60f * chop));
+                    vertices[(row * side) + column] = new Vector3(x, height, z);
+                }
+            }
+
+            int triangle = 0;
+            for (int row = 0; row + 1 < side; row++)
+            {
+                for (int column = 0; column + 1 < side; column++)
+                {
+                    int bottomLeft = (row * side) + column;
+                    int topLeft = bottomLeft + side;
+                    triangles[triangle++] = bottomLeft;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = topLeft + 1;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Smooth-shaded mesh, for water. Flat shading is right for terrain, where facets read as
+        /// slope, and wrong for a sea surface, where they read as broken glass.
+        /// </summary>
+        public static Mesh SmoothShaded(Vector3[] vertices, int[] triangles, string name)
+        {
+            var mesh = new Mesh
+            {
+                name = name,
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32,
+            };
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
         /// <summary>
         /// A smooth sphere at exactly sea level, for the planet's ocean.
         ///
@@ -183,23 +274,21 @@ namespace LifeSimulation.Presentation
             return mesh;
         }
 
-        /// <summary>Water colour, translucent so shallows read as shallow rather than as paint.</summary>
+        /// <summary>
+        /// Water: opaque, lit, slightly glossy.
+        ///
+        /// <para>Opaque rather than transparent on purpose. Transparent water showed the sea bed
+        /// through it, and the sea bed is a finite patch - so its straight edge was visible as a
+        /// lighter rectangle sitting in the middle of the ocean. Depth would have to be faked in a
+        /// shader to fix that properly; an opaque surface simply has no such artefact, and the
+        /// shallows still read through the beach band on the terrain itself.</para>
+        /// </summary>
         public static Material CreateWaterMaterial()
         {
             var material = new Material(Shader.Find("Standard"));
-            material.color = new Color(0.161f, 0.427f, 0.635f, 0.72f);
-
-            // Standard is opaque unless switched to the transparent path explicitly; setting only the
-            // alpha does nothing.
-            material.SetFloat("_Mode", 3f);
-            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetInt("_ZWrite", 0);
-            material.DisableKeyword("_ALPHATEST_ON");
-            material.EnableKeyword("_ALPHABLEND_ON");
-            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            material.renderQueue = 3000;
-            material.SetFloat("_Glossiness", 0.65f);
+            material.color = new Color(0.153f, 0.412f, 0.616f);
+            material.SetFloat("_Glossiness", 0.72f);
+            material.SetFloat("_Metallic", 0.1f);
             return material;
         }
 

@@ -130,13 +130,15 @@ namespace LifeSimulation.EditorTools
             GameObject water = null;
             if (waterPlaneHalfWidth > 0f)
             {
-                water = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                water.transform.localScale = new Vector3(waterPlaneHalfWidth / 5f, 1f, waterPlaneHalfWidth / 5f);
+                water = new GameObject("Water");
+                water.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();
+                TerrainMeshBuilder.BuildWaterSurface(
+                    waterPlaneHalfWidth, 0f, out Vector3[] waterVertices, out int[] waterTriangles);
+                water.AddComponent<MeshFilter>().sharedMesh =
+                    TerrainMeshBuilder.SmoothShaded(waterVertices, waterTriangles, "Water");
 
-                // Sea level is exactly zero now that elevation is signed displacement, so the plane
-                // sits there rather than at an offset guessed against a threshold.
+                // Sea level is exactly zero now that elevation is signed displacement.
                 water.transform.position = Vector3.zero;
-                water.GetComponent<Renderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();
             }
             else if (waterSphere)
             {
