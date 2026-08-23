@@ -2,18 +2,6 @@ using UnityEngine;
 
 namespace LifeSimulation.Presentation
 {
-    public enum BiomeKind
-    {
-        Ocean = 0,
-        Beach = 1,
-        Ice = 2,
-        Tundra = 3,
-        Desert = 4,
-        Marsh = 5,
-        Grassland = 6,
-        Scrub = 7,
-    }
-
     /// <summary>
     /// Colour and biome for a <see cref="PlanetSample"/>.
     ///
@@ -29,7 +17,7 @@ namespace LifeSimulation.Presentation
     /// indexed by the temperature/moisture <i>pair</i> and interpolated bilinearly has neither
     /// problem.</para>
     /// </summary>
-    public static class PlanetBiome
+    public static partial class PlanetBiome
     {
         /// <summary>
         /// Land palette, indexed [temperature, moisture]: rows run cold to hot, columns dry to wet.
@@ -58,20 +46,6 @@ namespace LifeSimulation.Presentation
                 new Color(0.478f, 0.639f, 0.267f), new Color(0.220f, 0.435f, 0.239f),
             },
         };
-
-        public static BiomeKind Classify(PlanetSample sample)
-        {
-            if (sample.Elevation <= 0f) return BiomeKind.Ocean;
-
-            float land = Mathf.Clamp01(sample.Elevation / PlanetTerrain.HighGround);
-            if (land < 0.045f) return BiomeKind.Beach;
-            if (sample.Temperature < 0.18f) return BiomeKind.Ice;
-            if (sample.Temperature < 0.33f) return BiomeKind.Tundra;
-            if (sample.Moisture < 0.34f) return BiomeKind.Desert;
-            if (sample.Moisture > 0.72f && land < 0.14f) return BiomeKind.Marsh;
-            if (sample.Moisture > 0.46f) return BiomeKind.Grassland;
-            return BiomeKind.Scrub;
-        }
 
         public static Color Shade(PlanetSample sample)
         {

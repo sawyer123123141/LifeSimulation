@@ -21,12 +21,18 @@ namespace LifeSimulation.Presentation
         Divergent = 4,
     }
 
-    public readonly struct PlateSample
+    /// <summary>
+    /// One neighbouring plate, and the margin between it and the plate a point sits on.
+    ///
+    /// <para>Kind and intensity are properties of the <b>pair</b>, so they change the instant the
+    /// neighbour does - which is why a point carries two of these. See
+    /// <see cref="PlateSample.AlternateWeight"/>.</para>
+    /// </summary>
+    public readonly struct PlateNeighbour
     {
-        public PlateSample(
-            bool continental, float baseElevation, float boundaryDistance, BoundaryKind boundary,
-            float intensity, bool onOceanicSide,
-            bool neighbourContinental, float neighbourBaseElevation, float blend)
+        public PlateNeighbour(
+            bool continental, float baseElevation, float boundaryDistance,
+            BoundaryKind boundary, float intensity, bool onOceanicSide, float blend)
         {
             Continental = continental;
             BaseElevation = baseElevation;
@@ -34,9 +40,58 @@ namespace LifeSimulation.Presentation
             Boundary = boundary;
             Intensity = intensity;
             OnOceanicSide = onOceanicSide;
-            NeighbourContinental = neighbourContinental;
-            NeighbourBaseElevation = neighbourBaseElevation;
             Blend = blend;
+        }
+
+        /// <summary>Whether the neighbouring plate carries land.</summary>
+        public bool Continental { get; }
+
+        /// <summary>The neighbour's own elevation offset.</summary>
+        public float BaseElevation { get; }
+
+        /// <summary>Angular distance to the margin with this neighbour.</summary>
+        public float BoundaryDistance { get; }
+
+        /// <summary>What kind of margin the two plates make.</summary>
+        public BoundaryKind Boundary { get; }
+
+        /// <summary>How hard they are meeting, from their relative drift.</summary>
+        public float Intensity { get; }
+
+        /// <summary>At a subduction margin, whether this point is on the plate going under.</summary>
+        public bool OnOceanicSide { get; }
+
+        /// <summary>1 deep inside the plate, 0.5 on the margin: how much is this plate's own.</summary>
+        public float Blend { get; }
+    }
+
+    /// <summary>
+    /// The plate a point sits on, and the two neighbours whose margins it is closest to.
+    ///
+    /// <para><b>Why two neighbours.</b> Boundary kind and intensity belong to a pair of plates, so
+    /// they change discontinuously the moment a different plate becomes second-nearest - and that
+    /// happens along a line running through a cell's interior, far from any seam, where the seam
+    /// blend has already saturated and smooths nothing. Measured at latitude 48.7 degrees: elevation
+    /// stepped 0.277 to 0.528 between samples 1.04 metres apart - a <b>7.24 grade, an 82 degree
+    /// wall</b> - with identical shelf and seam distance on both sides and the margin reading
+    /// Divergent on one and ContinentalCollision on the other.</para>
+    ///
+    /// <para>Carrying both candidates and crossfading between them removes it: exactly where the two
+    /// change places their distances are equal, so both sides of the swap evaluate the same
+    /// half-and-half mixture. Same lesson as the shelf blend, one layer down - <b>any piecewise
+    /// constant lookup is a cliff in whatever it feeds</b>, and ranking is a lookup.</para>
+    /// </summary>
+    public readonly struct PlateSample
+    {
+        public PlateSample(
+            bool continental, float baseElevation,
+            PlateNeighbour primary, PlateNeighbour alternate, float alternateWeight)
+        {
+            Continental = continental;
+            BaseElevation = baseElevation;
+            Primary = primary;
+            Alternate = alternate;
+            AlternateWeight = alternateWeight;
         }
 
         /// <summary>Type of the plate this point sits on.</summary>
@@ -45,58 +100,48 @@ namespace LifeSimulation.Presentation
         /// <summary>Plate's own elevation offset, before any boundary contribution.</summary>
         public float BaseElevation { get; }
 
-        /// <summary>Angular distance to the nearest plate boundary, in radians.</summary>
-        public float BoundaryDistance { get; }
+        /// <summary>The nearest margin.</summary>
+        public PlateNeighbour Primary { get; }
 
-        public BoundaryKind Boundary { get; }
-
-        /// <summary>0..1 from the magnitude of relative motion across that boundary.</summary>
-        public float Intensity { get; }
-
-        /// <summary>At a subduction boundary, whether this point is on the oceanic (trench) side.</summary>
-        public bool OnOceanicSide { get; }
-
-        /// <summary>Type of the second-nearest plate, for blending across the seam.</summary>
-        public bool NeighbourContinental { get; }
-
-        public float NeighbourBaseElevation { get; }
+        /// <summary>The next nearest, which is the one about to take over.</summary>
+        public PlateNeighbour Alternate { get; }
 
         /// <summary>
-        /// 1 deep inside this plate, falling to 0.5 exactly on the boundary.
-        ///
-        /// <para><b>Why any of this exists.</b> A Voronoi lookup is piecewise constant: the moment the
-        /// nearest plate changes, every property changes at once. Measured, that put a step of 0.825
-        /// in elevation between samples one unit apart, against a median step of 0.00093 - a ratio of
-        /// 885. Every plate boundary was a vertical cliff in the field, which is what produced the
-        /// terraces tracing closed contours and coastlines following cell edges. Blending the two
-        /// nearest plates over a width makes the field continuous.</para>
+        /// How much of <see cref="Alternate"/> to mix in: 0 where the ranking is unambiguous, rising
+        /// to 0.5 exactly where the two swap. It never exceeds 0.5, because past the swap the two
+        /// exchange names and the same mixture is reached from the other side.
         /// </summary>
-        public float Blend { get; }
+        public float AlternateWeight { get; }
+
+        // Kept so existing callers read the nearest margin without knowing about the crossfade.
+        public float BoundaryDistance { get { return Primary.BoundaryDistance; } }
+        public BoundaryKind Boundary { get { return Primary.Boundary; } }
+        public float Intensity { get { return Primary.Intensity; } }
+        public bool OnOceanicSide { get { return Primary.OnOceanicSide; } }
+        public bool NeighbourContinental { get { return Primary.Continental; } }
+        public float NeighbourBaseElevation { get { return Primary.BaseElevation; } }
+        public float Blend { get { return Primary.Blend; } }
     }
 
-    /// <summary>
-    /// Tectonic plates on a sphere: T0 of <c>docs/superpowers/specs/2026-08-14-world-generation-design.md</c>.
-    ///
-    /// <para><b>Why this exists.</b> That spec's core principle is that <i>noise cannot produce
-    /// continents</i> - every feature in a noise field is independent of every other, so nothing
-    /// explains anything else and the result reads as splatter however it is tuned. Structure has to
-    /// come from process. Mountain ranges lie along plate boundaries; island arcs curve because
-    /// subduction curves; trenches sit offshore of coastal ranges because one plate goes under the
-    /// other. Those relationships are what make terrain legible, and no amount of octave tuning
-    /// produces them.</para>
-    ///
-    /// <para>Plate seeds are placed by Fibonacci spiral - a low-discrepancy distribution, so plates
-    /// are evenly sized without being a visible lattice - then rotated by a seeded orientation. Cells
-    /// are spherical Voronoi around those seeds. Every per-plate property is derived from a
-    /// deterministic hash of its seed direction, so the whole structure is a pure function of the
-    /// world seed.</para>
-    ///
-    /// <para><b>Presentation only</b>, like <see cref="PlanetTerrain"/>: a prototype of T0 that costs
-    /// nothing to iterate on because no hash depends on it.</para>
-    /// </summary>
     public sealed class PlateStructure
     {
         private const double GoldenAngle = 2.39996322972865332d;
+
+        /// <summary>
+        /// Half-width of the seam over which two plates blend, in radians. Wide enough that the step
+        /// becomes a slope the mesh can represent, narrow enough that plate interiors keep their own
+        /// character. One radian is 500 metres, so this is 80 metres.
+        /// </summary>
+        private const double BlendWidth = 0.16d;
+
+        /// <summary>
+        /// How far either side of a rank swap the second and third neighbours crossfade, in radians -
+        /// 60 metres. Sized against the height the swap can move: the worst measured case stepped
+        /// 7.5 metres, and spreading that over 60 metres of ground is a 0.13 grade, comfortably under
+        /// the slope the mesh can draw. Too narrow and the wall becomes a steep ramp instead of
+        /// disappearing.
+        /// </summary>
+        private const double SwapTransition = 0.12d;
 
         private readonly double[] _seedX;
         private readonly double[] _seedY;
@@ -303,14 +348,18 @@ namespace LifeSimulation.Presentation
         {
             int nearest = -1;
             int second = -1;
+            int third = -1;
             double nearestDot = -2d;
             double secondDot = -2d;
+            double thirdDot = -2d;
 
             for (int index = 0; index < Count; index++)
             {
                 double dot = (dx * _seedX[index]) + (dy * _seedY[index]) + (dz * _seedZ[index]);
                 if (dot > nearestDot)
                 {
+                    thirdDot = secondDot;
+                    third = second;
                     secondDot = nearestDot;
                     second = nearest;
                     nearestDot = dot;
@@ -318,26 +367,57 @@ namespace LifeSimulation.Presentation
                 }
                 else if (dot > secondDot)
                 {
+                    thirdDot = secondDot;
+                    third = second;
                     secondDot = dot;
                     second = index;
                 }
+                else if (dot > thirdDot)
+                {
+                    thirdDot = dot;
+                    third = index;
+                }
             }
 
-            // Half the gap in angular distance to the two nearest seeds: zero on the Voronoi edge,
-            // growing toward each cell's interior.
-            double angleNearest = Math.Acos(Math.Max(-1d, Math.Min(1d, nearestDot)));
-            double angleSecond = Math.Acos(Math.Max(-1d, Math.Min(1d, secondDot)));
-            double boundaryDistance = (angleSecond - angleNearest) * 0.5d;
+            if (third < 0) third = second;
+
+            double angleNearest = Angle(nearestDot);
+            double angleSecond = Angle(secondDot);
+            double angleThird = Angle(thirdDot);
+
+            // How close the second and third plates are to changing places. At the moment they do,
+            // their angles are equal, the weight is 0.5, and both sides of the swap evaluate the
+            // same mixture - which is what makes the field continuous across it.
+            double gap = Math.Max(0d, angleThird - angleSecond);
+            double alternateWeight = 0.5d * (1d - Smooth01(Math.Min(1d, gap / SwapTransition)));
+
+            return new PlateSample(
+                _continental[nearest],
+                _baseElevation[nearest],
+                DescribeMargin(nearest, second, angleNearest, angleSecond),
+                DescribeMargin(nearest, third, angleNearest, angleThird),
+                (float)alternateWeight);
+        }
+
+        /// <summary>
+        /// The margin between the plate a point is on and one neighbour: what kind it is, how hard
+        /// they are meeting, and how far away it is.
+        /// </summary>
+        private PlateNeighbour DescribeMargin(int nearest, int other, double angleNearest, double angleOther)
+        {
+            // Half the gap in angular distance to the two seeds: zero on the Voronoi edge, growing
+            // toward each cell's interior.
+            double boundaryDistance = (angleOther - angleNearest) * 0.5d;
 
             // Relative motion across the boundary, resolved along the line joining the two plates.
-            double toOtherX = _seedX[second] - _seedX[nearest];
-            double toOtherY = _seedY[second] - _seedY[nearest];
-            double toOtherZ = _seedZ[second] - _seedZ[nearest];
+            double toOtherX = _seedX[other] - _seedX[nearest];
+            double toOtherY = _seedY[other] - _seedY[nearest];
+            double toOtherZ = _seedZ[other] - _seedZ[nearest];
             Normalize(ref toOtherX, ref toOtherY, ref toOtherZ);
 
-            double relativeX = _driftX[nearest] - _driftX[second];
-            double relativeY = _driftY[nearest] - _driftY[second];
-            double relativeZ = _driftZ[nearest] - _driftZ[second];
+            double relativeX = _driftX[nearest] - _driftX[other];
+            double relativeY = _driftY[nearest] - _driftY[other];
+            double relativeZ = _driftZ[nearest] - _driftZ[other];
 
             double closing = (relativeX * toOtherX) + (relativeY * toOtherY) + (relativeZ * toOtherZ);
             double shearX = relativeX - (closing * toOtherX);
@@ -346,7 +426,7 @@ namespace LifeSimulation.Presentation
             double shear = Math.Sqrt((shearX * shearX) + (shearY * shearY) + (shearZ * shearZ));
 
             bool nearestContinental = _continental[nearest];
-            bool otherContinental = _continental[second];
+            bool otherContinental = _continental[other];
 
             BoundaryKind kind;
             if (Math.Abs(closing) <= shear)
@@ -371,22 +451,21 @@ namespace LifeSimulation.Presentation
             // continental side, which is why coastal ranges have deep water just offshore.
             bool onOceanicSide = kind == BoundaryKind.Subduction && !nearestContinental;
 
-            // Half-width of the seam over which the two plates blend, in radians. Wide enough that
-            // the step becomes a slope the mesh can represent, narrow enough that plate interiors
-            // keep their own character.
-            const double blendWidth = 0.16d;
-            double blend = 0.5d + (0.5d * Smooth01(Math.Min(1d, boundaryDistance / blendWidth)));
+            double blend = 0.5d + (0.5d * Smooth01(Math.Min(1d, boundaryDistance / BlendWidth)));
 
-            return new PlateSample(
-                nearestContinental,
-                _baseElevation[nearest],
+            return new PlateNeighbour(
+                otherContinental,
+                _baseElevation[other],
                 (float)boundaryDistance,
                 kind,
                 (float)intensity,
                 onOceanicSide,
-                otherContinental,
-                _baseElevation[second],
                 (float)blend);
+        }
+
+        private static double Angle(double dot)
+        {
+            return Math.Acos(Math.Max(-1d, Math.Min(1d, dot)));
         }
 
         private static double Smooth01(double t)

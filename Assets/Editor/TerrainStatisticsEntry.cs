@@ -205,12 +205,19 @@ namespace LifeSimulation.EditorTools
             // anyone has, absent - so the sweep is the check that the palette is reachable rather
             // than merely present.
             report.AppendLine();
-            report.AppendLine("THE SAME WINDOW AT OTHER LATITUDES (same longitude, 400u)");
-            foreach (double latitude in new[] { -1.30d, -1.00d, -0.70d, -0.40d, 0d, 0.40d, 0.70d, 1.00d, 1.30d })
+            report.AppendLine("THE SAME WINDOWS AT OTHER LATITUDES (same longitude)");
+            report.AppendLine("Both flat views move together, so the close view matters as much as the");
+            report.AppendLine("wide one - and it holds a quarter of the area, so it fits fewer biomes.");
+            foreach (double halfWidth in new[] { 200d, 100d })
             {
-                AppendWindow(
-                    report, plates, $"lat {latitude * 180d / Math.PI,6:0.0} deg",
-                    latitude, centreLongitude, 200d);
+                report.AppendLine();
+                report.AppendLine($"-- {halfWidth * 2:0} unit window --");
+                foreach (double latitude in new[] { -1.30d, -1.00d, -0.70d, -0.40d, 0d, 0.40d, 0.55d, 0.70d, 0.85d, 1.00d, 1.30d })
+                {
+                    AppendWindow(
+                        report, plates, $"lat {latitude * 180d / Math.PI,6:0.0} deg",
+                        latitude, centreLongitude, halfWidth);
+                }
             }
 
             // Contrast() clamps, so an over-strong setting pins whole regions to 0 or 1. Saturated

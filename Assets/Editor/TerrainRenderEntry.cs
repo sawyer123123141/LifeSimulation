@@ -45,6 +45,13 @@ namespace LifeSimulation.EditorTools
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);
             RenderPatch(directory, "close-200", plates, centreLatitude, centreLongitude, TerrainPreview.RegionHalfWidth);
             RenderPatch(directory, "arena-50", plates, centreLatitude, centreLongitude, 25f, withCreatures: true);
+            // A high-latitude window as well as the default coast. The default centre is at -15
+            // degrees and holds grassland, beach and marsh only; every other biome the palette has
+            // lives further north, so a render set that never leaves the coast is not evidence about
+            // the palette. 0.85 radians is the most varied close view measured on this meridian:
+            // grassland 34%, scrub 29%, tundra 25%, ice 6%.
+            RenderPatch(directory, "close-200-north", plates, 0.85d, centreLongitude, TerrainPreview.RegionHalfWidth);
+
             RenderPlanet(directory, "planet", plates, centreLatitude, centreLongitude, markPatch: false);
             RenderPlanet(directory, "planet-marked", plates, centreLatitude, centreLongitude, markPatch: true);
 

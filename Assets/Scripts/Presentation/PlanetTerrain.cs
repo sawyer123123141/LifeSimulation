@@ -181,22 +181,31 @@ namespace LifeSimulation.Presentation
             // so taking only the nearest plate put a measured step of 0.825 in elevation between
             // samples one unit apart - a vertical cliff at every plate boundary, and the source of
             // the terraces that traced closed contours. Blending makes the seam a slope.
+            //
+            // Evaluated against BOTH candidate neighbours and crossfaded. Which plate is
+            // second-nearest changes along a line through the cell interior, and everything about a
+            // margin - its kind, its intensity, the neighbour's own height - changes with it. See
+            // PlateSample.AlternateWeight.
             double shelf = Lerp(
-                ShelfHeight(plate.NeighbourContinental, plate.NeighbourBaseElevation),
-                ShelfHeight(plate.Continental, plate.BaseElevation),
-                plate.Blend) + (s.ShelfNoiseStrength * shelfNoise);
+                ShelfFor(plate, plate.Primary),
+                ShelfFor(plate, plate.Alternate),
+                plate.AlternateWeight) + (s.ShelfNoiseStrength * shelfNoise);
 
-            // Layer 2: boundary landforms, signed, and blended across the seam for the same reason
-            // the shelf is. The kind and intensity of a boundary are properties of the PAIR of plates
-            // and so are already continuous, but which SIDE a point is on flips the instant the
-            // nearest plate changes - at a subduction margin that switches a -0.34 trench for a +0.46
-            // range, a jump of 0.8 exactly on the boundary. Evaluating both sides and blending
-            // removes it.
-            double distance = plate.BoundaryDistance;
+            // Layer 2: boundary landforms, signed, blended twice over.
+            //
+            // Across the seam, because which SIDE a point is on flips the instant the nearest plate
+            // changes - at a subduction margin that switches a -0.34 trench for a +0.46 range, a jump
+            // of 0.8 exactly on the boundary.
+            //
+            // And between the two candidate neighbours, because kind and intensity belong to a PAIR
+            // of plates. That was the remaining wall: measured 0.277 to 0.528 across 1.04 metres at
+            // latitude 48.7, identical shelf and seam distance on both sides, Divergent on one and
+            // ContinentalCollision on the other, with the seam blend already saturated at 1.000 and
+            // therefore smoothing nothing.
             double boundary = Lerp(
-                BoundaryContribution(plate.Boundary, plate.Intensity, distance, !plate.NeighbourContinental),
-                BoundaryContribution(plate.Boundary, plate.Intensity, distance, plate.OnOceanicSide),
-                plate.Blend);
+                BoundaryFor(plate.Primary),
+                BoundaryFor(plate.Alternate),
+                plate.AlternateWeight);
 
             // Layer 3: ranges, masked by the boundary lift so peaks gather along margins and plate
             // interiors stay open. This is the reference implementation's first-layer-as-mask idea.
@@ -294,6 +303,24 @@ namespace LifeSimulation.Presentation
             return new PlanetSample((float)elevation, (float)moisture, (float)temperature, (float)shelf);
         }
 
+        /// <summary>
+        /// The plate sample behind a point, warp included.
+        ///
+        /// <para>Diagnostic only. When the field has a step in it, the question is always whether the
+        /// plate lookup underneath changed - and answering it from outside meant re-deriving the
+        /// domain warp, which is how a diagnostic ends up describing a slightly different point than
+        /// the one it is diagnosing.</para>
+        /// </summary>
+        public static PlateSample SamplePlate(
+            int seed, PlateStructure plates, double dx, double dy, double dz, TerrainSettings settings = null)
+        {
+            TerrainSettings s = settings ?? Active;
+            double warpX = 0d, warpY = 0d, warpZ = 0d;
+            AddWarp(seed, 500, dx, dy, dz, s.WarpFrequency, s.WarpStrength, ref warpX, ref warpY, ref warpZ);
+            AddWarp(seed, 503, dx, dy, dz, s.WarpFrequency * 3.7d, s.WarpStrength * 0.35d, ref warpX, ref warpY, ref warpZ);
+            return plates.Sample(dx + warpX, dy + warpY, dz + warpZ);
+        }
+
         public static PlanetSample SampleAtLatLon(
             int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency,
             TerrainSettings settings = null)
@@ -305,6 +332,25 @@ namespace LifeSimulation.Presentation
                 Math.Sin(latitude),
                 cosLatitude * Math.Cos(longitude),
                 maximumFrequency, settings);
+        }
+
+        /// <summary>Shelf height for one candidate neighbour, blended across its seam.</summary>
+        private static double ShelfFor(PlateSample plate, PlateNeighbour neighbour)
+        {
+            return Lerp(
+                ShelfHeight(neighbour.Continental, neighbour.BaseElevation),
+                ShelfHeight(plate.Continental, plate.BaseElevation),
+                neighbour.Blend);
+        }
+
+        /// <summary>Boundary landform for one candidate neighbour, blended across its seam.</summary>
+        private static double BoundaryFor(PlateNeighbour neighbour)
+        {
+            double distance = neighbour.BoundaryDistance;
+            return Lerp(
+                BoundaryContribution(neighbour.Boundary, neighbour.Intensity, distance, !neighbour.Continental),
+                BoundaryContribution(neighbour.Boundary, neighbour.Intensity, distance, neighbour.OnOceanicSide),
+                neighbour.Blend);
         }
 
         /// <summary>
