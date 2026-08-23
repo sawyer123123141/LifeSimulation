@@ -65,6 +65,12 @@ namespace LifeSimulation.Presentation
         // the next. One continent band, one mountain band, one detail band.
         private const double ContinentFrequency = 1.15d;
         private const double MountainFrequency = 3.6d;
+
+        /// <summary>
+        /// Rolling ground. Sits between the mountain and detail bands, and applies to all land
+        /// rather than only near plate boundaries - without it, plate interiors are flat plateaus.
+        /// </summary>
+        private const double HillFrequency = 6.5d;
         private const double DetailFrequency = 11d;
         private const double MoistureFrequency = 1.9d;
         private const double ClimateNoiseFrequency = 2.4d;
@@ -159,13 +165,27 @@ namespace LifeSimulation.Presentation
                     break;
             }
 
-            // --- 3. Ridged detail, concentrated where the boundary is already raising ground, so
-            // foothills gather around ranges instead of scattering across plains.
+            // --- 3. Relief.
+            //
+            // The previous version multiplied ALL ridged detail by the boundary contribution, so a
+            // plate interior - where that contribution is zero by design - had exactly zero relief.
+            // Continental interiors rendered as perfectly flat plateaus and the only raised ground
+            // anywhere was a line along a plate edge. Relief has to have two independent parts:
+            // ground that is never flat, and ranges that occur where plates meet.
             int mountainOctaves = OctavesUnder(MountainFrequency, maximumFrequency, 5);
             double ridges = EnvironmentNoise.RidgedFbm(
                 seed, channel: 240,
                 dx * MountainFrequency, dy * MountainFrequency, dz * MountainFrequency,
                 mountainOctaves, Lacunarity, Gain, ridgeWeighting: 1.6d);
+
+            // Rolling ground, applied across all land regardless of tectonics. This is what hills,
+            // valleys and undulating plains are: terrain that exists because the surface is not a
+            // plane, not because two plates met.
+            int hillOctaves = OctavesUnder(HillFrequency, maximumFrequency, 4);
+            double hills = EnvironmentNoise.WarpedFbm(
+                seed, channel: 300,
+                dx * HillFrequency, dy * HillFrequency, dz * HillFrequency,
+                hillOctaves, Lacunarity, Gain, warpStrength: 0.25d);
 
             int detailOctaves = OctavesUnder(DetailFrequency, maximumFrequency, 3);
             double detail = EnvironmentNoise.Fbm(
@@ -173,11 +193,18 @@ namespace LifeSimulation.Presentation
                 dx * DetailFrequency, dy * DetailFrequency, dz * DetailFrequency,
                 detailOctaves, Lacunarity, Gain);
 
-            double relief = Math.Max(0d, boundaryEffect);
+            double boundaryRelief = Math.Max(0d, boundaryEffect);
+
+            // Land gets hills everywhere and ranges near boundaries; the sea floor gets a gentler
+            // version of the same, so it is not a mirror-flat basin either.
+            double aboveWater = EnvironmentNoise.Clamp01((continent - SeaLevel) / (1d - SeaLevel));
+            double hillAmplitude = 0.10d + (0.16d * aboveWater);
+
             double elevation = continent
                 + boundaryEffect
-                + (0.30d * ridges * relief)
-                + (0.045d * (detail - 0.5d));
+                + (hillAmplitude * (hills - 0.42d))
+                + (0.34d * ridges * boundaryRelief)
+                + (0.05d * (detail - 0.5d));
 
             elevation = EnvironmentNoise.Clamp01(elevation);
 
@@ -192,7 +219,10 @@ namespace LifeSimulation.Presentation
 
             // Lapse rate: height costs warmth, applied only above the waterline.
             double land01 = elevation <= SeaLevel ? 0d : (elevation - SeaLevel) / (1d - SeaLevel);
-            temperature = EnvironmentNoise.Clamp01(temperature - (0.55d * land01));
+            // 0.55 put every range past the snow threshold, so the only raised ground on the
+            // planet also rendered white. High ground should read colder than the valley beside it,
+            // not become an ice cap the moment it rises.
+            temperature = EnvironmentNoise.Clamp01(temperature - (0.32d * land01));
 
             // --- Moisture. Wet near the ocean and dry in continental interiors, which is what puts
             // deserts inland instead of scattering them, plus a warped band for regional variety.

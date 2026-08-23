@@ -84,7 +84,14 @@ namespace LifeSimulation.Presentation
         private readonly bool[] _continental;
         private readonly float[] _baseElevation;
 
-        public PlateStructure(int worldSeed, int plateCount = 24, double continentalFraction = 0.42d)
+        /// <summary>
+        /// <paramref name="plateCount"/> and <paramref name="continentalFraction"/> are <b>recipe
+        /// parameters</b>, not constants: the world-generation design defines a world by which
+        /// processes run and with what values, so that different worlds can differ in kind rather
+        /// than only in seed. They are arguments here so a recipe can set them; nothing about the
+        /// structure is hardcoded beyond the process itself.
+        /// </summary>
+        public PlateStructure(int worldSeed, int plateCount = 20, double continentalFraction = 0.42d)
         {
             if (plateCount < 4) throw new ArgumentOutOfRangeException(nameof(plateCount));
 

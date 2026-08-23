@@ -37,7 +37,7 @@ namespace LifeSimulation.Presentation
             /// <summary>A wide flat patch, many landforms across: what the raw field looks like.</summary>
             WidePatch = 1,
 
-            /// <summary>The same field shaped into a landmass ringed by ocean.</summary>
+            /// <summary>A close view, near the scale the simulation actually runs at.</summary>
             Island = 2,
 
             /// <summary>The whole planet, as an actual sphere.</summary>
@@ -124,9 +124,15 @@ namespace LifeSimulation.Presentation
         /// Patch relief, still scaled by the arena tuning so <c>[</c> and <c>]</c> keep working -
         /// they now adjust it relative to a height that suits the patch rather than the arena.
         /// </summary>
+        /// <summary>Extent of the flat view currently selected.</summary>
+        private float CurrentHalfWidth
+        {
+            get { return Current == Mode.Island ? RegionHalfWidth : WidePatchHalfWidth; }
+        }
+
         private float PatchHeightScale
         {
-            get { return WidePatchHalfWidth * 2f * PatchReliefFraction * (HeightScale / 14f); }
+            get { return CurrentHalfWidth * 2f * PatchReliefFraction * (HeightScale / 14f); }
         }
 
         private string LiveSuffix
@@ -142,7 +148,7 @@ namespace LifeSimulation.Presentation
                 case Mode.WidePatch:
                     return $"1/3 wide patch - {WidePatchHalfWidth * 2f:0} units of raw field{LiveSuffix}";
                 case Mode.Island:
-                    return $"2/3 island - the same field with a radial falloff{LiveSuffix}";
+                    return $"2/3 close view - {RegionHalfWidth * 2f:0} units, near simulation scale{LiveSuffix}";
                 case Mode.Planet:
                     return $"3/3 planet - the VIEW is spherical, the simulation is still flat{LiveSuffix}";
                 default:
@@ -158,8 +164,9 @@ namespace LifeSimulation.Presentation
                 switch (Current)
                 {
                     case Mode.WidePatch:
-                    case Mode.Island:
                         return WidePatchHalfWidth;
+                    case Mode.Island:
+                        return RegionHalfWidth;
                     case Mode.Planet:
                         return PlanetDrawRadius * 1.35f;
                     default:
@@ -223,7 +230,7 @@ namespace LifeSimulation.Presentation
             }
             else
             {
-                BuildWidePatch(world, island: Current == Mode.Island);
+                BuildWidePatch(world, CurrentHalfWidth);
             }
         }
 
@@ -232,7 +239,7 @@ namespace LifeSimulation.Presentation
         /// once. This is the view that makes "is the scale right?" answerable, because scale is a
         /// comparison and a single landform cannot be compared with anything.
         /// </summary>
-        private void BuildWidePatch(SimulationWorld world, bool island)
+        private void BuildWidePatch(SimulationWorld world, float halfWidth)
         {
             int side = PatchResolution;
             var vertices = new Vector3[side * side];
@@ -242,14 +249,14 @@ namespace LifeSimulation.Presentation
             for (int row = 0; row < side; row++)
             {
                 float v = row / (float)(side - 1);
-                float z = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, v);
+                float z = Mathf.Lerp(-halfWidth, halfWidth, v);
                 for (int column = 0; column < side; column++)
                 {
                     float u = column / (float)(side - 1);
-                    float x = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, u);
+                    float x = Mathf.Lerp(-halfWidth, halfWidth, u);
                     PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
-                    float elevation = island ? sample.Elevation * IslandFalloff(x, z) : sample.Elevation;
+                    float elevation = sample.Elevation;
                     float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * PatchHeightScale;
                     vertices[vertex] = new Vector3(x, height, z);
                     uv[vertex] = new Vector2(u, v);
@@ -258,7 +265,7 @@ namespace LifeSimulation.Presentation
 
             WriteQuads(triangles, side);
             Commit(vertices, uv, triangles);
-            if (NeedsTexture(world)) ApplyTexture(BuildPatchTexture(world, island));
+            if (NeedsTexture(world)) ApplyTexture(BuildPatchTexture(world, halfWidth));
         }
 
         /// <summary>
@@ -406,17 +413,17 @@ namespace LifeSimulation.Presentation
             return true;
         }
 
-        private Texture2D BuildPatchTexture(SimulationWorld world, bool island)
+        private Texture2D BuildPatchTexture(SimulationWorld world, float halfWidth)
         {
             var pixels = new Color[TextureWidth * TextureHeight];
             for (int y = 0; y < TextureHeight; y++)
             {
-                float worldZ = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, (y + 0.5f) / TextureHeight);
+                float worldZ = Mathf.Lerp(-halfWidth, halfWidth, (y + 0.5f) / TextureHeight);
                 for (int x = 0; x < TextureWidth; x++)
                 {
-                    float worldX = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, (x + 0.5f) / TextureWidth);
+                    float worldX = Mathf.Lerp(-halfWidth, halfWidth, (x + 0.5f) / TextureWidth);
                     PlanetSample sample = SamplePatch(world, worldX, worldZ);
-                    pixels[(y * TextureWidth) + x] = Shade(sample, island ? IslandFalloff(worldX, worldZ) : 1f);
+                    pixels[(y * TextureWidth) + x] = Shade(sample, 1f);
                 }
             }
 
@@ -501,36 +508,6 @@ namespace LifeSimulation.Presentation
             if (sample.Moisture > 0.72f && land < 0.14f) return new Color(0.259f, 0.435f, 0.388f);
             if (sample.Moisture > 0.46f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
             return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
-        }
-
-        /// <summary>
-        /// Radial falloff that turns an endless field into a landmass ringed by ocean, as in the
-        /// reference art. Flat across the interior, then dropping to zero before the edge, so the
-        /// coastline is produced by the shape of the field rather than cut off by the mesh boundary.
-        /// </summary>
-        private static float IslandFalloff(float x, float z)
-        {
-            float distance = Mathf.Sqrt((x * x) + (z * z)) / WidePatchHalfWidth;
-            return 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.35f, 0.92f, distance));
-        }
-
-        private static void WriteQuads(int[] triangles, int side)
-        {
-            int triangle = 0;
-            for (int row = 0; row + 1 < side; row++)
-            {
-                for (int column = 0; column + 1 < side; column++)
-                {
-                    int bottomLeft = (row * side) + column;
-                    int topLeft = bottomLeft + side;
-                    triangles[triangle++] = bottomLeft;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = topLeft + 1;
-                }
-            }
         }
 
         /// <summary>
