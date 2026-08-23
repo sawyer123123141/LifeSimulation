@@ -1104,4 +1104,20 @@ change.
 - **A mechanism that does not pay off may be limited by the scenario, not broken.** Before tuning a
   mechanism or building architecture around it, ask what actually limits the population. Saving 2.3
   creatures per run from predators changes nothing when the binding constraint is food.
+- **Cap-pinning audit result: the pattern was systemic, the damage was not (2026-08-22).** Eleven
+  CSVs and 4,080 runs have a zero-variance population or extinction column. Exactly **one**
+  conclusion was a ceiling artefact — the rendezvous survival null. In the other ten, zero extinction
+  was a *control against differential survival*, and that control is valid exactly as stated. **A
+  zero-variance column invalidates a conclusion only if that column was the outcome under test.**
+  Do not let a scary-looking scan turn into a blanket retraction; classify first.
+- **"0/120 extinct" is not evidence of a healthy world.** Those populations are cap-stabilised, and
+  removing the cap causes overshoot and collapse in both harnesses tested — predation config
+  0/8 extinct at cap 48 but 8/8 at 96; herbivore plant config 0/6 at cap 48 **and still pinned at
+  95.8 at cap 96**, then 5/6 at 200 and 6/6 at 600. Same cliff, different position. Check the second
+  configuration before claiming a finding generalises.
+- **The plant corpus is scoped to constant cap-saturated grazing.** Every plant trait result was
+  measured with the herbivore population pinned at 48. That is a fine controlled variable, but
+  whether the gradients survive a freely fluctuating herbivore population is untested — and raising
+  the cap does not test it, because that yields a boom-and-collapse rather than a free-running
+  population. It needs a habitat limited by carrying capacity instead of by a cap; none exists yet.
 

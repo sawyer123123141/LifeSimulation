@@ -300,13 +300,25 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-1. **Audit other cap-pinned conclusions.** The rendezvous survival null was a ceiling artefact.
-   Any recorded result whose outcome variable sat against a clamp deserves the same check — look for
-   arms reporting an identical final population across every seed.
-2. **Finish the P4a visible-feedback item**: resource depletion/recovery feedback and lineage
-   display are the two parts still open.
-3. **Then P5** (species and history), which is the large remaining phase before P6 terrain.
-4. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
+1. ~~Audit other cap-pinned conclusions~~ — **DONE**, `p4-cap-pinning-audit-2026-08-22.md`.
+   Eleven CSVs / 4,080 runs are cap-pinned, but exactly **one** conclusion was a ceiling artefact
+   (the rendezvous survival null, already corrected). In the other ten, zero extinction was a
+   *control against differential survival* and is valid as stated. **No banners added, no conclusion
+   retracted.** The corpus carries a new **scope qualification**: every plant trait result was
+   measured under a herbivore population pinned at 48, i.e. constant grazing pressure.
+2. **TERRAIN (P6 groundwork), by user decision.** Resume the paused environment-fields design and
+   build the generator **behind its existing default-false flags** (`ProceduralEnvironmentFieldsEnabled`,
+   `ElevationFieldEnabled`), with a Play-mode key for tuning. Keep ecology on flat fields so every
+   recorded result stays valid. **Expect `LivenessTests` to fail when temperature genuinely varies** —
+   `plantTemperatureAdaptationEnabled` is pinned inert *only* because `EnvironmentField` returns
+   Temperature = 1.0 everywhere, and at 1.0 the adaptation expression collapses to the raw value.
+   That failure is the designed signal, not a breakage; move the flag out of `KnownInertFlags` when
+   it fires.
+3. **Still open under the P4a visible-feedback item**: resource depletion/recovery feedback and
+   lineage display.
+4. **A carrying-capacity-limited habitat** would lift the plant corpus's scope qualification. Not an
+   audit task — scenario design. Raising the cap does **not** achieve it (boom then collapse).
+5. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
    design questions, not automatic fixes.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
