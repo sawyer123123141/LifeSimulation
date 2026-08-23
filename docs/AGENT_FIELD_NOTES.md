@@ -952,8 +952,10 @@ unrecoverable one.
   (-0.00248, t -0.34, 53/120) though the +0.0362 advantage measured at 24 sites is abolished; the
   lifespan-headroom claim is not adjudicated because its only available control is confounded. The
   six growth-rate nulls hold. **None of this refutes the recorded results**, because the replication
-  reproduces the recorded occupancy and not the recorded ecology - grazing pressure is 0.0026 with
-  the free-site pool outside the grazed arena. Banners stay.
+  reproduces the recorded occupancy and not the recorded ecology - grazing pressure is **0.00261 against
+  0.00699 at 24 sites, a ratio of 0.373**, because the free-site pool sits outside the grazed arena.
+  The matched 24-site arm reproduced its recorded occupancy (0.9139 against 0.904-0.908) at 0/120
+  extinct, so the harness is faithful and the deficit is geometric. Banners stay.
 - **`PlantEstablishmentContestEnabled` costs 19/120 extinctions at low occupancy** against 4/120 in
   the base arm, where at 24 sites it cost nothing. Any future use of the contest at low site
   occupancy must report survival.

@@ -138,8 +138,21 @@ and not the comparison it belongs to. The recorded nulls are consistent with wha
 Three claims went in; none came out confirmed. But the honest reading is not "the recorded results
 were wrong", for a reason registered before the run:
 
-**This condition reproduces the recorded occupancy and not the recorded ecology.**
-`RealizedGrazingPressure` is **0.0026** here. The lattice spans ±57 while the creature arena is
+**This condition reproduces the recorded occupancy and not the recorded ecology**, and prediction 3
+now has a number rather than an argument. A matched 24-site arm was run with the same varying
+founders, seeds and config:
+
+| arm | occupancy | RealizedGrazingPressure | extinct |
+|---|---|---|---|
+| base (low occupancy) | 0.3518 | **0.00261** | 4/120 |
+| base-24site | 0.9139 | **0.00699** | 0/120 |
+
+Grazing pressure at the low-occupancy condition is **0.373x** the 24-site value — inside the
+"roughly half or less" registered in prediction 3. The 24-site arm also reproduces its recorded
+occupancy (0.9139 against 0.904-0.908) at 0/120 extinct, which is a third independent check that the
+harness, config and founder setup are faithful.
+
+So the deficit is real and measured: this condition grazes at just over a third the intensity. The lattice spans ±57 while the creature arena is
 hard-coded to ±25, so most of the free-site pool sits in ungrazed refugia. Free sites that no
 herbivore can reach are not the same resource as free sites inside a grazed arena, and every one of
 these three claims is about how free-site abundance changes selection.
