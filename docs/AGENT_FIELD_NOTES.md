@@ -959,6 +959,14 @@ unrecoverable one.
 - **`PlantEstablishmentContestEnabled` costs 19/120 extinctions at low occupancy** against 4/120 in
   the base arm, where at 24 sites it cost nothing. Any future use of the contest at low site
   occupancy must report survival.
+- **Non-finite values are rejected at two boundaries (2026-08-22).** `SimulationConfig.Validate()`
+  checks all ten float tuning values are finite, and `ResourceDefinition`'s constructor checks
+  position, radius, amount, capacity, regeneration and nutrition multiplier. **Clamping is not a NaN
+  filter** - `Math.Max(0f, Math.Min(1f, NaN))` is NaN - so a non-finite value that gets past a
+  boundary propagates through every later operation and surfaces as an unreproducible run rather
+  than as an error. Convention preserved: config constructs freely and `Validate()` is the gate
+  (called by `SimulationWorld`'s constructor); scenario data has no deferred gate so it rejects at
+  construction.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

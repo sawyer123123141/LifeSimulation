@@ -19,6 +19,18 @@ namespace LifeSimulation.Simulation.Experiments
             float nutritionMultiplier = 1f,
             PlantGenome? plantGenome = null)
         {
+            // Scenario data is the other boundary a non-finite value can enter through, and it is
+            // the one experiments touch most. NaN survives clamping and every later arithmetic
+            // step, so a bad amount here would surface as an unreproducible run rather than as an
+            // error. Reject it where it is cheap and the caller can still see which field is wrong.
+            RequireFinite(position.X, nameof(position));
+            RequireFinite(position.Y, nameof(position));
+            RequireFinite(interactionRadius, nameof(interactionRadius));
+            RequireFinite(initialAmount, nameof(initialAmount));
+            RequireFinite(capacity, nameof(capacity));
+            RequireFinite(regenerationPerSecond, nameof(regenerationPerSecond));
+            RequireFinite(nutritionMultiplier, nameof(nutritionMultiplier));
+
             Kind = kind;
             Position = position;
             InteractionRadius = interactionRadius;
@@ -28,6 +40,14 @@ namespace LifeSimulation.Simulation.Experiments
             IsActive = isActive;
             NutritionMultiplier = nutritionMultiplier;
             PlantGenome = plantGenome;
+        }
+
+        private static void RequireFinite(float value, string parameterName)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                throw new ArgumentOutOfRangeException(parameterName, value, "Value must be finite.");
+            }
         }
 
         public ResourceKind Kind { get; }

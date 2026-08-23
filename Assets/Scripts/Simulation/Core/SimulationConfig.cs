@@ -430,8 +430,34 @@ namespace LifeSimulation.Simulation.Core
                 plantSeedProductionRateEnabled: true);
         }
 
+        /// <summary>
+        /// Rejects a non-finite tuning value at construction. NaN and infinity are never caught
+        /// later: they propagate silently through every arithmetic operation, survive the
+        /// <c>Math.Max(0f, Math.Min(1f, value))</c> clamping the genome relies on, and then poison
+        /// state hashes in a way that reads as nondeterminism rather than as bad input. The
+        /// boundary is the only place this is cheap to check.
+        /// </summary>
+        private static void RequireFinite(float value, string parameterName)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                throw new ArgumentOutOfRangeException(parameterName, value, "Value must be finite.");
+            }
+        }
+
         public void Validate()
         {
+            RequireFinite(HandlingSeconds, nameof(HandlingSeconds));
+            RequireFinite(ReferenceGain, nameof(ReferenceGain));
+            RequireFinite(CommitmentStrength, nameof(CommitmentStrength));
+            RequireFinite(CommitmentHalfLifeSeconds, nameof(CommitmentHalfLifeSeconds));
+            RequireFinite(GiveUpSensitivity, nameof(GiveUpSensitivity));
+            RequireFinite(SamePlaceRadius, nameof(SamePlaceRadius));
+            RequireFinite(ExpectedIntakeRate, nameof(ExpectedIntakeRate));
+            RequireFinite(ThreatFalloffDistance, nameof(ThreatFalloffDistance));
+            RequireFinite(PlantDefenseDeterrenceStrength, nameof(PlantDefenseDeterrenceStrength));
+            RequireFinite(PlantSeedProductionRateDispersalCharge, nameof(PlantSeedProductionRateDispersalCharge));
+
             if (InitialPopulation < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(InitialPopulation), "Founder population cannot be negative.");
