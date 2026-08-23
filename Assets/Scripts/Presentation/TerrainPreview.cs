@@ -47,6 +47,16 @@ namespace LifeSimulation.Presentation
         /// <summary>Half-width of the wide patch, in simulation units. 200 shows ~24 landforms across.</summary>
         public const float WidePatchHalfWidth = 200f;
 
+        /// <summary>
+        /// Half-width of the close view: four times the arena, so the playable area is a visible
+        /// fraction of it. This is the view that answers "what would a creature actually stand on?"
+        ///
+        /// <para>It replaces an earlier island mask, which multiplied elevation by a radial falloff
+        /// to force a landmass ringed by ocean. That was a workaround for having no continents;
+        /// plate structure produces real land and sea, so the mask only destroyed it.</para>
+        /// </summary>
+        public const float RegionHalfWidth = 100f;
+
         private const int PatchResolution = 161;
         private const int SphereLongitudeSteps = 192;
         private const int SphereLatitudeSteps = 96;
@@ -508,6 +518,26 @@ namespace LifeSimulation.Presentation
             if (sample.Moisture > 0.72f && land < 0.14f) return new Color(0.259f, 0.435f, 0.388f);
             if (sample.Moisture > 0.46f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
             return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
+        }
+
+        /// <summary>Two triangles per grid cell, wound consistently across the patch.</summary>
+        private static void WriteQuads(int[] triangles, int side)
+        {
+            int triangle = 0;
+            for (int row = 0; row + 1 < side; row++)
+            {
+                for (int column = 0; column + 1 < side; column++)
+                {
+                    int bottomLeft = (row * side) + column;
+                    int topLeft = bottomLeft + side;
+                    triangles[triangle++] = bottomLeft;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = bottomLeft + 1;
+                    triangles[triangle++] = topLeft;
+                    triangles[triangle++] = topLeft + 1;
+                }
+            }
         }
 
         /// <summary>
