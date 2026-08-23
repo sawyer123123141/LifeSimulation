@@ -1,7 +1,7 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `e6ce068`** (`experiment: reassess safety-gated rendezvous where survival can
-actually move`), pushed to `origin/main`.
+**Head at handoff: `be4dd63`** (`feat: give the ground real relief instead of a flat plane`),
+pushed to `origin/main`. Terrain work started; see §10.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
@@ -437,4 +437,70 @@ When terrain makes temperature genuinely vary, **`LivenessTests` will fail on
 returns Temperature = 1.0 everywhere and the adaptation expression collapses to the raw value at 1.0.
 The failure is the **designed signal** — the same thing happened when the procedural fields landed.
 Move the flag out of `LivenessTests.KnownInertFlags`; do not "fix" the test.
+
+---
+
+## 10. Terrain (P6 groundwork) — where it actually stands
+
+**Far more existed than "not started".** The elevation field has been in the repo since 2026-08-19:
+ridged multifractal (`1 - |2n-1|`, squared, octave-weighted so ridges connect into chains) plus a
+lapse rate `temperature - 0.45 * elevation`, behind `ElevationFieldEnabled`. Moisture, fertility and
+temperature fields shipped before it. What was missing was any way to *see* it.
+
+### Done 2026-08-22
+
+- **`529abdd` — elevation overlay and terrain playtest key.** `H` now cycles
+  None → Temperature → Biome → **Elevation**. `Y` opens a terrain scenario directly on that overlay.
+  The overlay is **banded** (water / beach / grass / rock / snow), not a smooth ramp, because a
+  continuous gradient hides the ridge structure the field exists to produce. With the flag off it
+  renders a flat sea rather than inventing terrain the simulation does not have.
+- **`be4dd63` — real relief.** The ground is a 129×129 mesh displaced by the elevation field.
+  Creatures and resources are drawn standing on it. Flat when the flag is off, so every existing
+  scenario looks unchanged. Rebuilt per scenario, since relief is a function of seed and flags.
+
+### The terrain playtest key `Y`, and why cap 96
+
+Two measured constraints from opposite directions. Elevation needs grazing pressure to have anything
+to act on — growth is multiplied by `(1 - Biomass/Capacity)`, so near capacity a change to the growth
+*limit* does nothing. But the cap cannot simply be raised: the herbivore configuration is 0/6 extinct
+at cap 96 and 5/6 at 200. **96 is the highest cap measured to survive.** Verified elevation is
+actually live there — 3/3 seeds at 12,000 ticks — so the key does not show terrain the ecology
+ignores.
+
+### What is cosmetic and what is not — do not confuse these
+
+| | status |
+|---|---|
+| elevation as a **field** (feeds temperature via lapse rate) | **real**, flag-gated, live |
+| ground **geometry** (displaced mesh, creatures drawn on it) | **cosmetic only** |
+| elevation affecting **movement** (uphill costs, 3D distance, slope) | **not built** |
+| **spherical** world | **not built**, large |
+
+`GroundHeightAt` lives in `Prototype1Presenter` and nothing under `Assets/Scripts/Simulation` knows
+it exists. The simulation is still a flat plane: every position is a `SimVector2` and distance is 2D.
+Creatures are *drawn* on hills; they do not walk up them and a hill costs them nothing.
+
+Making elevation affect movement is a **simulation** change — flag, tests, experiment, and it moves
+every hash. A spherical world is a spatial-model refactor: `SimVector2` everywhere, arena hardcoded
+`(-25, 25)`, uniform 2D perception grid, and movement / distance / dispersal / site placement /
+spatial hashing all assume a plane.
+
+### Next on terrain
+
+1. **Look at it in Play mode.** Press `Y`. Nothing below is worth doing until someone confirms the
+   relief reads well and the height scale (`TerrainHeightScale = 5f` over a 50-unit arena) is right.
+2. **A water surface.** Sub-sea-level ground is flattened to sea level but is still ground; an actual
+   water plane would make it read as a world.
+3. **Rain shadow.** Designed but never built, and deliberately so: it needs a wind-direction
+   convention, which is a design choice rather than a mechanical one.
+4. **`docs/sphere-sandbox-prompt.md`** is a fully written prompt for an external visual sandbox that
+   was **never run**. It asks for a spherical elevation spec in the same format as the three shipped
+   fields, and answers to five design questions. Running it is optional but cheap.
+
+### Expect this failure when terrain varies temperature
+
+`LivenessTests` will fail on `plantTemperatureAdaptationEnabled`. That flag is pinned inert **only**
+because `EnvironmentField` returns Temperature = 1.0 everywhere and the adaptation expression
+collapses to the raw value at 1.0. The failure is the **designed signal** — it already happened once
+when the procedural fields landed. Move the flag out of `KnownInertFlags`; do not "fix" the test.
 
