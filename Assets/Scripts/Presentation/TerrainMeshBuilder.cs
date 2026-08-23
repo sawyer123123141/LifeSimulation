@@ -118,8 +118,10 @@ namespace LifeSimulation.Presentation
         /// </summary>
         public static void BuildPlanet(
             int seed, PlateStructure plates,
-            out Vector3[] vertices, out Color[] colors, out int[] triangles)
+            out Vector3[] vertices, out Color[] colors, out int[] triangles,
+            float drawRadius = PlanetDrawRadius, TerrainSettings settings = null)
         {
+            settings = settings ?? TerrainView.Settings;
             IcoSphere.Build(PlanetSubdivisions, out Vector3[] directions, out int[] indices);
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
                 IcoSphere.SamplesAroundEquator(PlanetSubdivisions));
@@ -130,9 +132,13 @@ namespace LifeSimulation.Presentation
             {
                 Vector3 direction = directions[index];
                 PlanetSample sample = PlanetTerrain.Sample(
-                    seed, plates, direction.x, direction.y, direction.z, maximumFrequency, TerrainView.Settings);
+                    seed, plates, direction.x, direction.y, direction.z, maximumFrequency, settings);
 
-                vertices[index] = direction * (PlanetDrawRadius * (1f + (sample.Elevation * PlanetReliefFraction)));
+                // Relief is a FRACTION of the radius, so the same 0.06 is 3.6 units of height at the
+                // 60-unit preview radius and 30 units at the true 500 - which is exactly the arena's
+                // own 30 units per elevation unit. The globe and the ground were always the same
+                // shape at different sizes; drawing them as one world changes neither.
+                vertices[index] = direction * (drawRadius * (1f + (sample.Elevation * PlanetReliefFraction)));
                 colors[index] = PlanetBiome.Shade(sample);
             }
 
@@ -237,13 +243,14 @@ namespace LifeSimulation.Presentation
         /// displaced downward, so without a sea surface the planet renders bumpy blue sea bed and
         /// calls it water. Land protrudes through this because land elevation is positive.</para>
         /// </summary>
-        public static void BuildOceanSphere(out Vector3[] vertices, out int[] triangles)
+        public static void BuildOceanSphere(
+            out Vector3[] vertices, out int[] triangles, float drawRadius = PlanetDrawRadius)
         {
             IcoSphere.Build(PlanetSubdivisions - 1, out Vector3[] directions, out int[] indices);
             vertices = new Vector3[directions.Length];
             for (int index = 0; index < directions.Length; index++)
             {
-                vertices[index] = directions[index] * PlanetDrawRadius;
+                vertices[index] = directions[index] * drawRadius;
             }
 
             triangles = indices;

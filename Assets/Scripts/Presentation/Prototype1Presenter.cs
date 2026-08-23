@@ -173,6 +173,8 @@ namespace LifeSimulation.Presentation
                     $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
                 GUI.Label(new Rect(24f, 128f, 430f, 22f),
                     $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}   |   J tuning panel");
+                GUI.Label(new Rect(24f, 150f, 430f, 22f),
+                    $"O world shape: {(_sphericalArena ? "on the planet" : "flat patch")}");
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
@@ -366,6 +368,18 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             HandleTerrainTuningInput();
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                _sphericalArena = !_sphericalArena;
+
+                // Set here rather than only in the mesh path: a scenario with the elevation field off
+                // never reaches that path, and creatures would then be projected onto a planet whose
+                // ground was never curved to meet them.
+                ArenaProjection.Spherical = _sphericalArena;
+                RebuildTerrainViews();
+                ApplyCameraRange();
+            }
+
             if (Input.GetKeyDown(KeyCode.J)) _terrainTuningPanel.Toggle();
             if (Input.GetKeyDown(KeyCode.K) && _terrainPreview != null)
             {
@@ -554,6 +568,17 @@ namespace LifeSimulation.Presentation
         /// 17 wide and 5 tall - a squat lump beside a creature 1 unit tall. 14 gives a slope that
         /// reads as terrain rather than as a bump.</para>
         /// </summary>
+        /// <summary>
+        /// Whether the arena is drawn curved onto the planet it is a window on.
+        ///
+        /// <para>Presentation only. The simulation stays a flat 50-unit square with Euclidean
+        /// distances - see <see cref="ArenaProjection"/> - so this toggles what is on screen and
+        /// nothing else.</para>
+        /// </summary>
+        private bool _sphericalArena;
+
+        private GameObject _planetBackdrop;
+
         private float _terrainHeightScale = 14f;
 
         /// <summary>
@@ -765,7 +790,11 @@ namespace LifeSimulation.Presentation
             if (_waterSurface == null) return;
 
             bool hasTerrain = _world != null && _world.Config.ElevationFieldEnabled;
-            _waterSurface.SetActive(hasTerrain);
+
+            // Curved, the sea is the planet's ocean sphere rather than a local surface: a flat sheet
+            // over a curved patch cuts through the ground at the edges of the view, which reads as
+            // the sea flooding uphill.
+            _waterSurface.SetActive(hasTerrain && !_sphericalArena);
             _waterSurface.transform.position = Vector3.zero;
         }
 
@@ -886,7 +915,15 @@ namespace LifeSimulation.Presentation
                 out Vector3[] vertices, out Color[] colors, out int[] triangles,
                 ArenaTerrainSettings());
 
+            // Heights are cached from the FLAT vertices, before any curving. They are read back as
+            // "how high is the ground at this arena position", which is a question in simulation
+            // coordinates; taking them from curved vertices would fold the planet's radius into
+            // every creature's height.
             CacheArenaHeights(vertices);
+
+            ArenaProjection.Spherical = _sphericalArena;
+            ArenaProjection.ProjectVertices(vertices);
+            UpdatePlanetBackdrop();
 
             Mesh built = TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Arena Terrain");
             _terrainMesh.Clear();
@@ -931,6 +968,77 @@ namespace LifeSimulation.Presentation
             return _world != null && _world.Config.TerrainDrivenEnvironmentEnabled
                 ? EnvironmentField.CreateTerrainSettings()
                 : TerrainView.Settings;
+        }
+
+        /// <summary>
+        /// The planet the arena is a window on, drawn behind it at true scale.
+        ///
+        /// <para>Radius 500 - the same number <c>EnvironmentField.SphereRadius</c> uses - rather than
+        /// the preview's 60. Relief is a fraction of radius, so 0.06 gives 30 units of height per
+        /// elevation unit at this size, which is exactly what the arena patch uses. The two meshes
+        /// are the same surface at the same scale; only their detail differs, and the patch is lifted
+        /// clear by <c>ArenaProjection.PatchLift</c> so they do not fight for the same pixels.</para>
+        ///
+        /// <para>Nothing lives out here. Every creature is inside the patch, and stays there until
+        /// the simulation's own spatial model is spherical.</para>
+        /// </summary>
+        private void UpdatePlanetBackdrop()
+        {
+            if (!_sphericalArena)
+            {
+                if (_planetBackdrop != null) _planetBackdrop.SetActive(false);
+                return;
+            }
+
+            if (_planetBackdrop == null)
+            {
+                _planetBackdrop = new GameObject("Planet Backdrop");
+                _planetBackdrop.transform.position = ArenaProjection.Centre;
+
+                var surface = new GameObject("Planet Surface");
+                surface.transform.SetParent(_planetBackdrop.transform, false);
+                surface.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+                TerrainMeshBuilder.BuildPlanet(
+                    _world.Config.WorldSeed, _arenaPlates,
+                    out Vector3[] planetVertices, out Color[] planetColors, out int[] planetTriangles,
+                    ArenaProjection.PlanetRadius, ArenaTerrainSettings());
+                surface.AddComponent<MeshFilter>().sharedMesh =
+                    TerrainMeshBuilder.FlatShaded(planetVertices, planetColors, planetTriangles, "Planet Surface");
+
+                var ocean = new GameObject("Planet Ocean");
+                ocean.transform.SetParent(_planetBackdrop.transform, false);
+                ocean.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();
+                TerrainMeshBuilder.BuildOceanSphere(
+                    out Vector3[] oceanVertices, out int[] oceanTriangles, ArenaProjection.PlanetRadius);
+                ocean.AddComponent<MeshFilter>().sharedMesh =
+                    TerrainMeshBuilder.FlatShaded(oceanVertices, null, oceanTriangles, "Planet Ocean");
+            }
+
+            _planetBackdrop.SetActive(true);
+        }
+
+        /// <summary>
+        /// How far the camera may pull back. Curved, the arena is part of a 500-unit planet and the
+        /// whole point is being able to retreat far enough to see it; flat, the 50-unit ceiling is
+        /// right and a larger one only lets someone get lost.
+        /// </summary>
+        private void ApplyCameraRange()
+        {
+            var cameraController = Camera.main == null
+                ? null
+                : Camera.main.GetComponent<GroundPlaneCameraController>();
+            if (cameraController == null) return;
+
+            if (_sphericalArena)
+            {
+                cameraController.SetRange(ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 0.5f);
+                if (Camera.main != null) Camera.main.farClipPlane = ArenaProjection.PlanetRadius * 6f;
+            }
+            else
+            {
+                cameraController.ResetRange();
+                if (Camera.main != null) Camera.main.farClipPlane = 1000f;
+            }
         }
 
         private void EnsureArenaPlates()
@@ -1342,7 +1450,10 @@ namespace LifeSimulation.Presentation
                 Transform view = _resourceViews[index];
                 float fraction = resource.Capacity <= 0f ? 0f : resource.Amount / resource.Capacity;
                 float height = Mathf.Lerp(0.08f, 0.5f, fraction);
-                view.position = new Vector3(resource.Position.X, GroundHeightAt(resource.Position.X, resource.Position.Y) + height * 0.5f, resource.Position.Y);
+                view.position = ArenaProjection.ToWorld(
+                    resource.Position.X, resource.Position.Y,
+                    GroundHeightAt(resource.Position.X, resource.Position.Y) + (height * 0.5f));
+                view.rotation = ArenaProjection.Upright(resource.Position.X, resource.Position.Y);
                 view.localScale = new Vector3(2f, height, 2f);
                 Color baseColor = GetResourceColor(resource.Kind);
                 view.GetComponent<Renderer>().material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
@@ -1379,7 +1490,10 @@ namespace LifeSimulation.Presentation
 
                 var movement = _world.GetCreatureMovementAt(index);
                 CreatureAction action = _world.GetCreatureDecisionAt(index).Action;
-                view.position = new Vector3(movement.Position.X, GroundHeightAt(movement.Position.X, movement.Position.Y) + 0.55f, movement.Position.Y);
+                float groundHeight = GroundHeightAt(movement.Position.X, movement.Position.Y);
+                view.position = ArenaProjection.ToWorld(
+                    movement.Position.X, movement.Position.Y, groundHeight + 0.55f);
+                view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
                 view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale);

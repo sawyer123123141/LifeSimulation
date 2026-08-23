@@ -32,6 +32,32 @@ namespace LifeSimulation.Presentation
             ApplyTransform();
         }
 
+        /// <summary>
+        /// Widen the zoom ceiling without moving the camera.
+        ///
+        /// <para><see cref="Frame"/> also jumps the distance, which is right when a preview replaces
+        /// the scene and wrong when the arena curves onto its planet - there the view is continuous,
+        /// and the point is to be able to pull back to see the globe the ground is part of, not to be
+        /// teleported there.</para>
+        /// </summary>
+        public void SetRange(float maximumDistance, float panLimit)
+        {
+            _maximumDistance = Mathf.Max(DefaultMaximumDistance, maximumDistance);
+            _panLimit = Mathf.Max(DefaultPanLimit, panLimit);
+            _distance = Mathf.Min(_distance, _maximumDistance);
+        }
+
+        /// <summary>Return to the arena-sized zoom ceiling, keeping the current viewpoint.</summary>
+        public void ResetRange()
+        {
+            _maximumDistance = DefaultMaximumDistance;
+            _panLimit = DefaultPanLimit;
+            _distance = Mathf.Min(_distance, _maximumDistance);
+            _focus.x = Mathf.Clamp(_focus.x, -_panLimit, _panLimit);
+            _focus.z = Mathf.Clamp(_focus.z, -_panLimit, _panLimit);
+            ApplyTransform();
+        }
+
         /// <summary>Restore the arena-sized limits.</summary>
         public void ResetFrame()
         {
