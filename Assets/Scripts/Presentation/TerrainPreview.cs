@@ -65,6 +65,23 @@ namespace LifeSimulation.Presentation
         private readonly Mesh _mesh;
         private Texture2D _texture;
 
+        /// <summary>
+        /// The preview samples <b>its own</b> procedural field with elevation always enabled, rather
+        /// than the live world's.
+        ///
+        /// <para>It previously used <c>world.Environment</c>, which is wrong for a terrain viewer:
+        /// most scenarios run the flat legacy environment where moisture, fertility and temperature
+        /// are all 1 and elevation is 0. Every view then displaced by zero and shaded to the same
+        /// branch, so the wide patch and the island both rendered as an identical flat green plane
+        /// and the planet as a smooth ball. The generator was fine; nothing was asking it anything.</para>
+        ///
+        /// <para>This is a viewer for the terrain generator, so it should show the generator. When
+        /// the live scenario happens to use the same settings the two agree exactly, because both
+        /// are pure functions of the same seed.</para>
+        /// </summary>
+        private EnvironmentField _field;
+        private int _fieldSeed = int.MinValue;
+
         public TerrainPreview()
         {
             _root = new GameObject("Terrain Preview");
@@ -82,19 +99,24 @@ namespace LifeSimulation.Presentation
         /// <summary>Vertical exaggeration of the wide patch, shared with the arena ground for consistency.</summary>
         public float HeightScale { get; set; } = 14f;
 
+        private string LiveSuffix
+        {
+            get { return DiffersFromLiveWorld ? "  [generator preview, not this scenario]" : "  [matches this scenario]"; }
+        }
+
         /// <summary>What the preview is currently showing, for the on-screen readout.</summary>
         public string Describe()
         {
             switch (Current)
             {
                 case Mode.WidePatch:
-                    return $"wide patch, {WidePatchHalfWidth * 2f:0} units across (arena is 50)";
+                    return $"1/3 wide patch - {WidePatchHalfWidth * 2f:0} units of raw field{LiveSuffix}";
                 case Mode.Island:
-                    return "island - same field, shaped by a radial falloff";
+                    return $"2/3 island - the same field with a radial falloff{LiveSuffix}";
                 case Mode.Planet:
-                    return "whole planet - the VIEW is spherical, the simulation is still flat";
+                    return $"3/3 planet - the VIEW is spherical, the simulation is still flat{LiveSuffix}";
                 default:
-                    return "off";
+                    return "off (K to open the terrain viewer)";
             }
         }
 
@@ -114,6 +136,23 @@ namespace LifeSimulation.Presentation
                         return 0f;
                 }
             }
+        }
+
+        /// <summary>True when the live scenario does not itself use procedural fields with elevation,
+        /// so what is on screen is the generator rather than the world the creatures are living in.</summary>
+        public bool DiffersFromLiveWorld { get; private set; }
+
+        private EnvironmentField FieldFor(SimulationWorld world)
+        {
+            int seed = world.Config.WorldSeed;
+            if (_field == null || _fieldSeed != seed)
+            {
+                _field = EnvironmentField.CreateProcedural(seed, elevationEnabled: true);
+                _fieldSeed = seed;
+            }
+
+            DiffersFromLiveWorld = !(world.Config.ProceduralEnvironmentFieldsEnabled && world.Config.ElevationFieldEnabled);
+            return _field;
         }
 
         public Mode Advance(SimulationWorld world)
@@ -168,7 +207,7 @@ namespace LifeSimulation.Presentation
                 {
                     float u = column / (float)(side - 1);
                     float x = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, u);
-                    EnvironmentSample sample = world.Environment.Sample(new SimVector2(x, z));
+                    EnvironmentSample sample = FieldFor(world).Sample(new SimVector2(x, z));
                     int vertex = row * side + column;
                     float elevation = island ? sample.Elevation * IslandFalloff(x, z) : sample.Elevation;
                     float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * HeightScale;
@@ -191,6 +230,7 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private void BuildPlanet(SimulationWorld world)
         {
+            EnvironmentField field = FieldFor(world);
             int longitudeSteps = SphereLongitudeSteps;
             int latitudeSteps = SphereLatitudeSteps;
             var vertices = new Vector3[(longitudeSteps + 1) * (latitudeSteps + 1)];
@@ -206,7 +246,7 @@ namespace LifeSimulation.Presentation
                     float u = longitudeIndex / (float)longitudeSteps;
                     double longitude = (u - 0.5d) * 2d * Math.PI;
 
-                    EnvironmentSample sample = SampleAtLatLon(world, latitude, longitude);
+                    EnvironmentSample sample = SampleAtLatLon(field, latitude, longitude);
                     float relief = 1f + (Mathf.Max(0f, sample.Elevation - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
                     float radius = PlanetDrawRadius * relief;
 
@@ -246,12 +286,12 @@ namespace LifeSimulation.Presentation
         /// Convert a latitude/longitude back into the arena coordinates the field samples in. The
         /// field treats the arena as a small equatorial window, so this is its inverse.
         /// </summary>
-        private static EnvironmentSample SampleAtLatLon(SimulationWorld world, double latitude, double longitude)
+        private static EnvironmentSample SampleAtLatLon(EnvironmentField field, double latitude, double longitude)
         {
             var position = new SimVector2(
                 (float)(longitude * EnvironmentField.SphereRadius),
                 (float)(latitude * EnvironmentField.SphereRadius));
-            return world.Environment.Sample(position);
+            return field.Sample(position);
         }
 
         private Texture2D BuildPatchTexture(SimulationWorld world, bool island)
@@ -263,7 +303,7 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     float worldX = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, (x + 0.5f) / TextureWidth);
-                    EnvironmentSample sample = world.Environment.Sample(new SimVector2(worldX, worldZ));
+                    EnvironmentSample sample = FieldFor(world).Sample(new SimVector2(worldX, worldZ));
                     pixels[(y * TextureWidth) + x] = Shade(sample, island ? IslandFalloff(worldX, worldZ) : 1f);
                 }
             }
@@ -273,6 +313,7 @@ namespace LifeSimulation.Presentation
 
         private Texture2D BuildPlanetTexture(SimulationWorld world)
         {
+            EnvironmentField field = FieldFor(world);
             var pixels = new Color[TextureWidth * TextureHeight];
             for (int y = 0; y < TextureHeight; y++)
             {
@@ -280,7 +321,7 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     double longitude = (((x + 0.5d) / TextureWidth) - 0.5d) * 2d * Math.PI;
-                    pixels[(y * TextureWidth) + x] = Shade(SampleAtLatLon(world, latitude, longitude), 1f);
+                    pixels[(y * TextureWidth) + x] = Shade(SampleAtLatLon(field, latitude, longitude), 1f);
                 }
             }
 
