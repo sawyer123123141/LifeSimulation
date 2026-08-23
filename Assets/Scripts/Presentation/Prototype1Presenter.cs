@@ -368,10 +368,35 @@ namespace LifeSimulation.Presentation
             _temperatureHeatmap.filterMode = FilterMode.Bilinear;
             _temperaturePixels = new Color[HeatmapResolution * HeatmapResolution];
 
+            // Ambient light. Without it the only illumination is the directional light below, so any
+            // surface angled away from it renders black - which on terrain means steep slopes turn
+            // into hard dark bands that read as blocky cutoffs in the geometry. They are not: an
+            // unlit render of the same mesh shows a continuous surface with no banding at all.
+            //
+            // Setting these is not sufficient on its own; the ambient probe is baked from them and
+            // has to be regenerated, or shaders keep sampling the previous black probe.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.45f, 0.52f, 0.62f);
+            RenderSettings.ambientEquatorColor = new Color(0.36f, 0.40f, 0.44f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.22f, 0.20f);
+            RenderSettings.ambientIntensity = 1f;
+            DynamicGI.UpdateEnvironment();
+
             var directionalLight = new GameObject("Sun").AddComponent<Light>();
             directionalLight.type = LightType.Directional;
             directionalLight.intensity = 1.25f;
             directionalLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            // Fill light. With one light, every surface facing away from it renders black, which on
+            // terrain turns steep slopes into hard dark bands that read as blocky cutoffs in the
+            // geometry - they are not, as an unlit render of the same mesh shows a continuous
+            // surface. Ambient settings alone did not reach the shader, so this guarantees it.
+            var fillLight = new GameObject("Fill Light").AddComponent<Light>();
+            fillLight.type = LightType.Directional;
+            fillLight.intensity = 0.55f;
+            fillLight.color = new Color(0.72f, 0.80f, 0.92f);
+            fillLight.shadows = LightShadows.None;
+            fillLight.transform.rotation = Quaternion.Euler(28f, 160f, 0f);
 
             var cameraObject = new GameObject("Simulation Camera");
             _simulationCamera = cameraObject.AddComponent<Camera>();

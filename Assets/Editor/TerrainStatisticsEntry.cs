@@ -205,6 +205,16 @@ namespace LifeSimulation.EditorTools
                 if (value >= 0.999d) temperatureHigh++;
             }
 
+            int elevationHigh = 0, elevationLow = 0;
+            foreach (double value in elevations)
+            {
+                if (value >= 0.999d) elevationHigh++;
+                if (value <= 0.001d) elevationLow++;
+            }
+
+            report.AppendLine();
+            report.AppendLine($"elevation    at 0 {elevationLow / (double)total:0.0000}   at 1 {elevationHigh / (double)total:0.0000}   <- clamped plateaus with cliff edges");
+
             report.AppendLine();
             report.AppendLine("SATURATION (clamped to 0 or 1 - flat regions with hard edges)");
             report.AppendLine($"moisture     at 0 {moistureLow / (double)total:0.0000}   at 1 {moistureHigh / (double)total:0.0000}");

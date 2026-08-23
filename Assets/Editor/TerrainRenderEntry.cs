@@ -47,11 +47,12 @@ namespace LifeSimulation.EditorTools
             string directory, string name, PlateStructure plates,
             double centreLatitude, double centreLongitude, float halfWidth)
         {
-            const int side = 161;
+            const int side = 321;
             double angularWidth = 2d * halfWidth / 500d;
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor((int)(side * (2d * Mathf.PI) / angularWidth));
-            float heightScale = halfWidth * 2f * 0.075f;
+            float heightScale = halfWidth * 2f * 0.16f;
 
+            float cell = halfWidth * 2f / (side - 1);
             var vertices = new Vector3[side * side];
             var colors = new Color[side * side];
             for (int row = 0; row < side; row++)
@@ -60,12 +61,36 @@ namespace LifeSimulation.EditorTools
                 for (int column = 0; column < side; column++)
                 {
                     float x = Mathf.Lerp(-halfWidth, halfWidth, column / (float)(side - 1));
+                    // Jitter the sample position sideways. A perfectly regular grid gives every
+                    // triangle the same shape and orientation, so flat shading turns a steep slope
+                    // into repeating corduroy stripes rather than facets. Offsetting each vertex
+                    // within its own cell breaks that regularity without moving the field: the
+                    // terrain is unchanged, only where it is sampled.
+                    float jx = (Hash01(column, row, 17) - 0.5f) * cell * 0.28f;
+                    float jz = (Hash01(column, row, 31) - 0.5f) * cell * 0.28f;
+                    x += jx;
+                    z += jz;
                     PlanetSample sample = PlanetTerrain.SampleAtLatLon(
                         Seed, plates,
                         centreLatitude + (z / 500d), centreLongitude + (x / 500d), maximumFrequency);
 
                     int vertex = (row * side) + column;
-                    float height = Mathf.Max(0f, sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel) * heightScale;
+                    // Signed, not clamped. Clamping the sea floor to zero put a vertical cliff at
+                    // every waterline - land dropped straight to a flat plane, and the shoreline
+                    // stair-stepped because adjacent vertices jumped from land height to exactly 0.
+                    // Letting the sea bed go below zero makes the coast a continuous slope, which is
+                    // what a beach is. Depth is compressed relative to height so the ocean reads as
+                    // shallow shelf rather than a pit.
+                    // Taper the outer border below sea level. The heightfield simply stops at the
+                    // patch boundary, so land standing 20 units up ended in an open cut face with
+                    // nothing closing it to the water - which renders as a striped vertical wall and
+                    // is a mesh-boundary artefact, not terrain. Ending the patch in water removes it
+                    // without touching the field inside.
+                    float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) / halfWidth;
+                    float taper = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.86f, 1f, edge));
+
+                    float signed = ((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel) * taper) - ((1f - taper) * 0.15f);
+                    float height = signed >= 0f ? signed * heightScale : signed * heightScale * 0.35f;
                     vertices[vertex] = new Vector3(x, height, z);
                     colors[vertex] = PlanetBiome.Shade(sample);
                 }
@@ -79,16 +104,32 @@ namespace LifeSimulation.EditorTools
                 {
                     int bottomLeft = (row * side) + column;
                     int topLeft = bottomLeft + side;
-                    triangles[triangle++] = bottomLeft;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = topLeft + 1;
+                    // Alternate the diagonal per cell. With one fixed diagonal every quad splits the
+                    // same way, which is the other half of the corduroy.
+                    bool flip = ((row + column) & 1) == 0;
+                    if (flip)
+                    {
+                        triangles[triangle++] = bottomLeft;
+                        triangles[triangle++] = topLeft;
+                        triangles[triangle++] = bottomLeft + 1;
+                        triangles[triangle++] = bottomLeft + 1;
+                        triangles[triangle++] = topLeft;
+                        triangles[triangle++] = topLeft + 1;
+                    }
+                    else
+                    {
+                        triangles[triangle++] = bottomLeft;
+                        triangles[triangle++] = topLeft;
+                        triangles[triangle++] = topLeft + 1;
+                        triangles[triangle++] = bottomLeft;
+                        triangles[triangle++] = topLeft + 1;
+                        triangles[triangle++] = bottomLeft + 1;
+                    }
+
                 }
             }
 
-            Capture(directory, name, BuildFlatShaded(vertices, colors, triangles), halfWidth);
+            Capture(directory, name, BuildFlatShaded(vertices, colors, triangles), halfWidth, halfWidth);
         }
 
         private static void RenderPlanet(string directory, string name, PlateStructure plates)
@@ -108,7 +149,7 @@ namespace LifeSimulation.EditorTools
                 colors[index] = PlanetBiome.Shade(sample);
             }
 
-            Capture(directory, name, BuildFlatShaded(vertices, colors, indices), 78f);
+            Capture(directory, name, BuildFlatShaded(vertices, colors, indices), 78f, 0f);
         }
 
         /// <summary>Unshared vertices per triangle: one normal per face, colour still per corner.</summary>
@@ -133,21 +174,92 @@ namespace LifeSimulation.EditorTools
             return mesh;
         }
 
-        private static void Capture(string directory, string name, Mesh mesh, float framingRadius)
+
+        /// <summary>Deterministic 0..1 from a grid cell, for position jitter.</summary>
+        private static float Hash01(int x, int y, int salt)
+        {
+            unchecked
+            {
+                int h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791);
+                h = (h ^ (h >> 13)) * 1274126177;
+                return ((h ^ (h >> 16)) & 0xFFFFFF) / (float)0xFFFFFF;
+            }
+        }
+
+        private static void Capture(string directory, string name, Mesh mesh, float framingRadius, float waterHalfWidth)
         {
             var root = new GameObject("Capture");
             var filter = root.AddComponent<MeshFilter>();
             var renderer = root.AddComponent<MeshRenderer>();
             filter.sharedMesh = mesh;
 
-            Shader shader = Shader.Find("LifeSimulation/VertexColorLit") ?? Shader.Find("Standard");
-            renderer.sharedMaterial = new Material(shader);
+            // Diagnostic switch. Unlit removes lighting entirely: if a dark band survives that, it is
+            // geometry - a hole or a fold - and not a shading artefact. Guessing between the two cost
+            // several rounds.
+            bool unlit = System.Environment.GetCommandLineArgs().Length > 0
+                && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-terrainUnlit") >= 0;
+            Shader shader = unlit
+                ? Shader.Find("Unlit/Color")
+                : Shader.Find("LifeSimulation/VertexColorLit") ?? Shader.Find("Standard");
+            var material = new Material(shader);
+            if (unlit) material.color = new Color(0.6f, 0.75f, 0.55f);
+            renderer.sharedMaterial = material;
+
+            GameObject water = null;
+            if (waterHalfWidth > 0f)
+            {
+                water = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                water.transform.localScale = new Vector3(waterHalfWidth / 5f, 1f, waterHalfWidth / 5f);
+
+                // Slightly below the waterline. At exactly y=0 the water plane is coplanar with the
+                // terrain wherever the terrain crosses sea level - the entire shoreline - and the two
+                // surfaces z-fight, which renders as a striped comb following the coast contour.
+                water.transform.position = new Vector3(0f, -0.35f, 0f);
+                var waterMaterial = new Material(Shader.Find("Standard"));
+                waterMaterial.color = new Color(0.176f, 0.404f, 0.588f);
+                water.GetComponent<Renderer>().sharedMaterial = waterMaterial;
+            }
+
+            // Ambient light. A batchmode scene has no lighting setup, so ambient is zero and any face
+            // angled away from the single directional light renders pure black. On a steep slope,
+            // alternating facets face toward and away from the sun, which produced alternating black
+            // stripes that looked exactly like a terrain defect - and survived four separate attempts
+            // to fix the field, because the field was never the cause. The runtime view has ambient;
+            // the capture must too, or it is not showing what the player sees.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.45f, 0.52f, 0.62f);
+            RenderSettings.ambientEquatorColor = new Color(0.36f, 0.40f, 0.44f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.22f, 0.20f);
+            RenderSettings.ambientIntensity = 1f;
+
+            // Setting RenderSettings is not enough: the ambient probe is baked from them and must be
+            // regenerated, or shaders keep sampling the old (black) probe. Without this the ambient
+            // colours above are ignored entirely, which is why they appeared to change nothing.
+            DynamicGI.UpdateEnvironment();
 
             var lightObject = new GameObject("Sun");
             var light = lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
             light.intensity = 1.3f;
+
+            // Self-shadowing test. Hard-edged black bands on a steep slope are textbook shadow acne:
+            // a surface shadowing itself because the depth bias is too small for the mesh scale.
+            light.shadows = LightShadows.None;
             lightObject.transform.rotation = Quaternion.Euler(45f, -35f, 0f);
+
+
+            // Fill light from the opposite side. Ambient alone did not reach the shader in batchmode -
+            // setting RenderSettings and regenerating the probe both changed nothing - so faces
+            // pointing away from the key light received no illumination at all and rendered as hard
+            // black bands. A second dim light guarantees every face gets something, which is what
+            // ambient was supposed to do and is robust to however the probe is plumbed.
+            var fillObject = new GameObject("Fill");
+            var fill = fillObject.AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.intensity = 0.55f;
+            fill.color = new Color(0.72f, 0.80f, 0.92f);
+            fill.shadows = LightShadows.None;
+            fillObject.transform.rotation = Quaternion.Euler(28f, 160f, 0f);
 
             var cameraObject = new GameObject("Capture Camera");
             var camera = cameraObject.AddComponent<Camera>();
@@ -182,6 +294,8 @@ namespace LifeSimulation.EditorTools
             Object.DestroyImmediate(root);
             Object.DestroyImmediate(lightObject);
             Object.DestroyImmediate(cameraObject);
+            Object.DestroyImmediate(fillObject);
+            if (water != null) Object.DestroyImmediate(water);
         }
     }
 }

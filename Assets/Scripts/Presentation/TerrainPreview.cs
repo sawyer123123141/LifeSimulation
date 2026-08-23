@@ -154,7 +154,7 @@ namespace LifeSimulation.Presentation
         /// spans. A truthful ratio reads as a plain, so terrain is exaggerated here as it is in every
         /// game that draws it.</para>
         /// </summary>
-        private const float PatchReliefFraction = 0.075f;
+        private const float PatchReliefFraction = 0.16f;
 
         /// <summary>
         /// Patch relief, still scaled by the arena tuning so <c>[</c> and <c>]</c> keep working -
@@ -290,7 +290,11 @@ namespace LifeSimulation.Presentation
                     PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
                     float elevation = sample.Elevation;
-                    float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * PatchHeightScale;
+                    // Signed rather than clamped: clamping the sea floor to zero puts a vertical
+                    // cliff at every waterline and stair-steps the shoreline. Depth is compressed so
+                    // the sea reads as shelf rather than pit.
+                    float signed = (elevation - SeaLevel) / (1f - SeaLevel);
+                    float height = signed >= 0f ? signed * PatchHeightScale : signed * PatchHeightScale * 0.35f;
                     vertices[vertex] = new Vector3(x, height, z);
                     colors[vertex] = PlanetBiome.Shade(sample);
                 }
