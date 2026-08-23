@@ -79,7 +79,6 @@ namespace LifeSimulation.Presentation
         /// the live scenario happens to use the same settings the two agree exactly, because both
         /// are pure functions of the same seed.</para>
         /// </summary>
-        private EnvironmentField _field;
         private int _fieldSeed = int.MinValue;
 
         // Sampling is the expensive half - EnvironmentField.Sample runs several multi-octave
@@ -156,19 +155,14 @@ namespace LifeSimulation.Presentation
         /// edge by design - correct for a 50-unit world, and wrong for any view past it.
         /// See <see cref="EnvironmentField.CreatePlanetScaleClimate"/>.
         /// </summary>
-        private EnvironmentField FieldFor(SimulationWorld world)
+        private void FieldFor(SimulationWorld world)
         {
             int seed = world.Config.WorldSeed;
-            if (_field == null || _fieldSeed != seed)
-            {
-                _field = EnvironmentField.CreatePlanetScaleClimate(seed);
-                _fieldSeed = seed;
-                _planetElevation = null;
-                _texturedMode = Mode.Off;
-            }
+            if (_fieldSeed == seed) return;
 
-            DiffersFromLiveWorld = !(world.Config.ProceduralEnvironmentFieldsEnabled && world.Config.ElevationFieldEnabled);
-            return _field;
+            _fieldSeed = seed;
+            _planetElevation = null;
+            _texturedMode = Mode.Off;
         }
 
         public Mode Advance(SimulationWorld world)
@@ -223,7 +217,7 @@ namespace LifeSimulation.Presentation
                 {
                     float u = column / (float)(side - 1);
                     float x = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, u);
-                    EnvironmentSample sample = FieldFor(world).Sample(new SimVector2(x, z));
+                    PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
                     float elevation = island ? sample.Elevation * IslandFalloff(x, z) : sample.Elevation;
                     float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * HeightScale;
@@ -246,8 +240,8 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private void BuildPlanet(SimulationWorld world)
         {
-            EnvironmentField field = FieldFor(world);
-            EnsurePlanetElevation(field);
+            FieldFor(world);
+            EnsurePlanetElevation();
             int longitudeSteps = SphereLongitudeSteps;
             int latitudeSteps = SphereLatitudeSteps;
             var vertices = new Vector3[(longitudeSteps + 1) * (latitudeSteps + 1)];
@@ -263,7 +257,7 @@ namespace LifeSimulation.Presentation
                     float u = longitudeIndex / (float)longitudeSteps;
                     double longitude = (u - 0.5d) * 2d * Math.PI;
 
-                    EnvironmentSample sample = SampleAtLatLon(field, latitude, longitude);
+                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PlanetMaximumFrequency);
                     float relief = 1f + (Mathf.Max(0f, PlanetElevation(latitudeIndex, longitudeIndex, sample.Elevation) - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
                     float radius = PlanetDrawRadius * relief;
 
@@ -308,7 +302,7 @@ namespace LifeSimulation.Presentation
         /// field treats the arena as a small equatorial window, so this is its inverse.
         /// </summary>
         /// <summary>Sample elevation once per sphere vertex; only redone when the seed changes.</summary>
-        private void EnsurePlanetElevation(EnvironmentField field)
+        private void EnsurePlanetElevation()
         {
             int width = SphereLongitudeSteps + 1;
             int height = SphereLatitudeSteps + 1;
@@ -323,7 +317,7 @@ namespace LifeSimulation.Presentation
                 {
                     double longitude = ((longitudeIndex / (double)SphereLongitudeSteps) - 0.5d) * 2d * Math.PI;
                     _planetElevation[(latitudeIndex * width) + longitudeIndex] =
-                        SampleAtLatLon(field, latitude, longitude).Elevation;
+                        PlanetTerrain.SampleAtLatLon(_fieldSeed, latitude, longitude, PlanetMaximumFrequency).Elevation;
                 }
             }
         }
@@ -391,7 +385,7 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     float worldX = Mathf.Lerp(-WidePatchHalfWidth, WidePatchHalfWidth, (x + 0.5f) / TextureWidth);
-                    EnvironmentSample sample = FieldFor(world).Sample(new SimVector2(worldX, worldZ));
+                    PlanetSample sample = SamplePatch(world, worldX, worldZ);
                     pixels[(y * TextureWidth) + x] = Shade(sample, island ? IslandFalloff(worldX, worldZ) : 1f);
                 }
             }
@@ -401,7 +395,7 @@ namespace LifeSimulation.Presentation
 
         private Texture2D BuildPlanetTexture(SimulationWorld world)
         {
-            EnvironmentField field = FieldFor(world);
+            FieldFor(world);
             var pixels = new Color[TextureWidth * TextureHeight];
             for (int y = 0; y < TextureHeight; y++)
             {
@@ -409,22 +403,53 @@ namespace LifeSimulation.Presentation
                 for (int x = 0; x < TextureWidth; x++)
                 {
                     double longitude = (((x + 0.5d) / TextureWidth) - 0.5d) * 2d * Math.PI;
-                    pixels[(y * TextureWidth) + x] = Shade(SampleAtLatLon(field, latitude, longitude), 1f);
+                    pixels[(y * TextureWidth) + x] = Shade(PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PlanetMaximumFrequency), 1f);
                 }
             }
 
             return MakeTexture(pixels);
         }
 
-        /// <summary>Sea level as a fraction of the elevation range, matching the arena overlay.</summary>
-        private const float SeaLevel = 0.38f;
+        /// <summary>Sea level as a fraction of the elevation range.</summary>
+        private const float SeaLevel = PlanetTerrain.SeaLevel;
+
+        /// <summary>
+        /// Highest feature density each view can draw without aliasing.
+        ///
+        /// <para>The globe is the tight one: 192 columns around a full turn resolves frequencies up
+        /// to 192 / 4pi, about 15. The previous version sampled a five-octave field whose finest band
+        /// carried roughly 4,000 features around the equator - twenty times past what the mesh could
+        /// represent - which is why it rendered as static rather than as terrain.</para>
+        ///
+        /// <para>The patch covers 0.8 radians with 161 samples, so it resolves far more, which is why
+        /// the flat views legitimately show detail the globe cannot.</para>
+        /// </summary>
+        private static readonly double PlanetMaximumFrequency = PlanetTerrain.MaximumFrequencyFor(SphereLongitudeSteps);
+
+        private static readonly double PatchMaximumFrequency =
+            PlanetTerrain.MaximumFrequencyFor((int)(PatchResolution * (2d * Math.PI) / PatchAngularWidth));
+
+        /// <summary>Angular width of the wide patch on the unit sphere, in radians.</summary>
+        private const double PatchAngularWidth = 2d * WidePatchHalfWidth / EnvironmentField.SphereRadius;
+
+        /// <summary>
+        /// Sample the patch by treating it as a window on the sphere, which is exactly how the
+        /// simulation's own field maps arena positions - so the patch and the globe show the same
+        /// world at different zooms rather than two unrelated noise fields.
+        /// </summary>
+        private static PlanetSample SamplePatch(SimulationWorld world, float x, float z)
+        {
+            double longitude = x / EnvironmentField.SphereRadius;
+            double latitude = z / EnvironmentField.SphereRadius;
+            return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, latitude, longitude, PatchMaximumFrequency);
+        }
 
         /// <summary>
         /// Colour that combines all four fields, so the preview answers "do these read as a world?"
         /// rather than "what does one channel look like?". Water first, then cold ground, then the
         /// moisture/fertility classification that decides the rest.
         /// </summary>
-        private static Color Shade(EnvironmentSample sample, float elevationScale)
+        private static Color Shade(PlanetSample sample, float elevationScale)
         {
             float elevation = sample.Elevation * elevationScale;
 
@@ -443,8 +468,8 @@ namespace LifeSimulation.Presentation
             if (sample.Temperature < 0.24f) return Color.Lerp(new Color(0.86f, 0.90f, 0.93f), Color.white, land);
             if (sample.Temperature < 0.40f) return Color.Lerp(new Color(0.498f, 0.584f, 0.659f), new Color(0.62f, 0.66f, 0.68f), land);
             if (sample.Moisture < 0.34f) return Color.Lerp(new Color(0.878f, 0.769f, 0.478f), new Color(0.706f, 0.588f, 0.376f), land);
-            if (sample.Moisture > 0.74f && sample.Fertility < 0.48f) return new Color(0.259f, 0.435f, 0.388f);
-            if (sample.Fertility > 0.58f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
+            if (sample.Moisture > 0.72f && land < 0.14f) return new Color(0.259f, 0.435f, 0.388f);
+            if (sample.Moisture > 0.46f) return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
             return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
         }
 
