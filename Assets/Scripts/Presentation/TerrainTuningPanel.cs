@@ -29,6 +29,12 @@ namespace LifeSimulation.Presentation
         private Vector2 _scroll;
         private int _tab;
 
+        /// <summary>
+        /// Style for the line under each slider. Built on first draw rather than in a field, because
+        /// <c>GUI.skin</c> only exists inside OnGUI.
+        /// </summary>
+        private GUIStyle _hint;
+
         public bool Visible { get; private set; }
 
         public void Toggle()
@@ -45,6 +51,20 @@ namespace LifeSimulation.Presentation
             if (!Visible) return;
 
             TerrainSettings settings = PlanetTerrain.Active;
+            if (_hint == null)
+            {
+                // Every control says what it does in a few words. A slider labelled only
+                // "Continentality" is a control nobody touches, and the whole point of the panel is
+                // that these are judged by eye rather than derived.
+                _hint = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 10,
+                    wordWrap = true,
+                    padding = new RectOffset(2, 2, 0, 4),
+                };
+                _hint.normal.textColor = new Color(0.72f, 0.75f, 0.78f);
+            }
+
             float height = Mathf.Min(Screen.height - 24f, 640f);
             var area = new Rect(Screen.width - Width - 12f, 12f, Width, height);
 
@@ -58,56 +78,108 @@ namespace LifeSimulation.Presentation
             switch (_tab)
             {
                 case 0:
-                    GUILayout.Label("Amplitudes are elevation units; 1.0 is about 30 m.");
-                    changed |= Slider("Local relief", ref settings.LocalAmplitude, 0d, 0.12d, settings.LocalFrequency);
-                    changed |= Slider("Micro relief", ref settings.MicroAmplitude, 0d, 0.05d, settings.MicroFrequency);
-                    changed |= Slider("Fine detail", ref settings.DetailAmplitude, 0d, 0.30d, settings.DetailFrequency);
-                    changed |= Slider("Rolling ground", ref settings.RollingAmplitude, 0d, 0.60d, settings.HillFrequency);
-                    changed |= Slider("Mountain ranges", ref settings.RangeAmplitude, 0d, 1.00d, settings.MountainFrequency);
+                    GUILayout.Label("How tall each layer of relief is. 1.0 is about 30 m.", _hint);
+                    changed |= Slider(
+                        "Local relief", ref settings.LocalAmplitude, 0d, 0.12d, settings.LocalFrequency,
+                        "Undulations you walk over. The band that made the close view bumpy.");
+                    changed |= Slider(
+                        "Micro relief", ref settings.MicroAmplitude, 0d, 0.05d, settings.MicroFrequency,
+                        "Ankle-scale texture. Only exists in the close view and the arena.");
+                    changed |= Slider(
+                        "Fine detail", ref settings.DetailAmplitude, 0d, 0.30d, settings.DetailFrequency,
+                        "Roughness across a whole hillside.");
+                    changed |= Slider(
+                        "Rolling ground", ref settings.RollingAmplitude, 0d, 0.60d, settings.HillFrequency,
+                        "Broad hills over all land, so interiors are not plateaus.");
+                    changed |= Slider(
+                        "Mountain ranges", ref settings.RangeAmplitude, 0d, 1.00d, settings.MountainFrequency,
+                        "Peaks along plate margins. Zero gives a world with no mountains.");
                     GUILayout.Space(6f);
-                    GUILayout.Label("Ceiling on any band, in elevation per radian. A band above it");
-                    GUILayout.Label("is clipped to it, so two clipped bands sum to a staircase.");
-                    changed |= Slider("Maximum slope", ref settings.MaximumSlope, 0.5d, 20d, 0d);
+                    changed |= Slider(
+                        "Maximum slope", ref settings.MaximumSlope, 0.5d, 20d, 0d,
+                        "Steepest ground the mesh can draw. A ceiling, not a target: a band above it "
+                        + "is clipped to it, and two clipped bands sum to a staircase.");
                     break;
 
                 case 1:
-                    GUILayout.Label("Frequency is cycles per radian; a radian is 500 m.");
-                    changed |= Slider("Local", ref settings.LocalFrequency, 10d, 200d, 0d, showWavelength: true);
-                    changed |= Slider("Micro", ref settings.MicroFrequency, 40d, 400d, 0d, showWavelength: true);
-                    changed |= Slider("Detail", ref settings.DetailFrequency, 2d, 40d, 0d, showWavelength: true);
-                    changed |= Slider("Hills", ref settings.HillFrequency, 1d, 20d, 0d, showWavelength: true);
-                    changed |= Slider("Mountains", ref settings.MountainFrequency, 1d, 12d, 0d, showWavelength: true);
-                    changed |= Slider("Continents", ref settings.ContinentFrequency, 0.4d, 4d, 0d, showWavelength: true);
+                    GUILayout.Label("How wide each layer's features are. The metres are the size.", _hint);
+                    changed |= Slider(
+                        "Local", ref settings.LocalFrequency, 10d, 200d, 0d,
+                        "Width of an undulation.", showWavelength: true);
+                    changed |= Slider(
+                        "Micro", ref settings.MicroFrequency, 40d, 400d, 0d,
+                        "Width of a ground bump. Past what a view can draw, it vanishes.",
+                        showWavelength: true);
+                    changed |= Slider(
+                        "Detail", ref settings.DetailFrequency, 2d, 40d, 0d,
+                        "Width of surface roughness.", showWavelength: true);
+                    changed |= Slider(
+                        "Hills", ref settings.HillFrequency, 1d, 20d, 0d,
+                        "Distance from one hilltop to the next.", showWavelength: true);
+                    changed |= Slider(
+                        "Mountains", ref settings.MountainFrequency, 1d, 12d, 0d,
+                        "Spacing of peaks within a range.", showWavelength: true);
+                    changed |= Slider(
+                        "Continents", ref settings.ContinentFrequency, 0.4d, 4d, 0d,
+                        "Size of a landmass. Low means few, large continents.", showWavelength: true);
                     GUILayout.Space(6f);
-                    changed |= Slider("Octave step", ref settings.Lacunarity, 1.5d, 3d, 0d);
-                    changed |= Slider("Octave falloff", ref settings.Gain, 0.2d, 0.8d, 0d);
+                    changed |= Slider(
+                        "Octave step", ref settings.Lacunarity, 1.5d, 3d, 0d,
+                        "How much finer each added layer of noise is.");
+                    changed |= Slider(
+                        "Octave falloff", ref settings.Gain, 0.2d, 0.8d, 0d,
+                        "How much fainter each added layer is. High is rougher ground.");
                     break;
 
                 case 2:
-                    GUILayout.Label("Temperature and moisture, which decide the biome.");
-                    changed |= Slider("Latitude weight", ref settings.TemperatureLatitudeWeight, 0d, 1d, 0d);
-                    changed |= Slider("Altitude cooling", ref settings.AltitudeCooling, 0d, 1d, 0d);
-                    GUILayout.Label("Raise cooling for more snow on peaks; lower it for less ice.");
+                    GUILayout.Label("Temperature and moisture together pick the biome colour.", _hint);
+                    changed |= Slider(
+                        "Latitude weight", ref settings.TemperatureLatitudeWeight, 0d, 1d, 0d,
+                        "How much latitude sets temperature. Low scatters climate at random.");
+                    changed |= Slider(
+                        "Altitude cooling", ref settings.AltitudeCooling, 0d, 1d, 0d,
+                        "How cold high ground gets. This is the ice control.");
                     GUILayout.Space(6f);
-                    changed |= Slider("Moisture contrast", ref settings.MoistureContrast, 1d, 4d, 0d);
-                    changed |= Slider("Inland drying", ref settings.Continentality, 0d, 1.5d, 0d);
-                    GUILayout.Label("Inland drying is what puts deserts inland rather than scattered.");
-                    changed |= Slider("Moisture scale", ref settings.MoistureFrequency, 0.5d, 6d, 0d, showWavelength: true);
-                    changed |= Slider("Climate noise", ref settings.ClimateNoiseFrequency, 0.5d, 8d, 0d, showWavelength: true);
-                    changed |= Slider("Edge jitter", ref settings.JitterFrequency, 4d, 40d, 0d, showWavelength: true);
+                    changed |= Slider(
+                        "Moisture contrast", ref settings.MoistureContrast, 1d, 4d, 0d,
+                        "Spread between wettest and driest. Low means no deserts at all.");
+                    changed |= Slider(
+                        "Inland drying", ref settings.Continentality, 0d, 1.5d, 0d,
+                        "How dry interiors get. This is what puts deserts inland.");
+                    changed |= Slider(
+                        "Moisture scale", ref settings.MoistureFrequency, 0.5d, 6d, 0d,
+                        "Size of a wet or dry region.", showWavelength: true);
+                    changed |= Slider(
+                        "Climate noise", ref settings.ClimateNoiseFrequency, 0.5d, 8d, 0d,
+                        "Size of warm and cool patches away from latitude.", showWavelength: true);
+                    changed |= Slider(
+                        "Edge jitter", ref settings.JitterFrequency, 4d, 40d, 0d,
+                        "Raggedness of biome borders, so they look grown not drawn.",
+                        showWavelength: true);
                     break;
 
                 default:
-                    GUILayout.Label("Structure comes from plates, not from noise, so these are the");
-                    GUILayout.Label("controls that decide where continents are at all.");
+                    GUILayout.Label(
+                        "Land comes from tectonic plates, not from noise. These decide where "
+                        + "continents are at all, so they change the world rather than tune it.", _hint);
                     int plateCount = settings.PlateCount;
-                    changed |= IntSlider("Plate count", ref plateCount, 4, 60);
+                    changed |= IntSlider(
+                        "Plate count", ref plateCount, 4, 60,
+                        "Fewer plates means larger continents and longer mountain ranges.");
                     settings.PlateCount = plateCount;
-                    changed |= Slider("Continental share", ref settings.ContinentalFraction, 0.05d, 0.9d, 0d);
+                    changed |= Slider(
+                        "Continental share", ref settings.ContinentalFraction, 0.05d, 0.9d, 0d,
+                        "How many plates carry land. The main control on how much ocean there is.");
                     GUILayout.Space(6f);
-                    changed |= Slider("Coast roughness", ref settings.ShelfNoiseStrength, 0d, 1d, 0d);
-                    changed |= Slider("Coast wander", ref settings.WarpStrength, 0d, 1d, 0d);
-                    changed |= Slider("Wander scale", ref settings.WarpFrequency, 0.5d, 8d, 0d, showWavelength: true);
+                    changed |= Slider(
+                        "Coast roughness", ref settings.ShelfNoiseStrength, 0d, 1d, 0d,
+                        "Bays and headlands. Zero gives a smooth, artificial shoreline.");
+                    changed |= Slider(
+                        "Coast wander", ref settings.WarpStrength, 0d, 1d, 0d,
+                        "How far a coast strays from the straight plate edge underneath it.");
+                    changed |= Slider(
+                        "Wander scale", ref settings.WarpFrequency, 0.5d, 8d, 0d,
+                        "Length of one meander in that wander.", showWavelength: true);
                     break;
             }
 
@@ -133,9 +205,9 @@ namespace LifeSimulation.Presentation
         /// One labelled slider. Returns true only when the value actually moved, so a caller can
         /// rebuild meshes on change rather than every frame the panel is open.
         /// </summary>
-        private static bool Slider(
+        private bool Slider(
             string label, ref double value, double minimum, double maximum,
-            double frequencyForMetres, bool showWavelength = false)
+            double frequencyForMetres, string description = null, bool showWavelength = false)
         {
             string suffix = string.Empty;
             if (showWavelength)
@@ -151,6 +223,7 @@ namespace LifeSimulation.Presentation
 
             GUILayout.Label($"{label}  {value:0.000}{suffix}");
             var slider = (double)GUILayout.HorizontalSlider((float)value, (float)minimum, (float)maximum);
+            if (!string.IsNullOrEmpty(description)) GUILayout.Label(description, _hint);
             GUILayout.Space(4f);
 
             // The slider is fed a float, so an untouched control returns the double rounded through
@@ -162,10 +235,12 @@ namespace LifeSimulation.Presentation
             return true;
         }
 
-        private static bool IntSlider(string label, ref int value, int minimum, int maximum)
+        private bool IntSlider(string label, ref int value, int minimum, int maximum, string description = null)
         {
             GUILayout.Label($"{label}  {value}");
             int slider = Mathf.RoundToInt(GUILayout.HorizontalSlider(value, minimum, maximum));
+            if (!string.IsNullOrEmpty(description)) GUILayout.Label(description, _hint);
+            GUILayout.Space(4f);
             if (slider == value) return false;
 
             value = slider;
