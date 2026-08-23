@@ -116,3 +116,7 @@ InitTestScene*.unity*
 tools/HeadlessTests/bin/
 tools/HeadlessTests/obj/
 !tools/HeadlessTests/*.csproj
+
+tools/TerrainProbe/bin/
+tools/TerrainProbe/obj/
+!tools/TerrainProbe/*.csproj

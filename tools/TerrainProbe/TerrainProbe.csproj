@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Terrain measurement without Unity.
+
+    The editor instruments (Dump Terrain Statistics, Render Terrain Views) cannot run while the
+    Unity editor holds the project lock - which is exactly when terrain is being looked at. This
+    compiles the generator itself, which is deliberately pure C# with no UnityEngine types, so a
+    number can be had in two seconds without closing anything.
+
+    It measures the FIELD only. It cannot see a rendering defect, and the render cannot see a field
+    discontinuity, so this is a third instrument rather than a replacement for either.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\Assets\Scripts\Presentation\PlanetTerrain.cs" />
+    <Compile Include="..\..\Assets\Scripts\Presentation\PlateStructure.cs" />
+    <Compile Include="..\..\Assets\Scripts\Presentation\TerrainSettings.cs" />
+    <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
+  </ItemGroup>
+
+</Project>

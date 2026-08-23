@@ -30,11 +30,14 @@ namespace LifeSimulation.EditorTools
         private const int LatitudeSamples = 256;
         private const int Seed = 42;
 
+        /// <summary>Matches <see cref="TerrainMeshBuilder"/>: one radian of arc is 500 metres.</summary>
+        private const double SphereRadius = 500d;
+
         [MenuItem("Life Simulation/Dump Terrain Statistics")]
         public static void Dump()
         {
             var report = new StringBuilder();
-            var plates = new PlateStructure(Seed);
+            PlateStructure plates = PlateStructure.CreateActive(Seed);
 
             // Sample at the resolution the globe view draws at, so the numbers describe what is
             // actually rendered rather than a sharper field nobody sees.
@@ -185,10 +188,16 @@ namespace LifeSimulation.EditorTools
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
             report.AppendLine();
             report.AppendLine($"FLAT VIEW CENTRE  lat {centreLatitude:0.000} lon {centreLongitude:0.000}");
-            AppendWindow(report, plates, "wide patch (400u)", centreLatitude, centreLongitude, 200d, maximumFrequency);
-            AppendWindow(report, plates, "close view (200u)", centreLatitude, centreLongitude, 100d, maximumFrequency);
-            AppendWindow(report, plates, "arena (50u)", centreLatitude, centreLongitude, 25d, maximumFrequency);
-            AppendWindow(report, plates, "origin-centred 400u", 0d, 0d, 200d, maximumFrequency);
+            report.AppendLine("Each window is sampled at ITS OWN resolvable frequency and at the mesh");
+            report.AppendLine("resolution it is drawn with - not at the globe's. The bands below 55");
+            report.AppendLine("cycles/radian only exist in the closer views, so measuring every window");
+            report.AppendLine("at the globe frequency describes a field none of these views renders.");
+            report.AppendLine("Grade is |dh| between adjacent mesh samples, in metres per metre: 0.10");
+            report.AppendLine("is a gentle slope, 0.36 the slope ceiling, 1.00 a 45 degree face.");
+            AppendWindow(report, plates, "wide patch (400u)", centreLatitude, centreLongitude, 200d);
+            AppendWindow(report, plates, "close view (200u)", centreLatitude, centreLongitude, 100d);
+            AppendWindow(report, plates, "arena (50u)", centreLatitude, centreLongitude, 25d);
+            AppendWindow(report, plates, "origin-centred 400u", 0d, 0d, 200d);
 
             // Contrast() clamps, so an over-strong setting pins whole regions to 0 or 1. Saturated
             // ground is flat ground with a hard edge where it crosses - banding, not variety.
@@ -266,25 +275,45 @@ namespace LifeSimulation.EditorTools
             File.WriteAllText(path, text);
         }
 
-        /// <summary>Land fraction and elevation spread inside one flat-view window.</summary>
+        /// <summary>
+        /// What one flat view actually shows: land, biomes, and how steep the ground is.
+        ///
+        /// <para><b>Sampled at the window's own resolvable frequency</b>, computed exactly as
+        /// <see cref="TerrainMeshBuilder.BuildPatch"/> computes it. This used to take the globe's
+        /// frequency for every window, which silenced the local and micro bands entirely - so the
+        /// instrument reported on a field that no flat view renders, and could not have seen the
+        /// creature-scale relief that turned out to be the thing that looked wrong.</para>
+        ///
+        /// <para><b>Grade, not just spread.</b> Deciles and land fraction are identical whether a
+        /// field is smooth or cliffed; the adjacent-sample gradient is what found the 885x plate
+        /// step, and it is the only number here that can see roughness at all.</para>
+        /// </summary>
         private static void AppendWindow(
             StringBuilder report, PlateStructure plates, string label,
-            double centreLatitude, double centreLongitude, double halfWidth, double maximumFrequency)
+            double centreLatitude, double centreLongitude, double halfWidth)
         {
-            const int steps = 64;
+            int side = TerrainMeshBuilder.PatchResolution;
+            double angularWidth = 2d * halfWidth / SphereRadius;
+            double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
+                (int)(side * (2d * Math.PI) / angularWidth));
+
+            var height = new double[side, side];
             int land = 0;
-            double minimum = 1d;
-            double maximum = 0d;
+            double minimum = double.MaxValue;
+            double maximum = double.MinValue;
             var biomes = new HashSet<BiomeKind>();
-            for (int row = 0; row < steps; row++)
+            for (int row = 0; row < side; row++)
             {
-                double z = ((row / (double)(steps - 1)) - 0.5d) * 2d * halfWidth;
-                for (int column = 0; column < steps; column++)
+                double z = -halfWidth + (2d * halfWidth * row / (side - 1));
+                for (int column = 0; column < side; column++)
                 {
-                    double x = ((column / (double)(steps - 1)) - 0.5d) * 2d * halfWidth;
-                    double latitude = centreLatitude + (z / 500d);
-                    double longitude = centreLongitude + (x / 500d);
-                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(Seed, plates, latitude, longitude, maximumFrequency);
+                    double x = -halfWidth + (2d * halfWidth * column / (side - 1));
+                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(
+                        Seed, plates,
+                        centreLatitude + (z / SphereRadius), centreLongitude + (x / SphereRadius),
+                        maximumFrequency);
+
+                    height[row, column] = sample.Elevation * TerrainMeshBuilder.ElevationToWorldUnits;
                     if (sample.Elevation > 0f) land++;
                     if (sample.Elevation < minimum) minimum = sample.Elevation;
                     if (sample.Elevation > maximum) maximum = sample.Elevation;
@@ -292,7 +321,34 @@ namespace LifeSimulation.EditorTools
                 }
             }
 
-            report.AppendLine($"{label,-22} land {land / (double)(steps * steps):0.000}  elevation {minimum:0.000}-{maximum:0.000}  biomes {biomes.Count}");
+            double spacing = 2d * halfWidth / (side - 1);
+            var landGrades = new List<double>();
+            for (int row = 0; row < side; row++)
+            {
+                for (int column = 0; column + 1 < side; column++)
+                {
+                    double left = height[row, column];
+                    double right = height[row, column + 1];
+                    if (left > 0d && right > 0d) landGrades.Add(Math.Abs(right - left) / spacing);
+                }
+            }
+
+            landGrades.Sort();
+            report.AppendLine(
+                $"{label,-22} land {land / (double)(side * side):0.000}  elevation {minimum:0.000}-{maximum:0.000}  " +
+                $"biomes {biomes.Count}  maxFreq {maximumFrequency,6:0.0}  spacing {spacing:0.00} m");
+            report.AppendLine(
+                $"{string.Empty,-22} land grade  median {Quantile(landGrades, 0.5):0.000}  " +
+                $"p90 {Quantile(landGrades, 0.9):0.000}  p99 {Quantile(landGrades, 0.99):0.000}  " +
+                $"max {Quantile(landGrades, 1d):0.000}");
+        }
+
+        /// <summary>Value at a quantile of an already sorted list.</summary>
+        private static double Quantile(List<double> sorted, double quantile)
+        {
+            if (sorted.Count == 0) return 0d;
+            int index = (int)Math.Round(quantile * (sorted.Count - 1));
+            return sorted[index];
         }
 
         private static void AppendDeciles(StringBuilder report, string label, List<double> sorted)

@@ -39,7 +39,7 @@ namespace LifeSimulation.EditorTools
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "terrain");
             Directory.CreateDirectory(directory);
 
-            var plates = new PlateStructure(Seed);
+            PlateStructure plates = PlateStructure.CreateActive(Seed);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
 
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);
