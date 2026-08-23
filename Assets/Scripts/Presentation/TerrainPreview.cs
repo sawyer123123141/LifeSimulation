@@ -159,6 +159,12 @@ namespace LifeSimulation.Presentation
         /// Patch relief, still scaled by the arena tuning so <c>[</c> and <c>]</c> keep working -
         /// they now adjust it relative to a height that suits the patch rather than the arena.
         /// </summary>
+        /// <summary>Extent of the flat view currently selected, for callers sizing a water plane.</summary>
+        public float CurrentViewHalfWidth
+        {
+            get { return CurrentHalfWidth; }
+        }
+
         /// <summary>Extent of the flat view currently selected.</summary>
         private float CurrentHalfWidth
         {

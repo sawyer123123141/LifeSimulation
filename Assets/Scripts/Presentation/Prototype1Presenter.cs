@@ -757,9 +757,35 @@ namespace LifeSimulation.Presentation
             bool arenaVisible = mode == TerrainPreview.Mode.Off;
 
             _terrainRenderer.enabled = arenaVisible;
+            // Water in the preview views too. It used to be hidden whenever a preview was open, so
+            // the "ocean" on screen was the terrain mesh itself coloured blue - which is why the sea
+            // appeared to have hills: it was sea BED topography with nothing floating on it. The
+            // offline render tool always drew a water plane, which is why its images looked correct
+            // while the live view did not.
             if (_waterSurface != null)
             {
-                _waterSurface.SetActive(arenaVisible && _world != null && _world.Config.ElevationFieldEnabled);
+                bool hasElevation = _world != null && _world.Config.ElevationFieldEnabled;
+                if (arenaVisible)
+                {
+                    _waterSurface.SetActive(hasElevation);
+                    _waterSurface.transform.localScale = new Vector3(5f, 1f, 5f);
+                    _waterSurface.transform.position = new Vector3(0f, 0.06f, 0f);
+                }
+                else if (mode == TerrainPreview.Mode.Planet)
+                {
+                    // A plane cannot be a sea on a sphere; the planet's own shading carries its
+                    // ocean, so there is nothing to float.
+                    _waterSurface.SetActive(false);
+                }
+                else
+                {
+                    // Sea level is exactly zero now that elevation is signed displacement, so the
+                    // plane sits there rather than at an offset guessed against a threshold.
+                    float half = _terrainPreview.CurrentViewHalfWidth;
+                    _waterSurface.SetActive(true);
+                    _waterSurface.transform.localScale = new Vector3(half / 5f, 1f, half / 5f);
+                    _waterSurface.transform.position = Vector3.zero;
+                }
             }
 
             foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
