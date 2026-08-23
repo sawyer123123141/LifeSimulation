@@ -15,20 +15,50 @@ namespace LifeSimulation.Presentation
     }
 
     /// <summary>
-    /// Biome from a <see cref="PlanetSample"/>, and the colour that represents it.
+    /// Colour and biome for a <see cref="PlanetSample"/>.
     ///
-    /// <para>Extracted from the renderer so that the terrain statistics dump classifies with exactly
-    /// the same code that draws. Measuring one classifier while looking at another would make the
-    /// numbers meaningless, which is the whole point of instrumenting this.</para>
+    /// <para><b>Two functions with two jobs.</b> <see cref="Shade"/> is continuous - it blends across
+    /// a temperature/moisture palette, so biomes fade into each other. <see cref="Classify"/> buckets
+    /// the same variables into named biomes, which counting needs and blending cannot provide. They
+    /// read the same fields with the same thresholds; only one of them rounds.</para>
     ///
-    /// <para><b>Known limitation, to be fixed rather than tuned around.</b> This is an ordered
-    /// if-chain, so whichever variable is tested first dominates: temperature is checked before
-    /// moisture, so anything cold is Ice or Tundra no matter how wet it is. A Whittaker-style
-    /// classification takes the temperature/moisture <i>pair</i> and does not have that ordering
-    /// artefact. Recorded in docs/terrain-brainstorm-2026-08-23.md.</para>
+    /// <para><b>Why the shading changed.</b> Classify is an ordered if-chain, and using it to colour
+    /// meant every biome edge was a hard step - the "random cutoffs" in the render. Worse, an
+    /// if-chain makes whichever variable is tested first dominate: temperature was checked before
+    /// moisture, so anything cold was Ice or Tundra however wet it was. A Whittaker-style palette
+    /// indexed by the temperature/moisture <i>pair</i> and interpolated bilinearly has neither
+    /// problem.</para>
     /// </summary>
     public static class PlanetBiome
     {
+        /// <summary>
+        /// Land palette, indexed [temperature, moisture]: rows run cold to hot, columns dry to wet.
+        /// Bilinear interpolation between the sixteen entries is what removes the hard edges.
+        /// </summary>
+        private static readonly Color[,] LandPalette =
+        {
+            // coldest: ice and bare rock, wetter only means more snow
+            {
+                new Color(0.741f, 0.741f, 0.729f), new Color(0.808f, 0.824f, 0.831f),
+                new Color(0.898f, 0.918f, 0.929f), new Color(0.965f, 0.976f, 0.984f),
+            },
+            // cool: steppe into taiga
+            {
+                new Color(0.678f, 0.639f, 0.541f), new Color(0.573f, 0.596f, 0.502f),
+                new Color(0.404f, 0.518f, 0.404f), new Color(0.278f, 0.416f, 0.353f),
+            },
+            // temperate: scrub into deciduous and marsh
+            {
+                new Color(0.749f, 0.686f, 0.478f), new Color(0.561f, 0.639f, 0.365f),
+                new Color(0.361f, 0.588f, 0.278f), new Color(0.267f, 0.478f, 0.373f),
+            },
+            // hot: desert, savanna, tropical
+            {
+                new Color(0.878f, 0.788f, 0.545f), new Color(0.808f, 0.729f, 0.400f),
+                new Color(0.478f, 0.639f, 0.267f), new Color(0.220f, 0.435f, 0.239f),
+            },
+        };
+
         public static BiomeKind Classify(PlanetSample sample)
         {
             if (sample.Elevation <= PlanetTerrain.SeaLevel) return BiomeKind.Ocean;
@@ -45,33 +75,45 @@ namespace LifeSimulation.Presentation
 
         public static Color Shade(PlanetSample sample)
         {
-            float land = sample.Elevation <= PlanetTerrain.SeaLevel
-                ? 0f
-                : Mathf.Clamp01((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel));
-
-            switch (Classify(sample))
+            // Ocean: depth from the waterline down, so shelves read lighter than basins.
+            if (sample.Elevation <= PlanetTerrain.SeaLevel)
             {
-                case BiomeKind.Ocean:
-                {
-                    float depth = Mathf.Clamp01(sample.Elevation / PlanetTerrain.SeaLevel);
-                    return Color.Lerp(new Color(0.035f, 0.106f, 0.235f), new Color(0.180f, 0.451f, 0.647f), depth);
-                }
-
-                case BiomeKind.Beach:
-                    return new Color(0.902f, 0.831f, 0.639f);
-                case BiomeKind.Ice:
-                    return Color.Lerp(new Color(0.86f, 0.90f, 0.93f), Color.white, land);
-                case BiomeKind.Tundra:
-                    return Color.Lerp(new Color(0.498f, 0.584f, 0.659f), new Color(0.62f, 0.66f, 0.68f), land);
-                case BiomeKind.Desert:
-                    return Color.Lerp(new Color(0.878f, 0.769f, 0.478f), new Color(0.706f, 0.588f, 0.376f), land);
-                case BiomeKind.Marsh:
-                    return new Color(0.259f, 0.435f, 0.388f);
-                case BiomeKind.Grassland:
-                    return Color.Lerp(new Color(0.325f, 0.612f, 0.243f), new Color(0.239f, 0.408f, 0.220f), land);
-                default:
-                    return Color.Lerp(new Color(0.588f, 0.549f, 0.361f), new Color(0.463f, 0.435f, 0.396f), land);
+                float depth = Mathf.Clamp01(sample.Elevation / PlanetTerrain.SeaLevel);
+                return Color.Lerp(new Color(0.043f, 0.114f, 0.243f), new Color(0.212f, 0.478f, 0.663f), depth * depth);
             }
+
+            float land = Mathf.Clamp01((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel));
+            Color ground = SamplePalette(sample.Temperature, sample.Moisture);
+
+            // Beach fades out over the first stretch above the waterline instead of ending at a line.
+            float beach = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.005f, 0.05f, land));
+            ground = Color.Lerp(ground, new Color(0.902f, 0.847f, 0.663f), beach);
+
+            // Snow line: driven by temperature, so it follows climate rather than a fixed altitude,
+            // and fades in rather than switching.
+            float snow = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.30f, 0.12f, sample.Temperature));
+            ground = Color.Lerp(ground, new Color(0.957f, 0.969f, 0.980f), snow);
+
+            // Exposed rock on the steepest, highest ground, so peaks are not simply pale grass.
+            float rock = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 0.88f, land)) * (1f - snow);
+            ground = Color.Lerp(ground, new Color(0.451f, 0.435f, 0.412f), rock * 0.75f);
+
+            return ground;
+        }
+
+        /// <summary>Bilinear lookup into <see cref="LandPalette"/>. This is what removes the stepping.</summary>
+        private static Color SamplePalette(float temperature, float moisture)
+        {
+            float t = Mathf.Clamp01(temperature) * (LandPalette.GetLength(0) - 1);
+            float m = Mathf.Clamp01(moisture) * (LandPalette.GetLength(1) - 1);
+            int t0 = Mathf.Clamp((int)t, 0, LandPalette.GetLength(0) - 2);
+            int m0 = Mathf.Clamp((int)m, 0, LandPalette.GetLength(1) - 2);
+            float ft = Mathf.SmoothStep(0f, 1f, t - t0);
+            float fm = Mathf.SmoothStep(0f, 1f, m - m0);
+
+            Color cold = Color.Lerp(LandPalette[t0, m0], LandPalette[t0, m0 + 1], fm);
+            Color warm = Color.Lerp(LandPalette[t0 + 1, m0], LandPalette[t0 + 1, m0 + 1], fm);
+            return Color.Lerp(cold, warm, ft);
         }
     }
 }

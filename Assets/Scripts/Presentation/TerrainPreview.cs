@@ -57,9 +57,19 @@ namespace LifeSimulation.Presentation
         /// </summary>
         public const float RegionHalfWidth = 100f;
 
+        /// <summary>
+        /// The close view is offset from the continental centre so a coastline is in frame. Centred
+        /// exactly on the plate it showed nothing but inland grass - true to the world and useless
+        /// for judging it.
+        /// </summary>
+        private const float RegionOffset = 150f;
+
         private const int PatchResolution = 161;
-        private const int SphereLongitudeSteps = 192;
-        private const int SphereLatitudeSteps = 96;
+        /// <summary>
+        /// Icosphere subdivisions. 5 gives 20,480 near-uniform triangles - comparable detail to the
+        /// 192x96 lat/lon grid it replaces, without the polar singularity or the equatorial stretch.
+        /// </summary>
+        private const int PlanetSubdivisions = 5;
         private const int TextureWidth = 384;
         private const int TextureHeight = 192;
 
@@ -93,6 +103,14 @@ namespace LifeSimulation.Presentation
 
         /// <summary>Tectonic structure for the current seed. Rebuilt only when the seed changes.</summary>
         private PlateStructure _plates;
+
+        /// <summary>
+        /// Where the flat views are centred. Not the origin: a flat view spans about one plate, and
+        /// the plate at the origin is whichever the Fibonacci construction put there - an oceanic one
+        /// at seed 42, so both flat views rendered as open sea while the planet was 30% land.
+        /// </summary>
+        private double _centreLatitude;
+        private double _centreLongitude;
 
         // Sampling is the expensive half - EnvironmentField.Sample runs several multi-octave
         // warped-fBm evaluations per call, and a full texture was ~131,000 of them, which is the
@@ -202,6 +220,7 @@ namespace LifeSimulation.Presentation
 
             _fieldSeed = seed;
             _plates = new PlateStructure(seed);
+            _plates.GetContinentalCentre(out _centreLatitude, out _centreLongitude);
             _planetElevation = null;
             _texturedMode = Mode.Off;
         }
@@ -285,129 +304,36 @@ namespace LifeSimulation.Presentation
         /// longitude over ±π and latitude over ±π/2 covers the entire surface, of which the arena is
         /// a 50-unit speck near the equator.
         /// </summary>
+        /// <summary>
+        /// The planet, as a subdivided icosahedron.
+        ///
+        /// <para>A lat/lon sphere converges every longitude vertex on a single point at each pole, so
+        /// triangles there degenerate and their normals fan out - the starburst "bottom of a balloon"
+        /// pinch. That is singular by construction, not a tuning problem. An icosphere has no pole and
+        /// near-uniform triangles everywhere, and gives the flat-shaded low-poly look as a side
+        /// effect. Colour is per-vertex rather than a texture, which also removes the equirectangular
+        /// seam and the polar texture stretch.</para>
+        /// </summary>
         private void BuildPlanet(SimulationWorld world)
         {
             FieldFor(world);
-            EnsurePlanetElevation();
-            int longitudeSteps = SphereLongitudeSteps;
-            int latitudeSteps = SphereLatitudeSteps;
-            var vertices = new Vector3[(longitudeSteps + 1) * (latitudeSteps + 1)];
-            var uv = new Vector2[vertices.Length];
-            var triangles = new int[longitudeSteps * latitudeSteps * 6];
+            IcoSphere.Build(PlanetSubdivisions, out Vector3[] directions, out int[] indices);
+            double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(IcoSphere.SamplesAroundEquator(PlanetSubdivisions));
 
-            for (int latitudeIndex = 0; latitudeIndex <= latitudeSteps; latitudeIndex++)
+            var vertices = new Vector3[directions.Length];
+            var colors = new Color[directions.Length];
+            for (int index = 0; index < directions.Length; index++)
             {
-                float v = latitudeIndex / (float)latitudeSteps;
-                double latitude = (v - 0.5d) * Math.PI;
-                for (int longitudeIndex = 0; longitudeIndex <= longitudeSteps; longitudeIndex++)
-                {
-                    float u = longitudeIndex / (float)longitudeSteps;
-                    double longitude = (u - 0.5d) * 2d * Math.PI;
+                Vector3 direction = directions[index];
+                PlanetSample sample = PlanetTerrain.Sample(
+                    world.Config.WorldSeed, _plates, direction.x, direction.y, direction.z, maximumFrequency);
 
-                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PlanetMaximumFrequency);
-                    float relief = 1f + (Mathf.Max(0f, PlanetElevation(latitudeIndex, longitudeIndex, sample.Elevation) - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
-                    float radius = PlanetDrawRadius * relief;
-
-                    double cosLatitude = Math.Cos(latitude);
-                    var direction = new Vector3(
-                        (float)(cosLatitude * Math.Sin(longitude)),
-                        (float)Math.Sin(latitude),
-                        (float)(cosLatitude * Math.Cos(longitude)));
-
-                    int vertex = (latitudeIndex * (longitudeSteps + 1)) + longitudeIndex;
-                    vertices[vertex] = direction * radius;
-                    uv[vertex] = new Vector2(u, v);
-                }
+                float relief = 1f + (Mathf.Max(0f, sample.Elevation - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
+                vertices[index] = direction * (PlanetDrawRadius * relief);
+                colors[index] = PlanetBiome.Shade(sample);
             }
 
-            int triangle = 0;
-            for (int latitudeIndex = 0; latitudeIndex < latitudeSteps; latitudeIndex++)
-            {
-                for (int longitudeIndex = 0; longitudeIndex < longitudeSteps; longitudeIndex++)
-                {
-                    int bottomLeft = (latitudeIndex * (longitudeSteps + 1)) + longitudeIndex;
-                    int topLeft = bottomLeft + longitudeSteps + 1;
-
-                    // Counter-clockwise seen from OUTSIDE. The previous order was reversed, so every
-                    // outward face was backface-culled and the inside of the far hemisphere showed
-                    // through instead - the sphere looked transparent and inside-out from the front.
-                    triangles[triangle++] = bottomLeft;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = bottomLeft + 1;
-                    triangles[triangle++] = topLeft + 1;
-                    triangles[triangle++] = topLeft;
-                }
-            }
-
-            Commit(vertices, uv, triangles);
-            if (NeedsTexture(world)) ApplyTexture(BuildPlanetTexture(world));
-        }
-
-        /// <summary>
-        /// Convert a latitude/longitude back into the arena coordinates the field samples in. The
-        /// field treats the arena as a small equatorial window, so this is its inverse.
-        /// </summary>
-        /// <summary>Sample elevation once per sphere vertex; only redone when the seed changes.</summary>
-        private void EnsurePlanetElevation()
-        {
-            int width = SphereLongitudeSteps + 1;
-            int height = SphereLatitudeSteps + 1;
-            int cells = width * height;
-            if (_planetElevation != null && _planetElevation.Length == cells) return;
-
-            _planetElevation = new float[cells];
-            for (int latitudeIndex = 0; latitudeIndex < height; latitudeIndex++)
-            {
-                double latitude = ((latitudeIndex / (double)SphereLatitudeSteps) - 0.5d) * Math.PI;
-                for (int longitudeIndex = 0; longitudeIndex < width; longitudeIndex++)
-                {
-                    double longitude = ((longitudeIndex / (double)SphereLongitudeSteps) - 0.5d) * 2d * Math.PI;
-                    _planetElevation[(latitudeIndex * width) + longitudeIndex] =
-                        PlanetTerrain.SampleAtLatLon(_fieldSeed, _plates, latitude, longitude, PlanetMaximumFrequency).Elevation;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Smoothed planet elevation, averaged over the neighbouring lat/lon samples.
-        ///
-        /// <para>A globe carries the whole field across far fewer vertices than a patch does, so the
-        /// finest octaves land below one vertex and displace isolated points - which renders as
-        /// spikes rather than as terrain. Averaging removes what cannot be resolved at this size.
-        /// The detail is still present in the flat views, where there are enough vertices to show
-        /// it.</para>
-        /// </summary>
-        private float PlanetElevation(int latitudeIndex, int longitudeIndex, float fallback)
-        {
-            if (_planetElevation == null) return fallback;
-
-            int width = SphereLongitudeSteps + 1;
-            int height = SphereLatitudeSteps + 1;
-            float total = 0f;
-            int taps = 0;
-            for (int dLatitude = -1; dLatitude <= 1; dLatitude++)
-            {
-                int row = latitudeIndex + dLatitude;
-                if (row < 0 || row >= height) continue;
-                for (int dLongitude = -1; dLongitude <= 1; dLongitude++)
-                {
-                    // Longitude wraps, so the seam averages against the far edge rather than itself.
-                    int column = (longitudeIndex + dLongitude + width) % width;
-                    total += _planetElevation[(row * width) + column];
-                    taps++;
-                }
-            }
-
-            return taps == 0 ? fallback : total / taps;
-        }
-
-        private static EnvironmentSample SampleAtLatLon(EnvironmentField field, double latitude, double longitude)
-        {
-            var position = new SimVector2(
-                (float)(longitude * EnvironmentField.SphereRadius),
-                (float)(latitude * EnvironmentField.SphereRadius));
-            return field.Sample(position);
+            CommitColored(vertices, colors, indices);
         }
 
         /// <summary>
@@ -440,67 +366,6 @@ namespace LifeSimulation.Presentation
             return MakeTexture(pixels);
         }
 
-        private Texture2D BuildPlanetTexture(SimulationWorld world)
-        {
-            FieldFor(world);
-            var pixels = new Color[TextureWidth * TextureHeight];
-            for (int y = 0; y < TextureHeight; y++)
-            {
-                double latitude = (((y + 0.5d) / TextureHeight) - 0.5d) * Math.PI;
-                for (int x = 0; x < TextureWidth; x++)
-                {
-                    double longitude = (((x + 0.5d) / TextureWidth) - 0.5d) * 2d * Math.PI;
-                    pixels[(y * TextureWidth) + x] = Shade(PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PlanetMaximumFrequency), 1f);
-                }
-            }
-
-            return MakeTexture(pixels);
-        }
-
-        /// <summary>Sea level as a fraction of the elevation range.</summary>
-        private const float SeaLevel = PlanetTerrain.SeaLevel;
-
-        /// <summary>
-        /// Highest feature density each view can draw without aliasing.
-        ///
-        /// <para>The globe is the tight one: 192 columns around a full turn resolves frequencies up
-        /// to 192 / 4pi, about 15. The previous version sampled a five-octave field whose finest band
-        /// carried roughly 4,000 features around the equator - twenty times past what the mesh could
-        /// represent - which is why it rendered as static rather than as terrain.</para>
-        ///
-        /// <para>The patch covers 0.8 radians with 161 samples, so it resolves far more, which is why
-        /// the flat views legitimately show detail the globe cannot.</para>
-        /// </summary>
-        private static readonly double PlanetMaximumFrequency = PlanetTerrain.MaximumFrequencyFor(SphereLongitudeSteps);
-
-        private static readonly double PatchMaximumFrequency =
-            PlanetTerrain.MaximumFrequencyFor((int)(PatchResolution * (2d * Math.PI) / PatchAngularWidth));
-
-        /// <summary>Angular width of the wide patch on the unit sphere, in radians.</summary>
-        private const double PatchAngularWidth = 2d * WidePatchHalfWidth / EnvironmentField.SphereRadius;
-
-        /// <summary>
-        /// Sample the patch by treating it as a window on the sphere, which is exactly how the
-        /// simulation's own field maps arena positions - so the patch and the globe show the same
-        /// world at different zooms rather than two unrelated noise fields.
-        /// </summary>
-        private PlanetSample SamplePatch(SimulationWorld world, float x, float z)
-        {
-            double longitude = x / EnvironmentField.SphereRadius;
-            double latitude = z / EnvironmentField.SphereRadius;
-            return PlanetTerrain.SampleAtLatLon(world.Config.WorldSeed, _plates, latitude, longitude, PatchMaximumFrequency);
-        }
-
-        /// <summary>
-        /// Colour that combines all four fields, so the preview answers "do these read as a world?"
-        /// rather than "what does one channel look like?". Water first, then cold ground, then the
-        /// moisture/fertility classification that decides the rest.
-        /// </summary>
-        /// <summary>
-        /// Colour comes from <see cref="PlanetBiome"/>, so the renderer and the terrain statistics
-        /// dump classify with the same code. Two implementations would let the numbers describe a
-        /// different world than the one on screen.
-        /// </summary>
         private static Color Shade(PlanetSample sample, float elevationScale)
         {
             return PlanetBiome.Shade(sample);
@@ -569,8 +434,48 @@ namespace LifeSimulation.Presentation
             return _texture;
         }
 
+        /// <summary>
+        /// Flat-shaded commit with per-vertex colour instead of a texture. Each triangle gets its own
+        /// three vertices, all three carrying the colour of the first, so a face is one flat colour
+        /// and one normal - the low-poly look, and no interpolation smearing a biome across a face.
+        /// </summary>
+        private void CommitColored(Vector3[] vertices, Color[] colors, int[] indices)
+        {
+            var flatVertices = new Vector3[indices.Length];
+            var flatColors = new Color[indices.Length];
+            var flatTriangles = new int[indices.Length];
+            for (int index = 0; index < indices.Length; index += 3)
+            {
+                Color face = colors[indices[index]];
+                for (int corner = 0; corner < 3; corner++)
+                {
+                    flatVertices[index + corner] = vertices[indices[index + corner]];
+                    flatColors[index + corner] = face;
+                    flatTriangles[index + corner] = index + corner;
+                }
+            }
+
+            _root.transform.position = Vector3.zero;
+            _mesh.Clear();
+            _mesh.vertices = flatVertices;
+            _mesh.colors = flatColors;
+            _mesh.triangles = flatTriangles;
+            _mesh.uv = new Vector2[flatVertices.Length];
+            _mesh.RecalculateNormals();
+            _mesh.RecalculateBounds();
+
+            // Standard ignores mesh.colors, so the planet would render white under it.
+            Shader vertexColor = Shader.Find("LifeSimulation/VertexColorLit");
+            if (vertexColor != null) _renderer.material.shader = vertexColor;
+            _renderer.material.mainTexture = null;
+            _renderer.material.color = Color.white;
+        }
+
         private void ApplyTexture(Texture2D texture)
         {
+            // Back to the textured path after the planet may have swapped the shader out.
+            Shader standard = Shader.Find("Standard");
+            if (standard != null && _renderer.material.shader != standard) _renderer.material.shader = standard;
             _renderer.material.mainTexture = texture;
             _renderer.material.color = Color.white;
         }

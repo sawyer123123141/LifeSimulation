@@ -179,6 +179,17 @@ namespace LifeSimulation.EditorTools
                 report.AppendLine($"{pair.Key,-20} | {near,5:0.000} | {farMean,5:0.000} | {near - farMean,5:0.000}");
             }
 
+            // What the flat views actually see. The global land fraction is true and useless for
+            // this: a 400-unit patch spans about one plate, so where it is centred decides whether
+            // it shows a continent or an empty ocean.
+            plates.GetContinentalCentre(out double centreLatitude, out double centreLongitude);
+            report.AppendLine();
+            report.AppendLine($"FLAT VIEW CENTRE  lat {centreLatitude:0.000} lon {centreLongitude:0.000}");
+            AppendWindow(report, plates, "wide patch (400u)", centreLatitude, centreLongitude, 200d, maximumFrequency);
+            AppendWindow(report, plates, "close view (200u)", centreLatitude, centreLongitude, 100d, maximumFrequency);
+            AppendWindow(report, plates, "arena (50u)", centreLatitude, centreLongitude, 25d, maximumFrequency);
+            AppendWindow(report, plates, "origin-centred 400u", 0d, 0d, 200d, maximumFrequency);
+
             report.AppendLine();
             report.AppendLine("BIOME COUNTS");
             foreach (KeyValuePair<BiomeKind, int> pair in biomeCounts)
@@ -191,6 +202,35 @@ namespace LifeSimulation.EditorTools
             string path = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "terrain-statistics.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, text);
+        }
+
+        /// <summary>Land fraction and elevation spread inside one flat-view window.</summary>
+        private static void AppendWindow(
+            StringBuilder report, PlateStructure plates, string label,
+            double centreLatitude, double centreLongitude, double halfWidth, double maximumFrequency)
+        {
+            const int steps = 64;
+            int land = 0;
+            double minimum = 1d;
+            double maximum = 0d;
+            var biomes = new HashSet<BiomeKind>();
+            for (int row = 0; row < steps; row++)
+            {
+                double z = ((row / (double)(steps - 1)) - 0.5d) * 2d * halfWidth;
+                for (int column = 0; column < steps; column++)
+                {
+                    double x = ((column / (double)(steps - 1)) - 0.5d) * 2d * halfWidth;
+                    double latitude = centreLatitude + (z / 500d);
+                    double longitude = centreLongitude + (x / 500d);
+                    PlanetSample sample = PlanetTerrain.SampleAtLatLon(Seed, plates, latitude, longitude, maximumFrequency);
+                    if (sample.Elevation > PlanetTerrain.SeaLevel) land++;
+                    if (sample.Elevation < minimum) minimum = sample.Elevation;
+                    if (sample.Elevation > maximum) maximum = sample.Elevation;
+                    biomes.Add(PlanetBiome.Classify(sample));
+                }
+            }
+
+            report.AppendLine($"{label,-22} land {land / (double)(steps * steps):0.000}  elevation {minimum:0.000}-{maximum:0.000}  biomes {biomes.Count}");
         }
 
         private static void AppendDeciles(StringBuilder report, string label, List<double> sorted)

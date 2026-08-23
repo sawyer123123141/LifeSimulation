@@ -150,6 +150,47 @@ namespace LifeSimulation.Presentation
         public int Count { get; }
 
         /// <summary>
+        /// Latitude and longitude of a continental plate worth looking at, preferring one whose
+        /// neighbours give it a convergent margin so there is relief as well as land.
+        ///
+        /// <para><b>Why this is needed.</b> The flat views sample a window about 0.8 radians across,
+        /// and a plate is about that size, so a flat view shows roughly one plate. Centred at
+        /// coordinate zero it showed whichever plate happens to sit there - an oceanic one - so 400
+        /// units of open sea was rendered while the planet as a whole was 30% land. A global land
+        /// fraction says nothing about where the camera is parked.</para>
+        /// </summary>
+        public void GetContinentalCentre(out double latitude, out double longitude)
+        {
+            int best = -1;
+            double bestScore = double.NegativeInfinity;
+            for (int index = 0; index < Count; index++)
+            {
+                if (!_continental[index]) continue;
+
+                // Prefer a plate with an oceanic neighbour: that margin subducts, which is the
+                // landform with the strongest measured lift (0.346) and gives a coastline too.
+                double score = _baseElevation[index];
+                for (int other = 0; other < Count; other++)
+                {
+                    if (other == index || _continental[other]) continue;
+                    double dot = (_seedX[index] * _seedX[other]) + (_seedY[index] * _seedY[other]) + (_seedZ[index] * _seedZ[other]);
+                    if (dot > 0.5d) score += 0.5d;
+                }
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = index;
+                }
+            }
+
+            if (best < 0) { latitude = 0d; longitude = 0d; return; }
+
+            latitude = Math.Asin(Math.Max(-1d, Math.Min(1d, _seedY[best])));
+            longitude = Math.Atan2(_seedX[best], _seedZ[best]);
+        }
+
+        /// <summary>
         /// The plate containing a direction, its distance to the nearest boundary, and that
         /// boundary's kind and intensity. This is the only interface the field layer consumes.
         /// </summary>
