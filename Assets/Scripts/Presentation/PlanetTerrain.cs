@@ -60,56 +60,44 @@ namespace LifeSimulation.Presentation
         /// </summary>
         public const float HighGround = 0.55f;
 
-        // Base frequencies in features per radian, roughly 3x apart so each band is visibly its own
-        // scale rather than blurring into the next.
-        private const double ContinentFrequency = 1.15d;
-        private const double MountainFrequency = 3.6d;
-        private const double HillFrequency = 6.5d;
-        private const double DetailFrequency = 11d;
-        private const double MoistureFrequency = 1.9d;
-        private const double ClimateNoiseFrequency = 2.4d;
-        private const double JitterFrequency = 16d;
+        /// <summary>
+        /// The settings every caller uses unless it passes its own.
+        ///
+        /// <para>These were <c>private const</c> fields here. They moved to
+        /// <see cref="TerrainSettings"/> so the runtime panel can drive them, which is the only way
+        /// to tune relief that is judged by eye against a one-metre creature.</para>
+        ///
+        /// <para><b>Deliberately mutable static state.</b> The alternative was threading a settings
+        /// argument through every mesh builder, preview and editor entry point, for a value that is
+        /// global by nature - there is one terrain. The explicit parameter on <see cref="Sample"/>
+        /// still exists so a test or an offline probe can sweep values without touching this.</para>
+        ///
+        /// <para>Presentation-only, like everything here: no simulation code reads it, so nothing it
+        /// changes can move a hash or invalidate a recorded result.</para>
+        /// </summary>
+        public static TerrainSettings Active { get; set; } = new TerrainSettings();
 
         /// <summary>
-        /// Local relief, at creature scale rather than planet scale.
-        ///
-        /// <para>Every other band is sized for the globe: the hill band runs at 6.5 cycles per radian,
-        /// which is a 77-metre wavelength, so <b>less than one hill spans the 50-metre arena</b> and
-        /// terrain is effectively flat everywhere a creature can walk. 55 and 150 cycles per radian
-        /// are 9-metre and 3-metre features - undulations, banks and dips at the scale something one
-        /// metre tall actually experiences.</para>
-        ///
-        /// <para>Amplitude is slope-limited rather than chosen, so these add texture without turning
-        /// into the cliffs that a high-frequency band at hand-picked amplitude produces.</para>
+        /// Incremented whenever <see cref="Active"/> changes. Anything holding derived state - a
+        /// plate structure, a built mesh - caches against this as well as the seed, because plate
+        /// count and continental fraction are settings and a cache keyed on the seed alone would
+        /// keep serving the old planet.
         /// </summary>
-        private const double LocalFrequency = 55d;
-        private const double MicroFrequency = 150d;
+        public static int SettingsRevision { get; private set; }
 
-        /// <summary>Domain warp on the plate lookup, so coastlines wander off the cell edge.</summary>
-        private const double WarpFrequency = 2.1d;
-        private const double WarpStrength = 0.32d;
+        /// <summary>Call after editing <see cref="Active"/>, so caches rebuild.</summary>
+        public static void MarkSettingsChanged()
+        {
+            SettingsRevision++;
+        }
 
-        private const double Lacunarity = 2d;
-        private const double Gain = 0.5d;
+        /// <summary>Restore every tunable to the value the generator ships with.</summary>
+        public static void ResetSettings()
+        {
+            Active = new TerrainSettings();
+            MarkSettingsChanged();
+        }
 
-        /// <summary>
-        /// Steepest slope the renderer can represent, in elevation units per radian.
-        ///
-        /// <para>Measured: the mesh samples every 2.5 units while the ridged band produced roughly 17
-        /// units of rise across 4 units of ground - a 76 degree face - which a heightfield renders as
-        /// a staircase of alternating near-vertical and near-horizontal facets. Doubling mesh
-        /// resolution doubled the stripe count without removing them, so the binding limit is
-        /// <b>slope</b>, not sampling frequency.</para>
-        ///
-        /// <para><b>Units matter here and were wrong at first.</b> Elevation 1.0 is about 30 metres
-        /// and one radian is 500 metres, so a value of <c>s</c> is a real grade of
-        /// <c>s * 30 / 500</c>. The original 0.55 was therefore a 3% grade - a gently sloping field -
-        /// which crushed every band above about 10 cycles per radian to a few centimetres and made
-        /// creature-scale relief impossible. 6 is a 36% grade at the limit, steep but walkable, and
-        /// it leaves all the planet-scale bands untouched because their frequencies are low enough
-        /// that they were never the binding constraint.</para>
-        /// </summary>
-        private const double MaximumSlope = 6d;
 
         /// <summary>Highest safely renderable frequency for a view with this many samples around a full turn.</summary>
         public static double MaximumFrequencyFor(int samplesAroundEquator)
@@ -121,13 +109,13 @@ namespace LifeSimulation.Presentation
         /// Octaves that fit under a resolution limit. Octaves finer than the sample spacing do not
         /// add detail, they add aliasing - which is what turned the globe into static.
         /// </summary>
-        public static int OctavesUnder(double baseFrequency, double maximumFrequency, int cap)
+        public static int OctavesUnder(double baseFrequency, double maximumFrequency, int cap, double lacunarity = 2d)
         {
             int octaves = 1;
             double frequency = baseFrequency;
-            while (octaves < cap && frequency * Lacunarity <= maximumFrequency)
+            while (octaves < cap && frequency * lacunarity <= maximumFrequency)
             {
-                frequency *= Lacunarity;
+                frequency *= lacunarity;
                 octaves++;
             }
 
@@ -139,13 +127,34 @@ namespace LifeSimulation.Presentation
         /// <see cref="MaximumSlope"/>. Derived rather than hand-tuned, so raising a band's frequency
         /// automatically lowers its height instead of producing cliffs.
         /// </summary>
-        private static double SlopeLimited(double amplitude, double frequency)
+        private static double SlopeLimited(double amplitude, double frequency, double maximumSlope)
         {
-            return Math.Min(amplitude, MaximumSlope / Math.Max(frequency, 1e-6d));
+            return Math.Min(amplitude, maximumSlope / Math.Max(frequency, 1e-6d));
         }
 
-        public static PlanetSample Sample(int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency)
+        /// <summary>
+        /// How much of a band at this frequency the view can carry: zero where the mesh can only just
+        /// represent it, one half an octave later.
+        ///
+        /// <para>The bands used to be switched on by <c>if (maximumFrequency >= BandFrequency)</c>,
+        /// which makes a band appear at <b>full amplitude</b> the moment the camera crosses a
+        /// threshold. Zooming then changed the character of the ground rather than its detail, which
+        /// reads as the world being rebuilt rather than approached.</para>
+        /// </summary>
+        private static double BandWeight(double maximumFrequency, double bandFrequency)
         {
+            if (bandFrequency <= 0d) return 1d;
+            double t = (maximumFrequency - bandFrequency) / (0.5d * bandFrequency);
+            if (t <= 0d) return 0d;
+            if (t >= 1d) return 1d;
+            return t * t * (3d - (2d * t));
+        }
+
+        public static PlanetSample Sample(
+            int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency,
+            TerrainSettings settings = null)
+        {
+            TerrainSettings s = settings ?? Active;
             if (plates == null)
             {
                 throw new ArgumentNullException(
@@ -156,17 +165,17 @@ namespace LifeSimulation.Presentation
             // Domain warp the plate lookup so a coastline wanders instead of tracing the Voronoi cell
             // edge. Perturbing a threshold cannot move a boundary; moving the sample position can.
             double warpX = 0d, warpY = 0d, warpZ = 0d;
-            AddWarp(seed, 500, dx, dy, dz, WarpFrequency, WarpStrength, ref warpX, ref warpY, ref warpZ);
-            AddWarp(seed, 503, dx, dy, dz, WarpFrequency * 3.7d, WarpStrength * 0.35d, ref warpX, ref warpY, ref warpZ);
+            AddWarp(seed, 500, dx, dy, dz, s.WarpFrequency, s.WarpStrength, ref warpX, ref warpY, ref warpZ);
+            AddWarp(seed, 503, dx, dy, dz, s.WarpFrequency * 3.7d, s.WarpStrength * 0.35d, ref warpX, ref warpY, ref warpZ);
             PlateSample plate = plates.Sample(dx + warpX, dy + warpY, dz + warpZ);
 
             // Layer 1: continental shelf, signed. Land and sea come from plate type, not from a
             // threshold applied to a bounded field.
-            int shelfOctaves = OctavesUnder(ContinentFrequency, maximumFrequency, 4);
+            int shelfOctaves = OctavesUnder(s.ContinentFrequency, maximumFrequency, 4, s.Lacunarity);
             double shelfNoise = EnvironmentNoise.WarpedFbm(
                 seed, channel: 200,
-                dx * ContinentFrequency, dy * ContinentFrequency, dz * ContinentFrequency,
-                shelfOctaves, Lacunarity, Gain, warpStrength: 0.55d) - 0.5d;
+                dx * s.ContinentFrequency, dy * s.ContinentFrequency, dz * s.ContinentFrequency,
+                shelfOctaves, s.Lacunarity, s.Gain, warpStrength: 0.55d) - 0.5d;
 
             // Blend the shelf between the two nearest plates. A Voronoi lookup is piecewise constant,
             // so taking only the nearest plate put a measured step of 0.825 in elevation between
@@ -175,7 +184,7 @@ namespace LifeSimulation.Presentation
             double shelf = Lerp(
                 ShelfHeight(plate.NeighbourContinental, plate.NeighbourBaseElevation),
                 ShelfHeight(plate.Continental, plate.BaseElevation),
-                plate.Blend) + (0.32d * shelfNoise);
+                plate.Blend) + (s.ShelfNoiseStrength * shelfNoise);
 
             // Layer 2: boundary landforms, signed, and blended across the seam for the same reason
             // the shelf is. The kind and intensity of a boundary are properties of the PAIR of plates
@@ -191,49 +200,50 @@ namespace LifeSimulation.Presentation
 
             // Layer 3: ranges, masked by the boundary lift so peaks gather along margins and plate
             // interiors stay open. This is the reference implementation's first-layer-as-mask idea.
-            int mountainOctaves = OctavesUnder(MountainFrequency, maximumFrequency, 3);
+            int mountainOctaves = OctavesUnder(s.MountainFrequency, maximumFrequency, 3, s.Lacunarity);
             double ridges = EnvironmentNoise.RidgedFbm(
                 seed, channel: 240,
-                dx * MountainFrequency, dy * MountainFrequency, dz * MountainFrequency,
-                mountainOctaves, Lacunarity, Gain, ridgeWeighting: 1.6d);
-            double ranges = SlopeLimited(0.34d, MountainFrequency) * ridges * Math.Max(0d, boundary);
+                dx * s.MountainFrequency, dy * s.MountainFrequency, dz * s.MountainFrequency,
+                mountainOctaves, s.Lacunarity, s.Gain, ridgeWeighting: 1.6d);
+            double ranges = SlopeLimited(s.RangeAmplitude, s.MountainFrequency, s.MaximumSlope) * ridges * Math.Max(0d, boundary);
 
             // Layer 4: rolling ground across all land, so interiors are never flat plateaus. The mask
             // fades in across the shoreline rather than switching at it.
-            int hillOctaves = OctavesUnder(HillFrequency, maximumFrequency, 3);
+            int hillOctaves = OctavesUnder(s.HillFrequency, maximumFrequency, 3, s.Lacunarity);
             double hills = (EnvironmentNoise.WarpedFbm(
                 seed, channel: 300,
-                dx * HillFrequency, dy * HillFrequency, dz * HillFrequency,
-                hillOctaves, Lacunarity, Gain, warpStrength: 0.25d) - 0.5d) * 2d;
+                dx * s.HillFrequency, dy * s.HillFrequency, dz * s.HillFrequency,
+                hillOctaves, s.Lacunarity, s.Gain, warpStrength: 0.25d) - 0.5d) * 2d;
             double landMask = Smooth01((shelf + boundary) / 0.16d);
-            double rolling = SlopeLimited(0.22d, HillFrequency) * hills * (0.35d + (0.65d * landMask));
+            double rolling = SlopeLimited(s.RollingAmplitude, s.HillFrequency, s.MaximumSlope) * hills * (0.35d + (0.65d * landMask));
 
             // Layer 5: fine detail, amplitude limited by slope rather than chosen by hand.
-            int detailOctaves = OctavesUnder(DetailFrequency, maximumFrequency, 2);
+            int detailOctaves = OctavesUnder(s.DetailFrequency, maximumFrequency, 2, s.Lacunarity);
             double detail = (EnvironmentNoise.Fbm(
                 seed, channel: 320,
-                dx * DetailFrequency, dy * DetailFrequency, dz * DetailFrequency,
-                detailOctaves, Lacunarity, Gain) - 0.5d) * 2d;
+                dx * s.DetailFrequency, dy * s.DetailFrequency, dz * s.DetailFrequency,
+                detailOctaves, s.Lacunarity, s.Gain) - 0.5d) * 2d;
 
-            // Layers 6 and 7: local and micro relief, only sampled when the view can resolve them.
-            // They cost nothing on the globe, where OctavesUnder returns them at zero amplitude
-            // because their frequency is far past what the mesh can represent.
+            // Layers 6 and 7: local and micro relief, at the scale of the thing walking on them.
+            // Faded in across the resolution limit rather than switched on at it - see BandWeight.
+            double localWeight = BandWeight(maximumFrequency, s.LocalFrequency);
             double local = 0d;
-            if (maximumFrequency >= LocalFrequency)
+            if (localWeight > 0d)
             {
-                local = SlopeLimited(0.16d, LocalFrequency) * ((EnvironmentNoise.WarpedFbm(
+                local = localWeight * SlopeLimited(s.LocalAmplitude, s.LocalFrequency, s.MaximumSlope) * ((EnvironmentNoise.WarpedFbm(
                     seed, channel: 460,
-                    dx * LocalFrequency, dy * LocalFrequency, dz * LocalFrequency,
-                    OctavesUnder(LocalFrequency, maximumFrequency, 3), Lacunarity, Gain, warpStrength: 0.3d) - 0.5d) * 2d);
+                    dx * s.LocalFrequency, dy * s.LocalFrequency, dz * s.LocalFrequency,
+                    OctavesUnder(s.LocalFrequency, maximumFrequency, 3, s.Lacunarity), s.Lacunarity, s.Gain, warpStrength: 0.3d) - 0.5d) * 2d);
             }
 
+            double microWeight = BandWeight(maximumFrequency, s.MicroFrequency);
             double micro = 0d;
-            if (maximumFrequency >= MicroFrequency)
+            if (microWeight > 0d)
             {
-                micro = SlopeLimited(0.08d, MicroFrequency) * ((EnvironmentNoise.Fbm(
+                micro = microWeight * SlopeLimited(s.MicroAmplitude, s.MicroFrequency, s.MaximumSlope) * ((EnvironmentNoise.Fbm(
                     seed, channel: 480,
-                    dx * MicroFrequency, dy * MicroFrequency, dz * MicroFrequency,
-                    OctavesUnder(MicroFrequency, maximumFrequency, 2), Lacunarity, Gain) - 0.5d) * 2d);
+                    dx * s.MicroFrequency, dy * s.MicroFrequency, dz * s.MicroFrequency,
+                    OctavesUnder(s.MicroFrequency, maximumFrequency, 2, s.Lacunarity), s.Lacunarity, s.Gain) - 0.5d) * 2d);
             }
 
             // Local relief belongs on land and in the shallows, not carved into deep ocean floor.
@@ -242,7 +252,7 @@ namespace LifeSimulation.Presentation
             // Sum. No clamp, no saturation curve, no interior sea level: the coast is the zero
             // crossing of this value.
             double elevation = shelf + boundary + ranges + rolling
-                + (SlopeLimited(0.09d, DetailFrequency) * detail)
+                + (SlopeLimited(s.DetailAmplitude, s.DetailFrequency, s.MaximumSlope) * detail)
                 + ((local + micro) * localMask);
 
             // Climate. dy is sin(latitude) for a unit direction, so this is cos(latitude) - the
@@ -250,31 +260,32 @@ namespace LifeSimulation.Presentation
             double latitudeTerm = Math.Sqrt(Math.Max(0d, 1d - (dy * dy)));
             double climateNoise = EnvironmentNoise.Fbm(
                 seed, channel: 360,
-                dx * ClimateNoiseFrequency, dy * ClimateNoiseFrequency, dz * ClimateNoiseFrequency,
-                OctavesUnder(ClimateNoiseFrequency, maximumFrequency, 3), Lacunarity, Gain);
-            double temperature = (0.78d * latitudeTerm) + (0.22d * climateNoise);
+                dx * s.ClimateNoiseFrequency, dy * s.ClimateNoiseFrequency, dz * s.ClimateNoiseFrequency,
+                OctavesUnder(s.ClimateNoiseFrequency, maximumFrequency, 3, s.Lacunarity), s.Lacunarity, s.Gain);
+            double temperature = (s.TemperatureLatitudeWeight * latitudeTerm)
+                + ((1d - s.TemperatureLatitudeWeight) * climateNoise);
 
             double aboveWater = Math.Max(0d, elevation) / HighGround;
-            temperature = EnvironmentNoise.Clamp01(temperature - (0.30d * aboveWater));
+            temperature = EnvironmentNoise.Clamp01(temperature - (s.AltitudeCooling * aboveWater));
 
             // Moisture. Contrast expanded because raw fBm spans about .37-.82, and without it the dry
             // end is unreachable and deserts cannot occur at all.
             double moistureNoise = EnvironmentNoise.Contrast(
                 EnvironmentNoise.WarpedFbm(
                     seed, channel: 400,
-                    dx * MoistureFrequency, dy * MoistureFrequency, dz * MoistureFrequency,
-                    OctavesUnder(MoistureFrequency, maximumFrequency, 4), Lacunarity, Gain, warpStrength: 0.4d),
-                strength: 2.2d);
+                    dx * s.MoistureFrequency, dy * s.MoistureFrequency, dz * s.MoistureFrequency,
+                    OctavesUnder(s.MoistureFrequency, maximumFrequency, 4, s.Lacunarity), s.Lacunarity, s.Gain, warpStrength: 0.4d),
+                strength: s.MoistureContrast);
 
             // Continental interiors dry out, which puts deserts inland rather than scattering them.
-            double continentality = 1d - (0.85d * Math.Min(1d, aboveWater));
+            double continentality = 1d - (s.Continentality * Math.Min(1d, aboveWater));
 
             // High-frequency jitter so biome edges are ragged rather than clean level sets of a
             // smooth field, which read as drawn rather than grown.
             double jitter = EnvironmentNoise.Fbm(
                 seed, channel: 440,
-                dx * JitterFrequency, dy * JitterFrequency, dz * JitterFrequency,
-                OctavesUnder(JitterFrequency, maximumFrequency, 2), Lacunarity, Gain) - 0.5d;
+                dx * s.JitterFrequency, dy * s.JitterFrequency, dz * s.JitterFrequency,
+                OctavesUnder(s.JitterFrequency, maximumFrequency, 2, s.Lacunarity), s.Lacunarity, s.Gain) - 0.5d;
 
             double moisture = EnvironmentNoise.Clamp01(
                 (0.62d * moistureNoise) + (0.38d * continentality) + (0.07d * jitter));
@@ -283,7 +294,9 @@ namespace LifeSimulation.Presentation
             return new PlanetSample((float)elevation, (float)moisture, (float)temperature, (float)shelf);
         }
 
-        public static PlanetSample SampleAtLatLon(int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency)
+        public static PlanetSample SampleAtLatLon(
+            int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency,
+            TerrainSettings settings = null)
         {
             double cosLatitude = Math.Cos(latitude);
             return Sample(
@@ -291,7 +304,7 @@ namespace LifeSimulation.Presentation
                 cosLatitude * Math.Sin(longitude),
                 Math.Sin(latitude),
                 cosLatitude * Math.Cos(longitude),
-                maximumFrequency);
+                maximumFrequency, settings);
         }
 
         /// <summary>

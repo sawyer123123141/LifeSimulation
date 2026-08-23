@@ -114,6 +114,16 @@ namespace LifeSimulation.Presentation
         /// than only in seed. They are arguments here so a recipe can set them; nothing about the
         /// structure is hardcoded beyond the process itself.
         /// </summary>
+        /// <summary>
+        /// The plate structure the active settings describe. Use this rather than the constructor
+        /// wherever the view is meant to follow the tuning panel.
+        /// </summary>
+        public static PlateStructure CreateActive(int worldSeed)
+        {
+            TerrainSettings settings = PlanetTerrain.Active;
+            return new PlateStructure(worldSeed, settings.PlateCount, settings.ContinentalFraction);
+        }
+
         public PlateStructure(int worldSeed, int plateCount = 20, double continentalFraction = 0.42d)
         {
             if (plateCount < 4) throw new ArgumentOutOfRangeException(nameof(plateCount));

@@ -46,6 +46,7 @@ namespace LifeSimulation.Presentation
         private GameObject _waterSurface;
         private PlateStructure _arenaPlates;
         private int _arenaPlateSeed = int.MinValue;
+        private int _arenaPlateRevision = int.MinValue;
         private double _arenaCentreLatitude;
         private double _arenaCentreLongitude;
         private Material _arenaTerrainMaterial;
@@ -58,6 +59,9 @@ namespace LifeSimulation.Presentation
         /// Presentation only - see <see cref="TerrainPreview"/>.
         /// </summary>
         private TerrainPreview _terrainPreview;
+
+        /// <summary>Runtime tuning over <see cref="PlanetTerrain.Active"/>. Presentation only.</summary>
+        private readonly TerrainTuningPanel _terrainTuningPanel = new TerrainTuningPanel();
         private Color[] _temperaturePixels;
         private Color _terrainColor;
         private float _accumulator;
@@ -143,12 +147,17 @@ namespace LifeSimulation.Presentation
         private void OnGUI()
         {
             EnsureInitialized();
+
+            // Drawn before the hidden-HUD early return: tuning terrain is exactly when the rest of
+            // the HUD is in the way, so the panel has to survive H.
+            _terrainTuningPanel.Draw(RebuildTerrainViews);
+
             if (_hudHidden)
             {
                 // One line rather than nothing, so it is obvious the HUD is suppressed and how to
                 // get it back.
                 GUI.Label(new Rect(12f, 12f, 700f, 22f),
-                    $"Terrain viewer - {(_terrainPreview == null ? string.Empty : _terrainPreview.Describe())}   |   K next view, [ ] height");
+                    $"Terrain viewer - {(_terrainPreview == null ? string.Empty : _terrainPreview.Describe())}   |   K next view, J tuning, [ ] height");
                 return;
             }
 
@@ -162,7 +171,7 @@ namespace LifeSimulation.Presentation
                 GUI.Label(new Rect(24f, 106f, 430f, 22f),
                     $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
                 GUI.Label(new Rect(24f, 128f, 430f, 22f),
-                    $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}");
+                    $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}   |   J tuning panel");
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
@@ -356,6 +365,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             HandleTerrainTuningInput();
+            if (Input.GetKeyDown(KeyCode.J)) _terrainTuningPanel.Toggle();
             if (Input.GetKeyDown(KeyCode.K) && _terrainPreview != null)
             {
                 _terrainPreview.HeightScale = _terrainHeightScale;
@@ -819,6 +829,15 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.Period) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus)) { _terrainSmoothingRadius += 0.4f; changed = true; }
             if (!changed) return;
 
+            RebuildTerrainViews();
+        }
+
+        /// <summary>
+        /// Rebuild everything drawn from the terrain generator: the arena ground, the sea, and the
+        /// K viewer if it is open. Called after any tuning change, from the keys or the panel.
+        /// </summary>
+        private void RebuildTerrainViews()
+        {
             BuildTerrainMesh();
             UpdateWaterSurface();
             if (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off)
@@ -899,10 +918,12 @@ namespace LifeSimulation.Presentation
         private void EnsureArenaPlates()
         {
             int seed = _world.Config.WorldSeed;
-            if (_arenaPlates != null && _arenaPlateSeed == seed) return;
+            int revision = PlanetTerrain.SettingsRevision;
+            if (_arenaPlates != null && _arenaPlateSeed == seed && _arenaPlateRevision == revision) return;
 
-            _arenaPlates = new PlateStructure(seed);
+            _arenaPlates = PlateStructure.CreateActive(seed);
             _arenaPlateSeed = seed;
+            _arenaPlateRevision = revision;
             _arenaPlates.GetCoastalCentre(out _arenaCentreLatitude, out _arenaCentreLongitude);
         }
 

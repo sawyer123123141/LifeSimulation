@@ -48,8 +48,10 @@ namespace LifeSimulation.Presentation
 
         private GameObject _oceanSphere;
         private GameObject _oceanPlane;
+        private float _oceanPlaneHalfWidth = float.MinValue;
         private PlateStructure _plates;
         private int _plateSeed = int.MinValue;
+        private int _plateRevision = int.MinValue;
         private double _centreLatitude;
         private double _centreLongitude;
 
@@ -167,10 +169,12 @@ namespace LifeSimulation.Presentation
         private void EnsurePlates(SimulationWorld world)
         {
             int seed = world.Config.WorldSeed;
-            if (_plates != null && _plateSeed == seed) return;
+            int revision = PlanetTerrain.SettingsRevision;
+            if (_plates != null && _plateSeed == seed && _plateRevision == revision) return;
 
-            _plates = new PlateStructure(seed);
+            _plates = PlateStructure.CreateActive(seed);
             _plateSeed = seed;
+            _plateRevision = revision;
             _plates.GetCoastalCentre(out _centreLatitude, out _centreLongitude);
         }
 
@@ -195,21 +199,33 @@ namespace LifeSimulation.Presentation
 
             if (plane && _oceanPlane == null)
             {
-                _oceanPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                _oceanPlane.name = "Ocean Plane";
-                Object.Destroy(_oceanPlane.GetComponent<Collider>());
-                _oceanPlane.GetComponent<Renderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();
+                _oceanPlane = new GameObject("Ocean Plane");
+                _oceanPlane.AddComponent<MeshFilter>();
+                _oceanPlane.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();
+            }
+
+            // Built from the shared swell mesh, not from PrimitiveType.Plane. The capture already
+            // used the swell while this used a flat primitive, so the sea in a diagnostic PNG was
+            // not the sea in the Play view - the same drift that made TerrainMeshBuilder the single
+            // build path in the first place. A flat primitive also reads as plastic: no variation at
+            // any scale, and a visible rectangular edge exactly the size of the terrain.
+            if (plane && !Mathf.Approximately(_oceanPlaneHalfWidth, halfWidth))
+            {
+                TerrainMeshBuilder.BuildWaterSurface(
+                    halfWidth, 0f, out Vector3[] waterVertices, out int[] waterTriangles);
+                _oceanPlane.GetComponent<MeshFilter>().sharedMesh =
+                    TerrainMeshBuilder.SmoothShaded(waterVertices, waterTriangles, "Ocean Plane");
+                _oceanPlaneHalfWidth = halfWidth;
             }
 
             if (_oceanSphere != null) _oceanSphere.SetActive(sphere);
             if (_oceanPlane != null)
             {
                 _oceanPlane.SetActive(plane);
-                if (plane)
-                {
-                    _oceanPlane.transform.localScale = new Vector3(halfWidth / 5f, 1f, halfWidth / 5f);
-                    _oceanPlane.transform.position = Vector3.zero;
-                }
+
+                // Sea level is exactly zero: elevation is signed displacement, so nothing here is a
+                // guessed offset against a threshold.
+                if (plane) _oceanPlane.transform.position = Vector3.zero;
             }
         }
     }
