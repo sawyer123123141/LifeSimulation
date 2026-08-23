@@ -1061,3 +1061,22 @@ change.
   property count is pinned (44 hashed of 46; `FixedDeltaTime` and `MaximumMemorySlots` are derived
   from inputs already covered). Adding a field without hashing it fails a test instead of quietly
   producing a fingerprint that no longer means what a baseline assumed.
+- **Put per-entity observation OUTSIDE `SimulationWorld` (2026-08-22, `CreatureActionHistory`).**
+  Anything that watches creatures — histories, timelines, per-entity diagnostics — should sample the
+  world from outside rather than live inside it, following the `LivenessRecorder` precedent. Held
+  inside, it is future-determining state by the letter of the fingerprint design and has to be
+  re-argued every time a hash changes; held outside, the question never arises, it is absent from
+  every hash by construction, and it is still fully deterministic and testable headlessly. Do not
+  gate such a thing behind a `SimulationConfig` flag: a diagnostics flag must be behavior-inert to
+  be correct, and `FlagLivenessAnalysis` then reports it inert and fails the known-inert assertion.
+- **The V2 fingerprint's first real job is proving an observer is an observer.** Fingerprint a
+  watched world and an unwatched world after N ticks and assert equality. That is a much stronger
+  claim than "I did not intend to mutate anything", and it is one line. Pair it with an assertion
+  that the observer actually recorded something, or the equality proves nothing.
+- **Sample observers per simulated step, not per frame.** Frame-rate and the speed multiplier would
+  otherwise change what the player sees, which makes an on-screen history non-reproducible and
+  useless as evidence.
+- **Show the need delta across an episode, not just the action.** "SeekFood 12.4s, food -6%" reads
+  as a failed trip; "SeekFood" alone reads as normal behavior. The instantaneous inspector cannot
+  show this, which is why the reproduction gate stayed invisible for so long.
+

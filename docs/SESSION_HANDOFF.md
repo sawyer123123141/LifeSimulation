@@ -1,6 +1,6 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `7343653`** (`feat: add a complete, versioned state fingerprint (V2)`),
+**Head at handoff: `32900de`** (`feat: show what the selected creature has been doing`),
 pushed to `origin/main`.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
@@ -57,6 +57,7 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 | commit | what |
 |---|---|
 | `7343653` | `ComputeStateFingerprint` (V2) + `SimulationConfig.ComputeConfigurationHash`; `BehaviorHash` extended with plant age/cooldown after measuring it changes no verdict |
+| `32900de` | selected-creature action history — an outside observer, testable headlessly |
 
 ---
 
@@ -162,6 +163,32 @@ constructor parameter must move the hash, and the property count is pinned.
 
 ---
 
+### Selected-creature history (DONE — `32900de`)
+
+`CreatureActionHistory` records, for one creature at a time, a bounded list of action episodes plus
+a lifetime budget of ticks per action. Each episode carries the needs it started and finished on,
+which is the whole point: a `SeekFood` episode ending with **less** energy than it started is a
+failed trip, and that is invisible from an instantaneous inspector reading.
+
+**It lives outside `SimulationWorld` on purpose.** It samples the world; the world never reads it.
+So it adds no simulation state, appears in no hash, and cannot change a tick. A per-creature history
+held *inside* the world would be future-determining state by the letter of the fingerprint design
+and would need re-arguing every time a fingerprint changed. Not config-flag-gated either — a
+diagnostics flag has to be behavior-inert to be correct, and `FlagLivenessAnalysis` would then
+report it inert and fail the known-inert-flag assertion. Same reasoning as `SimulationWorld.Liveness`.
+
+Ten tests. The load-bearing one: an observed world and an unobserved world have **identical V2
+fingerprints** after 400 ticks — the first real use of the fingerprint from `7343653`. Both that
+test and the determinism test assert the observer actually recorded something, and a third asserts
+the run produced more than one kind of episode, since a single unbroken `Wander` would satisfy
+determinism while showing the player nothing.
+
+Sampled once per simulated step, not per frame, so resolution is independent of frame rate and of
+the speed multiplier. Drawn in its own panel at (464, 300) rather than lengthening the inspector,
+which is already at full height with all optional trait rows showing.
+
+---
+
 ## 3. Unresolved findings
 
 ### The three low-occupancy plant conclusions are UNVERIFIABLE
@@ -196,7 +223,10 @@ not exist.
 ### Unverified by me
 
 The breeding-readiness inspector UI (`15c7a5a`) compiles and passes tests but was **never seen in
-Play mode**. Layout at 324px with all optional trait rows showing is untested.
+Play mode**. Layout at 324px with all optional trait rows showing is untested. The same applies to
+the selected-creature history panel (`32900de`): its *model* is covered by ten headless tests, but
+the panel itself has never been seen rendered. It was placed at (464, 300) in free space beside the
+population-condition box specifically to avoid stacking more onto the untested inspector.
 
 ### Not measured
 
@@ -231,10 +261,13 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-1. **Resume `docs/ROADMAP.md`.** Next unfinished P4a items: selected-creature action/history
-   feedback, and reassessing safety-gated rendezvous (first ecological experiment was null — do not
-   build pack architecture to force it).
-2. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
+1. **Reassess safety-gated rendezvous** — the last unfinished P4a mechanism. Flag
+   `SafetyGatedMateRendezvousEnabled` exists; the first ecological experiment was null. Measure
+   before building. **Do not build pack architecture to force it**, and be willing to close it as a
+   measured negative the way home-range affinity was closed.
+2. **Then the rest of `docs/ROADMAP.md`.** Still open under the visible-feedback item:
+   resource depletion/recovery feedback and lineage display.
+3. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
    design questions, not automatic fixes.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
@@ -258,7 +291,7 @@ dotnet test --no-build --filter "FullyQualifiedName~LivenessTests&FullyQualified
 dotnet test --no-build --filter "FullyQualifiedName~RiskAversionIsLiveOnlyWhenThreatsExist"
 ```
 
-**Green at handoff: 489 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
+**Green at handoff: 499 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
 
 Presentation changes additionally need a Unity compile — the headless project excludes
 `Assets/Scripts/Presentation`:
