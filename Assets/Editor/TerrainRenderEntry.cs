@@ -44,7 +44,8 @@ namespace LifeSimulation.EditorTools
 
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);
             RenderPatch(directory, "close-200", plates, centreLatitude, centreLongitude, TerrainPreview.RegionHalfWidth);
-            RenderPlanet(directory, "planet", plates);
+            RenderPlanet(directory, "planet", plates, centreLatitude, centreLongitude, markPatch: false);
+            RenderPlanet(directory, "planet-marked", plates, centreLatitude, centreLongitude, markPatch: true);
 
             Debug.Log("Terrain views rendered to " + directory);
         }
@@ -61,23 +62,63 @@ namespace LifeSimulation.EditorTools
             Capture(
                 directory, name,
                 TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Terrain Patch"),
-                halfWidth, waterPlaneHalfWidth: halfWidth, waterSphere: false);
+                halfWidth, waterPlaneHalfWidth: halfWidth, waterSphere: false, viewDirection: Vector3.zero);
         }
 
-        private static void RenderPlanet(string directory, string name, PlateStructure plates)
+        /// <summary>
+        /// The planet, optionally with the flat views' window marked.
+        ///
+        /// <para>This is a test, not decoration. The flat views and the globe are supposed to be the
+        /// same world at different levels of detail, but nothing had actually checked that their
+        /// lat/lon mapping agrees - so a mismatch would have looked exactly like a level-of-detail
+        /// difference. If the marker lands on the coastline the patch shows, they agree.</para>
+        /// </summary>
+        private static void RenderPlanet(
+            string directory, string name, PlateStructure plates,
+            double centreLatitude, double centreLongitude, bool markPatch)
         {
             TerrainMeshBuilder.BuildPlanet(
                 Seed, plates, out Vector3[] vertices, out Color[] colors, out int[] triangles);
 
+            if (markPatch)
+            {
+                // The wide patch spans +-halfWidth/SphereRadius radians about the centre.
+                double halfAngle = TerrainPreview.WidePatchHalfWidth / 500d;
+                for (int index = 0; index < vertices.Length; index++)
+                {
+                    Vector3 direction = vertices[index].normalized;
+                    double latitude = Mathf.Asin(Mathf.Clamp(direction.y, -1f, 1f));
+                    double longitude = Mathf.Atan2(direction.x, direction.z);
+                    double dLat = latitude - centreLatitude;
+                    double dLon = Mathf.DeltaAngle((float)(centreLongitude * Mathf.Rad2Deg), (float)(longitude * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
+
+                    if (System.Math.Abs(dLat) <= halfAngle && System.Math.Abs(dLon) <= halfAngle)
+                    {
+                        colors[index] = Color.Lerp(colors[index], new Color(1f, 0.25f, 0.35f), 0.55f);
+                    }
+                }
+            }
+
+            // Face the patch centre. Without this the globe showed whichever hemisphere happened to
+            // point at a fixed camera, and the flat views' region sat on the far limb - so the two
+            // views were of DIFFERENT PARTS of the planet, which looks exactly like a level-of-detail
+            // difference and is not one.
+            double cosLatitude = System.Math.Cos(centreLatitude);
+            var lookAt = new Vector3(
+                (float)(cosLatitude * System.Math.Sin(centreLongitude)),
+                (float)System.Math.Sin(centreLatitude),
+                (float)(cosLatitude * System.Math.Cos(centreLongitude)));
+
             Capture(
                 directory, name,
                 TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Planet"),
-                TerrainMeshBuilder.PlanetDrawRadius * 1.35f, waterPlaneHalfWidth: 0f, waterSphere: true);
+                TerrainMeshBuilder.PlanetDrawRadius * 1.35f, waterPlaneHalfWidth: 0f, waterSphere: true,
+                viewDirection: lookAt);
         }
 
         private static void Capture(
             string directory, string name, Mesh mesh,
-            float framingRadius, float waterPlaneHalfWidth, bool waterSphere)
+            float framingRadius, float waterPlaneHalfWidth, bool waterSphere, Vector3 viewDirection)
         {
             var root = new GameObject("Capture");
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -128,9 +169,20 @@ namespace LifeSimulation.EditorTools
 
             // Pitch only, no yaw. GroundPlaneCameraController has no yaw control, so a yawed capture
             // would show the terrain from an angle the Game view cannot actually produce.
-            var rotation = Quaternion.Euler(52f, 0f, 0f);
-            cameraObject.transform.rotation = rotation;
-            cameraObject.transform.position = rotation * new Vector3(0f, 0f, -framingRadius * 2.1f);
+            if (viewDirection == Vector3.zero)
+            {
+                // Flat views: pitch only, no yaw, because GroundPlaneCameraController has no yaw
+                // control and a yawed capture would show an angle the Game view cannot produce.
+                var rotation = Quaternion.Euler(52f, 0f, 0f);
+                cameraObject.transform.rotation = rotation;
+                cameraObject.transform.position = rotation * new Vector3(0f, 0f, -framingRadius * 2.1f);
+            }
+            else
+            {
+                // Planet: look straight down at the given surface point.
+                cameraObject.transform.position = viewDirection.normalized * framingRadius * 2.1f;
+                cameraObject.transform.rotation = Quaternion.LookRotation(-viewDirection.normalized, Vector3.up);
+            }
 
             var target = new RenderTexture(Width, Height, 24);
             camera.targetTexture = target;
