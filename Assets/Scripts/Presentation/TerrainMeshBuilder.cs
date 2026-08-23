@@ -30,14 +30,23 @@ namespace LifeSimulation.Presentation
         public const float PlanetReliefFraction = 0.06f;
 
         /// <summary>
-        /// Relief on a flat patch as a fraction of its width. Real terrain is far flatter - Everest
-        /// is about 0.2% of the distance it spans - but a truthful ratio reads as a plain.
+        /// World units of height per unit of elevation, <b>constant across every view</b>.
+        ///
+        /// <para>This used to be a fraction of view width, which silently made zooming in flatten the
+        /// terrain: the 400-unit view got 28 units per elevation unit and the 50-unit arena got 3.5,
+        /// so the same ground rendered eight times flatter the closer you looked. Elevation is a
+        /// physical quantity - 1.0 is about 30 metres - and 30 metres does not shrink because the
+        /// camera moved.</para>
+        ///
+        /// <para>The exaggeration factor is in <c>PlanetReliefFraction</c> for the globe, which is a
+        /// genuine artistic choice about a body whose real relief would be invisible at that size.
+        /// </para>
         /// </summary>
-        public const float PatchReliefFraction = 0.07f;
+        public const float ElevationToWorldUnits = 30f;
 
         public static float PatchHeightScale(float halfWidth)
         {
-            return halfWidth * 2f * PatchReliefFraction;
+            return ElevationToWorldUnits;
         }
 
         /// <summary>

@@ -44,6 +44,7 @@ namespace LifeSimulation.EditorTools
 
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);
             RenderPatch(directory, "close-200", plates, centreLatitude, centreLongitude, TerrainPreview.RegionHalfWidth);
+            RenderPatch(directory, "arena-50", plates, centreLatitude, centreLongitude, 25f, withCreatures: true);
             RenderPlanet(directory, "planet", plates, centreLatitude, centreLongitude, markPatch: false);
             RenderPlanet(directory, "planet-marked", plates, centreLatitude, centreLongitude, markPatch: true);
 
@@ -52,7 +53,7 @@ namespace LifeSimulation.EditorTools
 
         private static void RenderPatch(
             string directory, string name, PlateStructure plates,
-            double centreLatitude, double centreLongitude, float halfWidth)
+            double centreLatitude, double centreLongitude, float halfWidth, bool withCreatures = false)
         {
             TerrainMeshBuilder.BuildPatch(
                 Seed, plates, centreLatitude, centreLongitude,
@@ -62,7 +63,8 @@ namespace LifeSimulation.EditorTools
             Capture(
                 directory, name,
                 TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Terrain Patch"),
-                halfWidth, waterPlaneHalfWidth: halfWidth, waterSphere: false, viewDirection: Vector3.zero);
+                halfWidth, waterPlaneHalfWidth: halfWidth, waterSphere: false, viewDirection: Vector3.zero,
+                creatureScaleMarkers: withCreatures);
         }
 
         /// <summary>
@@ -118,7 +120,8 @@ namespace LifeSimulation.EditorTools
 
         private static void Capture(
             string directory, string name, Mesh mesh,
-            float framingRadius, float waterPlaneHalfWidth, bool waterSphere, Vector3 viewDirection)
+            float framingRadius, float waterPlaneHalfWidth, bool waterSphere, Vector3 viewDirection,
+            bool creatureScaleMarkers = false)
         {
             var root = new GameObject("Capture");
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -142,6 +145,37 @@ namespace LifeSimulation.EditorTools
                 TerrainMeshBuilder.BuildOceanSphere(out Vector3[] oceanVertices, out int[] oceanTriangles);
                 water.AddComponent<MeshFilter>().sharedMesh =
                     TerrainMeshBuilder.FlatShaded(oceanVertices, null, oceanTriangles, "Ocean Sphere");
+            }
+
+            // Creature-sized markers. A creature is 1 unit, and 1 unit is 1 metre by the settled
+            // scale, so these are the only way an image conveys how big the terrain actually is.
+            // They are scale references, not simulated creatures - the capture has no world.
+            var markers = new System.Collections.Generic.List<GameObject>();
+            if (creatureScaleMarkers)
+            {
+                Mesh terrain = mesh;
+                Vector3[] surface = terrain.vertices;
+                for (int index = 0; index < 40; index++)
+                {
+                    // Deterministic spread over the mesh, keeping only points above sea level.
+                    int vertex = (int)((index * 7919L) % surface.Length);
+                    int guard = 0;
+                    while (surface[vertex].y <= 0.2f && guard++ < 64)
+                    {
+                        vertex = (vertex + 9973) % surface.Length;
+                    }
+
+                    if (surface[vertex].y <= 0.2f) continue;
+
+                    var marker = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                    Object.DestroyImmediate(marker.GetComponent<Collider>());
+                    marker.transform.position = surface[vertex] + new Vector3(0f, 0.55f, 0f);
+                    marker.transform.localScale = new Vector3(0.7f, 0.55f, 0.7f);
+                    var markerMaterial = new Material(Shader.Find("Standard"));
+                    markerMaterial.color = new Color(0.85f, 0.25f, 0.35f);
+                    marker.GetComponent<Renderer>().sharedMaterial = markerMaterial;
+                    markers.Add(marker);
+                }
             }
 
             var keyObject = new GameObject("Sun");
@@ -205,6 +239,7 @@ namespace LifeSimulation.EditorTools
             Object.DestroyImmediate(fillObject);
             Object.DestroyImmediate(cameraObject);
             if (water != null) Object.DestroyImmediate(water);
+            foreach (GameObject marker in markers) Object.DestroyImmediate(marker);
         }
     }
 }

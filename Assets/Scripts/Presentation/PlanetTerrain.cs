@@ -70,6 +70,21 @@ namespace LifeSimulation.Presentation
         private const double ClimateNoiseFrequency = 2.4d;
         private const double JitterFrequency = 16d;
 
+        /// <summary>
+        /// Local relief, at creature scale rather than planet scale.
+        ///
+        /// <para>Every other band is sized for the globe: the hill band runs at 6.5 cycles per radian,
+        /// which is a 77-metre wavelength, so <b>less than one hill spans the 50-metre arena</b> and
+        /// terrain is effectively flat everywhere a creature can walk. 55 and 150 cycles per radian
+        /// are 9-metre and 3-metre features - undulations, banks and dips at the scale something one
+        /// metre tall actually experiences.</para>
+        ///
+        /// <para>Amplitude is slope-limited rather than chosen, so these add texture without turning
+        /// into the cliffs that a high-frequency band at hand-picked amplitude produces.</para>
+        /// </summary>
+        private const double LocalFrequency = 55d;
+        private const double MicroFrequency = 150d;
+
         /// <summary>Domain warp on the plate lookup, so coastlines wander off the cell edge.</summary>
         private const double WarpFrequency = 2.1d;
         private const double WarpStrength = 0.32d;
@@ -85,8 +100,16 @@ namespace LifeSimulation.Presentation
         /// a staircase of alternating near-vertical and near-horizontal facets. Doubling mesh
         /// resolution doubled the stripe count without removing them, so the binding limit is
         /// <b>slope</b>, not sampling frequency.</para>
+        ///
+        /// <para><b>Units matter here and were wrong at first.</b> Elevation 1.0 is about 30 metres
+        /// and one radian is 500 metres, so a value of <c>s</c> is a real grade of
+        /// <c>s * 30 / 500</c>. The original 0.55 was therefore a 3% grade - a gently sloping field -
+        /// which crushed every band above about 10 cycles per radian to a few centimetres and made
+        /// creature-scale relief impossible. 6 is a 36% grade at the limit, steep but walkable, and
+        /// it leaves all the planet-scale bands untouched because their frequencies are low enough
+        /// that they were never the binding constraint.</para>
         /// </summary>
-        private const double MaximumSlope = 0.55d;
+        private const double MaximumSlope = 6d;
 
         /// <summary>Highest safely renderable frequency for a view with this many samples around a full turn.</summary>
         public static double MaximumFrequencyFor(int samplesAroundEquator)
@@ -192,9 +215,35 @@ namespace LifeSimulation.Presentation
                 dx * DetailFrequency, dy * DetailFrequency, dz * DetailFrequency,
                 detailOctaves, Lacunarity, Gain) - 0.5d) * 2d;
 
+            // Layers 6 and 7: local and micro relief, only sampled when the view can resolve them.
+            // They cost nothing on the globe, where OctavesUnder returns them at zero amplitude
+            // because their frequency is far past what the mesh can represent.
+            double local = 0d;
+            if (maximumFrequency >= LocalFrequency)
+            {
+                local = SlopeLimited(0.16d, LocalFrequency) * ((EnvironmentNoise.WarpedFbm(
+                    seed, channel: 460,
+                    dx * LocalFrequency, dy * LocalFrequency, dz * LocalFrequency,
+                    OctavesUnder(LocalFrequency, maximumFrequency, 3), Lacunarity, Gain, warpStrength: 0.3d) - 0.5d) * 2d);
+            }
+
+            double micro = 0d;
+            if (maximumFrequency >= MicroFrequency)
+            {
+                micro = SlopeLimited(0.08d, MicroFrequency) * ((EnvironmentNoise.Fbm(
+                    seed, channel: 480,
+                    dx * MicroFrequency, dy * MicroFrequency, dz * MicroFrequency,
+                    OctavesUnder(MicroFrequency, maximumFrequency, 2), Lacunarity, Gain) - 0.5d) * 2d);
+            }
+
+            // Local relief belongs on land and in the shallows, not carved into deep ocean floor.
+            double localMask = 0.25d + (0.75d * Smooth01((shelf + boundary) / 0.20d));
+
             // Sum. No clamp, no saturation curve, no interior sea level: the coast is the zero
             // crossing of this value.
-            double elevation = shelf + boundary + ranges + rolling + (SlopeLimited(0.09d, DetailFrequency) * detail);
+            double elevation = shelf + boundary + ranges + rolling
+                + (SlopeLimited(0.09d, DetailFrequency) * detail)
+                + ((local + micro) * localMask);
 
             // Climate. dy is sin(latitude) for a unit direction, so this is cos(latitude) - the
             // insolation curve, rather than 1 - |sin| which is far too steep and froze the planet.

@@ -44,6 +44,11 @@ namespace LifeSimulation.Presentation
         private MeshFilter _terrainMeshFilter;
         private Mesh _terrainMesh;
         private GameObject _waterSurface;
+        private PlateStructure _arenaPlates;
+        private int _arenaPlateSeed = int.MinValue;
+        private double _arenaCentreLatitude;
+        private double _arenaCentreLongitude;
+        private Material _arenaTerrainMaterial;
 
         /// <summary>Set while a terrain preview is open, so the fixed-pixel HUD does not cover it.</summary>
         private bool _hudHidden;
@@ -589,7 +594,7 @@ namespace LifeSimulation.Presentation
         {
             if (_terrainHeights == null || _world == null || !_world.Config.ElevationFieldEnabled) return 0f;
 
-            int side = TerrainResolution;
+            int side = TerrainMeshBuilder.PatchResolution;
             float u = Mathf.Clamp01((x + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
             float v = Mathf.Clamp01((z + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
             int column = Mathf.Clamp((int)u, 0, side - 2);
@@ -750,7 +755,7 @@ namespace LifeSimulation.Presentation
 
             bool hasTerrain = _world != null && _world.Config.ElevationFieldEnabled;
             _waterSurface.SetActive(hasTerrain);
-            _waterSurface.transform.position = new Vector3(0f, 0.06f, 0f);
+            _waterSurface.transform.position = Vector3.zero;
         }
 
         /// <summary>
@@ -827,29 +832,102 @@ namespace LifeSimulation.Presentation
         /// Rebuild the ground as a displaced grid over the arena. Flat when the elevation flag is
         /// off, which keeps every existing scenario looking exactly as it did.
         /// </summary>
+        /// <summary>
+        /// The arena ground.
+        ///
+        /// <para>With the elevation field on, this is built from <see cref="PlanetTerrain"/> through
+        /// the shared <see cref="TerrainMeshBuilder"/> - the same generator, window and shading the
+        /// K viewer uses - so the playable arena is a 50-unit window on the planet rather than a
+        /// separate flat world. Creatures stand on it because <see cref="GroundHeightAt"/> reads the
+        /// heights cached from this very mesh.</para>
+        ///
+        /// <para><b>Cosmetic.</b> The simulation still samples its own <c>EnvironmentField</c> for
+        /// moisture, fertility and temperature, and nothing under <c>Assets/Scripts/Simulation</c>
+        /// reads PlanetTerrain. Creatures are drawn on this relief but do not experience it: a hill
+        /// costs them nothing. Making elevation affect movement is a simulation change needing a
+        /// flag, tests and a re-measure.</para>
+        /// </summary>
         private void BuildTerrainMesh()
         {
             if (_terrainMesh == null) return;
 
-            RebuildTerrainHeights();
+            bool planetTerrain = _world != null && _world.Config.ElevationFieldEnabled;
+            if (!planetTerrain)
+            {
+                BuildFlatArenaMesh();
+                return;
+            }
 
+            EnsureArenaPlates();
+            float heightScale = TerrainMeshBuilder.PatchHeightScale(TerrainHalfWidth) * (_terrainHeightScale / 14f);
+            TerrainMeshBuilder.BuildPatch(
+                _world.Config.WorldSeed, _arenaPlates, _arenaCentreLatitude, _arenaCentreLongitude,
+                TerrainHalfWidth, heightScale,
+                out Vector3[] vertices, out Color[] colors, out int[] triangles);
+
+            CacheArenaHeights(vertices);
+
+            Mesh built = TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Arena Terrain");
+            _terrainMesh.Clear();
+            _terrainMesh.vertices = built.vertices;
+            _terrainMesh.colors = built.colors;
+            _terrainMesh.triangles = built.triangles;
+            _terrainMesh.RecalculateNormals();
+            _terrainMesh.RecalculateBounds();
+            if (_arenaTerrainMaterial == null) _arenaTerrainMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+            _terrainRenderer.sharedMaterial = _arenaTerrainMaterial;
+            Destroy(built);
+        }
+
+        /// <summary>
+        /// Heights for creature placement, taken from the mesh the arena actually draws, so creatures
+        /// stand on the drawn surface rather than on a separately computed one.
+        /// </summary>
+        private void CacheArenaHeights(Vector3[] vertices)
+        {
+            if (_terrainHeights == null || _terrainHeights.Length != vertices.Length)
+            {
+                _terrainHeights = new float[vertices.Length];
+            }
+
+            for (int index = 0; index < vertices.Length; index++)
+            {
+                _terrainHeights[index] = vertices[index].y;
+            }
+        }
+
+        private void EnsureArenaPlates()
+        {
+            int seed = _world.Config.WorldSeed;
+            if (_arenaPlates != null && _arenaPlateSeed == seed) return;
+
+            _arenaPlates = new PlateStructure(seed);
+            _arenaPlateSeed = seed;
+            _arenaPlates.GetCoastalCentre(out _arenaCentreLatitude, out _arenaCentreLongitude);
+        }
+
+        /// <summary>Flat ground for every scenario that does not use the elevation field.</summary>
+        private void BuildFlatArenaMesh()
+        {
             const float halfWidth = TerrainHalfWidth;
-            int side = TerrainResolution;
+            int side = TerrainMeshBuilder.PatchResolution;
             var vertices = new Vector3[side * side];
-            var uv = new Vector2[side * side];
             var triangles = new int[(side - 1) * (side - 1) * 6];
+
+            if (_terrainHeights == null || _terrainHeights.Length != side * side)
+            {
+                _terrainHeights = new float[side * side];
+            }
+
+            System.Array.Clear(_terrainHeights, 0, _terrainHeights.Length);
 
             for (int row = 0; row < side; row++)
             {
-                float v = row / (float)(side - 1);
-                float z = Mathf.Lerp(-halfWidth, halfWidth, v);
+                float z = Mathf.Lerp(-halfWidth, halfWidth, row / (float)(side - 1));
                 for (int column = 0; column < side; column++)
                 {
-                    float u = column / (float)(side - 1);
-                    float x = Mathf.Lerp(-halfWidth, halfWidth, u);
-                    int vertex = row * side + column;
-                    vertices[vertex] = new Vector3(x, _terrainHeights[vertex], z);
-                    uv[vertex] = new Vector2(u, v);
+                    float x = Mathf.Lerp(-halfWidth, halfWidth, column / (float)(side - 1));
+                    vertices[(row * side) + column] = new Vector3(x, 0f, z);
                 }
             }
 
@@ -858,7 +936,7 @@ namespace LifeSimulation.Presentation
             {
                 for (int column = 0; column + 1 < side; column++)
                 {
-                    int bottomLeft = row * side + column;
+                    int bottomLeft = (row * side) + column;
                     int topLeft = bottomLeft + side;
                     triangles[triangle++] = bottomLeft;
                     triangles[triangle++] = topLeft;
@@ -871,7 +949,6 @@ namespace LifeSimulation.Presentation
 
             _terrainMesh.Clear();
             _terrainMesh.vertices = vertices;
-            _terrainMesh.uv = uv;
             _terrainMesh.triangles = triangles;
             _terrainMesh.RecalculateNormals();
             _terrainMesh.RecalculateBounds();
