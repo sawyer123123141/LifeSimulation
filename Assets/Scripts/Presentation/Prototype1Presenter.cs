@@ -45,6 +45,9 @@ namespace LifeSimulation.Presentation
         private Mesh _terrainMesh;
         private GameObject _waterSurface;
 
+        /// <summary>Set while a terrain preview is open, so the fixed-pixel HUD does not cover it.</summary>
+        private bool _hudHidden;
+
         /// <summary>
         /// Look-at-it view of the fields, decoupled from the 50-unit arena. Cycled with <c>K</c>.
         /// Presentation only - see <see cref="TerrainPreview"/>.
@@ -135,6 +138,15 @@ namespace LifeSimulation.Presentation
         private void OnGUI()
         {
             EnsureInitialized();
+            if (_hudHidden)
+            {
+                // One line rather than nothing, so it is obvious the HUD is suppressed and how to
+                // get it back.
+                GUI.Label(new Rect(12f, 12f, 700f, 22f),
+                    $"Terrain viewer - {(_terrainPreview == null ? string.Empty : _terrainPreview.Describe())}   |   K next view, [ ] height");
+                return;
+            }
+
             GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
@@ -756,36 +768,12 @@ namespace LifeSimulation.Presentation
         {
             bool arenaVisible = mode == TerrainPreview.Mode.Off;
 
+            // A preview REPLACES the scene rather than being added to it. Hiding only the ground left
+            // creatures, resources and the sea floating in the middle of a planet.
             _terrainRenderer.enabled = arenaVisible;
-            // Water in the preview views too. It used to be hidden whenever a preview was open, so
-            // the "ocean" on screen was the terrain mesh itself coloured blue - which is why the sea
-            // appeared to have hills: it was sea BED topography with nothing floating on it. The
-            // offline render tool always drew a water plane, which is why its images looked correct
-            // while the live view did not.
             if (_waterSurface != null)
             {
-                bool hasElevation = _world != null && _world.Config.ElevationFieldEnabled;
-                if (arenaVisible)
-                {
-                    _waterSurface.SetActive(hasElevation);
-                    _waterSurface.transform.localScale = new Vector3(5f, 1f, 5f);
-                    _waterSurface.transform.position = new Vector3(0f, 0.06f, 0f);
-                }
-                else if (mode == TerrainPreview.Mode.Planet)
-                {
-                    // A plane cannot be a sea on a sphere; the planet's own shading carries its
-                    // ocean, so there is nothing to float.
-                    _waterSurface.SetActive(false);
-                }
-                else
-                {
-                    // Sea level is exactly zero now that elevation is signed displacement, so the
-                    // plane sits there rather than at an offset guessed against a threshold.
-                    float half = _terrainPreview.CurrentViewHalfWidth;
-                    _waterSurface.SetActive(true);
-                    _waterSurface.transform.localScale = new Vector3(half / 5f, 1f, half / 5f);
-                    _waterSurface.transform.position = Vector3.zero;
-                }
+                _waterSurface.SetActive(arenaVisible && _world != null && _world.Config.ElevationFieldEnabled);
             }
 
             foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
@@ -797,6 +785,11 @@ namespace LifeSimulation.Presentation
             {
                 if (_resourceViews[index] != null) _resourceViews[index].gameObject.SetActive(arenaVisible);
             }
+
+            // The HUD is laid out in fixed pixels and covers most of a small Game view, so at the
+            // resolutions this is actually looked at the terrain was mostly hidden behind panels.
+            // A viewer you cannot see is not a viewer.
+            _hudHidden = !arenaVisible;
 
             var cameraController = _simulationCamera == null ? null : _simulationCamera.GetComponent<GroundPlaneCameraController>();
             if (cameraController == null) return;
