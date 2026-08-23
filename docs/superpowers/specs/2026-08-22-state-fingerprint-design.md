@@ -1,6 +1,7 @@
 # State Fingerprints — Design
 
-**Status:** proposed, not implemented
+**Status:** IMPLEMENTED in `7343653`. See "As built" at the foot of this file for the two places
+the implementation went beyond the design.
 **Date:** 2026-08-22
 **Motivation:** an evidence-integrity review found `ComputeStateHash` incomplete as a future-state
 fingerprint. Confirmed, and the audit below found more omissions than the review named.
@@ -102,3 +103,43 @@ remain valid as *V1* values and must not be recomputed or overwritten.
 - Making V1 complete. It is a historical identifier now, not a correctness tool.
 - Using V2 for liveness. That is `BehaviorHash`'s job and the two must not be merged.
 - Changing what `BehaviorHash` excludes on the genome/phenotype/config side.
+
+
+---
+
+## As built (`7343653`)
+
+Implemented as designed, with two decisions the design left open:
+
+**Home-range state is hashed unconditionally.** V1 hashes it only when `HomeRangeAffinityEnabled`
+is set. V2 must not do that: a fingerprint whose *field set* depends on a flag cannot answer
+"will these two worlds evolve identically", because two worlds differing in that flag would be
+compared on different fields.
+
+**`BehaviorHash` gained plant `Age` and `ReproductionCooldownRemaining`.** The design listed these
+as V2 omissions and said `BehaviorHash` needed "an audit, not a redesign". The audit found they
+belong there too: both are behavior state rather than genome, both decide *when* something happens,
+and their absence is precisely why the `ReplaceAt` takeover-age defect was invisible to every hash
+regression.
+
+This was decided by measurement, not by argument. Prediction stated first: the inert set would not
+change, because all four inert flags are inert for a *reachability* reason (readers on the Legacy
+path), not a sensitivity one. Measured with the two lines added and removed: the inert flag set is
+identical, and every plant gene liveness verdict is identical — 33 / 19 / 1 green either way. No
+`BehaviorHash` value is pinned as a literal anywhere in the repo; it is only ever compared against
+itself, so extending it invalidates no baseline. Strictly more sensitive at no cost to the pinned
+set, so it was kept.
+
+**Config hash coverage.** 44 of `SimulationConfig`'s 46 public properties are hashed. The two
+excluded are derived: `FixedDeltaTime` (from `Schedule.BaseFrequencyHz`) and `MaximumMemorySlots`
+(from `MinimumMemorySlots + AdditionalMemorySlots`), both already covered through their inputs.
+Two drift guards enforce this: every `bool` constructor parameter must move the config hash, and
+the public property count is pinned, so adding a field without hashing it fails a test rather than
+silently producing a fingerprint that no longer means what a baseline assumed.
+
+**Acceptance, as measured.** 2,000-tick equality holds, with positive controls proving the run
+actually exercised all four named paths — births, dispersal, plant death and takeover. The takeover
+control is keyed on the **lineage parent**, not on the age reset, because keying it on age would key
+the detector on the very fix that motivated this work. One test per omission. 489 / 19 / 33 / 1
+green, up from 480; the three liveness counts are unchanged, which is the acceptance criterion that
+mattered.

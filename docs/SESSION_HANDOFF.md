@@ -1,7 +1,10 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `c197061`** (`docs: benchmark resource allocation and decline to optimise it`),
+**Head at handoff: `7343653`** (`feat: add a complete, versioned state fingerprint (V2)`),
 pushed to `origin/main`.
+
+Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
+rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
 
 Read this first, then `docs/CLAUDE_HANDOFF_2026-08-22.md` for architecture, scientific context,
 testing rules and user preferences. `docs/ROADMAP.md` is the backlog. `docs/superpowers/plans/` is
@@ -48,6 +51,12 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 | `b8a61a7` | mandatory experiment manifest + scenario layout fingerprint |
 | `d3fac12` | P5 clustering allocation made linear in population |
 | `c197061` | resource allocation benchmarked and **deliberately not optimised** |
+
+### Phase D — state fingerprint V2 (the item the last handoff queued)
+
+| commit | what |
+|---|---|
+| `7343653` | `ComputeStateFingerprint` (V2) + `SimulationConfig.ComputeConfigurationHash`; `BehaviorHash` extended with plant age/cooldown after measuring it changes no verdict |
 
 ---
 
@@ -122,6 +131,37 @@ Pre-fix → post-fix, same probe, version-independent detector:
 
 ---
 
+### State fingerprint V2 (DONE — `7343653`)
+
+Three hashes, three jobs, and they must stay separate:
+
+| | job | includes configuration? |
+|---|---|---|
+| `ComputeStateHash` (V1) | frozen historical identifier; tests pin its literals | only `WorldSeed` |
+| `ComputeStateFingerprint` (V2) | "will these two worlds evolve identically from here?" | **yes, all of it** |
+| `ComputeBehaviorHash` | did this gene/flag reach behavior? | **no, and never** |
+
+V2 adds, over V1: the config hash, `_birthOrdinal`, `_plantSeedOrdinal`, the three store id
+counters, `PlantSiteRegistry` contents and order, plant `Age` and `ReproductionCooldownRemaining`,
+and home-range state **unconditionally** rather than behind its flag. Guarded to a settled step
+boundary, like `CaptureStatistics`. Excluded on purpose: reporting accumulators, liveness counters,
+derived caches.
+
+`BehaviorHash` also gained plant `Age` and `ReproductionCooldownRemaining` — decided by measurement,
+not argument. Prediction stated first (the inert set would not move, since all four inert flags are
+inert for a *reachability* reason); measured with the lines in and out: **identical inert set,
+identical plant gene verdicts, 33 / 19 / 1 either way**. No `BehaviorHash` value is pinned as a
+literal anywhere, so extending it invalidated no baseline.
+
+Config hash covers **44 of 46** public `SimulationConfig` properties; `FixedDeltaTime` and
+`MaximumMemorySlots` are derived from inputs already hashed. Two drift guards: every `bool`
+constructor parameter must move the hash, and the property count is pinned.
+
+**Green: 489 / 19 / 33 / 1**, up from 480 / 19 / 33 / 1. The three liveness counts being unchanged
+*was* the acceptance criterion.
+
+---
+
 ## 3. Unresolved findings
 
 ### The three low-occupancy plant conclusions are UNVERIFIABLE
@@ -183,24 +223,23 @@ population as an upper bound — sound for that decision, but it is a bound, not
    Juveniles are not the failing class and mortality is not the failure mode.
 6. **Place memory stays inert.** Never wire `MemorySystem.ObservePlace`.
 7. **Do not use the competition-off arm as a drift control.** It disables no trait.
+8. **The three hashes stay three hashes.** V1 stays frozen and incomplete; V2 carries configuration;
+   `BehaviorHash` never carries configuration. Merging any two of them breaks either a recorded
+   baseline or `FlagLivenessAnalysis`, which would then report every flag as live.
 
 ---
 
 ## 5. Next task
 
-1. **State fingerprint V2** — designed, unimplemented:
-   `docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`. Three hashes with three jobs
-   (frozen V1; versioned complete V2 including config; config-free `BehaviorHash`). The acceptance
-   criterion that matters: **`FlagLivenessAnalysis` must still report exactly the known inert set** —
-   if adding configuration makes an extra flag read live, the change is wrong, not the pinned set.
-   Omissions the audit found beyond the review's list: `_birthOrdinal`, `_plantSeedOrdinal` (both
-   feed RNG streams), plant `Age` and `ReproductionCooldownRemaining`, the three store `_nextId`
-   counters, `PlantSiteRegistry` contents/order, and configuration beyond `WorldSeed`.
-2. **Resume `docs/ROADMAP.md`.** Next unfinished P4a items: selected-creature action/history
+1. **Resume `docs/ROADMAP.md`.** Next unfinished P4a items: selected-creature action/history
    feedback, and reassessing safety-gated rendezvous (first ecological experiment was null — do not
    build pack architecture to force it).
-3. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
+2. Treat dense-index scheduling, stale grids, defense projection and Legacy predation as measured or
    design questions, not automatic fixes.
+
+**Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
+`ComputeStateHash` — V1 is a frozen historical identifier and is deliberately incomplete. Never
+recompute or overwrite a recorded V1 value.
 
 **Use `ExperimentManifest` + `ExperimentCsv` for every new experiment CSV.** `ExperimentCsv.Compose`
 refuses without provenance; that is deliberate.
@@ -219,7 +258,7 @@ dotnet test --no-build --filter "FullyQualifiedName~LivenessTests&FullyQualified
 dotnet test --no-build --filter "FullyQualifiedName~RiskAversionIsLiveOnlyWhenThreatsExist"
 ```
 
-**Green at handoff: 480 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
+**Green at handoff: 489 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
 
 Presentation changes additionally need a Unity compile — the headless project excludes
 `Assets/Scripts/Presentation`:

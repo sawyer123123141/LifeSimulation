@@ -1024,3 +1024,40 @@ change.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
 - `python3` is unavailable in this environment. Large heredocs sometimes fail;
   use the Write tool.
+- **Three hashes, three jobs — never merge them (2026-08-22, implemented in `7343653`).**
+  `ComputeStateHash` is **V1, frozen**: a historical identifier that many tests pin as literals. It
+  is incomplete and that is now fine; never "complete" it and never recompute a recorded V1 value.
+  `ComputeStateFingerprint` is **V2**: every future-determining field *plus* configuration, versioned
+  so a field-set change is a new number rather than a silent redefinition, and valid **only at a
+  settled step boundary** (it throws if deaths are queued). `ComputeBehaviorHash` answers a different
+  question — did this gene or flag reach behavior — and **must never include configuration**:
+  `FlagLivenessAnalysis` flips a flag and compares that hash, so folding config in would make every
+  flag read live by definition and destroy the harness. If you are ever tempted to unify them, that
+  interaction is the reason not to.
+- **A fingerprint whose field set depends on a flag cannot do its job.** V1 hashes home-range state
+  only when `HomeRangeAffinityEnabled` is on. V2 hashes it unconditionally. Two worlds differing in
+  a flag would otherwise be compared on different fields, which is exactly the comparison a
+  fingerprint exists to make valid.
+- **Decide "should this hash cover more?" by measurement, not by argument.** Adding plant `Age` and
+  `ReproductionCooldownRemaining` to `BehaviorHash` was the open question; the prediction (stated
+  first) was that the inert set would not move, since all four inert flags are inert for a
+  *reachability* reason, not a sensitivity one. Measured with the lines in and out: identical inert
+  set, identical plant gene verdicts, 33 / 19 / 1 either way. Kept because it is strictly more
+  sensitive at no cost. `BehaviorHash` is never pinned as a literal anywhere — only ever compared
+  against itself — so extending it invalidates no baseline. Check that property before extending any
+  hash.
+- **Absence from every hash is why a real defect stayed invisible.** Plant `Age` was in no hash, so
+  the `ReplaceAt` takeover-age bug passed every hash regression the project had. When a fix reveals
+  that a field was unhashed, hashing it is part of the fix, not a follow-up.
+- **A detector must not be keyed on the thing it is testing.** The takeover control keys on the
+  lineage-parent change, not on the age reset — keying on age would key the detector on the very fix
+  under test. Same lesson as the 2026-08-22 lifetime detector, now pinned in a committed test.
+- **Assert the manipulation, or the test name is an overclaim.** A 2,000-tick equality test named
+  "...AcrossBirthsDispersalDeathAndTakeover" passes just as happily in a run where no patch ever
+  died. It now carries a positive control per named path. A green test that proves nothing happened
+  is worse than no test, because it reads as evidence.
+- **Guard drift with a pinned count, not with a comment.** `ComputeConfigurationHash` is enforced by
+  two tests: every `bool` constructor parameter must move the hash, and `SimulationConfig`'s public
+  property count is pinned (44 hashed of 46; `FixedDeltaTime` and `MaximumMemorySlots` are derived
+  from inputs already covered). Adding a field without hashing it fails a test instead of quietly
+  producing a fingerprint that no longer means what a baseline assumed.
