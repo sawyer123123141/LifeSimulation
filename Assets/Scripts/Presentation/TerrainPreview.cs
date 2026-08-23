@@ -98,6 +98,24 @@ namespace LifeSimulation.Presentation
             }
         }
 
+        /// <summary>How far the camera must pull back to see the current view, in world units.</summary>
+        public float FramingRadius
+        {
+            get
+            {
+                switch (Current)
+                {
+                    case Mode.WidePatch:
+                    case Mode.Island:
+                        return WidePatchHalfWidth;
+                    case Mode.Planet:
+                        return PlanetDrawRadius * 1.35f;
+                    default:
+                        return 0f;
+                }
+            }
+        }
+
         public Mode Advance(SimulationWorld world)
         {
             Current = (Mode)(((int)Current + 1) % 4);
@@ -222,7 +240,6 @@ namespace LifeSimulation.Presentation
 
             Commit(vertices, uv, triangles);
             ApplyTexture(BuildPlanetTexture(world));
-            _root.transform.position = new Vector3(0f, PlanetDrawRadius + 20f, 0f);
         }
 
         /// <summary>

@@ -5,12 +5,42 @@ namespace LifeSimulation.Presentation
     public sealed class GroundPlaneCameraController : MonoBehaviour
     {
         private const float MinimumDistance = 8f;
-        private const float MaximumDistance = 60f;
+        private const float DefaultMaximumDistance = 60f;
+        private const float DefaultPanLimit = 35f;
         private const float MinimumPitch = 25f;
         private const float MaximumPitch = 75f;
         private Vector3 _focus;
         private float _distance = 32f;
         private float _pitch = 52f;
+        private float _maximumDistance = DefaultMaximumDistance;
+        private float _panLimit = DefaultPanLimit;
+
+        /// <summary>
+        /// Point the camera at something of a given size and let it pull back far enough to see it.
+        ///
+        /// <para>The zoom ceiling and pan clamp are sized for the 50-unit arena, so a 400-unit
+        /// terrain preview could not be framed at all - it filled the view and read as a flat plane
+        /// because only its middle was ever visible. Callers showing something larger raise the
+        /// limits for as long as it is on screen.</para>
+        /// </summary>
+        public void Frame(float radius)
+        {
+            _focus = Vector3.zero;
+            _maximumDistance = Mathf.Max(DefaultMaximumDistance, radius * 2.6f);
+            _panLimit = Mathf.Max(DefaultPanLimit, radius);
+            _distance = Mathf.Clamp(radius * 2.1f, MinimumDistance, _maximumDistance);
+            ApplyTransform();
+        }
+
+        /// <summary>Restore the arena-sized limits.</summary>
+        public void ResetFrame()
+        {
+            _maximumDistance = DefaultMaximumDistance;
+            _panLimit = DefaultPanLimit;
+            _focus = Vector3.zero;
+            _distance = Mathf.Min(32f, _maximumDistance);
+            ApplyTransform();
+        }
 
         private void Awake()
         {
@@ -20,15 +50,15 @@ namespace LifeSimulation.Presentation
 
         private void LateUpdate()
         {
-            _distance = Mathf.Clamp(_distance - (Input.mouseScrollDelta.y * 3f), MinimumDistance, MaximumDistance);
+            _distance = Mathf.Clamp(_distance - (Input.mouseScrollDelta.y * _distance * .12f), MinimumDistance, _maximumDistance);
             if (Input.GetMouseButton(1))
             {
                 Vector3 right = transform.right;
                 Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
                 Vector2 delta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
                 _focus -= (right * delta.x + forward * delta.y) * (_distance * .035f);
-                _focus.x = Mathf.Clamp(_focus.x, -35f, 35f);
-                _focus.z = Mathf.Clamp(_focus.z, -35f, 35f);
+                _focus.x = Mathf.Clamp(_focus.x, -_panLimit, _panLimit);
+                _focus.z = Mathf.Clamp(_focus.z, -_panLimit, _panLimit);
             }
 
             if (Input.GetMouseButton(0)) _pitch = Mathf.Clamp(_pitch - (Input.GetAxisRaw("Mouse Y") * 5f), MinimumPitch, MaximumPitch);

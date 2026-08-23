@@ -342,10 +342,7 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.K) && _terrainPreview != null)
             {
                 _terrainPreview.HeightScale = _terrainHeightScale;
-                TerrainPreview.Mode mode = _terrainPreview.Advance(_world);
-                // The arena ground and the preview would occupy the same space, so hide one.
-                _terrainRenderer.enabled = mode == TerrainPreview.Mode.Off;
-                if (_waterSurface != null) _waterSurface.SetActive(mode == TerrainPreview.Mode.Off && _world != null && _world.Config.ElevationFieldEnabled);
+                ApplyTerrainPreviewMode(_terrainPreview.Advance(_world));
             }
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
             if (Input.GetMouseButton(0)) UpdateResourceDrag();
@@ -669,6 +666,44 @@ namespace LifeSimulation.Presentation
             bool hasTerrain = _world != null && _world.Config.ElevationFieldEnabled;
             _waterSurface.SetActive(hasTerrain);
             _waterSurface.transform.position = new Vector3(0f, 0.06f, 0f);
+        }
+
+        /// <summary>
+        /// Show or hide everything that belongs to the arena when a preview opens or closes.
+        ///
+        /// <para>Hiding the ground alone was not enough: creatures, resources and the sea stayed
+        /// where they were, so the planet appeared to hover over a field of animals floating in
+        /// empty space. A preview replaces the scene rather than being added to it.</para>
+        ///
+        /// <para>The camera is re-framed too, because its zoom ceiling and pan clamp are sized for a
+        /// 50-unit arena - a 400-unit patch could not be pulled away from far enough to see, which
+        /// is why it read as a featureless flat plane.</para>
+        /// </summary>
+        private void ApplyTerrainPreviewMode(TerrainPreview.Mode mode)
+        {
+            bool arenaVisible = mode == TerrainPreview.Mode.Off;
+
+            _terrainRenderer.enabled = arenaVisible;
+            if (_waterSurface != null)
+            {
+                _waterSurface.SetActive(arenaVisible && _world != null && _world.Config.ElevationFieldEnabled);
+            }
+
+            foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
+            {
+                if (pair.Value != null) pair.Value.gameObject.SetActive(arenaVisible);
+            }
+
+            for (int index = 0; index < _resourceViews.Count; index++)
+            {
+                if (_resourceViews[index] != null) _resourceViews[index].gameObject.SetActive(arenaVisible);
+            }
+
+            var cameraController = _simulationCamera == null ? null : _simulationCamera.GetComponent<GroundPlaneCameraController>();
+            if (cameraController == null) return;
+
+            if (arenaVisible) cameraController.ResetFrame();
+            else cameraController.Frame(_terrainPreview.FramingRadius);
         }
 
         /// <summary>
@@ -1127,6 +1162,11 @@ namespace LifeSimulation.Presentation
                     float hue = (id.Value * 0.61803398875f) % 1f;
                     view.GetComponent<Renderer>().material.color = Color.HSVToRGB(hue, 0.55f, 0.95f);
                     _creatureViews.Add(id, view);
+                    if (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off)
+                    {
+                        // Born while a preview is up: stay hidden until the arena comes back.
+                        view.gameObject.SetActive(false);
+                    }
                 }
 
                 var movement = _world.GetCreatureMovementAt(index);
