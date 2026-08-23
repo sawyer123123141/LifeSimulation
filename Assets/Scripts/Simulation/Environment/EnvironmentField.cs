@@ -49,6 +49,7 @@ namespace LifeSimulation.Simulation.Environment
         private readonly bool _usesMoistureGradient;
         private readonly bool _usesProceduralFields;
         private readonly bool _usesElevation;
+        private readonly bool _usesPlanetScaleClimate;
         private readonly int _worldSeed;
 
         /// <summary>
@@ -69,11 +70,12 @@ namespace LifeSimulation.Simulation.Environment
             _usesMoistureGradient = usesMoistureGradient;
         }
 
-        private EnvironmentField(int worldSeed, bool procedural, bool elevation)
+        private EnvironmentField(int worldSeed, bool procedural, bool elevation, bool planetScaleClimate = false)
         {
             _constantSample = new EnvironmentSample(1f, 1f, 1f);
             _usesProceduralFields = procedural;
             _usesElevation = elevation;
+            _usesPlanetScaleClimate = planetScaleClimate;
             _worldSeed = worldSeed;
         }
 
@@ -86,6 +88,29 @@ namespace LifeSimulation.Simulation.Environment
         public static EnvironmentField CreateProcedural(int worldSeed, bool elevationEnabled = false)
         {
             return new EnvironmentField(worldSeed, true, elevationEnabled);
+        }
+
+        /// <summary>
+        /// The same fields, but with a climate defined over the <b>whole sphere</b> rather than over
+        /// the arena window.
+        ///
+        /// <para>The standard latitude term is
+        /// <c>1 - |sin(lat) * (SphereRadius / ArenaSize) * 2|</c>, which for the small angles the
+        /// arena occupies is <c>1 - |y| / 25</c>: temperature reaches zero exactly at the arena edge.
+        /// That is deliberate and correct for a 50-unit world, and completely wrong past it - every
+        /// position beyond the arena is frozen, so a wide view shows an equatorial strip of habitable
+        /// ground and ice everywhere else. Here the term is <c>cos(latitude)</c>, warm at the equator
+        /// and cold at the poles, which is the same shape defined over the actual sphere.</para>
+        ///
+        /// <para><b>Nothing in the simulation uses this yet.</b> It exists so the terrain viewer can
+        /// show what a planet-scale climate looks like before anything commits to one. Adopting it
+        /// for simulation is a behaviour change and needs a flag, tests and a re-measure of every
+        /// procedural-field result; this factory alone changes nothing, because no default path
+        /// reaches it.</para>
+        /// </summary>
+        public static EnvironmentField CreatePlanetScaleClimate(int worldSeed, bool elevationEnabled = true)
+        {
+            return new EnvironmentField(worldSeed, true, elevationEnabled, planetScaleClimate: true);
         }
 
         /// <summary>
@@ -132,8 +157,10 @@ namespace LifeSimulation.Simulation.Environment
             // latitudeTerm is already 0..1 - warm at the equator, cold toward the band edges. It is
             // used directly; an earlier version remapped it with (t + 1) * .5 and squashed the whole
             // field into .6..1, which is exactly the flat-environment problem this work exists to fix.
-            double latitudeTerm = EnvironmentNoise.Clamp01(
-                1d - Math.Abs(Math.Sin(position.Y / SphereRadius) * (SphereRadius / ArenaSize) * 2d));
+            double latitudeTerm = _usesPlanetScaleClimate
+                ? EnvironmentNoise.Clamp01(Math.Cos(position.Y / SphereRadius))
+                : EnvironmentNoise.Clamp01(
+                    1d - Math.Abs(Math.Sin(position.Y / SphereRadius) * (SphereRadius / ArenaSize) * 2d));
             double temperatureNoise = EnvironmentNoise.Fbm(
                 _worldSeed, channel: 32, x, y, z,
                 octaves: 3, lacunarity: 2.1d, gain: .45d);

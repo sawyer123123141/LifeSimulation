@@ -398,6 +398,7 @@ namespace LifeSimulation.Presentation
             _resourceViews.Clear();
             _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
+            _rawElevationValid = false;
             // The relief is a function of this world's seed and flags, so it is rebuilt per scenario
             // rather than once at startup.
             BuildTerrainMesh();
@@ -520,6 +521,20 @@ namespace LifeSimulation.Presentation
         private float[] _terrainHeights;
 
         /// <summary>
+        /// Raw elevation samples, cached so tuning never resamples the field.
+        ///
+        /// <para>Sampling is the expensive half by a wide margin - <c>EnvironmentField.Sample</c>
+        /// runs several multi-octave warped-fBm evaluations per call - while applying a height scale
+        /// is a multiply. Keeping them apart is what makes <c>[</c> and <c>]</c> instant instead of
+        /// rebuilding 16,000 noise samples per keypress.</para>
+        /// </summary>
+        private float[] _rawElevation;
+        private int _rawElevationSeed = int.MinValue;
+        private bool _rawElevationValid;
+        private float _blurredForRadius = -1f;
+        private float[] _blurredElevation;
+
+        /// <summary>
         /// Ground height under a simulation position, in Unity units, read from the cached height
         /// grid with bilinear interpolation.
         ///
@@ -569,10 +584,8 @@ namespace LifeSimulation.Presentation
         private void RebuildTerrainHeights()
         {
             int side = TerrainResolution;
-            if (_terrainHeights == null || _terrainHeights.Length != side * side)
-            {
-                _terrainHeights = new float[side * side];
-            }
+            int cells = side * side;
+            if (_terrainHeights == null || _terrainHeights.Length != cells) _terrainHeights = new float[cells];
 
             if (_world == null || !_world.Config.ElevationFieldEnabled)
             {
@@ -580,21 +593,58 @@ namespace LifeSimulation.Presentation
                 return;
             }
 
-            var raw = new float[side * side];
+            EnsureRawElevation(side, cells);
+            EnsureBlurredElevation(side, cells);
+
+            for (int index = 0; index < cells; index++)
+            {
+                _terrainHeights[index] = Mathf.Max(0f, _blurredElevation[index] - OverlaySeaLevel) / (1f - OverlaySeaLevel) * _terrainHeightScale;
+            }
+        }
+
+        /// <summary>Sample the field once per grid cell. Only ever redone when the world changes.</summary>
+        private void EnsureRawElevation(int side, int cells)
+        {
+            if (_rawElevationValid && _rawElevation != null && _rawElevation.Length == cells && _rawElevationSeed == _world.Config.WorldSeed)
+            {
+                return;
+            }
+
+            if (_rawElevation == null || _rawElevation.Length != cells) _rawElevation = new float[cells];
             for (int row = 0; row < side; row++)
             {
                 float z = Mathf.Lerp(-TerrainHalfWidth, TerrainHalfWidth, row / (float)(side - 1));
                 for (int column = 0; column < side; column++)
                 {
                     float x = Mathf.Lerp(-TerrainHalfWidth, TerrainHalfWidth, column / (float)(side - 1));
-                    raw[row * side + column] = _world.Environment.Sample(new SimVector2(x, z)).Elevation;
+                    _rawElevation[row * side + column] = _world.Environment.Sample(new SimVector2(x, z)).Elevation;
                 }
             }
 
-            // Each pass is a 3x3 box over one cell, so N passes smooth roughly N cells outward.
+            _rawElevationSeed = _world.Config.WorldSeed;
+            _rawElevationValid = true;
+            _blurredForRadius = -1f;
+        }
+
+        /// <summary>
+        /// Blur the cached samples on the grid. One sample per cell, then N passes of a 3x3
+        /// neighbourhood where N is the radius in cells - correct at any radius, and its cost does
+        /// not grow with the radius. Recomputed only when the radius actually changes.
+        /// </summary>
+        private void EnsureBlurredElevation(int side, int cells)
+        {
+            if (_blurredElevation != null && _blurredElevation.Length == cells && Mathf.Approximately(_blurredForRadius, _terrainSmoothingRadius))
+            {
+                return;
+            }
+
+            if (_blurredElevation == null || _blurredElevation.Length != cells) _blurredElevation = new float[cells];
+            System.Array.Copy(_rawElevation, _blurredElevation, cells);
+
             float cellSize = 2f * TerrainHalfWidth / (side - 1);
             int passes = Mathf.Clamp(Mathf.RoundToInt(_terrainSmoothingRadius / Mathf.Max(cellSize, 0.0001f)), 0, 32);
-            var scratch = new float[side * side];
+            var scratch = new float[cells];
+            float[] source = _blurredElevation;
             for (int pass = 0; pass < passes; pass++)
             {
                 for (int row = 0; row < side; row++)
@@ -611,7 +661,7 @@ namespace LifeSimulation.Presentation
                             {
                                 int sampleColumn = column + dx;
                                 if (sampleColumn < 0 || sampleColumn >= side) continue;
-                                total += raw[sampleRow * side + sampleColumn];
+                                total += source[sampleRow * side + sampleColumn];
                                 taps++;
                             }
                         }
@@ -620,15 +670,13 @@ namespace LifeSimulation.Presentation
                     }
                 }
 
-                float[] swap = raw;
-                raw = scratch;
+                float[] swap = source;
+                source = scratch;
                 scratch = swap;
             }
 
-            for (int index = 0; index < raw.Length; index++)
-            {
-                _terrainHeights[index] = Mathf.Max(0f, raw[index] - OverlaySeaLevel) / (1f - OverlaySeaLevel) * _terrainHeightScale;
-            }
+            if (!ReferenceEquals(source, _blurredElevation)) System.Array.Copy(source, _blurredElevation, cells);
+            _blurredForRadius = _terrainSmoothingRadius;
         }
 
         /// <summary>

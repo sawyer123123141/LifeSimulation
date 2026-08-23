@@ -47,17 +47,17 @@ namespace LifeSimulation.Presentation
         /// <summary>Half-width of the wide patch, in simulation units. 200 shows ~24 landforms across.</summary>
         public const float WidePatchHalfWidth = 200f;
 
-        private const int PatchResolution = 193;
-        private const int SphereLongitudeSteps = 256;
-        private const int SphereLatitudeSteps = 128;
-        private const int TextureWidth = 512;
-        private const int TextureHeight = 256;
+        private const int PatchResolution = 161;
+        private const int SphereLongitudeSteps = 192;
+        private const int SphereLatitudeSteps = 96;
+        private const int TextureWidth = 384;
+        private const int TextureHeight = 192;
 
         /// <summary>Drawn planet radius in world units. Unrelated to the field's sampling radius.</summary>
         private const float PlanetDrawRadius = 60f;
 
         /// <summary>Relief on the planet as a fraction of its radius.</summary>
-        private const float PlanetReliefFraction = 0.055f;
+        private const float PlanetReliefFraction = 0.045f;
 
         private readonly GameObject _root;
         private readonly MeshFilter _meshFilter;
@@ -81,6 +81,14 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private EnvironmentField _field;
         private int _fieldSeed = int.MinValue;
+
+        // Sampling is the expensive half - EnvironmentField.Sample runs several multi-octave
+        // warped-fBm evaluations per call, and a full texture was ~131,000 of them, which is the
+        // pause felt on every keypress. Everything sampled is cached and keyed by what it depends
+        // on, so changing the height scale rebuilds geometry from cached numbers and never resamples.
+        private float[] _planetElevation;
+        private Mode _texturedMode = Mode.Off;
+        private int _texturedSeed = int.MinValue;
 
         public TerrainPreview()
         {
@@ -142,13 +150,21 @@ namespace LifeSimulation.Presentation
         /// so what is on screen is the generator rather than the world the creatures are living in.</summary>
         public bool DiffersFromLiveWorld { get; private set; }
 
+        /// <summary>
+        /// Planet-scale climate, so a wide view is not an equatorial strip of habitable ground with
+        /// ice everywhere else. The standard field's latitude term reaches zero exactly at the arena
+        /// edge by design - correct for a 50-unit world, and wrong for any view past it.
+        /// See <see cref="EnvironmentField.CreatePlanetScaleClimate"/>.
+        /// </summary>
         private EnvironmentField FieldFor(SimulationWorld world)
         {
             int seed = world.Config.WorldSeed;
             if (_field == null || _fieldSeed != seed)
             {
-                _field = EnvironmentField.CreateProcedural(seed, elevationEnabled: true);
+                _field = EnvironmentField.CreatePlanetScaleClimate(seed);
                 _fieldSeed = seed;
+                _planetElevation = null;
+                _texturedMode = Mode.Off;
             }
 
             DiffersFromLiveWorld = !(world.Config.ProceduralEnvironmentFieldsEnabled && world.Config.ElevationFieldEnabled);
@@ -218,7 +234,7 @@ namespace LifeSimulation.Presentation
 
             WriteQuads(triangles, side);
             Commit(vertices, uv, triangles);
-            ApplyTexture(BuildPatchTexture(world, island));
+            if (NeedsTexture(world)) ApplyTexture(BuildPatchTexture(world, island));
         }
 
         /// <summary>
@@ -231,6 +247,7 @@ namespace LifeSimulation.Presentation
         private void BuildPlanet(SimulationWorld world)
         {
             EnvironmentField field = FieldFor(world);
+            EnsurePlanetElevation(field);
             int longitudeSteps = SphereLongitudeSteps;
             int latitudeSteps = SphereLatitudeSteps;
             var vertices = new Vector3[(longitudeSteps + 1) * (latitudeSteps + 1)];
@@ -247,7 +264,7 @@ namespace LifeSimulation.Presentation
                     double longitude = (u - 0.5d) * 2d * Math.PI;
 
                     EnvironmentSample sample = SampleAtLatLon(field, latitude, longitude);
-                    float relief = 1f + (Mathf.Max(0f, sample.Elevation - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
+                    float relief = 1f + (Mathf.Max(0f, PlanetElevation(latitudeIndex, longitudeIndex, sample.Elevation) - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
                     float radius = PlanetDrawRadius * relief;
 
                     double cosLatitude = Math.Cos(latitude);
@@ -269,29 +286,100 @@ namespace LifeSimulation.Presentation
                 {
                     int bottomLeft = (latitudeIndex * (longitudeSteps + 1)) + longitudeIndex;
                     int topLeft = bottomLeft + longitudeSteps + 1;
+
+                    // Counter-clockwise seen from OUTSIDE. The previous order was reversed, so every
+                    // outward face was backface-culled and the inside of the far hemisphere showed
+                    // through instead - the sphere looked transparent and inside-out from the front.
                     triangles[triangle++] = bottomLeft;
-                    triangles[triangle++] = topLeft;
-                    triangles[triangle++] = bottomLeft + 1;
                     triangles[triangle++] = bottomLeft + 1;
                     triangles[triangle++] = topLeft;
+                    triangles[triangle++] = bottomLeft + 1;
                     triangles[triangle++] = topLeft + 1;
+                    triangles[triangle++] = topLeft;
                 }
             }
 
             Commit(vertices, uv, triangles);
-            ApplyTexture(BuildPlanetTexture(world));
+            if (NeedsTexture(world)) ApplyTexture(BuildPlanetTexture(world));
         }
 
         /// <summary>
         /// Convert a latitude/longitude back into the arena coordinates the field samples in. The
         /// field treats the arena as a small equatorial window, so this is its inverse.
         /// </summary>
+        /// <summary>Sample elevation once per sphere vertex; only redone when the seed changes.</summary>
+        private void EnsurePlanetElevation(EnvironmentField field)
+        {
+            int width = SphereLongitudeSteps + 1;
+            int height = SphereLatitudeSteps + 1;
+            int cells = width * height;
+            if (_planetElevation != null && _planetElevation.Length == cells) return;
+
+            _planetElevation = new float[cells];
+            for (int latitudeIndex = 0; latitudeIndex < height; latitudeIndex++)
+            {
+                double latitude = ((latitudeIndex / (double)SphereLatitudeSteps) - 0.5d) * Math.PI;
+                for (int longitudeIndex = 0; longitudeIndex < width; longitudeIndex++)
+                {
+                    double longitude = ((longitudeIndex / (double)SphereLongitudeSteps) - 0.5d) * 2d * Math.PI;
+                    _planetElevation[(latitudeIndex * width) + longitudeIndex] =
+                        SampleAtLatLon(field, latitude, longitude).Elevation;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Smoothed planet elevation, averaged over the neighbouring lat/lon samples.
+        ///
+        /// <para>A globe carries the whole field across far fewer vertices than a patch does, so the
+        /// finest octaves land below one vertex and displace isolated points - which renders as
+        /// spikes rather than as terrain. Averaging removes what cannot be resolved at this size.
+        /// The detail is still present in the flat views, where there are enough vertices to show
+        /// it.</para>
+        /// </summary>
+        private float PlanetElevation(int latitudeIndex, int longitudeIndex, float fallback)
+        {
+            if (_planetElevation == null) return fallback;
+
+            int width = SphereLongitudeSteps + 1;
+            int height = SphereLatitudeSteps + 1;
+            float total = 0f;
+            int taps = 0;
+            for (int dLatitude = -1; dLatitude <= 1; dLatitude++)
+            {
+                int row = latitudeIndex + dLatitude;
+                if (row < 0 || row >= height) continue;
+                for (int dLongitude = -1; dLongitude <= 1; dLongitude++)
+                {
+                    // Longitude wraps, so the seam averages against the far edge rather than itself.
+                    int column = (longitudeIndex + dLongitude + width) % width;
+                    total += _planetElevation[(row * width) + column];
+                    taps++;
+                }
+            }
+
+            return taps == 0 ? fallback : total / taps;
+        }
+
         private static EnvironmentSample SampleAtLatLon(EnvironmentField field, double latitude, double longitude)
         {
             var position = new SimVector2(
                 (float)(longitude * EnvironmentField.SphereRadius),
                 (float)(latitude * EnvironmentField.SphereRadius));
             return field.Sample(position);
+        }
+
+        /// <summary>
+        /// True when the colour map is stale. Height tuning does not invalidate it, which is most of
+        /// what made adjusting a setting take a visible pause: the texture is tens of thousands of
+        /// field evaluations and none of them depend on the height scale.
+        /// </summary>
+        private bool NeedsTexture(SimulationWorld world)
+        {
+            if (_texture != null && _texturedMode == Current && _texturedSeed == world.Config.WorldSeed) return false;
+            _texturedMode = Current;
+            _texturedSeed = world.Config.WorldSeed;
+            return true;
         }
 
         private Texture2D BuildPatchTexture(SimulationWorld world, bool island)
