@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LifeSimulation.Simulation.Analysis;
 using LifeSimulation.Simulation.Behavior;
@@ -54,6 +55,13 @@ namespace LifeSimulation.Presentation
         private string _scenarioHint;
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
+
+        /// <summary>
+        /// History of what the selected creature has been doing. An outside observer: it reads the
+        /// world and the world never reads it, so watching a creature cannot change the run. A test
+        /// pins that by fingerprinting an observed and an unobserved world.
+        /// </summary>
+        private readonly CreatureActionHistory _selectedCreatureHistory = new CreatureActionHistory();
         private SimulationEvent _recentEvent;
         private bool _hasRecentEvent;
         private P5HistoryPanelSession _p5HistorySession;
@@ -103,6 +111,7 @@ namespace LifeSimulation.Presentation
                 {
                     _world.Step(_world.Config.FixedDeltaTime);
                     _p5HistorySession.Advance(_world);
+                    ObserveSelectedCreature();
                     CaptureRecentEvent();
                     _world.Events.Clear();
                     _accumulator -= _world.Config.FixedDeltaTime;
@@ -121,6 +130,7 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             DrawSelectedCreatureInspector();
+            DrawSelectedCreatureHistory();
             var stats = _world.Statistics;
             DrawPopulationCondition(stats);
             DrawP5HistoryPanel();
@@ -919,6 +929,135 @@ namespace LifeSimulation.Presentation
                     fertile++;
                 }
             }
+        }
+
+        /// <summary>
+        /// Keep the history pointed at whatever is selected. Called once per simulated step, so the
+        /// history's resolution is the tick rather than the frame and is therefore independent of
+        /// frame rate and of the speed multiplier.
+        /// </summary>
+        private void ObserveSelectedCreature()
+        {
+            if (!_hasSelectedCreature)
+            {
+                if (_selectedCreatureHistory.IsTracking) _selectedCreatureHistory.Clear();
+                return;
+            }
+
+            _selectedCreatureHistory.Track(_selectedCreature);
+            _selectedCreatureHistory.Observe(_world);
+        }
+
+        /// <summary>
+        /// What the selected creature has been doing, rather than what it is doing right now. The
+        /// inspector answers the second question already; this answers the first, which is the one
+        /// that makes a commute, a failed foraging trip or a long thirsty wander legible while
+        /// watching.
+        /// </summary>
+        private void DrawSelectedCreatureHistory()
+        {
+            const float panelX = 464f;
+            const float panelY = 300f;
+            const float lineHeight = 22f;
+            const int maximumEpisodes = 6;
+
+            GUI.Box(new Rect(panelX, panelY, 280f, 268f), "Selected creature history");
+
+            if (!_hasSelectedCreature || !_selectedCreatureHistory.IsTracking)
+            {
+                GUI.Label(new Rect(panelX + 12f, panelY + 28f, 260f, lineHeight), "Click a creature to follow it.");
+                return;
+            }
+
+            float y = panelY + 28f;
+            if (!_selectedCreatureHistory.IsAlive)
+            {
+                GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), "This creature has died.");
+                y += lineHeight;
+            }
+            else if (_selectedCreatureHistory.TryGetOpenEpisode(out CreatureActionEpisode current))
+            {
+                GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), $"Now: {DescribeEpisode(current)}");
+                y += lineHeight;
+            }
+
+            GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), $"Watched {DescribeSeconds(_selectedCreatureHistory.ObservedTicks)}, mostly {DescribeBusiestAction()}");
+            y += lineHeight + 4f;
+
+            if (_selectedCreatureHistory.EpisodeCount == 0)
+            {
+                GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), "No completed activity yet.");
+                return;
+            }
+
+            int shown = Math.Min(maximumEpisodes, _selectedCreatureHistory.EpisodeCount);
+            for (int index = 0; index < shown; index++)
+            {
+                GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), DescribeEpisode(_selectedCreatureHistory.GetEpisodeAt(index)));
+                y += lineHeight;
+            }
+
+            int hidden = _selectedCreatureHistory.EpisodeCount - shown;
+            if (hidden > 0)
+            {
+                GUI.Label(new Rect(panelX + 12f, y, 260f, lineHeight), $"{hidden} older activit{(hidden == 1 ? "y" : "ies")} hidden");
+            }
+        }
+
+        /// <summary>
+        /// "SeekWater 4.1s, water -3%" - the need delta is the point. A long SeekFood that ends with
+        /// energy lower than it started is a failed trip, and that is invisible from an
+        /// instantaneous reading of the same creature.
+        /// </summary>
+        private string DescribeEpisode(CreatureActionEpisode episode)
+        {
+            string duration = DescribeSeconds(episode.DurationTicks);
+            switch (episode.Action)
+            {
+                case CreatureAction.SeekFood:
+                case CreatureAction.Eat:
+                case CreatureAction.SeekCarcass:
+                case CreatureAction.FeedCarcass:
+                    return $"{episode.Action} {duration}, food {DescribeDelta(episode.EnergyDelta)}";
+                case CreatureAction.SeekWater:
+                case CreatureAction.Drink:
+                    return $"{episode.Action} {duration}, water {DescribeDelta(episode.HydrationDelta)}";
+                default:
+                    return $"{episode.Action} {duration}";
+            }
+        }
+
+        private static string DescribeDelta(float fractionDelta)
+        {
+            int percent = (int)Math.Round(fractionDelta * 100f);
+            return percent > 0 ? $"+{percent}%" : $"{percent}%";
+        }
+
+        private string DescribeSeconds(long ticks)
+        {
+            return $"{ticks * _world.Config.FixedDeltaTime:0.0}s";
+        }
+
+        private string DescribeBusiestAction()
+        {
+            CreatureAction busiest = CreatureAction.Wander;
+            long best = -1L;
+            foreach (CreatureAction action in Enum.GetValues(typeof(CreatureAction)))
+            {
+                long ticks = _selectedCreatureHistory.GetObservedTicksFor(action);
+                if (ticks > best)
+                {
+                    best = ticks;
+                    busiest = action;
+                }
+            }
+
+            if (best <= 0L) return "nothing yet";
+
+            float share = _selectedCreatureHistory.ObservedTicks <= 0L
+                ? 0f
+                : best / (float)_selectedCreatureHistory.ObservedTicks;
+            return $"{busiest} ({share * 100f:0}%)";
         }
 
         private void DrawSelectedCreatureInspector()
