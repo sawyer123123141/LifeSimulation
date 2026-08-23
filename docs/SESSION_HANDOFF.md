@@ -1,7 +1,7 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `be4dd63`** (`feat: give the ground real relief instead of a flat plane`),
-pushed to `origin/main`. Terrain work started; see §10.
+**Head at handoff: `7c290b5`** (`fix: land barely rose above sea level, so the mesh rendered flat`),
+pushed to `origin/main`. Terrain work in progress; see §10.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
@@ -485,17 +485,79 @@ every hash. A spherical world is a spatial-model refactor: `SimVector2` everywhe
 `(-25, 25)`, uniform 2D perception grid, and movement / distance / dispersal / site placement /
 spatial hashing all assume a plane.
 
-### Next on terrain
+### Terrain generation was rebuilt (2026-08-23)
 
-1. **Look at it in Play mode.** Press `Y`. Nothing below is worth doing until someone confirms the
-   relief reads well and the height scale (`TerrainHeightScale = 5f` over a 50-unit arena) is right.
-2. **A water surface.** Sub-sea-level ground is flattened to sea level but is still ground; an actual
-   water plane would make it read as a world.
-3. **Rain shadow.** Designed but never built, and deliberately so: it needs a wind-direction
-   convention, which is a design choice rather than a mechanical one.
-4. **`docs/sphere-sandbox-prompt.md`** is a fully written prompt for an external visual sandbox that
-   was **never run**. It asks for a spherical elevation spec in the same format as the three shipped
-   fields, and answers to five design questions. Running it is optional but cheap.
+The first attempt produced a uniform gravel field and a globe that rendered as static. Two causes,
+both arithmetic, and neither fixable by smoothing:
+
+1. **No large-scale structure.** Elevation, moisture and fertility were all 3-5 octave fBm at
+   roughly one base frequency, sized so three features span the 50-unit arena. Correct for a 50-unit
+   world; rendered wide it is one band of noise doing everything, so every peak is the same size and
+   biomes speckle.
+2. **Sampling ~20x past Nyquist.** The globe draws 192 columns, resolving frequencies to
+   192/4pi ~ 15. It was handed a field whose finest octave carried ~4,000 features around the
+   equator. Octaves finer than the sample spacing do not add detail, they add aliasing.
+
+**`Assets/Scripts/Presentation/PlanetTerrain.cs`** replaces it with three explicitly separated bands,
+about 3x apart, combined **multiplicatively**: a heavily warped low-frequency **continent mask**
+deciding where land exists; **ridged mountain belts** modulated by that mask *and* a second
+low-frequency belt mask, so ranges occupy part of a continent rather than all of it (**this is what
+makes plains exist**); and a small-amplitude **detail** band. Ocean depth follows the continent
+field, giving shelves and trenches. Moisture carries a **continentality** term, putting deserts
+inland. Every band derives its octave count from the caller's render resolution
+(`PlanetTerrain.OctavesUnder`), so the globe takes fewer octaves than the patch.
+
+Two later fixes worth keeping in mind, because both were "the structure reads correctly, the numbers
+do not":
+
+- Land sat at ~0.51 against a 0.38 waterline - a thirteenth of the range - because the belt mask is
+  zero across most of a continent by design. Land now rises to `SeaLevel + 0.30 * continent` before
+  any ranges, and the range term is **squared** so ridges dominate and ground between them stays
+  flat.
+- Patch relief is a fraction of patch **width**. Reusing the arena's 14 units for a 400-unit patch is
+  flat by construction.
+
+Other fixed defects: the smoothing filter was **aliasing rather than blurring** (three taps at any
+radius, so more smoothing meant more roughness); the sphere was **wound inside-out**, so every
+outward face was backface-culled; the preview sampled the **loaded scenario** rather than the
+generator, so it drew a flat green plane whenever elevation was off; and the camera could not frame
+anything larger than the arena.
+
+**Performance:** sampling and scaling are now separated and everything sampled is cached. The colour
+map alone was ~131,000 `EnvironmentField.Sample` calls being redone on every keypress, though nothing
+about it depends on the height scale.
+
+### THE OPEN DECISION - read before continuing terrain
+
+**`PlanetTerrain` is presentation only. Nothing under `Assets/Scripts/Simulation` reads it.** The
+viewer shows good terrain; the actual game world still runs the old arena-scaled field.
+
+**Do not simply point the arena ground at `PlanetTerrain`.** That would make the visuals and the
+simulation disagree - creatures walking over a mountain the ecology does not know exists. Appearance
+diverging from measurement is the failure mode this whole project is disciplined against.
+
+The blocker is a **scale mismatch**: the arena is 50 units, planet continents are ~500. The whole
+playable area fits inside a fraction of one continent, where planet-scale terrain is uniformly flat.
+Three honest options:
+
+| option | meaning | cost |
+|---|---|---|
+| shrink the features | terrain varies within 50 units | cheap, but it is a hilly field, not a world |
+| **grow the arena** | hundreds of units, so continents fit | large: movement, perception grid, resource placement, and every result is scoped to a 50-unit arena |
+| two scales | planet generates the world, simulation runs a movable window into it | most flexible, most work |
+
+**Recommended: grow the arena** - and note this is not only a terrain argument. The 2026-08-22 cap
+audit found the population cap is *load-bearing*: remove it and the world collapses. Four resource
+sites in a 50-unit box is a tiny artificial ecosystem, and a larger world is the most plausible route
+to the **carrying-capacity-limited habitat** that audit named as missing. Growing the arena may fix
+the ecology problem as well as the terrain one.
+
+### Promotion path, when the decision is made
+
+1. Port the generator into `Assets/Scripts/Simulation/Environment` behind a new flag, default false.
+2. Prove flag-off is **byte-identical** - the project's standing rule for any new behaviour.
+3. Enable it in the terrain playtest scenario only.
+4. Re-measure every procedural-field result; they are scoped to the old field.
 
 ### Expect this failure when terrain varies temperature
 

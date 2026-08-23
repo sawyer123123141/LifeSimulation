@@ -1120,4 +1120,33 @@ change.
   whether the gradients survive a freely fluctuating herbivore population is untested — and raising
   the cap does not test it, because that yields a boom-and-collapse rather than a free-running
   population. It needs a habitat limited by carrying capacity instead of by a cap; none exists yet.
+- **Terrain that reads as terrain needs separated scales, not more octaves (2026-08-23).** One band
+  of fBm doing everything gives a uniform gravel field: every peak the same size, no continents, no
+  plains. The structure that works is a hierarchy combined **multiplicatively** - a very-low-frequency
+  continent mask deciding where land exists, ridged mountain belts modulated by that mask *and* by a
+  second low-frequency belt mask so ranges cover only part of a continent, then small-amplitude
+  detail. The belt mask being zero over most of a continent is what makes plains exist.
+- **Never sample noise finer than the render resolution.** Octaves below the sample spacing do not
+  add detail, they add aliasing. A globe drawn with 192 columns resolves frequencies to 192/4pi ~ 15;
+  it was being handed a field whose finest octave carried ~4,000 features around the equator, and it
+  rendered as television static. Derive octave count from the caller's resolution
+  (`PlanetTerrain.OctavesUnder`), so the same generator gives a globe fewer octaves than a close-up.
+- **When a field looks wrong, evaluate the formula on typical inputs before rewriting it.** Twice the
+  structure read correctly while the numbers did not: land came out at 0.51 against a 0.38 waterline
+  because the belt mask multiplying the relief term is zero over most of a continent; and patch
+  relief reused the arena's 14 units for a 400-unit patch. Both rendered as a coloured plane, and
+  neither was visible from reading the code.
+- **A smoothing filter with a fixed tap count is an aliasing filter.** Averaging three samples spread
+  over a radius undersamples harder as the radius grows - more smoothing produced more roughness.
+  Sample density must scale with radius; blurring on the grid instead is correct at any radius and
+  costs the same.
+- **Prototype generation in Presentation before promoting it to Simulation.** `PlanetTerrain` lives
+  in Presentation, so iterating on it moves no hash and needs no re-measure. Promotion is a
+  deliberate step: flag defaulting false, prove flag-off byte-identical, then re-measure every result
+  scoped to the old field. Do not shortcut it by pointing the renderer at a field the simulation does
+  not use - visuals disagreeing with the simulation is the failure this project is built to avoid.
+- **The 50-unit arena is too small for planet-scale terrain, and possibly for the ecology too.**
+  Continents are ~500 units; the arena fits inside a fraction of one. The same smallness is the
+  likeliest reason the population cap is load-bearing (2026-08-22 cap audit). Growing the arena is a
+  terrain decision *and* the most plausible route to a carrying-capacity-limited habitat.
 
