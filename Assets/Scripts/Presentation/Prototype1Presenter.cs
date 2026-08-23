@@ -315,6 +315,9 @@ namespace LifeSimulation.Presentation
             // because seed 42's founders are one of six cases in thirty that fail to establish in
             // this layout - see docs/experiments/p4a-shifting-patches-2026-08-22.md.
             if (Input.GetKeyDown(KeyCode.V)) ResetObservationScenario(Prototype4Scenarios.ObservationShiftingPatches, foundersAreMature: false, mateSelectionEnabled: false, plantMortalityEnabled: true, worldSeed: 45);
+            // Y is the terrain scenario: procedural environment fields with the elevation channel and
+            // its lapse rate on. Press H until the overlay reaches Elevation to see the relief.
+            if (Input.GetKeyDown(KeyCode.Y)) ResetTerrainPlaytest();
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
@@ -392,7 +395,19 @@ namespace LifeSimulation.Presentation
             None = 0,
             Temperature = 1,
             Biome = 2,
+
+            /// <summary>
+            /// Raw elevation, shaded water -> lowland -> upland -> peak. Reads
+            /// <c>EnvironmentSample.Elevation</c>, which is <b>zero unless
+            /// <c>SimulationConfig.ElevationFieldEnabled</c> is set</c> - so with the flag off this
+            /// renders a flat sea rather than inventing terrain that the simulation does not have.
+            /// Press <c>Y</c> for a scenario that turns the flag on.
+            /// </summary>
+            Elevation = 3,
         }
+
+        /// <summary>Sea level as a fraction of the 0..1 elevation range, for the overlay only.</summary>
+        private const float OverlaySeaLevel = 0.38f;
 
         /// <summary>Biome palette, matching docs/experiments/field-atlas.html so the game view and the atlas agree.</summary>
         private static readonly Color[] BiomeColors =
@@ -411,6 +426,28 @@ namespace LifeSimulation.Presentation
             if (sample.Moisture > 0.74f && sample.Fertility < 0.48f) return 2;
             if (sample.Fertility > 0.58f) return 3;
             return 4;
+        }
+
+        /// <summary>
+        /// Elevation as a readable relief map: everything below <see cref="OverlaySeaLevel"/> reads
+        /// as water, and land ramps beach -> grass -> rock -> snow. Banded rather than a smooth
+        /// gradient because the point of looking at terrain is to see where the contours are, and a
+        /// continuous ramp hides exactly the ridge structure the ridged-multifractal field exists to
+        /// produce.
+        /// </summary>
+        private static Color ShadeElevation(float elevation)
+        {
+            if (elevation <= OverlaySeaLevel)
+            {
+                float depth = OverlaySeaLevel <= 0f ? 0f : Mathf.Clamp01(elevation / OverlaySeaLevel);
+                return Color.Lerp(new Color(0.043f, 0.129f, 0.278f), new Color(0.176f, 0.408f, 0.616f), depth);
+            }
+
+            float land = Mathf.Clamp01((elevation - OverlaySeaLevel) / (1f - OverlaySeaLevel));
+            if (land < 0.08f) return Color.Lerp(new Color(0.827f, 0.776f, 0.573f), new Color(0.573f, 0.678f, 0.376f), land / 0.08f);
+            if (land < 0.45f) return Color.Lerp(new Color(0.573f, 0.678f, 0.376f), new Color(0.353f, 0.478f, 0.278f), (land - 0.08f) / 0.37f);
+            if (land < 0.78f) return Color.Lerp(new Color(0.353f, 0.478f, 0.278f), new Color(0.478f, 0.451f, 0.412f), (land - 0.45f) / 0.33f);
+            return Color.Lerp(new Color(0.478f, 0.451f, 0.412f), Color.white, (land - 0.78f) / 0.22f);
         }
 
         private void UpdateTemperatureHeatmapIfNeeded()
@@ -433,7 +470,11 @@ namespace LifeSimulation.Presentation
                 {
                     float worldX = Mathf.Lerp(minX, maxX, (x + 0.5f) / HeatmapResolution);
                     var position = new SimVector2(worldX, z);
-                    if (_overlay == TerrainOverlay.Biome)
+                    if (_overlay == TerrainOverlay.Elevation)
+                    {
+                        _temperaturePixels[rowStart + x] = ShadeElevation(_world.Environment.Sample(position).Elevation);
+                    }
+                    else if (_overlay == TerrainOverlay.Biome)
                     {
                         EnvironmentSample sample = _world.Environment.Sample(position);
                         // Shade each biome by its own fertility so the map shows gradient within a
@@ -461,7 +502,7 @@ namespace LifeSimulation.Presentation
 
         private void ToggleTemperatureHeatmap()
         {
-            _overlay = (TerrainOverlay)(((int)_overlay + 1) % 3);
+            _overlay = (TerrainOverlay)(((int)_overlay + 1) % 4);
             _showTemperatureHeatmap = _overlay != TerrainOverlay.None;
             if (_showTemperatureHeatmap)
             {
@@ -591,6 +632,61 @@ namespace LifeSimulation.Presentation
         private void ResetWatchableStarterHabitat()
         {
             ResetObservationScenario(Prototype4Scenarios.WatchableStarterHabitat, foundersAreMature: true, mateSelectionEnabled: true);
+        }
+
+        /// <summary>
+        /// Terrain playtest: procedural environment fields with the elevation channel and its lapse
+        /// rate enabled, so <c>H</c>'s Elevation overlay shows real relief rather than a flat sea.
+        ///
+        /// <para><b>Population cap 96, not the usual 40.</b> Two measured reasons. Elevation is
+        /// inert at cap 48 because patches sit near capacity and growth is multiplied by
+        /// <c>(1 - Biomass/Capacity)</c>, so a change to the growth *limit* has nothing to act on
+        /// (docs/experiments/p4-elevation-field-2026-08-19.md); heavier grazing is what lets the
+        /// limit matter. But the cap cannot simply be removed - the herbivore configuration goes
+        /// 0/6 extinct at cap 96 and 5/6 at cap 200, because past that the population overshoots and
+        /// starves (docs/experiments/p4-cap-pinning-audit-2026-08-22.md). 96 is the highest cap
+        /// measured to survive.</para>
+        ///
+        /// <para>Fertility adaptation is on for the other measured reason: fertility binds the
+        /// growth <c>Min</c> at 82-90% of plant-reachable positions, so while it is the smallest
+        /// channel a colder crest changes nothing at all.</para>
+        /// </summary>
+        private void ResetTerrainPlaytest()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
+            var config = new SimulationConfig(
+                defaults.WorldSeed,
+                defaults.InitialPopulation,
+                defaults.Schedule,
+                maximumPopulation: 96,
+                defaults.FounderProfile,
+                defaults.CognitionEnabled,
+                defaults.PhysiologyEnabled,
+                DecisionPolicyVersion.IntentUtilityV1,
+                defaults.PlantCohortsEnabled,
+                predationEconomicsEnabled: true,
+                decisionStaggerEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                restBehaviorEnabled: true,
+                juvenileCapabilityEnabled: true,
+                parentalFollowingEnabled: true,
+                kinRecognitionEnabled: true,
+                learnedResourceQualityEnabled: true,
+                mateSelectionEnabled: true,
+                plantSiteCompetitionEnabled: true,
+                plantMortalityEnabled: true,
+                plantTemperatureAdaptationEnabled: true,
+                proceduralEnvironmentFieldsEnabled: true,
+                plantFertilityAdaptationEnabled: true,
+                elevationFieldEnabled: true);
+            ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
+            _scenarioId = "p6-terrain-playtest";
+            _scenarioHint = "Watch: press H to reach the Elevation overlay";
+            _overlay = TerrainOverlay.Elevation;
+            _showTemperatureHeatmap = true;
+            _heatmapUpdateAccumulator = HeatmapUpdateInterval;
+            UpdateTemperatureHeatmapIfNeeded();
+            ApplyTemperatureHeatmap();
         }
 
         private static string GetScenarioHint(string scenarioId)

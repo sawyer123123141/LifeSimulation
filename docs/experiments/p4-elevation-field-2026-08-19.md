@@ -44,6 +44,19 @@ And it does not disturb the plant calibration: 0/30 extinct, 0/30 plantless, mea
 
 ## Two conditions, and neither alone is enough
 
+> **SCOPE NOTE, 2026-08-22.** The two-factor table below was measured on **seed 42 at 2,000 ticks**.
+> At that run length the population has not reached its cap — under the terrain playtest
+> configuration it only reaches 12–17 creatures by tick 2,000 — so a cap of 48 versus 1,000 can bind
+> only if the tested configuration grows much faster than that one does. Re-measured at **12,000
+> ticks** on `ConsumerDefenseCalibrationModerate` with the full P4 flag set, elevation is **live at
+> every cap tested, including 48**, on 23 of 24 seed/flag combinations — fertility adaptation is not
+> required there either.
+>
+> This does **not** refute the table: different scenario, different flag set, different run length.
+> It scopes it. The two-factor claim holds for the configuration it was measured on and should not
+> be quoted as a general property of elevation. If the conditions matter for a new piece of work,
+> re-measure them on that work's configuration and at a run length where the cap actually binds.
+
 That identical survival table is the signature of a dead flag in this repo, not of a small
 effect, so it was checked against the state hash rather than trusted. Seed 42, 2,000 ticks:
 
