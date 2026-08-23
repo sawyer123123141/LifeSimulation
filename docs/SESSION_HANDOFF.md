@@ -1,7 +1,8 @@
 # Session Handoff — 2026-08-22
 
-**Head at handoff: `7c290b5`** (`fix: land barely rose above sea level, so the mesh rendered flat`),
-pushed to `origin/main`. Terrain work in progress; see §10.
+**Head at handoff: the terrain brainstorm commit** on `origin/main`. Terrain work paused mid-way;
+**read `docs/terrain-brainstorm-2026-08-23.md` before touching terrain again** - it explains why five
+rounds of changes produced no visible difference, and the answer is arithmetic, not taste.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
