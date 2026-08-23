@@ -104,6 +104,72 @@ namespace LifeSimulation.Simulation.Experiments
         public string Id { get; }
         public int ResourceCount => _resources.Length;
 
+        /// <summary>
+        /// Deterministic fingerprint of the actual layout: every resource definition and the
+        /// founder placement.
+        ///
+        /// <para>An identifier is not provenance. Two scenarios can share a name and differ in
+        /// geometry, which is precisely how the 168-site low-occupancy condition was lost on
+        /// 2026-08-22 - the writeups recorded its site count and config but never its coordinates,
+        /// and nothing could tell a later reconstruction whether it matched. Recording this
+        /// alongside a result lets a future session answer that question.</para>
+        /// </summary>
+        public ulong ComputeLayoutFingerprint()
+        {
+            ulong hash = 14695981039346656037UL;
+            hash = Mix(hash, unchecked((ulong)_resources.Length));
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition definition = _resources[index];
+                hash = Mix(hash, unchecked((ulong)definition.Kind));
+                hash = MixFloat(hash, definition.Position.X);
+                hash = MixFloat(hash, definition.Position.Y);
+                hash = MixFloat(hash, definition.InteractionRadius);
+                hash = MixFloat(hash, definition.InitialAmount);
+                hash = MixFloat(hash, definition.Capacity);
+                hash = MixFloat(hash, definition.RegenerationPerSecond);
+                hash = MixFloat(hash, definition.NutritionMultiplier);
+                hash = Mix(hash, definition.IsActive ? 1UL : 0UL);
+                if (definition.PlantGenome.HasValue)
+                {
+                    PlantGenome genome = definition.PlantGenome.Value;
+                    hash = Mix(hash, 1UL);
+                    foreach (float trait in genome.ToTraits())
+                    {
+                        hash = MixFloat(hash, trait);
+                    }
+                }
+                else
+                {
+                    hash = Mix(hash, 0UL);
+                }
+            }
+
+            hash = Mix(hash, _founderPlacement.HasValue ? 1UL : 0UL);
+            if (_founderPlacement.HasValue)
+            {
+                hash = MixFloat(hash, _founderPlacement.Value.X);
+                hash = MixFloat(hash, _founderPlacement.Value.Y);
+            }
+
+            return hash;
+        }
+
+        private static ulong MixFloat(ulong hash, float value)
+        {
+            return Mix(hash, unchecked((ulong)BitConverter.SingleToInt32Bits(value)));
+        }
+
+        private static ulong Mix(ulong hash, ulong value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                hash *= 1099511628211UL;
+                return hash;
+            }
+        }
+
         public void ApplyTo(SimulationWorld world)
         {
             if (world == null)

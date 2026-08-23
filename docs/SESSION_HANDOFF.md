@@ -80,35 +80,35 @@ files are preserved unedited.
 
 ## Next task
 
-The evidence audit is **complete except for the low-occupancy conclusions**, which are blocked on
-geometry rather than on effort.
+The evidence audit is **closed**. Its outcome: the three low-occupancy plant conclusions are
+**unverifiable**, not merely unverified - their scenario was never committed, and the calibrated
+replication reproduces the recorded occupancy (0.311) but grazes at 0.373x the 24-site intensity
+because its free-site pool sits outside the +/-25 creature arena. Placing 162 targets at
+non-saturating spacing inside the arena is geometrically impossible. Their banners stay. Everything
+else in the plant corpus was revalidated on fixed code and cleared.
 
-Revalidated and cleared on fixed code (120 seeds, varying founders, 0/120 extinct and 0/120 frozen
-throughout): the `Dispersal` and `SeedInvestment` positive controls, the establishment-contest
-manipulation, the 24-site `SeedProductionRate` null, and the entire plant lifetime decomposition
-(34% takeover / median 1.95s / R² 0.516 / lifespan R² ≈ 0).
+P1 queue, remaining:
 
-Still open, in order:
+1. ~~finite/range validation~~ **done** (`c751a13`).
+2. ~~mandatory experiment manifest/provenance~~ **done** - `ExperimentManifest` + `ExperimentCsv`,
+   with `SimulationScenario.ComputeLayoutFingerprint()`. **Use them for every new experiment CSV.**
+3. **Allocation-free genetic distance with a measured P5 budget.** Measure first: establish what the
+   current allocation cost actually is per observation before optimising it.
+4. **Benchmark crowded resource allocation before optimising it.** Same rule - the review flagged it
+   as a hot spot, which is a hypothesis, not a measurement.
 
-1. **Reproduce the low-occupancy operating point.** The committed
-   `AbundantSiteReplicationModerate` matches the original's site count exactly and produces
-   occupancy **0.84, not 0.32**, while the 24-site arm in the same sweep reproduced its recorded
-   occupancy to within 0.006 — so the harness is right and the geometry is wrong. Site count is not
-   the lever; **target spacing** is. Try targets spread far apart rather than a dense lattice, and
-   confirm occupancy near 0.32 *before* drawing any trait conclusions from it. Until then the three
-   low-occupancy documents and the six growth-rate nulls stay un-auditable, and the
-   mortality/lifespan-headroom conclusion with them.
-2. Then the P1 queue in its stated order: finite/range validation; mandatory experiment
-   manifest/provenance (this audit is the argument for it); allocation-free genetic distance with a
-   measured P5 budget; benchmark crowded resource allocation before optimising it.
-3. Then resume the ROADMAP.
+Then: State fingerprint V2 (designed, unimplemented,
+`docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`), then resume the ROADMAP.
 
-Two method rules this audit produced, both in the field notes: a control that does not disable the
-trait is not a control, and compare the manipulation the conclusion is about rather than the
-absolute delta.
+If the low-occupancy question matters scientifically, do **not** attempt a fourth reconstruction.
+Re-derive it as a new experiment with a committed scenario: does free-site abundance change which
+plant traits are selected, measured in a geometry that fits inside the grazed arena.
 
-State fingerprint V2 remains designed but unimplemented
-(`docs/superpowers/specs/2026-08-22-state-fingerprint-design.md`).
+Method rules this audit produced, all in the field notes: a control that does not disable the trait
+is not a control; a control that disables more than the trait is also not a control; compare the
+manipulation the conclusion is about rather than the absolute delta; a detector must not depend on
+the fix under test; exclude right-censored lifetimes from lifespan regressions; check the Play seed
+individually before binding a key.
 
 ## Working-tree rules
 

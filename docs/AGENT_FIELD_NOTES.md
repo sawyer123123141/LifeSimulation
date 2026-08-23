@@ -967,6 +967,18 @@ unrecoverable one.
   than as an error. Convention preserved: config constructs freely and `Validate()` is the gate
   (called by `SimulationWorld`'s constructor); scenario data has no deferred gate so it rejects at
   construction.
+- **Every experiment CSV must carry a manifest (2026-08-22).** Use
+  `ExperimentManifest.Describe(codeRevision, scenario, config, firstSeed, seedCount, ticks)` and
+  `ExperimentCsv.Compose(manifest, header, rows)`; the composer **refuses** to write without one.
+  The manifest records the schema version, a caller-supplied code revision, the scenario id, its
+  **layout fingerprint**, resource count, seeds, ticks and all 26 behaviour flags plus the key
+  numerics. A test uses reflection to assert every public bool on `SimulationConfig` appears, so a
+  new flag that is not added to the manifest fails the build - a manifest that silently omits a
+  flag is worse than none, because it looks complete.
+  **`SimulationScenario.ComputeLayoutFingerprint()` is the part that matters most**: an identifier
+  is not provenance, two scenarios can share a name and differ in geometry, and that is exactly how
+  the 168-site condition was lost. `ExperimentManifest` is deliberately environment-free (no clock,
+  no git call, no file system) because it lives in Simulation; the caller supplies the revision.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.
