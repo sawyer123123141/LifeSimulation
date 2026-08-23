@@ -44,6 +44,12 @@ namespace LifeSimulation.Presentation
         private MeshFilter _terrainMeshFilter;
         private Mesh _terrainMesh;
         private GameObject _waterSurface;
+
+        /// <summary>
+        /// Look-at-it view of the fields, decoupled from the 50-unit arena. Cycled with <c>K</c>.
+        /// Presentation only - see <see cref="TerrainPreview"/>.
+        /// </summary>
+        private TerrainPreview _terrainPreview;
         private Color[] _temperaturePixels;
         private Color _terrainColor;
         private float _accumulator;
@@ -138,6 +144,8 @@ namespace LifeSimulation.Presentation
                     $"Height {_terrainHeightScale:0.0}  ([ lower, ] raise or PgDn/PgUp)");
                 GUI.Label(new Rect(24f, 106f, 430f, 22f),
                     $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
+                GUI.Label(new Rect(24f, 128f, 430f, 22f),
+                    $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}");
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
@@ -331,6 +339,14 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();
             HandleTerrainTuningInput();
+            if (Input.GetKeyDown(KeyCode.K) && _terrainPreview != null)
+            {
+                _terrainPreview.HeightScale = _terrainHeightScale;
+                TerrainPreview.Mode mode = _terrainPreview.Advance(_world);
+                // The arena ground and the preview would occupy the same space, so hide one.
+                _terrainRenderer.enabled = mode == TerrainPreview.Mode.Off;
+                if (_waterSurface != null) _waterSurface.SetActive(mode == TerrainPreview.Mode.Off && _world != null && _world.Config.ElevationFieldEnabled);
+            }
             if (Input.GetMouseButtonDown(0) && !TryBeginResourceDrag()) TrySelectCreature();
             if (Input.GetMouseButton(0)) UpdateResourceDrag();
             if (Input.GetMouseButtonUp(0)) _isDraggingResource = false;
@@ -347,6 +363,7 @@ namespace LifeSimulation.Presentation
             _terrainMeshFilter.sharedMesh = _terrainMesh;
             BuildTerrainMesh();
             CreateWaterSurface();
+            _terrainPreview = new TerrainPreview();
             _terrainColor = new Color(0.16f, 0.28f, 0.16f);
             _terrainRenderer.material.color = _terrainColor;
             _temperatureHeatmap = new Texture2D(HeatmapResolution, HeatmapResolution, TextureFormat.RGBA32, false);
@@ -672,6 +689,11 @@ namespace LifeSimulation.Presentation
 
             BuildTerrainMesh();
             UpdateWaterSurface();
+            if (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off)
+            {
+                _terrainPreview.HeightScale = _terrainHeightScale;
+                _terrainPreview.Rebuild(_world);
+            }
         }
 
         /// <summary>
