@@ -1,0 +1,59 @@
+=== TERRAIN STATISTICS ===
+seed 42, 512x256 samples, maxFrequency 40.7
+sea level 0.000 (elevation is signed displacement)
+
+elevation       min -0.709  p10 -0.588  p20 -0.560  p30 -0.536  p40 -0.512  p50 -0.486  p60 -0.439  p70 -0.144  p80 0.209  p90 0.366  max 0.650
+moisture        min 0.152  p10 0.432  p20 0.500  p30 0.558  p40 0.609  p50 0.657  p60 0.702  p70 0.744  p80 0.791  p90 0.855  max 1.000
+temperature     min 0.000  p10 0.099  p20 0.243  p30 0.391  p40 0.525  p50 0.642  p60 0.739  p70 0.805  p80 0.848  p90 0.875  max 0.954
+
+LAND FRACTION 0.240  (target ~0.30)
+land elevation  min 0.000  p10 0.146  p20 0.228  p30 0.260  p40 0.287  p50 0.324  p60 0.387  p70 0.479  p80 0.512  p90 0.538  max 0.650
+highest land 0.650 against HighGround 0.550
+
+ELEVATION BY DISTANCE FROM PLATE BOUNDARY (continental only)
+bucket | mean elevation | samples
+     0 |         0.1477 |    1938
+     1 |         0.2187 |    1816
+     2 |         0.2854 |    1697
+     3 |         0.3231 |    1527
+     4 |         0.3219 |     999
+     5 |         0.3472 |     685
+     6 |         0.3605 |     422
+     7 |         0.3819 |     152
+
+ELEVATION NEAR vs FAR, BY BOUNDARY KIND (continental only)
+Averaging across kinds hides the signal: a collision raising ground is
+diluted by transforms that raise none and rifts that lower it.
+kind                 | near  | far   | lift
+Divergent            | -0.200 | 0.348 | -0.548
+Transform            | 0.112 | 0.297 | -0.185
+Subduction           | -0.032 | 0.430 | -0.462
+ContinentalCollision | 0.490 | 0.464 | 0.026
+IslandArc            | 0.000 | 0.000 | 0.000
+
+FLAT VIEW CENTRE  lat -0.269 lon 2.479
+wide patch (400u)      land 0.379  elevation -0.659-0.651  biomes 6
+close view (200u)      land 0.368  elevation -0.574-0.335  biomes 4
+arena (50u)            land 0.482  elevation -0.254-0.322  biomes 3
+origin-centred 400u    land 0.000  elevation -0.678-0.000  biomes 1
+
+elevation    at 0 0.7606   at 1 0.0000   <- clamped plateaus with cliff edges
+
+SATURATION (clamped to 0 or 1 - flat regions with hard edges)
+moisture     at 0 0.0000   at 1 0.0037
+temperature  at 0 0.0310   at 1 0.0000
+
+ADJACENT-SAMPLE ELEVATION JUMP along a meridian through the view centre
+samples 400, spacing 1.00 units
+median 0.00122   p90 0.01463   max 0.04173 at lat -0.301
+max/median ratio 34.3  (a smooth field is under ~20)
+
+BIOME COUNTS
+Ocean           99664  0.760
+Beach             654  0.005
+Marsh             541  0.004
+Grassland        7548  0.058
+Scrub            1549  0.012
+Desert            350  0.003
+Tundra           5784  0.044
+Ice             14982  0.114

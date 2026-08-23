@@ -61,9 +61,9 @@ namespace LifeSimulation.Presentation
 
         public static BiomeKind Classify(PlanetSample sample)
         {
-            if (sample.Elevation <= PlanetTerrain.SeaLevel) return BiomeKind.Ocean;
+            if (sample.Elevation <= 0f) return BiomeKind.Ocean;
 
-            float land = Mathf.Clamp01((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel));
+            float land = Mathf.Clamp01(sample.Elevation / PlanetTerrain.HighGround);
             if (land < 0.045f) return BiomeKind.Beach;
             if (sample.Temperature < 0.18f) return BiomeKind.Ice;
             if (sample.Temperature < 0.33f) return BiomeKind.Tundra;
@@ -76,13 +76,14 @@ namespace LifeSimulation.Presentation
         public static Color Shade(PlanetSample sample)
         {
             // Ocean: depth from the waterline down, so shelves read lighter than basins.
-            if (sample.Elevation <= PlanetTerrain.SeaLevel)
+            if (sample.Elevation <= 0f)
             {
-                float depth = Mathf.Clamp01(sample.Elevation / PlanetTerrain.SeaLevel);
+                // Depth from the waterline down; shelves read lighter than basins.
+                float depth = Mathf.Clamp01(1f + (sample.Elevation / 0.55f));
                 return Color.Lerp(new Color(0.043f, 0.114f, 0.243f), new Color(0.212f, 0.478f, 0.663f), depth * depth);
             }
 
-            float land = Mathf.Clamp01((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel));
+            float land = Mathf.Clamp01(sample.Elevation / PlanetTerrain.HighGround);
             Color ground = SamplePalette(sample.Temperature, sample.Moisture);
 
             // Beach fades out over the first stretch above the waterline instead of ending at a line.

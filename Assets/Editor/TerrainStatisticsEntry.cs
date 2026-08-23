@@ -79,7 +79,7 @@ namespace LifeSimulation.EditorTools
                     biomeCounts.TryGetValue(biome, out int count);
                     biomeCounts[biome] = count + 1;
 
-                    if (sample.Elevation > PlanetTerrain.SeaLevel) landElevations.Add(sample.Elevation);
+                    if (sample.Elevation > 0f) landElevations.Add(sample.Elevation);
 
                     PlateSample plate = plates.Sample(dx, dy, dz);
                     if (plate.BoundaryDistance > maximumBoundaryDistance) maximumBoundaryDistance = plate.BoundaryDistance;
@@ -134,7 +134,7 @@ namespace LifeSimulation.EditorTools
 
             report.AppendLine("=== TERRAIN STATISTICS ===");
             report.AppendLine($"seed {Seed}, {LongitudeSamples}x{LatitudeSamples} samples, maxFrequency {maximumFrequency:0.0}");
-            report.AppendLine($"sea level {PlanetTerrain.SeaLevel:0.000}");
+            report.AppendLine("sea level 0.000 (elevation is signed displacement)");
             report.AppendLine();
 
             AppendDeciles(report, "elevation", elevations);
@@ -148,7 +148,7 @@ namespace LifeSimulation.EditorTools
             if (land > 0)
             {
                 AppendDeciles(report, "land elevation", landElevations);
-                report.AppendLine($"land elevation uses {(landElevations[land - 1] - PlanetTerrain.SeaLevel) / (1d - PlanetTerrain.SeaLevel):0.000} of the range above sea level");
+                report.AppendLine($"highest land {landElevations[land - 1]:0.000} against HighGround {PlanetTerrain.HighGround:0.000}");
             }
 
             report.AppendLine();
@@ -220,6 +220,38 @@ namespace LifeSimulation.EditorTools
             report.AppendLine($"moisture     at 0 {moistureLow / (double)total:0.0000}   at 1 {moistureHigh / (double)total:0.0000}");
             report.AppendLine($"temperature  at 0 {temperatureLow / (double)total:0.0000}   at 1 {temperatureHigh / (double)total:0.0000}");
 
+            // Adjacent-sample gradient. A terrace is a slope discontinuity, so if the field is
+            // continuous the largest jump between neighbouring samples should be small and smoothly
+            // distributed. A big outlier means the FIELD steps, not the renderer.
+            {
+                const int line = 400;
+                double worst = 0d;
+                double worstAt = 0d;
+                double previous = double.NaN;
+                var jumps = new List<double>();
+                for (int step = 0; step <= line; step++)
+                {
+                    double t = step / (double)line;
+                    double lat = centreLatitude + ((t - 0.5d) * 0.8d);
+                    double value = PlanetTerrain.SampleAtLatLon(Seed, plates, lat, centreLongitude, maximumFrequency).Elevation;
+                    if (!double.IsNaN(previous))
+                    {
+                        double jump = Math.Abs(value - previous);
+                        jumps.Add(jump);
+                        if (jump > worst) { worst = jump; worstAt = lat; }
+                    }
+
+                    previous = value;
+                }
+
+                jumps.Sort();
+                report.AppendLine();
+                report.AppendLine("ADJACENT-SAMPLE ELEVATION JUMP along a meridian through the view centre");
+                report.AppendLine($"samples {line}, spacing {0.8d / line * 500d:0.00} units");
+                report.AppendLine($"median {jumps[jumps.Count / 2]:0.00000}   p90 {jumps[(int)(jumps.Count * 0.9)]:0.00000}   max {worst:0.00000} at lat {worstAt:0.000}");
+                report.AppendLine($"max/median ratio {worst / Math.Max(1e-9d, jumps[jumps.Count / 2]):0.0}  (a smooth field is under ~20)");
+            }
+
             report.AppendLine();
             report.AppendLine("BIOME COUNTS");
             foreach (KeyValuePair<BiomeKind, int> pair in biomeCounts)
@@ -253,7 +285,7 @@ namespace LifeSimulation.EditorTools
                     double latitude = centreLatitude + (z / 500d);
                     double longitude = centreLongitude + (x / 500d);
                     PlanetSample sample = PlanetTerrain.SampleAtLatLon(Seed, plates, latitude, longitude, maximumFrequency);
-                    if (sample.Elevation > PlanetTerrain.SeaLevel) land++;
+                    if (sample.Elevation > 0f) land++;
                     if (sample.Elevation < minimum) minimum = sample.Elevation;
                     if (sample.Elevation > maximum) maximum = sample.Elevation;
                     biomes.Add(PlanetBiome.Classify(sample));

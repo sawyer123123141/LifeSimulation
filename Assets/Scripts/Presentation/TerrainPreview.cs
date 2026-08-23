@@ -129,7 +129,6 @@ namespace LifeSimulation.Presentation
         public Mode Current { get; private set; } = Mode.Off;
 
         /// <summary>Waterline, shared with the generator so shading and geometry agree.</summary>
-        private const float SeaLevel = PlanetTerrain.SeaLevel;
 
         /// <summary>Angular width of the wide patch on the unit sphere, in radians.</summary>
         private const double PatchAngularWidth = 2d * WidePatchHalfWidth / EnvironmentField.SphereRadius;
@@ -154,7 +153,7 @@ namespace LifeSimulation.Presentation
         /// spans. A truthful ratio reads as a plain, so terrain is exaggerated here as it is in every
         /// game that draws it.</para>
         /// </summary>
-        private const float PatchReliefFraction = 0.16f;
+        private const float PatchReliefFraction = 0.07f;
 
         /// <summary>
         /// Patch relief, still scaled by the arena tuning so <c>[</c> and <c>]</c> keep working -
@@ -290,11 +289,10 @@ namespace LifeSimulation.Presentation
                     PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
                     float elevation = sample.Elevation;
-                    // Signed rather than clamped: clamping the sea floor to zero puts a vertical
-                    // cliff at every waterline and stair-steps the shoreline. Depth is compressed so
-                    // the sea reads as shelf rather than pit.
-                    float signed = (elevation - SeaLevel) / (1f - SeaLevel);
-                    float height = signed >= 0f ? signed * PatchHeightScale : signed * PatchHeightScale * 0.35f;
+                    // Elevation is already signed displacement from sea level, so height is one
+                    // multiply: no threshold, no branch, no piecewise mapping to put a slope
+                    // discontinuity at the waterline.
+                    float height = elevation * PatchHeightScale;
                     vertices[vertex] = new Vector3(x, height, z);
                     colors[vertex] = PlanetBiome.Shade(sample);
                 }
@@ -335,7 +333,7 @@ namespace LifeSimulation.Presentation
                 PlanetSample sample = PlanetTerrain.Sample(
                     world.Config.WorldSeed, _plates, direction.x, direction.y, direction.z, maximumFrequency);
 
-                float relief = 1f + (Mathf.Max(0f, sample.Elevation - SeaLevel) / (1f - SeaLevel) * PlanetReliefFraction);
+                float relief = 1f + (sample.Elevation * PlanetReliefFraction);
                 vertices[index] = direction * (PlanetDrawRadius * relief);
                 colors[index] = PlanetBiome.Shade(sample);
             }

@@ -50,7 +50,7 @@ namespace LifeSimulation.EditorTools
             const int side = 321;
             double angularWidth = 2d * halfWidth / 500d;
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor((int)(side * (2d * Mathf.PI) / angularWidth));
-            float heightScale = halfWidth * 2f * 0.16f;
+            float heightScale = halfWidth * 2f * 0.07f;
 
             float cell = halfWidth * 2f / (side - 1);
             var vertices = new Vector3[side * side];
@@ -81,16 +81,9 @@ namespace LifeSimulation.EditorTools
                     // Letting the sea bed go below zero makes the coast a continuous slope, which is
                     // what a beach is. Depth is compressed relative to height so the ocean reads as
                     // shallow shelf rather than a pit.
-                    // Taper the outer border below sea level. The heightfield simply stops at the
-                    // patch boundary, so land standing 20 units up ended in an open cut face with
-                    // nothing closing it to the water - which renders as a striped vertical wall and
-                    // is a mesh-boundary artefact, not terrain. Ending the patch in water removes it
-                    // without touching the field inside.
-                    float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) / halfWidth;
-                    float taper = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.86f, 1f, edge));
 
-                    float signed = ((sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel) * taper) - ((1f - taper) * 0.15f);
-                    float height = signed >= 0f ? signed * heightScale : signed * heightScale * 0.35f;
+                    // One multiply: elevation is already signed displacement from sea level.
+                    float height = sample.Elevation * heightScale;
                     vertices[vertex] = new Vector3(x, height, z);
                     colors[vertex] = PlanetBiome.Shade(sample);
                 }
@@ -144,7 +137,7 @@ namespace LifeSimulation.EditorTools
             {
                 Vector3 direction = directions[index];
                 PlanetSample sample = PlanetTerrain.Sample(Seed, plates, direction.x, direction.y, direction.z, maximumFrequency);
-                float relief = 1f + (Mathf.Max(0f, sample.Elevation - PlanetTerrain.SeaLevel) / (1f - PlanetTerrain.SeaLevel) * 0.075f);
+                float relief = 1f + (sample.Elevation * 0.075f);
                 vertices[index] = direction * (60f * relief);
                 colors[index] = PlanetBiome.Shade(sample);
             }
