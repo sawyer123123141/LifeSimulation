@@ -7,6 +7,15 @@ namespace LifeSimulation.Presentation
         private const float MinimumDistance = 8f;
         private const float DefaultMaximumDistance = 60f;
         private const float DefaultPanLimit = 35f;
+        /// <summary>
+        /// Fraction of the current distance one wheel notch covers. Zoom is multiplicative, so the
+        /// number of notches between two distances is <c>ln(far/near) / ln(1 + step)</c> - at the
+        /// arena's 0.12 that is thirty-four notches from 32 units out to a 500-unit planet, which is
+        /// not a zoom control, it is a chore. Callers showing something that large pass a coarser
+        /// step.
+        /// </summary>
+        private const float DefaultZoomStep = 0.12f;
+
         private const float MinimumPitch = 25f;
         private const float MaximumPitch = 75f;
         private Vector3 _focus;
@@ -14,6 +23,7 @@ namespace LifeSimulation.Presentation
         private float _pitch = 52f;
         private float _maximumDistance = DefaultMaximumDistance;
         private float _panLimit = DefaultPanLimit;
+        private float _zoomStep = DefaultZoomStep;
 
         /// <summary>
         /// Point the camera at something of a given size and let it pull back far enough to see it.
@@ -40,10 +50,11 @@ namespace LifeSimulation.Presentation
         /// and the point is to be able to pull back to see the globe the ground is part of, not to be
         /// teleported there.</para>
         /// </summary>
-        public void SetRange(float maximumDistance, float panLimit)
+        public void SetRange(float maximumDistance, float panLimit, float zoomStep = DefaultZoomStep)
         {
             _maximumDistance = Mathf.Max(DefaultMaximumDistance, maximumDistance);
             _panLimit = Mathf.Max(DefaultPanLimit, panLimit);
+            _zoomStep = zoomStep;
             _distance = Mathf.Min(_distance, _maximumDistance);
         }
 
@@ -52,6 +63,7 @@ namespace LifeSimulation.Presentation
         {
             _maximumDistance = DefaultMaximumDistance;
             _panLimit = DefaultPanLimit;
+            _zoomStep = DefaultZoomStep;
             _distance = Mathf.Min(_distance, _maximumDistance);
             _focus.x = Mathf.Clamp(_focus.x, -_panLimit, _panLimit);
             _focus.z = Mathf.Clamp(_focus.z, -_panLimit, _panLimit);
@@ -76,7 +88,7 @@ namespace LifeSimulation.Presentation
 
         private void LateUpdate()
         {
-            _distance = Mathf.Clamp(_distance - (Input.mouseScrollDelta.y * _distance * .12f), MinimumDistance, _maximumDistance);
+            _distance = Mathf.Clamp(_distance - (Input.mouseScrollDelta.y * _distance * _zoomStep), MinimumDistance, _maximumDistance);
             if (Input.GetMouseButton(1))
             {
                 Vector3 right = transform.right;

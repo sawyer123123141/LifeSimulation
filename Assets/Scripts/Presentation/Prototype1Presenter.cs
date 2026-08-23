@@ -1029,20 +1029,26 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private void ApplyCameraRange()
         {
-            var cameraController = Camera.main == null
+            // The presenter builds its own camera; Camera.main only finds one tagged MainCamera, and
+            // when it found nothing this method returned early and left the 50-unit arena's zoom
+            // ceiling in place - so the planet was there and could not be backed away from.
+            var cameraController = _simulationCamera == null
                 ? null
-                : Camera.main.GetComponent<GroundPlaneCameraController>();
+                : _simulationCamera.GetComponent<GroundPlaneCameraController>();
             if (cameraController == null) return;
 
             if (_sphericalArena)
             {
-                cameraController.SetRange(ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 0.5f);
-                if (Camera.main != null) Camera.main.farClipPlane = ArenaProjection.PlanetRadius * 6f;
+                // Far enough back to see a 500-unit sphere whole, and a coarser zoom step so getting
+                // there is a few turns of the wheel rather than thirty-four.
+                cameraController.SetRange(
+                    ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 0.5f, zoomStep: 0.30f);
+                _simulationCamera.farClipPlane = ArenaProjection.PlanetRadius * 8f;
             }
             else
             {
                 cameraController.ResetRange();
-                if (Camera.main != null) Camera.main.farClipPlane = 1000f;
+                _simulationCamera.farClipPlane = 1000f;
             }
         }
 
