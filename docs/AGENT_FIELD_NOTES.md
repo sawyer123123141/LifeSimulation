@@ -1277,3 +1277,23 @@ change.
   changing hands, so away from those lines the field is bit-for-bit what it was. That is why the
   biome mix survived a change to the plate machinery - worth aiming for deliberately, because a
   global retune would have invalidated every window measurement taken this session.
+- **A round world is a display transform, not a spatial model (2026-08-23).** Creature positions stay
+  two floats on a flat 50-unit square with Euclidean distances; `ArenaProjection` maps them onto a
+  sphere *after* the tick. No hash moves, no flag, nothing re-measured. The trick that keeps the
+  camera working is putting the planet's centre at `(0, -R, 0)`, so the arena's centre lands on the
+  origin with its normal pointing up - there the mapping is the identity, and a rig written for flat
+  ground with up = +Y needs a zoom ceiling and a far clip and nothing else. **Ask what has to be true
+  for the existing code to keep working, and then arrange for it.**
+- **Check whether two views are already the same shape before "fixing" the scale.** I predicted that
+  drawing the planet at true radius would shrink the mountains. It does not: the preview's relief is
+  a *fraction* of radius, so 0.06 at radius 60 is 3.6 units per elevation unit, and at radius 500 it
+  is 30 - exactly what the arena uses. The globe and the ground were always the same shape at
+  different sizes. A ratio that looks like a discrepancy may be the same number twice.
+- **Curve the existing mesh, do not write a curved mesh builder.** The patch is remapped from the
+  flat builder's output. A spherical copy would be a second implementation of the same geometry, and
+  the last two times this project had those they drifted until the diagnostics described a mesh
+  nobody was looking at.
+- **Cache derived quantities in the coordinates they are asked about.** Ground heights are taken from
+  the flat vertices before curving, because "how high is the ground at this arena position" is a
+  question in simulation coordinates; reading it off curved vertices would fold the planet's radius
+  into every creature's height.
