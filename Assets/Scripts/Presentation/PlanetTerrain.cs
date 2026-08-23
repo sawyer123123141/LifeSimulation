@@ -144,17 +144,29 @@ namespace LifeSimulation.Presentation
             // --- Combine multiplicatively. Ocean depth follows the continent mask so there are
             // shelves and trenches rather than a flat floor; land rises from the coast, with ranges
             // where the belt mask allows and gentle ground where it does not.
+            // Land has to occupy most of the range above the waterline, or the mesh is flat however
+            // it is displaced. An earlier version put typical land at about 0.51 against a 0.38
+            // waterline - a thirteenth of the available range - which rendered as a coloured plane.
+            //
+            // The shape wanted here: coastal plains only just above sea level, broad uplands over
+            // most of a continent, and ranges reaching the top of the range where belts allow.
             double elevation;
             if (continent <= 0d)
             {
-                double oceanFloor = 0.06d + (0.24d * continentNoise);
-                elevation = oceanFloor;
+                // Ocean: deep basins far from land, shallow shelves near it.
+                elevation = 0.04d + (0.30d * continentNoise);
             }
             else
             {
-                double baseLand = SeaLevel + (0.06d * continent);
-                double relief = (0.46d * ridges * beltMask) + (0.10d * (detail - 0.5d));
-                elevation = baseLand + (continent * relief);
+                // Rises from the shore, so coasts are low and interiors high regardless of ranges.
+                double upland = SeaLevel + (0.30d * continent);
+
+                // Ranges. Squared so that ridge lines dominate and the ground between them stays
+                // comparatively flat, which is what separates mountains from general lumpiness.
+                double range = ridges * ridges * beltMask;
+
+                double relief = (0.52d * range) + (0.09d * (detail - 0.5d));
+                elevation = upland + (continent * relief);
             }
 
             elevation = EnvironmentNoise.Clamp01(elevation);

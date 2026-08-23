@@ -57,7 +57,7 @@ namespace LifeSimulation.Presentation
         private const float PlanetDrawRadius = 60f;
 
         /// <summary>Relief on the planet as a fraction of its radius.</summary>
-        private const float PlanetReliefFraction = 0.045f;
+        private const float PlanetReliefFraction = 0.075f;
 
         private readonly GameObject _root;
         private readonly MeshFilter _meshFilter;
@@ -105,6 +105,26 @@ namespace LifeSimulation.Presentation
 
         /// <summary>Vertical exaggeration of the wide patch, shared with the arena ground for consistency.</summary>
         public float HeightScale { get; set; } = 14f;
+
+        /// <summary>
+        /// Relief on the wide patch, as a fraction of its width. The patch is eight times wider than
+        /// the arena, so reusing the arena's height directly would draw 400 units of world with 14
+        /// units of relief - flat, whatever the elevation field says.
+        ///
+        /// <para>Real terrain is far flatter than this: Everest is about 0.2% of the distance it
+        /// spans. A truthful ratio reads as a plain, so terrain is exaggerated here as it is in every
+        /// game that draws it.</para>
+        /// </summary>
+        private const float PatchReliefFraction = 0.075f;
+
+        /// <summary>
+        /// Patch relief, still scaled by the arena tuning so <c>[</c> and <c>]</c> keep working -
+        /// they now adjust it relative to a height that suits the patch rather than the arena.
+        /// </summary>
+        private float PatchHeightScale
+        {
+            get { return WidePatchHalfWidth * 2f * PatchReliefFraction * (HeightScale / 14f); }
+        }
 
         private string LiveSuffix
         {
@@ -220,7 +240,7 @@ namespace LifeSimulation.Presentation
                     PlanetSample sample = SamplePatch(world, x, z);
                     int vertex = row * side + column;
                     float elevation = island ? sample.Elevation * IslandFalloff(x, z) : sample.Elevation;
-                    float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * HeightScale;
+                    float height = Mathf.Max(0f, elevation - SeaLevel) / (1f - SeaLevel) * PatchHeightScale;
                     vertices[vertex] = new Vector3(x, height, z);
                     uv[vertex] = new Vector2(u, v);
                 }
