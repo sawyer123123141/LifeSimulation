@@ -17,6 +17,27 @@ namespace LifeSimulation.Simulation.Analysis
             return RootMeanSquare(first.ToTraits(), second.ToTraits());
         }
 
+        /// <summary>
+        /// Distance between two genomes already flattened into one shared trait buffer. Allocates
+        /// nothing, which is what lets an O(n^2) clustering pass allocate O(n).
+        /// </summary>
+        public static float Between(float[] traits, int firstOffset, int secondOffset, int traitCount)
+        {
+            if (traits == null) throw new ArgumentNullException(nameof(traits));
+            if (traitCount <= 0) throw new ArgumentOutOfRangeException(nameof(traitCount));
+            if (firstOffset < 0 || firstOffset + traitCount > traits.Length) throw new ArgumentOutOfRangeException(nameof(firstOffset));
+            if (secondOffset < 0 || secondOffset + traitCount > traits.Length) throw new ArgumentOutOfRangeException(nameof(secondOffset));
+
+            float sumSquared = 0f;
+            for (int index = 0; index < traitCount; index++)
+            {
+                float difference = traits[firstOffset + index] - traits[secondOffset + index];
+                sumSquared += difference * difference;
+            }
+
+            return (float)Math.Sqrt(sumSquared / traitCount);
+        }
+
         private static float RootMeanSquare(float[] first, float[] second)
         {
             float sumSquared = 0f;

@@ -979,6 +979,14 @@ unrecoverable one.
   is not provenance, two scenarios can share a name and differ in geometry, and that is exactly how
   the 168-site condition was lost. `ExperimentManifest` is deliberately environment-free (no clock,
   no git call, no file system) because it lives in Simulation; the caller supplies the revision.
+- **P5 clustering allocation is now linear in population, measured both before and after
+  (2026-08-22).** `GeneticClusters.From` flattens every genome into one shared trait buffer once,
+  then compares offsets into it via `GeneticDistance.Between(traits, offsetA, offsetB, count)`.
+  Before: a constant **240 bytes per pair** (two `ToTraits` arrays), giving 187 KB at 40 creatures,
+  4.8 MB at 200 and **120 MB / 126 ms at 1,000**. After: 4.3 KB, 21 KB and **104 KB / 50 ms** - a
+  1,151x reduction and 2.5x faster at 1,000. `Genome.WriteTraits(destination, offset)` is the single
+  source of trait order; `ToTraits()` is now the allocating wrapper around it. A test pins that
+  allocation grows under 8x when pairs grow 16x, so a regression to per-pair allocation fails.
 - Phase order is fixed: P4 (ecosystem) → P5 (species/history) → P6 (terrain
   generation). Terrain is last, deliberately.
 - Subagents: dispatch on `model: sonnet` explicitly. Ask before using opus.

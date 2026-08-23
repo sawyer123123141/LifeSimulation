@@ -162,16 +162,46 @@ namespace LifeSimulation.Simulation.Biology
         /// </summary>
         public float[] ToTraits()
         {
-            return new[]
-            {
-                BodySize, MovementSpeed, MetabolicPace, VisionRange,
-                WaterEfficiency, FoodEfficiency, Attack, Defense,
-                Maneuverability, Fear, Aggression, DietSpecialization,
-                MemoryCapacity, MemoryRetention, LearningRate, Exploration,
-                TemperatureTolerance, FertilityInvestment, LifespanTendency,
-                UrgencyExponent, TravelSensitivity, RiskAversion,
-                NeutralMarker, Persistence,
-            };
+            var traits = new float[TraitCount];
+            WriteTraits(traits, 0);
+            return traits;
+        }
+
+        /// <summary>
+        /// Writes this genome's traits into a caller-owned buffer at <paramref name="offset"/>.
+        /// <see cref="ToTraits"/> is the allocating convenience wrapper; analysis loops that compare
+        /// many genomes use this so their allocation scales with the population rather than with the
+        /// number of pairs compared.
+        /// </summary>
+        public void WriteTraits(float[] destination, int offset)
+        {
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (offset < 0 || offset + TraitCount > destination.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+
+            destination[offset + 0] = BodySize;
+            destination[offset + 1] = MovementSpeed;
+            destination[offset + 2] = MetabolicPace;
+            destination[offset + 3] = VisionRange;
+            destination[offset + 4] = WaterEfficiency;
+            destination[offset + 5] = FoodEfficiency;
+            destination[offset + 6] = Attack;
+            destination[offset + 7] = Defense;
+            destination[offset + 8] = Maneuverability;
+            destination[offset + 9] = Fear;
+            destination[offset + 10] = Aggression;
+            destination[offset + 11] = DietSpecialization;
+            destination[offset + 12] = MemoryCapacity;
+            destination[offset + 13] = MemoryRetention;
+            destination[offset + 14] = LearningRate;
+            destination[offset + 15] = Exploration;
+            destination[offset + 16] = TemperatureTolerance;
+            destination[offset + 17] = FertilityInvestment;
+            destination[offset + 18] = LifespanTendency;
+            destination[offset + 19] = UrgencyExponent;
+            destination[offset + 20] = TravelSensitivity;
+            destination[offset + 21] = RiskAversion;
+            destination[offset + 22] = NeutralMarker;
+            destination[offset + 23] = Persistence;
         }
 
         /// <summary>Rebuild a genome from <see cref="ToTraits"/> output.</summary>
