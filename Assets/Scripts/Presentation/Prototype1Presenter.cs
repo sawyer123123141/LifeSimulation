@@ -134,8 +134,10 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             if (_world != null && _world.Config.ElevationFieldEnabled)
             {
-                GUI.Label(new Rect(24f, 84f, 420f, 22f),
-                    $"Terrain: height [ ] {_terrainHeightScale:0.0}    smoothing , . {_terrainSmoothingRadius:0.0}");
+                GUI.Label(new Rect(24f, 84f, 430f, 22f),
+                    $"Height {_terrainHeightScale:0.0}  ([ lower, ] raise or PgDn/PgUp)");
+                GUI.Label(new Rect(24f, 106f, 430f, 22f),
+                    $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
@@ -471,6 +473,9 @@ namespace LifeSimulation.Presentation
         /// <summary>Vertices per side of the ground mesh. 129 gives 0.39-unit quads across the arena.</summary>
         private const int TerrainResolution = 129;
 
+        /// <summary>Half the arena width, matching the simulation's hardcoded (-25, 25) bounds.</summary>
+        private const float TerrainHalfWidth = 25f;
+
         /// <summary>
         /// World units of relief between sea level and the highest ground. <b>Tunable at runtime</b>
         /// with <c>[</c> and <c>]</c>, because the right value cannot be reasoned out - it depends on
@@ -496,11 +501,13 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private float _terrainSmoothingRadius = 1.2f;
 
-        /// <summary>Samples per side of the smoothing filter. 3 means a 3x3 box, 9 samples.</summary>
-        private const int TerrainSmoothingTaps = 3;
+
+        /// <summary>Cached smoothed height grid, TerrainResolution x TerrainResolution, in world units.</summary>
+        private float[] _terrainHeights;
 
         /// <summary>
-        /// Ground height under a simulation position, in Unity units.
+        /// Ground height under a simulation position, in Unity units, read from the cached height
+        /// grid with bilinear interpolation.
         ///
         /// <para><b>Cosmetic only.</b> The simulation is a flat plane: every position is a
         /// <c>SimVector2</c>, distance is 2D, and nothing in <c>Assets/Scripts/Simulation</c> knows
@@ -508,41 +515,106 @@ namespace LifeSimulation.Presentation
         /// and a hill costs them nothing. Making elevation affect movement is a simulation change -
         /// flag, tests and an experiment - not a presentation one.</para>
         ///
-        /// <para>Everything at or below sea level is flattened to sea level, so water reads as a
-        /// surface rather than as a bowl.</para>
+        /// <para>Reading the cache rather than resampling matters twice over: creatures land exactly
+        /// on the drawn surface rather than on a separately computed one, and a creature costs an
+        /// array read per frame instead of a noise evaluation.</para>
         /// </summary>
         private float GroundHeightAt(float x, float z)
         {
-            if (_world == null || !_world.Config.ElevationFieldEnabled) return 0f;
+            if (_terrainHeights == null || _world == null || !_world.Config.ElevationFieldEnabled) return 0f;
 
-            return Mathf.Max(0f, SmoothedElevationAt(x, z) - OverlaySeaLevel) / (1f - OverlaySeaLevel) * _terrainHeightScale;
+            int side = TerrainResolution;
+            float u = Mathf.Clamp01((x + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
+            float v = Mathf.Clamp01((z + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
+            int column = Mathf.Clamp((int)u, 0, side - 2);
+            int row = Mathf.Clamp((int)v, 0, side - 2);
+            float fx = u - column;
+            float fz = v - row;
+
+            float bottomLeft = _terrainHeights[row * side + column];
+            float bottomRight = _terrainHeights[row * side + column + 1];
+            float topLeft = _terrainHeights[(row + 1) * side + column];
+            float topRight = _terrainHeights[(row + 1) * side + column + 1];
+            return Mathf.Lerp(Mathf.Lerp(bottomLeft, bottomRight, fx), Mathf.Lerp(topLeft, topRight, fx), fz);
         }
 
         /// <summary>
-        /// Elevation averaged over a small box, which removes the sub-creature-scale octaves without
-        /// touching the field itself. A radius of zero returns the raw field.
+        /// Sample the elevation field onto the mesh grid, then blur it <i>on the grid</i>.
+        ///
+        /// <para>The earlier version averaged a fixed 3x3 of point samples spread across the
+        /// smoothing radius, which is not a blur at all: as the radius grows those three taps move
+        /// apart and <b>undersample</b> the field, synthesising a new jagged pattern instead of
+        /// removing one. Turning smoothing up made the ground rougher. A box filter needs sample
+        /// density proportional to its radius, so the fix is to sample once per grid cell and then
+        /// filter neighbouring cells, which is both correct and independent of radius in cost.</para>
+        ///
+        /// <para>Filtering happens here rather than in <c>EnvironmentField</c> because the field is
+        /// simulation state feeding the lapse rate: smoothing it there would change ecology and every
+        /// elevation-on hash, while smoothing the mesh changes only what is drawn.</para>
         /// </summary>
-        private float SmoothedElevationAt(float x, float z)
+        private void RebuildTerrainHeights()
         {
-            if (_terrainSmoothingRadius <= 0f)
+            int side = TerrainResolution;
+            if (_terrainHeights == null || _terrainHeights.Length != side * side)
             {
-                return _world.Environment.Sample(new SimVector2(x, z)).Elevation;
+                _terrainHeights = new float[side * side];
             }
 
-            float total = 0f;
-            int taps = 0;
-            for (int row = 0; row < TerrainSmoothingTaps; row++)
+            if (_world == null || !_world.Config.ElevationFieldEnabled)
             {
-                float offsetZ = Mathf.Lerp(-_terrainSmoothingRadius, _terrainSmoothingRadius, row / (float)(TerrainSmoothingTaps - 1));
-                for (int column = 0; column < TerrainSmoothingTaps; column++)
+                System.Array.Clear(_terrainHeights, 0, _terrainHeights.Length);
+                return;
+            }
+
+            var raw = new float[side * side];
+            for (int row = 0; row < side; row++)
+            {
+                float z = Mathf.Lerp(-TerrainHalfWidth, TerrainHalfWidth, row / (float)(side - 1));
+                for (int column = 0; column < side; column++)
                 {
-                    float offsetX = Mathf.Lerp(-_terrainSmoothingRadius, _terrainSmoothingRadius, column / (float)(TerrainSmoothingTaps - 1));
-                    total += _world.Environment.Sample(new SimVector2(x + offsetX, z + offsetZ)).Elevation;
-                    taps++;
+                    float x = Mathf.Lerp(-TerrainHalfWidth, TerrainHalfWidth, column / (float)(side - 1));
+                    raw[row * side + column] = _world.Environment.Sample(new SimVector2(x, z)).Elevation;
                 }
             }
 
-            return total / taps;
+            // Each pass is a 3x3 box over one cell, so N passes smooth roughly N cells outward.
+            float cellSize = 2f * TerrainHalfWidth / (side - 1);
+            int passes = Mathf.Clamp(Mathf.RoundToInt(_terrainSmoothingRadius / Mathf.Max(cellSize, 0.0001f)), 0, 32);
+            var scratch = new float[side * side];
+            for (int pass = 0; pass < passes; pass++)
+            {
+                for (int row = 0; row < side; row++)
+                {
+                    for (int column = 0; column < side; column++)
+                    {
+                        float total = 0f;
+                        int taps = 0;
+                        for (int dz = -1; dz <= 1; dz++)
+                        {
+                            int sampleRow = row + dz;
+                            if (sampleRow < 0 || sampleRow >= side) continue;
+                            for (int dx = -1; dx <= 1; dx++)
+                            {
+                                int sampleColumn = column + dx;
+                                if (sampleColumn < 0 || sampleColumn >= side) continue;
+                                total += raw[sampleRow * side + sampleColumn];
+                                taps++;
+                            }
+                        }
+
+                        scratch[row * side + column] = total / taps;
+                    }
+                }
+
+                float[] swap = raw;
+                raw = scratch;
+                scratch = swap;
+            }
+
+            for (int index = 0; index < raw.Length; index++)
+            {
+                _terrainHeights[index] = Mathf.Max(0f, raw[index] - OverlaySeaLevel) / (1f - OverlaySeaLevel) * _terrainHeightScale;
+            }
         }
 
         /// <summary>
@@ -590,10 +662,12 @@ namespace LifeSimulation.Presentation
         private void HandleTerrainTuningInput()
         {
             bool changed = false;
-            if (Input.GetKeyDown(KeyCode.LeftBracket)) { _terrainHeightScale = Mathf.Max(0f, _terrainHeightScale - 2f); changed = true; }
-            if (Input.GetKeyDown(KeyCode.RightBracket)) { _terrainHeightScale += 2f; changed = true; }
-            if (Input.GetKeyDown(KeyCode.Comma)) { _terrainSmoothingRadius = Mathf.Max(0f, _terrainSmoothingRadius - 0.3f); changed = true; }
-            if (Input.GetKeyDown(KeyCode.Period)) { _terrainSmoothingRadius += 0.3f; changed = true; }
+            // Two bindings each, because bracket and comma keys are not in the same place on every
+            // keyboard layout and a tuning control you cannot find is not a tuning control.
+            if (Input.GetKeyDown(KeyCode.LeftBracket) || Input.GetKeyDown(KeyCode.PageDown)) { _terrainHeightScale = Mathf.Max(0f, _terrainHeightScale - 2f); changed = true; }
+            if (Input.GetKeyDown(KeyCode.RightBracket) || Input.GetKeyDown(KeyCode.PageUp)) { _terrainHeightScale += 2f; changed = true; }
+            if (Input.GetKeyDown(KeyCode.Comma) || Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus)) { _terrainSmoothingRadius = Mathf.Max(0f, _terrainSmoothingRadius - 0.4f); changed = true; }
+            if (Input.GetKeyDown(KeyCode.Period) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus)) { _terrainSmoothingRadius += 0.4f; changed = true; }
             if (!changed) return;
 
             BuildTerrainMesh();
@@ -608,7 +682,9 @@ namespace LifeSimulation.Presentation
         {
             if (_terrainMesh == null) return;
 
-            const float halfWidth = 25f;
+            RebuildTerrainHeights();
+
+            const float halfWidth = TerrainHalfWidth;
             int side = TerrainResolution;
             var vertices = new Vector3[side * side];
             var uv = new Vector2[side * side];
@@ -623,7 +699,7 @@ namespace LifeSimulation.Presentation
                     float u = column / (float)(side - 1);
                     float x = Mathf.Lerp(-halfWidth, halfWidth, u);
                     int vertex = row * side + column;
-                    vertices[vertex] = new Vector3(x, GroundHeightAt(x, z), z);
+                    vertices[vertex] = new Vector3(x, _terrainHeights[vertex], z);
                     uv[vertex] = new Vector2(u, v);
                 }
             }
