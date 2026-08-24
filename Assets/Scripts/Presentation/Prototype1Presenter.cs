@@ -767,7 +767,15 @@ namespace LifeSimulation.Presentation
                 // being simulated ought to be the same ground. Safe to switch on here only because
                 // the local band exists: without it this field is nearly constant across a 50-unit
                 // window and the temperature heatmap below would show one flat colour.
-                terrainDrivenEnvironmentEnabled: true);
+                terrainDrivenEnvironmentEnabled: true,
+                // And a hill costs something to climb. Measured across three conditions before being
+                // switched on anywhere: it destabilises nothing at a sane population cap, moves no
+                // gene, and puts creatures on flatter ground - the mechanism's own prediction, at
+                // t = -2.09 with a sign test agreeing. See
+                // docs/experiments/p6-slope-cost-cap100-2026-08-24.md. The configuration default
+                // stays false; this is a scenario choice, and every recorded plant result was
+                // measured without it.
+                slopeMovementCostEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";

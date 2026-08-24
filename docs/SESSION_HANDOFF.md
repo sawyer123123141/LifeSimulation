@@ -1091,6 +1091,23 @@ off.** A decisive version needs a scenario built for the question rather than in
 plant corpus - population uncapped, resources placed so reaching them means climbing, and a
 distance-travelled statistic.
 
+**Third condition, and the one that answers it** (`--focused 120 100`,
+`docs/experiments/p6-slope-cost-cap100-2026-08-24.md`). At a cap of 100 the ecology is healthy -
+**2 extinctions against 2** in 120 pairs, every pair diverged - and the table is quiet enough to
+read. **Creatures that pay to climb stand on flatter ground**: `occupied_slope` -0.0345, t = -2.09,
+sign test 71 negative against 45, z = 2.41. That is the mechanism's a-priori prediction and it is a
+behavioural readout rather than a gene, so it needs no selection to have happened. Energy points the
+same way.
+
+**Do not oversell it.** The control `NeutralMarker` comes in at sign z = -1.64, which is the noise
+floor of these tests; 2.41 clears it without towering over it, and one column of fourteen past
+|t| = 2 is what chance produces. **No gene moved** - every gene column is at |t| <= 1.36. Behaviour
+responds within a lifetime; selection would need a stronger cost or far longer runs.
+
+**`slopeMovementCostEnabled` is now on for the `Y` terrain playtest scenario** - the scenario whose
+whole purpose is that terrain means something. The configuration default stays `false`, and every
+recorded plant result remains scoped to runs without it.
+
 **A second, focused run fixed both limitations** (`--focused`, 60 relief-bearing seeds, cap 200,
 `docs/experiments/p6-slope-cost-focused-2026-08-24.md`). Every pair diverged - 0 identical hashes -
 and the result is **suggestive, not established**: extinction 46 against 38, but the paired test is

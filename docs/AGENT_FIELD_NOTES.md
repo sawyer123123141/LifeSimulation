@@ -1490,3 +1490,12 @@ change.
   *where* it was - 98.31% beyond 60 degrees - closed the item without touching a coefficient. Third
   stale worry closed by measurement in one session, after `PatchLift` and the claim that
   `GeneticClusterHistory` could not be split.
+- **Measure the control's own noise floor before calling a result significant (2026-08-24).** The
+  cap-100 slope run put `occupied_slope` at sign z = 2.41 - but the `NeutralMarker` control, which
+  cannot respond to anything, came in at z = -1.64 on the same test. The floor is not zero. A result
+  is only as impressive as its distance from what the control does, and reporting 2.41 without 1.64
+  beside it would have been the more flattering half of the truth.
+- **A behavioural readout beats a genetic one for showing a mechanism works.** Where an animal is
+  standing responds within a lifetime; a gene needs selection, generations and a strong enough
+  pressure. The slope cost moved `occupied_slope` and no gene at all, which is the coherent result -
+  and it was measurable with no new simulation state, from positions that already existed.
