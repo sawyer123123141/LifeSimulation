@@ -428,21 +428,6 @@ namespace LifeSimulation.Presentation
             _arenaPlateSeed = seed;
             _arenaPlateRevision = revision;
             _arenaPlates.GetCoastalCentre(out _arenaCentreLatitude, out _arenaCentreLongitude);
-
-            // Same snap the terrain-driven environment field applies, so the ground drawn and the
-            // ground simulated stay the same ground. A 50-unit window on a planet 3 km around
-            // otherwise lands on a river only by luck.
-            RiverNetwork arenaRivers = TerrainView.RiversFor(seed, _arenaPlates);
-            if (arenaRivers != null)
-            {
-                double latitude = _arenaCentreLatitude;
-                double longitude = _arenaCentreLongitude;
-                if (arenaRivers.SnapToNearestMouth(ref latitude, ref longitude))
-                {
-                    _arenaCentreLatitude = latitude;
-                    _arenaCentreLongitude = longitude;
-                }
-            }
         }
 
         /// <summary>Flat ground for every scenario that does not use the elevation field.</summary>

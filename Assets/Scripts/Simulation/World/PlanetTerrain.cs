@@ -6,24 +6,13 @@ namespace LifeSimulation.Simulation.World
     /// <summary>One point on the planet surface.</summary>
     public readonly struct PlanetSample
     {
-        public PlanetSample(float elevation, float moisture, float temperature, float continent, float channel = 0f)
+        public PlanetSample(float elevation, float moisture, float temperature, float continent)
         {
             Elevation = elevation;
             Moisture = moisture;
             Temperature = temperature;
             Continent = continent;
-            Channel = channel;
         }
-
-        /// <summary>
-        /// How much river is at this point: 1 midstream, 0 away from any channel.
-        ///
-        /// <para>Carried on the sample rather than recomputed by the renderer, because the only way
-        /// to be sure the blue line and the cut ground are the same river is for both to read one
-        /// number. It is zero unless the caller supplied a <c>RiverNetwork</c>, so a sample without
-        /// one is exactly the sample this returned before rivers existed.</para>
-        /// </summary>
-        public float Channel { get; }
 
         /// <summary>
         /// <b>Signed displacement from sea level.</b> Positive is land, negative is sea bed, zero is
@@ -135,7 +124,7 @@ namespace LifeSimulation.Simulation.World
 
         public static PlanetSample Sample(
             int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency,
-            TerrainSettings settings, RiverNetwork rivers = null)
+            TerrainSettings settings)
         {
             TerrainSettings s = settings ?? throw new ArgumentNullException(nameof(settings));
             if (plates == null)
@@ -283,46 +272,7 @@ namespace LifeSimulation.Simulation.World
                 (0.62d * moistureNoise) + (0.38d * continentality) + (0.07d * jitter));
             temperature = EnvironmentNoise.Clamp01(temperature + (0.05d * jitter));
 
-            // Rivers, last, and only when a caller supplies a network - so a sample without one is
-            // bit-for-bit the sample this function returned before rivers existed.
-            double channel = 0d;
-            if (rivers != null)
-            {
-                RiverNetwork.RiverInfluence river = rivers.Influence(dx, dy, dz);
-                if (river.Touches)
-                {
-                    // BLEND toward the river; do not subtract from the ground. Subtracting keeps the
-                    // hillside and puts a slot in it, which is what made the first version read as a
-                    // stripe drawn across a slope. Interpolating toward the water surface pulls the
-                    // whole valley down with it, so the banks slope in and the metre-scale bands that
-                    // would otherwise cross the stream are flattened where the water is.
-                    //
-                    // Faded out as the ground approaches sea level: a valley blended into the last few
-                    // metres of a river mouth flattens the coastline, and there is nothing left for a
-                    // river to carve once it is the sea.
-                    // A valley only ever CUTS. The profile is built from the walk's coarse field, so
-                    // it sits above the fine field wherever the fine bands dip - blending toward it
-                    // unconditionally filled those dips and left the river running along a raised
-                    // bank, measured at 0.2 m of ground becoming 0.9 m. Taking the lower of the two
-                    // keeps the valley a valley.
-                    double onLand = Smooth01(elevation / 0.06d);
-                    double weight = river.Weight * onLand;
-                    double target = Math.Min(river.TargetHeight, elevation) - (RiverNetwork.BedDepth * river.Channel);
-                    double carved = elevation + ((target - elevation) * weight);
-
-                    // A river may not turn land into sea. Without this the valley digs the last few
-                    // hundred metres of a course below the waterline and the palette paints the whole
-                    // floodplain ocean-blue - a broad flat band with hard edges, which is the stripe
-                    // this rework exists to remove, arriving by a different route.
-                    if (elevation > 0d) carved = Math.Max(carved, 0.002d);
-                    elevation = carved;
-                    channel = river.Channel * onLand;
-                    moisture = EnvironmentNoise.Clamp01(moisture + RiverNetwork.Wetting(channel));
-                }
-            }
-
-            return new PlanetSample(
-                (float)elevation, (float)moisture, (float)temperature, (float)shelf, (float)channel);
+            return new PlanetSample((float)elevation, (float)moisture, (float)temperature, (float)shelf);
         }
 
         /// <summary>
@@ -345,7 +295,7 @@ namespace LifeSimulation.Simulation.World
 
         public static PlanetSample SampleAtLatLon(
             int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency,
-            TerrainSettings settings, RiverNetwork rivers = null)
+            TerrainSettings settings)
         {
             double cosLatitude = Math.Cos(latitude);
             return Sample(
@@ -353,7 +303,7 @@ namespace LifeSimulation.Simulation.World
                 cosLatitude * Math.Sin(longitude),
                 Math.Sin(latitude),
                 cosLatitude * Math.Cos(longitude),
-                maximumFrequency, settings, rivers);
+                maximumFrequency, settings);
         }
 
         /// <summary>Shelf height for one candidate neighbour, blended across its seam.</summary>

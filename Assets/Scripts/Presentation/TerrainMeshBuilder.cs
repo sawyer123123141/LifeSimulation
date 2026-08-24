@@ -65,7 +65,6 @@ namespace LifeSimulation.Presentation
             // failure this project exists to avoid - and the tuning panel would otherwise desync them
             // the moment anyone moved a slider.
             settings = settings ?? TerrainView.Settings;
-            RiverNetwork rivers = TerrainView.RiversFor(seed, plates);
             int side = PatchResolution;
             double angularWidth = 2d * halfWidth / SphereRadius;
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
@@ -85,7 +84,7 @@ namespace LifeSimulation.Presentation
                         seed, plates,
                         centreLatitude + (z / SphereRadius),
                         centreLongitude + (x / SphereRadius),
-                        maximumFrequency, settings, rivers);
+                        maximumFrequency, settings);
 
                     int vertex = (row * side) + column;
 
@@ -123,10 +122,6 @@ namespace LifeSimulation.Presentation
             float drawRadius = PlanetDrawRadius, TerrainSettings settings = null)
         {
             settings = settings ?? TerrainView.Settings;
-
-            // The backdrop globe is not given the river network. Its triangles are about 19 units
-            // across at true scale and a channel is 5 metres wide, so every sample would miss every
-            // river and the only effect would be a quarter second of walk per rebuild.
             IcoSphere.Build(PlanetSubdivisions, out Vector3[] directions, out int[] indices);
             double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
                 IcoSphere.SamplesAroundEquator(PlanetSubdivisions));

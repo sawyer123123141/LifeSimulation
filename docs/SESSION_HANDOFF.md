@@ -662,64 +662,36 @@ what every recorded distance means (decision 15).
   experiment configuration is touched**; `CreateFullEcosystemDefaults` still has the flag off, so
   every recorded baseline stands.
 
-### Rivers: R1 is done (`RiverNetwork`, 2026-08-23)
+### Rivers: built twice, rejected, and REVERTED (`d0d2199` and `65e78ac`, reverted 2026-08-23)
 
-Walked downhill once per world, recorded as segments, carved at sample time. Full description in
-`docs/terrain-caves-and-rivers.md`. Numbers worth keeping:
+**Head carries no river code.** Both attempts are reverted; the terrain is exactly what it was before
+them. The postmortem is in `docs/terrain-caves-and-rivers.md` and is the authoritative account.
 
-- Seed 42: **16 of 48 rivers reach the sea, 716 segments, 255 ms** to build. Paths that stall inland
-  are discarded rather than drained.
-- Channel **0.055 elevation units (1.7 m) deep, 5 m wide** at the mouth; moisture **+0.30**; about
-  **2.4%** of a 50-unit arena window is touched by one.
-- **Segments, not points.** Nearest-point distance rises between path points, which left the channel
-  floor scalloped: proximity 0.999 / 0.848 / 0.999 measured along one straight reach.
-- **The walk reads a coarse field** (`WalkFrequency = 24`) on purpose. A walk at full detail stops in
-  the first hollow a metre across.
-- **Carving alone is invisible** - measured, not guessed: the first render showed one faint line at
-  200 units and nothing in the arena. `PlanetSample.Channel` plus a blue blend in `PlanetBiome.Shade`
-  is what makes a river read.
-- **Sampling without a network is bit-for-bit the old sample.** The backdrop globe is deliberately
-  given none - 19-unit triangles cannot see a 5 m channel.
-- **507 / 19 / 33 / 1 green**, Unity compile clean.
+**Why it was rejected, in one line: painted rivers do not drain, cannot erode, and cannot animate.**
+The generator is a pure function of one direction, so it reads nothing about a point's neighbours -
+and drainage, erosion and a flowing surface are all relationships *between* neighbours. No amount of
+profile shaping fixes that.
 
-### Rivers v2: the first version read as stripes, and the reason was structural
+**What the two attempts cost, and what they bought.** Attempt one carved a fixed 5 m slot and read as
+a stripe. Attempt two fixed every named artefact - monotone profile, compactly supported valley blend
+after Peytavie et al., cut-only modifier, no flooding land to sea, gradient plus momentum instead of
+eight compass points, a tributary pass, tapered heads - and the verdict was still that it does not
+look like a river. **That is the finding worth keeping:** the fixes were correct individually and the
+approach was wrong.
 
-Reported as "very bad, looks like random strips in the land". It was: v1 subtracted a fixed slot from
-whatever ground it crossed, so the water surface rose and fell with the hillside and the land beside
-it never sloped in. Every fix below is standard practice somewhere in the literature; the table in
-`docs/terrain-caves-and-rivers.md` pairs each with the symptom it removes.
+Numbers, since they cost real compute: seed 42 produced 58 courses and 2,005 segments in 1.1 s; a
+snapped 50-unit arena window held 34.5% valley and 5.8% open water with a deepest cut of 4.1 m. The
+480-run plant sweep over that field moved nothing conclusive - `MoistureTolerance` +0.0402 (t +2.57)
+and `WaterEfficiency` -0.0189 (t -2.10) were the only cells past |t| = 2 in twenty-two comparisons.
 
-- **Monotone profile** - running minimum along the course, smoothed, minimum re-applied.
-- **Valley blend with compact support** - terrain interpolated toward the water surface over a 3-9 m
-  half-width, so banks slope in. Peytavie et al., *Procedural Riverscapes*.
-- **The valley only ever cuts** (`min(profile, terrain)`). Blending unconditionally filled dips the
-  coarse walk could not see and left the river on a **raised bank** - measured, 0.2 m of ground
-  became 0.9 m.
-- **A river may not turn land into sea.** Cutting below the waterline near a mouth painted a wide flat
-  ocean-blue band with hard edges - the same stripe arriving by another route.
-- **Gradient from the whole sample ring plus momentum** (inertia 0.55). Steepest descent over eight
-  compass points produced right-angled staircases; the render showed them plainly.
-- **Two passes.** Trunks at 75 m separation, then tributaries at 22 m **kept only if they join** an
-  existing course. Trunks alone never meet: the network had **zero confluences** before this.
-- **Tapered heads** over the first 20%, or a course appears at full width partway up a hillside.
+**Next on this thread, and it is a prerequisite chain, not a menu:**
 
-Seed 42: **58 courses, 2,005 segments, 1.1 s**. A snapped arena window holds **34.5% valley, 5.8%
-open water**, deepest cut **4.1 m**. The arena snaps **two thirds down** a course, not to the mouth -
-a mouth-centred window is an estuary and fills with water.
+1. **Region/chunk system.** A finite grid at fixed resolution, cached per region.
+2. **Depression filling and D8 flow accumulation** on it - real drainage, branching, discharge.
+3. **Erosion** - valleys form around rivers because water dug them.
+4. **A water surface mesh** with flow vectors, which is the only way rivers animate.
 
-Re-ran the 480-run plant sweep with valley rivers in the simulation field: **still nothing
-conclusive**. Paired terrain-minus-flat, contest-on, `MoistureTolerance` **+0.0402 (t +2.57)** and
-`WaterEfficiency` **-0.0189 (t -2.10)** are the only cells past |t| = 2 in twenty-two comparisons.
-`MoistureTolerance` is at least mechanistically plausible now - rivers are wet corridors - but two
-marginal cells out of twenty-two is what twenty-two comparisons produce, and neither is claimed.
-
-**509 / 19 / 33 / 1 green**, Unity compile clean. Two tests failed while this landed and both were
-right to: `RiversMergeRatherThanCross` caught the missing tributary pass, and
-`ElevationMatchesTheTerrainGeneratorExactly` caught the snap being applied by the field and not by
-the check - the join guard working.
-
-**Next on this thread is R2 (flow accumulation), and it should NOT be started yet** - it needs the
-region/chunk system adaptive detail also needs, or it gets built twice.
+**Do not attempt rivers again before step 1 exists.**
 
 ### Also open, smaller
 

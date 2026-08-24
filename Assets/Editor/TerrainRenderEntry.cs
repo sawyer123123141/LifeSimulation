@@ -43,20 +43,6 @@ namespace LifeSimulation.EditorTools
             PlateStructure plates = TerrainView.CreatePlates(Seed);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
 
-            // Same snap the arena and the environment field apply, so these renders show the ground
-            // the playtest actually stands on rather than a coastline a few hundred metres along.
-            RiverNetwork rivers = TerrainView.RiversFor(Seed, plates);
-            if (rivers != null)
-            {
-                double latitude = centreLatitude;
-                double longitude = centreLongitude;
-                if (rivers.SnapToNearestMouth(ref latitude, ref longitude))
-                {
-                    centreLatitude = latitude;
-                    centreLongitude = longitude;
-                }
-            }
-
             RenderPatch(directory, "wide-400", plates, centreLatitude, centreLongitude, TerrainPreview.WidePatchHalfWidth);
             RenderPatch(directory, "close-200", plates, centreLatitude, centreLongitude, TerrainPreview.RegionHalfWidth);
             RenderPatch(directory, "arena-50", plates, centreLatitude, centreLongitude, 25f, withCreatures: true);

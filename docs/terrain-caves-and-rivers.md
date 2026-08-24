@@ -33,7 +33,21 @@ So: **rivers need a pass, caves need a different representation.** Neither is a 
 
 Two options, and they are not alternatives — the first is a stepping stone.
 
-### R1. Painted rivers - **DONE, 2026-08-23** (`RiverNetwork`)
+### R1. Painted rivers - **BUILT, REJECTED AND REVERTED, 2026-08-23**
+
+**Do not build this again.** It was written twice - once as a carved slot, once properly inscribed
+with a valley blend, a monotone profile, momentum, tributaries and tapered heads - and the verdict on
+the second attempt was still that it does not read as a river. The reason is not tuning. Ask the
+three questions that decide it:
+
+| question | answer for R1 | why |
+|---|---|---|
+| does it **drain**? | no | each course is an independent walk. No upstream area, no discharge, no basins; width is faked from distance travelled |
+| does it **erode**? | no, and it cannot | `PlanetTerrain.Sample` is a pure function of one direction and reads nothing about neighbours. Erosion is sediment moving *between* neighbours. A valley blend is the closest a pure function gets, which is why it reads as applied rather than grown |
+| does it **animate**? | no | the blue is vertex colour on the ground mesh. Flowing water needs its own surface with a flow direction per vertex, which needs the drainage the first row does not have |
+
+Everything below is kept because the second attempt is a decent record of what the fixes are called
+and which artefact each one removes - but as steps inside a real hydrology pass, not as a feature.
 
 Pick river sources on high ground, walk downhill sampling the existing field, and record the path.
 Carve a channel into elevation near the path, and raise moisture beside it. The walk happens once per
@@ -106,9 +120,26 @@ the machinery hydraulic erosion needs**, which is why it is worth doing properly
 - Depressions must be filled or flow gets stuck in pits, which is its own well-known step.
 - Rivers must reach the sea, which means the region has to include coast or the paths dead-end.
 
-**Recommendation: R1 first**, because it gets rivers visible and tells us whether they read at all at
-this scale, and because R2's real prerequisite is the region/chunk system that adaptive level of
-detail also needs (T6). Do not build R2 before chunking exists; it would be built twice.
+**Superseded recommendation (kept because it was wrong in an instructive way): "R1 first, because it
+gets rivers visible and tells us whether they read at all at this scale."** R1 did answer that
+question - the answer was no - but the answer was available from the three questions above without
+writing the code twice. **A feature whose acceptance test is "does it look like a river" cannot be
+satisfied by something that does not drain, erode or move.**
+
+## The order, after the R1 postmortem
+
+1. **Region/chunk system (T6).** A finite grid at a fixed resolution, cached per region. Everything
+   below needs it, and adaptive level of detail wants it anyway.
+2. **Depression filling and flow accumulation (D8)** on that grid. Every cell learns how much water
+   passes through it, so rivers are cells above a threshold: branching for free, width from real
+   discharge, basins and lakes identified rather than discarded.
+3. **Erosion.** Particle or stream-power, on the same grid. This is what makes valleys form *around*
+   rivers instead of being drawn around them, and it is the single largest visual difference between
+   what we have and what a real terrain generator produces.
+4. **Water surface mesh.** Separate geometry at the computed water level, with flow vectors from
+   step 2 driving the shader. That is the animation, and it is only possible after step 2.
+
+**Nothing about rivers should be attempted before step 1 exists.**
 
 ---
 

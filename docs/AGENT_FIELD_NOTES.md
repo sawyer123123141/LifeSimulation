@@ -1405,3 +1405,13 @@ change.
   to corrugate the land never meet, so the network had zero confluences and read as parallel
   scratches. Tributaries are a second pass with their own spacing, kept only if they join. Hoping an
   emergent property emerges is not a plan.
+- **Ask what a feature must DO before choosing how to build it (2026-08-23).** Rivers were written
+  twice and reverted. The second attempt fixed every visual artefact by name - monotone profile,
+  valley blend, cut-only modifier, momentum instead of compass directions, tributary pass, tapered
+  heads - and still did not read as a river, because the acceptance test was never "is the geometry
+  right". It was drain, erode, animate: three properties a pure function of one direction cannot have
+  at any quality of tuning. **Three questions asked at the start would have saved both attempts.**
+- **"Get it visible and see if it reads" is not always the cheap first step.** That was the recorded
+  reasoning for doing painted rivers before real hydrology, and it cost two implementations to
+  discover something derivable from the data structure. Prototype first when the *unknown* is
+  perceptual; reason first when the unknown is structural.
