@@ -45,8 +45,14 @@ namespace LifeSimulation.TerrainProbe
         /// <summary>The two flat views, by half width: `K` once, then twice.</summary>
         private static readonly double[] Views = { 200d, 100d };
 
-        private static void Main()
+        private static void Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "--rivers")
+            {
+                ReportRivers();
+                return;
+            }
+
             var current = new TerrainSettings();
             PlateStructure plates = PlateStructure.Create(Seed, current);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
@@ -232,6 +238,79 @@ namespace LifeSimulation.TerrainProbe
             if (sorted.Count == 0) return 0d;
             int index = (int)Math.Round(quantile * (sorted.Count - 1));
             return sorted[index];
+        }
+
+        /// <summary>
+        /// What the river walk produced, and what a channel does to the ground it crosses.
+        ///
+        /// <para>A river network cannot be judged from a median: the question is whether the paths
+        /// reach the sea at all, how much of the surface they touch, and whether the channel is a
+        /// groove or a trench. The first two are counts and the third is a profile across one.</para>
+        /// </summary>
+        private static void ReportRivers()
+        {
+            var settings = new TerrainSettings();
+            PlateStructure plates = PlateStructure.Create(Seed, settings);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            RiverNetwork rivers = RiverNetwork.Create(Seed, plates, settings);
+            clock.Stop();
+
+            Console.WriteLine($"seed {Seed}: {rivers.RiverCount} rivers reached the sea, "
+                + $"{rivers.PointCount} path points, built in {clock.ElapsedMilliseconds} ms");
+
+            plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
+            double maximumFrequency = MaximumFrequencyFor(25d);
+
+            // How much of a 50-unit window a river touches at all, and how deep the deepest cut is.
+            int side = 193;
+            int wet = 0;
+            double deepest = 0d;
+            double bestProximity = 0d;
+            double bestLatitude = centreLatitude;
+            double bestLongitude = centreLongitude;
+            for (int row = 0; row < side; row++)
+            {
+                for (int column = 0; column < side; column++)
+                {
+                    double latitude = centreLatitude + (((row / (double)(side - 1)) - 0.5d) * 50d / 500d);
+                    double longitude = centreLongitude + (((column / (double)(side - 1)) - 0.5d) * 50d / 500d);
+                    double cosLatitude = Math.Cos(latitude);
+                    double proximity = rivers.Proximity(
+                        cosLatitude * Math.Sin(longitude), Math.Sin(latitude), cosLatitude * Math.Cos(longitude));
+                    if (proximity <= 0d) continue;
+
+                    wet++;
+                    if (proximity > bestProximity)
+                    {
+                        bestProximity = proximity;
+                        bestLatitude = latitude;
+                        bestLongitude = longitude;
+                    }
+
+                    PlanetSample withRiver = PlanetTerrain.SampleAtLatLon(
+                        Seed, plates, latitude, longitude, maximumFrequency, settings, rivers);
+                    PlanetSample without = PlanetTerrain.SampleAtLatLon(
+                        Seed, plates, latitude, longitude, maximumFrequency, settings);
+                    double cut = without.Elevation - withRiver.Elevation;
+                    if (cut > deepest) deepest = cut;
+                }
+            }
+
+            Console.WriteLine($"coastal window: {wet} of {side * side} samples touched by a channel "
+                + $"({100d * wet / (side * side):0.0}%), deepest cut {deepest:0.0000} elevation units "
+                + $"= {deepest * 30d:0.0} m");
+
+            // A profile straight across the widest part of one channel, to see the banks.
+            Console.WriteLine("profile across a channel, metres from centre -> cut in metres:");
+            for (int step = -8; step <= 8; step++)
+            {
+                double offset = step * 0.6d / 500d;
+                double latitude = bestLatitude + offset;
+                double cosLatitude = Math.Cos(latitude);
+                double proximity = rivers.Proximity(
+                    cosLatitude * Math.Sin(bestLongitude), Math.Sin(latitude), cosLatitude * Math.Cos(bestLongitude));
+                Console.WriteLine($"   {step * 0.6d,5:0.0}  proximity {proximity:0.000}  cut {RiverNetwork.Carve(proximity) * 30d:0.00} m");
+            }
         }
     }
 }

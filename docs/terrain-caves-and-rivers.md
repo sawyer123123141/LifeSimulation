@@ -33,7 +33,7 @@ So: **rivers need a pass, caves need a different representation.** Neither is a 
 
 Two options, and they are not alternatives — the first is a stepping stone.
 
-### R1. Painted rivers (cheap, presentation-only, no new machinery)
+### R1. Painted rivers - **DONE, 2026-08-23** (`RiverNetwork`)
 
 Pick river sources on high ground, walk downhill sampling the existing field, and record the path.
 Carve a channel into elevation near the path, and raise moisture beside it. The walk happens once per
@@ -44,6 +44,35 @@ near a recorded path".
   valleys form around them. They will look painted on, because they are.
 - Wants a spatial index on the paths, or every sample tests every river.
 - Fits the current architecture with no changes at all. Probably one session.
+
+**As built.** 2,048 candidate sources on a spiral over the sphere, the highest kept subject to a
+minimum separation of 0.12 radians so rivers scatter over the continents instead of crowding one
+range. Steepest descent in 0.0025-radian steps (1.25 m), up to 400 steps, **against a deliberately
+coarse field** (`WalkFrequency = 24`) - a walk that sees every micro bump stops in the first hollow.
+A path that stalls inland is **discarded**, not drained: an inland lake needs a water surface, which
+is a different feature.
+
+At seed 42: **16 of 48 rivers reach the sea, 716 segments, 255 ms** to build. Segments, not points -
+measuring to points alone left the channel floor scalloped at proximity 0.999 / 0.848 / 0.999 along
+one straight reach, because between two path points the nearest-point distance rises.
+
+Channel: **0.055 elevation units deep (about 1.7 m), 5 m wide at the mouth** narrowing upstream,
+smoothstepped so the banks meet the surrounding ground with matching slope. It fades out as the
+ground approaches sea level, or a river mouth becomes a notch in the coastline seen from orbit.
+Moisture is lifted 0.30 at the channel.
+
+**Carving alone was invisible and the render proved it.** A metre-deep cut in ground whose relief
+runs to tens of metres showed one faint line in a 200-unit view and nothing at all in the arena. The
+water surface is the cue: `PlanetSample` now carries `Channel`, and `PlanetBiome.Shade` blends toward
+river blue. With that the river reads clearly in the 200-unit view and clips the arena's corner.
+
+- **Sampling without a `RiverNetwork` is bit-for-bit the old sample**, so every non-river caller is
+  unaffected - the backdrop globe is deliberately not given one, since its triangles are 19 units
+  across and would miss every channel.
+- **Four tests** (`RiverNetworkTests`): same seed walks the same rivers, rivers reach the sea, ground
+  away from a channel is untouched, and a channel cuts down and never up.
+- The simulation sees rivers too when the terrain join is on - **it moved no plant result**, which is
+  expected: channels touch about 2.4% of an arena window.
 
 ### R2. Flow accumulation (the real thing)
 

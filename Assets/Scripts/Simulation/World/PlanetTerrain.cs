@@ -6,13 +6,24 @@ namespace LifeSimulation.Simulation.World
     /// <summary>One point on the planet surface.</summary>
     public readonly struct PlanetSample
     {
-        public PlanetSample(float elevation, float moisture, float temperature, float continent)
+        public PlanetSample(float elevation, float moisture, float temperature, float continent, float channel = 0f)
         {
             Elevation = elevation;
             Moisture = moisture;
             Temperature = temperature;
             Continent = continent;
+            Channel = channel;
         }
+
+        /// <summary>
+        /// How much river is at this point: 1 midstream, 0 away from any channel.
+        ///
+        /// <para>Carried on the sample rather than recomputed by the renderer, because the only way
+        /// to be sure the blue line and the cut ground are the same river is for both to read one
+        /// number. It is zero unless the caller supplied a <c>RiverNetwork</c>, so a sample without
+        /// one is exactly the sample this returned before rivers existed.</para>
+        /// </summary>
+        public float Channel { get; }
 
         /// <summary>
         /// <b>Signed displacement from sea level.</b> Positive is land, negative is sea bed, zero is
@@ -124,7 +135,7 @@ namespace LifeSimulation.Simulation.World
 
         public static PlanetSample Sample(
             int seed, PlateStructure plates, double dx, double dy, double dz, double maximumFrequency,
-            TerrainSettings settings)
+            TerrainSettings settings, RiverNetwork rivers = null)
         {
             TerrainSettings s = settings ?? throw new ArgumentNullException(nameof(settings));
             if (plates == null)
@@ -272,7 +283,30 @@ namespace LifeSimulation.Simulation.World
                 (0.62d * moistureNoise) + (0.38d * continentality) + (0.07d * jitter));
             temperature = EnvironmentNoise.Clamp01(temperature + (0.05d * jitter));
 
-            return new PlanetSample((float)elevation, (float)moisture, (float)temperature, (float)shelf);
+            // Rivers, last, and only when a caller supplies a network - so a sample without one is
+            // bit-for-bit the sample this function returned before rivers existed.
+            //
+            // The channel fades out as the ground approaches sea level, because a trench cut through
+            // the last few metres of a river mouth would show as a notch in the coastline from
+            // orbit, and because there is nothing for a river to carve once it is the sea.
+            double channel = 0d;
+            if (rivers != null)
+            {
+                double proximity = rivers.Proximity(dx, dy, dz);
+                if (proximity > 0d)
+                {
+                    // Fade the channel out as the ground approaches sea level: a trench cut through
+                    // the last few metres of a river mouth shows as a notch in the coastline from
+                    // orbit, and there is nothing left for a river to carve once it is the sea.
+                    double onLand = Smooth01(elevation / 0.06d);
+                    elevation -= RiverNetwork.Carve(proximity) * onLand;
+                    moisture = EnvironmentNoise.Clamp01(moisture + RiverNetwork.Wetting(proximity));
+                    channel = proximity * onLand;
+                }
+            }
+
+            return new PlanetSample(
+                (float)elevation, (float)moisture, (float)temperature, (float)shelf, (float)channel);
         }
 
         /// <summary>
@@ -295,7 +329,7 @@ namespace LifeSimulation.Simulation.World
 
         public static PlanetSample SampleAtLatLon(
             int seed, PlateStructure plates, double latitude, double longitude, double maximumFrequency,
-            TerrainSettings settings)
+            TerrainSettings settings, RiverNetwork rivers = null)
         {
             double cosLatitude = Math.Cos(latitude);
             return Sample(
@@ -303,7 +337,7 @@ namespace LifeSimulation.Simulation.World
                 cosLatitude * Math.Sin(longitude),
                 Math.Sin(latitude),
                 cosLatitude * Math.Cos(longitude),
-                maximumFrequency, settings);
+                maximumFrequency, settings, rivers);
         }
 
         /// <summary>Shelf height for one candidate neighbour, blended across its seam.</summary>

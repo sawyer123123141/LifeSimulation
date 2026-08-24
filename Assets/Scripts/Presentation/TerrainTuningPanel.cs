@@ -286,6 +286,17 @@ namespace LifeSimulation.Presentation
             GUILayout.Label("Coastline is the computed default: a land plate meeting an ocean one.", _hint);
 
             GUILayout.Space(8f);
+            bool rivers = GUILayout.Toggle(TerrainView.RiversEnabled, " Rivers");
+            if (rivers != TerrainView.RiversEnabled)
+            {
+                TerrainView.RiversEnabled = rivers;
+                changed = true;
+            }
+
+            GUILayout.Label("Walked downhill once per world, then carved. They follow the ground "
+                + "without eroding it, so no valley forms around them.", _hint);
+
+            GUILayout.Space(8f);
             GUILayout.Label("Biomes in this view");
             GUILayout.Label(BiomeMix(preview), _hint);
             return changed;

@@ -61,6 +61,16 @@ namespace LifeSimulation.Presentation
             float land = Mathf.Clamp01(sample.Elevation / PlanetTerrain.HighGround);
             Color ground = SamplePalette(sample.Temperature, sample.Moisture);
 
+            // Rivers are drawn, not merely dug. A channel a metre deep in ground whose relief runs to
+            // tens of metres is invisible at every zoom that matters - the first render with rivers
+            // carved and not coloured showed one faint line in a 200-unit view and nothing at all in
+            // the arena. The water surface is the cue; the cut underneath is what makes it sit in a
+            // hollow rather than lie on top of the grass.
+            if (sample.Channel > 0f)
+            {
+                ground = Color.Lerp(ground, new Color(0.180f, 0.412f, 0.596f), Mathf.Clamp01(sample.Channel));
+            }
+
             // Beach fades out over the first stretch above the waterline instead of ending at a line.
             float beach = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.005f, 0.05f, land));
             ground = Color.Lerp(ground, new Color(0.902f, 0.847f, 0.663f), beach);

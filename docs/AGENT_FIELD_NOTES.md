@@ -1375,3 +1375,16 @@ change.
   mean and a zero-centred band supplies within-arena variation. The band's strength is chosen to
   MATCH the previous field's spread, not to maximise it: past that point the regional value stops
   mattering and the join is decorative again.
+- **A feature that is not visible has not landed (2026-08-23).** Rivers were carved correctly - the
+  probe measured a 1 m channel across 2.4% of the window, and four tests passed - and the render
+  showed nothing. Terrain relief runs to tens of metres, so a metre of cut is invisible at every zoom
+  anyone uses. **Render it before believing it**; the fix was a colour, not a depth.
+- **Walk a coarse field, carve a fine one.** A downhill walk at full detail stops in the first
+  metre-wide hollow it meets. Rivers follow the shape of a continent, so the walk reads a deliberately
+  blunt field (`WalkFrequency = 24`) and the channel is applied to the sharp one. The cost is that a
+  river can sit slightly off the finest valley floor; the alternative is erosion, which is a different
+  and much larger feature.
+- **Store a path as segments, not as the points you sampled.** Distance-to-nearest-point rises between
+  samples, so a channel measured that way scallops at the sampling frequency of its own path -
+  measured at 0.999 / 0.848 / 0.999 along one straight reach. Point-to-segment is four extra lines and
+  removes the artefact entirely.

@@ -31,6 +31,7 @@ namespace LifeSimulation.Tests.EditMode
             EnvironmentField field = EnvironmentField.CreateTerrainDriven(Seed);
             TerrainSettings settings = EnvironmentField.CreateTerrainSettings();
             PlateStructure plates = PlateStructure.Create(Seed, settings);
+            RiverNetwork rivers = RiverNetwork.Create(Seed, plates, settings);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
             double maximumFrequency = ArenaMaximumFrequency();
 
@@ -51,7 +52,7 @@ namespace LifeSimulation.Tests.EditMode
                     Seed, plates,
                     centreLatitude + (position.Y / EnvironmentField.SphereRadius),
                     centreLongitude + (position.X / EnvironmentField.SphereRadius),
-                    maximumFrequency, settings);
+                    maximumFrequency, settings, rivers);
 
                 float expected = (float)Math.Max(
                     0d, Math.Min(1d, terrain.Elevation / PlanetTerrain.HighGround));

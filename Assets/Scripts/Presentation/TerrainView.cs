@@ -49,5 +49,35 @@ namespace LifeSimulation.Presentation
         {
             return PlateStructure.Create(worldSeed, Settings);
         }
+
+        private static RiverNetwork _rivers;
+        private static int _riversSeed;
+        private static int _riversRevision = -1;
+
+        /// <summary>
+        /// The rivers of one world, cached.
+        ///
+        /// <para>Walking them costs about a quarter of a second, which is nothing once per world and
+        /// unusable once per mesh rebuild - and the tuning panel rebuilds the mesh on every slider
+        /// drag. Keyed on the settings revision as well as the seed, because the walk reads the
+        /// terrain and the panel edits the terrain.</para>
+        /// </summary>
+        public static RiverNetwork RiversFor(int worldSeed, PlateStructure plates)
+        {
+            if (!RiversEnabled) return null;
+
+            if (_rivers != null && _riversSeed == worldSeed && _riversRevision == SettingsRevision)
+            {
+                return _rivers;
+            }
+
+            _rivers = RiverNetwork.Create(worldSeed, plates, Settings);
+            _riversSeed = worldSeed;
+            _riversRevision = SettingsRevision;
+            return _rivers;
+        }
+
+        /// <summary>Whether the viewer draws rivers at all. A panel toggle, not a world property.</summary>
+        public static bool RiversEnabled { get; set; } = true;
     }
 }

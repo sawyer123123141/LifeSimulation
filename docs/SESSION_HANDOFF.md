@@ -662,6 +662,32 @@ what every recorded distance means (decision 15).
   experiment configuration is touched**; `CreateFullEcosystemDefaults` still has the flag off, so
   every recorded baseline stands.
 
+### Rivers: R1 is done (`RiverNetwork`, 2026-08-23)
+
+Walked downhill once per world, recorded as segments, carved at sample time. Full description in
+`docs/terrain-caves-and-rivers.md`. Numbers worth keeping:
+
+- Seed 42: **16 of 48 rivers reach the sea, 716 segments, 255 ms** to build. Paths that stall inland
+  are discarded rather than drained.
+- Channel **0.055 elevation units (1.7 m) deep, 5 m wide** at the mouth; moisture **+0.30**; about
+  **2.4%** of a 50-unit arena window is touched by one.
+- **Segments, not points.** Nearest-point distance rises between path points, which left the channel
+  floor scalloped: proximity 0.999 / 0.848 / 0.999 measured along one straight reach.
+- **The walk reads a coarse field** (`WalkFrequency = 24`) on purpose. A walk at full detail stops in
+  the first hollow a metre across.
+- **Carving alone is invisible** - measured, not guessed: the first render showed one faint line at
+  200 units and nothing in the arena. `PlanetSample.Channel` plus a blue blend in `PlanetBiome.Shade`
+  is what makes a river read.
+- **Sampling without a network is bit-for-bit the old sample.** The backdrop globe is deliberately
+  given none - 19-unit triangles cannot see a 5 m channel.
+- Re-ran the 480-run sweep with rivers in the simulation field: **nothing moved** (WaterEfficiency
+  t -2.35, NutrientUptake t +2.05, unchanged from the river-free run). 2.4% of the window is not an
+  ecological event.
+- **507 / 19 / 33 / 1 green**, Unity compile clean.
+
+**Next on this thread is R2 (flow accumulation), and it should NOT be started yet** - it needs the
+region/chunk system adaptive detail also needs, or it gets built twice.
+
 ### Also open, smaller
 
 - **`PatchLift`** almost certainly needs raising - see section 3.

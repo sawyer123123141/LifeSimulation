@@ -58,6 +58,7 @@ namespace LifeSimulation.Simulation.Environment
         private readonly bool _usesTerrain;
         private readonly TerrainSettings _terrainSettings;
         private readonly PlateStructure _plates;
+        private readonly RiverNetwork _rivers;
         private readonly double _terrainCentreLatitude;
         private readonly double _terrainCentreLongitude;
 
@@ -141,8 +142,20 @@ namespace LifeSimulation.Simulation.Environment
             _worldSeed = worldSeed;
             _terrainSettings = terrainSettings;
             _plates = PlateStructure.Create(worldSeed, terrainSettings);
+            _rivers = RiverNetwork.Create(worldSeed, _plates, terrainSettings);
             _plates.GetCoastalCentre(out _terrainCentreLatitude, out _terrainCentreLongitude);
         }
+
+        /// <summary>
+        /// The rivers of this world, or null when this field is not terrain-driven.
+        ///
+        /// <para>Exposed because the join is only worth anything if the ground simulated and the
+        /// ground drawn are the same ground, and a river carves the ground. Anything checking that
+        /// equivalence has to sample the generator with <b>this</b> network, not a fresh one - and a
+        /// fresh one would in fact be identical, which is exactly why the check has to be handed the
+        /// real one rather than left to reconstruct something that happens to agree.</para>
+        /// </summary>
+        public RiverNetwork Rivers { get { return _rivers; } }
 
         public static EnvironmentField CreateMoistureGradient() { return new EnvironmentField(true); }
 
@@ -247,7 +260,7 @@ namespace LifeSimulation.Simulation.Environment
                 _worldSeed, _plates,
                 _terrainCentreLatitude + (position.Y / SphereRadius),
                 _terrainCentreLongitude + (position.X / SphereRadius),
-                TerrainMaximumFrequency, _terrainSettings);
+                TerrainMaximumFrequency, _terrainSettings, _rivers);
 
             // Height above sea level, normalised against the palette's high-ground reference. Sea bed
             // reads as zero rather than negative: elevation is a lapse-rate input here, and ground
