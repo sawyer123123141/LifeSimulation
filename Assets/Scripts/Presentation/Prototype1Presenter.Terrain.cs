@@ -297,6 +297,17 @@ namespace LifeSimulation.Presentation
                 _terrainPreview.HeightScale = _terrainHeightScale;
                 _terrainPreview.Rebuild(_world);
             }
+
+            // The planet too, and this is the one that was missing. The chunked surface is built
+            // once and then only rebuilt when the seed or the settings revision changes - so with
+            // the planet view open, every slider on the J panel moved the arena mesh underneath and
+            // left the globe on screen showing the previous world. A tuning control whose effect is
+            // not visible in the view you are tuning in is not a tuning control.
+            if (_sphericalArena)
+            {
+                EnsureArenaPlates();
+                UpdatePlanetBackdrop();
+            }
         }
 
         /// <summary>

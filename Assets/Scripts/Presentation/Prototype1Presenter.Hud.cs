@@ -27,8 +27,11 @@ namespace LifeSimulation.Presentation
             {
                 // One line rather than nothing, so it is obvious the HUD is suppressed and how to
                 // get it back.
-                GUI.Label(new Rect(12f, 12f, 700f, 22f),
-                    $"Terrain viewer - {(_terrainPreview == null ? string.Empty : _terrainPreview.Describe())}   |   K next view, J tuning, [ ] height");
+                string what = _sphericalArena
+                    ? "Planet view - paused"
+                    : "Terrain viewer - " + (_terrainPreview == null ? string.Empty : _terrainPreview.Describe());
+                GUI.Label(new Rect(12f, 12f, 760f, 22f),
+                    $"{what}   |   J tuning, [ ] height, K flat views, O back to the arena");
                 return;
             }
 
