@@ -1421,3 +1421,13 @@ change.
   what was actually wanted, which was rivers that drain, erode and animate. Those need the chunk
   system, and the doc said so before either attempt started. **A question about sequencing is a
   question about the objective.**
+- **A new control scheme has to be checked against the keys already bound (2026-08-24).** The free
+  camera wanted WASD; `D` resets to the drought scenario, `E` to the starter habitat, `F` to food
+  scarcity. Gating movement behind a held right mouse button - Unity's own scene-view idiom - kept
+  both, and cost nothing. Grep the input handler before choosing keys, not after someone reports that
+  flying left restarted the simulation.
+- **Put the arithmetic where a test can reach it.** Every camera bug this project shipped was found
+  by a human in Play mode, because the rules lived inside `LateUpdate` next to `Input`. The free
+  camera's speed, height bounds and pitch limit are pure functions in `FreeCameraMotion` with no
+  Unity types, so the headless project compiles them. **A MonoBehaviour is not a place to keep
+  rules.**

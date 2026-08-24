@@ -367,7 +367,7 @@ namespace LifeSimulation.Presentation
             _simulationCamera = cameraObject.AddComponent<Camera>();
             _simulationCamera.orthographic = false;
             _simulationCamera.fieldOfView = 55f;
-            cameraObject.AddComponent<GroundPlaneCameraController>();
+            cameraObject.AddComponent<FreeFlyCameraController>();
             _simulationCamera.backgroundColor = new Color(0.06f, 0.09f, 0.13f);
 
         }

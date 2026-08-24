@@ -529,7 +529,8 @@ which separated shading from geometry in one image. It should have been first, n
   can disagree by more than 0.02, in which case the coarse globe pokes through the fine patch. Not
   seen either way; fix is a larger lift or a slightly smaller backdrop radius.
 - The user reports it as "**a bit buggy**" without specifics. Not diagnosed.
-- The pan clamp is still a **box in x/z**, not an orbit, so it will fight at planet distance.
+- The pan clamp was a **box in x/z** and fought at planet distance. **Fixed by deletion** - the free
+  camera has no focus to clamp.
 - **Four bugs shipped in a row on this feature**, all from wiring behaviour into paths not read
   carefully: the terrain path most scenarios never take (`96990b8`), a `Camera.main` lookup that never
   resolves (`165cb8f`), no yaw at all (`56ba489`), and a focus that zooming never re-clamped
@@ -707,32 +708,44 @@ and `WaterEfficiency` -0.0189 (t -2.10) were the only cells past |t| = 2 in twen
 
 **Do not attempt rivers again before step 1 exists.**
 
-### The developer camera needs replacing, and it is the next thing worth building
+### The developer camera is now free-fly (`FreeFlyCameraController`, 2026-08-24)
 
-**Stated plainly by the user: they do not like it.** It is an orbit rig - left drag orbits, right drag
-pans, wheel zooms - and it has been the single worst-behaved part of the project. Four bugs shipped in
-a row in one session (`96990b8`, `165cb8f`, `56ba489`, `b336b7d`), and the ones that remain are
-structural rather than incidental:
+**The orbit rig is deleted.** `GroundPlaneCameraController` is gone; the camera is a position and a
+direction, and the whole class of bug that came from clamping a focus point to a box in x and z is
+gone with it. There is no focus, no orbit, and no handover between two framing rules - the three
+things the previous camera's four shipped bugs came out of.
 
-- **The pan clamp is a box in x/z.** On a sphere that is wrong everywhere except the arena centre, and
-  it fights the user at planet distance.
-- **Orbiting cannot get anywhere.** Reaching a feature means zoom-to-cursor, then pan, then re-orbit;
-  there is no way to simply go somewhere and look around.
-- **Two focus rules** - the arena focus and the handover toward the planet centre - interact, and that
-  interaction is where the last two bugs came from.
-- **No headless instrument exists for it**, so every regression was found by a human in Play mode.
+**Controls.** Hold the **right mouse button** to fly: mouse looks, **WASD** moves along the view
+axes, **Q/E** down and up along the local vertical, **shift** boosts five times, **alt** slows to a
+fifth, the **wheel** sets the speed dial. With the button up the camera is inert, which is what makes
+this possible at all - `D`, `E` and `F` are scenario hotkeys, and a camera that swallowed them would
+have cost more than it gained. **Arrow keys** move without the button, the **wheel alone** dollies,
+and **Home** frames the arena. The HUD legend lists all of it.
 
-**What to build instead: a free-fly developer camera.** Position and orientation, not a focus point
-and an orbit around it. WASD or arrows along the view axes, mouse look while a button is held, a
-boost modifier, vertical controls, speed scaled by height above the surface so it is usable both at
-creature scale and at planet scale. Keep one key that frames the arena, because that is the one thing
-the orbit rig is good at. **A free camera has no clamp problem** - there is nothing to clamp but a
-position - which deletes the entire class of bug above.
+**Speed is proportional to height above the surface**, clamped below by a floor of 1.8 units/second
+and above by the extent of what is on screen. That single rule is why one camera works beside a
+1-unit creature and around a 500-unit planet: the height above the ground *is* the scale the viewer
+is working at.
 
-Worth doing before more terrain work, because every terrain judgement so far has been made through a
-camera that fights the person making it.
+**Two rules, never blended.** When `SetExtent` is given a surface radius, height is measured from the
+sphere and up points away from its centre - so flying to the far side stays upright. With radius zero
+the world is a plane and height is `y`. The arena and every preview use the plane; the curved arena
+uses the sphere. There is deliberately **no interpolation between them**, because a handover between
+two framing rules is exactly what produced `b336b7d`.
 
-### Also open, smaller
+**It finally has an instrument.** `FreeCameraMotion` holds the arithmetic - `SpeedAt`,
+`ClampAltitude`, `ClampPitch`, `AdjustDial` - with no Unity types in it, and is compiled into
+`tools/HeadlessTests` by an explicit `<Compile Include>` alongside nine tests in
+`FreeCameraMotionTests`. It is the only Presentation file in that project and the comment there says
+why. `LifeSimulation.EditModeTests` also references `LifeSimulation.Unity` now.
+
+**Not verified visually.** Camera behaviour only exists in Play mode and there is no way to drive
+synthetic input headlessly, so the compile is clean and the arithmetic is tested but nobody has flown
+it yet. **First thing to do next session: press Play, fly, and report.** Things most likely to be
+wrong are feel rather than logic - look sensitivity (4.5 degrees per unit of mouse movement), the
+dolly notch, and whether the speed floor is slow enough beside a creature.
+
+### Also open, smaller### Also open, smaller
 
 - **`PatchLift`** almost certainly needs raising - see section 3.
 - **Painted rivers (R1)** from `docs/terrain-caves-and-rivers.md`: additive, presentation-only, no new

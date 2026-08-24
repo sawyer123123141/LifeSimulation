@@ -203,7 +203,7 @@ namespace LifeSimulation.Presentation
             // A viewer you cannot see is not a viewer.
             _hudHidden = !arenaVisible;
 
-            var cameraController = _simulationCamera == null ? null : _simulationCamera.GetComponent<GroundPlaneCameraController>();
+            var cameraController = _simulationCamera == null ? null : _simulationCamera.GetComponent<FreeFlyCameraController>();
             if (cameraController == null) return;
 
             if (arenaVisible) cameraController.ResetFrame();
@@ -385,35 +385,32 @@ namespace LifeSimulation.Presentation
         }
 
         /// <summary>
-        /// How far the camera may pull back. Curved, the arena is part of a 500-unit planet and the
-        /// whole point is being able to retreat far enough to see it; flat, the 50-unit ceiling is
+        /// What scale the camera is flying at. Curved, the arena is part of a 500-unit planet and the
+        /// whole point is being able to retreat far enough to see it; flat, the arena's own scale is
         /// right and a larger one only lets someone get lost.
         /// </summary>
         private void ApplyCameraRange()
         {
             // The presenter builds its own camera; Camera.main only finds one tagged MainCamera, and
-            // when it found nothing this method returned early and left the 50-unit arena's zoom
-            // ceiling in place - so the planet was there and could not be backed away from.
+            // when it found nothing this method returned early and left the arena's own scale in
+            // place - so the planet was there and could not be flown away from.
             var cameraController = _simulationCamera == null
                 ? null
-                : _simulationCamera.GetComponent<GroundPlaneCameraController>();
+                : _simulationCamera.GetComponent<FreeFlyCameraController>();
             if (cameraController == null) return;
 
             if (_sphericalArena)
             {
-                // Far enough back to see a 500-unit sphere whole, and a coarser zoom step so getting
-                // there is a few turns of the wheel rather than thirty-four.
-                // Orbit the planet's centre once far enough out, and let the pitch go nearly overhead
-                // and well below the horizon - a globe is looked at from any angle, unlike ground.
-                cameraController.SetRange(
-                    ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 2f,
-                    zoomStep: 0.30f, distantFocus: ArenaProjection.Centre,
-                    minimumPitch: -85f, maximumPitch: 89f);
+                // Height is now measured from the sphere rather than from y = 0, so flight speed
+                // scales with height above the ground the camera is actually over, and up points away
+                // from the planet's centre wherever it goes.
+                cameraController.SetExtent(
+                    ArenaProjection.PlanetRadius, ArenaProjection.Centre, ArenaProjection.PlanetRadius);
                 _simulationCamera.farClipPlane = ArenaProjection.PlanetRadius * 8f;
             }
             else
             {
-                cameraController.ResetRange();
+                cameraController.ResetExtent();
                 _simulationCamera.farClipPlane = 1000f;
             }
         }

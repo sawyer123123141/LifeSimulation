@@ -2,7 +2,8 @@
   "name": "LifeSimulation.EditModeTests",
   "rootNamespace": "LifeSimulation.Tests.EditMode",
   "references": [
-    "LifeSimulation.Simulation"
+    "LifeSimulation.Simulation",
+    "LifeSimulation.Unity"
   ],
   "includePlatforms": [
     "Editor"

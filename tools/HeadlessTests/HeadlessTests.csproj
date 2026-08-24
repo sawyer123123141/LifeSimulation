@@ -21,6 +21,11 @@
 
   <ItemGroup>
     <Compile Include="../../Assets/Scripts/Simulation/**/*.cs" />
+    <!-- The one presentation file with no Unity types in it. The free camera's arithmetic - flight
+         speed, height bounds, pitch limit - was put there on purpose so it could be checked here
+         rather than by a person flying around in Play mode, which is how every previous camera bug
+         was found. Everything else under Presentation stays out of this project. -->
+    <Compile Include="../../Assets/Scripts/Presentation/FreeCameraMotion.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />
   </ItemGroup>

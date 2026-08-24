@@ -211,12 +211,10 @@ namespace LifeSimulation.EditorTools
             camera.nearClipPlane = 0.5f;
             camera.farClipPlane = 5000f;
 
-            // Pitch only, no yaw. GroundPlaneCameraController has no yaw control, so a yawed capture
-            // would show the terrain from an angle the Game view cannot actually produce.
             if (viewDirection == Vector3.zero)
             {
-                // Flat views: pitch only, no yaw, because GroundPlaneCameraController has no yaw
-                // control and a yawed capture would show an angle the Game view cannot produce.
+                // Flat views: the same pitch and distance FreeFlyCameraController frames the arena
+                // at, so a capture matches what the Game view opens on.
                 var rotation = Quaternion.Euler(52f, 0f, 0f);
                 cameraObject.transform.rotation = rotation;
                 cameraObject.transform.position = rotation * new Vector3(0f, 0f, -framingRadius * 2.1f);
