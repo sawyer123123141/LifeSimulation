@@ -537,10 +537,23 @@ which separated shading from geometry in one image. It should have been first, n
   (`b336b7d`). **Presentation has no headless check that means anything** - a human in Play mode is
   the only instrument.
 
-### `GeneticClusterHistory` is still 1324 lines
+### `GeneticClusterHistory` is split (2026-08-24)
 
-Not split. Its members do not sit at class indent - the bulk is nested types - so the mechanical pass
-finds nothing to move, and a real decomposition means reading it. Known debt; left deliberately.
+1324 lines became 313 + 555 + 439 + 65, as partials:
+
+| file | what |
+|---|---|
+| `GeneticClusterHistory.cs` | fields, `Record`, `ProcessTransition`, segment and track state |
+| `.Events.cs` | emitting, holding back pending evidence, writing unresolved |
+| `.Graph.cs` | **every method static, reads no field** - relations, strong components, ancestry |
+| `.Pending.cs` | the two nested evidence classes |
+
+**The previous note here was wrong and cost two sessions of not doing this.** It said the members do
+not sit at class indent and the bulk is nested types, so a mechanical pass finds nothing. The nested
+types are the last 55 lines and every member sits at class indent. `.Graph.cs` was the real seam:
+nothing in it can touch a history's state.
+
+563 tests green, Unity compile clean, no behaviour change.
 
 ### Unverified by me
 

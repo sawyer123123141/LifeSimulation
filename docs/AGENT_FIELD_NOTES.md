@@ -1466,3 +1466,8 @@ change.
   byte-identical, because half the arenas are flat. That could have been dilution hiding an effect;
   restricting to the pairs that diverged doubled the means and left every t identical, which settles
   it. Two lines of analysis, no rerun.
+- **A note saying "this cannot be done mechanically" deserves the same suspicion as any other stale
+  worry (2026-08-24).** `GeneticClusterHistory` sat at 1324 lines across two sessions because the
+  handoff said its members were not at class indent and the bulk was nested types. Neither was true -
+  the nested types were the last 55 lines. Thirty seconds of looking beat two sessions of trusting
+  the note. Same shape as the `PatchLift` closure.
