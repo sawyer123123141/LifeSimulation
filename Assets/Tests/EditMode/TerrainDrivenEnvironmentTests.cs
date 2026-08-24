@@ -33,6 +33,11 @@ namespace LifeSimulation.Tests.EditMode
             PlateStructure plates = PlateStructure.Create(Seed, settings);
             RiverNetwork rivers = RiverNetwork.Create(Seed, plates, settings);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
+
+            // The field snaps its window onto a river, so a check that does not snap compares two
+            // different places and reads as a broken join. This failing when the snap was added was
+            // the guard working.
+            rivers.SnapToNearestMouth(ref centreLatitude, ref centreLongitude);
             double maximumFrequency = ArenaMaximumFrequency();
 
             // Spread across the arena rather than one point: a single agreeing sample could be luck,

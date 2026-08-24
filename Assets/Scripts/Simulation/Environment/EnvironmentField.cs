@@ -144,6 +144,10 @@ namespace LifeSimulation.Simulation.Environment
             _plates = PlateStructure.Create(worldSeed, terrainSettings);
             _rivers = RiverNetwork.Create(worldSeed, _plates, terrainSettings);
             _plates.GetCoastalCentre(out _terrainCentreLatitude, out _terrainCentreLongitude);
+
+            // Put the arena on a river mouth when one is near the chosen coast. The renderer does the
+            // same, from the same seed and settings, so both describe the same ground.
+            _rivers.SnapToNearestMouth(ref _terrainCentreLatitude, ref _terrainCentreLongitude);
         }
 
         /// <summary>

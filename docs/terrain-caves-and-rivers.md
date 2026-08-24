@@ -71,8 +71,29 @@ river blue. With that the river reads clearly in the 200-unit view and clips the
   across and would miss every channel.
 - **Four tests** (`RiverNetworkTests`): same seed walks the same rivers, rivers reach the sea, ground
   away from a channel is untouched, and a channel cuts down and never up.
-- The simulation sees rivers too when the terrain join is on - **it moved no plant result**, which is
-  expected: channels touch about 2.4% of an arena window.
+- The simulation sees rivers too when the terrain join is on.
+
+**Version 1 looked wrong, and the reason was structural.** It subtracted a fixed 5 m slot from
+whatever ground it crossed, so the water surface rose and fell with the hillside and the land beside
+it never sloped in. That is a groove scratched across a slope, and it read as one. What the
+literature does instead, and what the second version does:
+
+| problem in v1 | fix in v2 |
+|---|---|
+| water surface followed the terrain up and down | **monotone profile**: running minimum along the course, smoothed, minimum re-applied |
+| a slot with untouched ground beside it | **compactly supported valley blend** - terrain is interpolated toward the water surface over a 3-9 m half-width, so banks slope in (Peytavie et al., *Procedural Riverscapes*) |
+| the blend filled dips the coarse walk could not see, leaving the river on a raised bank (0.2 m of ground became 0.9 m) | the valley **only ever cuts**: `min(profile, terrain)` |
+| carving below the waterline near a mouth painted a wide flat ocean-blue band | a river **may not turn land into sea** - the result is clamped just above zero |
+| steepest descent picked one of eight compass points, so paths came out as right-angled staircases | **gradient from the whole sample ring, plus momentum** (inertia 0.55), as particle-erosion implementations do, then a light position smoothing |
+| every course ran to the sea alone - zero confluences | **two passes**: trunks at 75 m separation, then tributaries at 22 m kept **only if they join** an existing course |
+| courses appeared at full width partway up a hillside | **tapered heads** over the first 20% |
+
+Seed 42, after: **58 courses, 2,005 segments, 1.1 s** to build. A 50-unit arena window snapped onto a
+river holds **34.5% valley, 5.8% open water**, with a deepest cut of **4.1 m**. Water is about 2.5 m
+wide at a source and 5 m at a mouth; the valley reaches 18 m across.
+
+The arena is snapped **two thirds of the way down** a course rather than to the mouth: a window
+centred on a mouth is an estuary, and the arena filled with water.
 
 ### R2. Flow accumulation (the real thing)
 

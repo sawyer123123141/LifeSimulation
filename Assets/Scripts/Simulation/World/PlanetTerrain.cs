@@ -285,23 +285,39 @@ namespace LifeSimulation.Simulation.World
 
             // Rivers, last, and only when a caller supplies a network - so a sample without one is
             // bit-for-bit the sample this function returned before rivers existed.
-            //
-            // The channel fades out as the ground approaches sea level, because a trench cut through
-            // the last few metres of a river mouth would show as a notch in the coastline from
-            // orbit, and because there is nothing for a river to carve once it is the sea.
             double channel = 0d;
             if (rivers != null)
             {
-                double proximity = rivers.Proximity(dx, dy, dz);
-                if (proximity > 0d)
+                RiverNetwork.RiverInfluence river = rivers.Influence(dx, dy, dz);
+                if (river.Touches)
                 {
-                    // Fade the channel out as the ground approaches sea level: a trench cut through
-                    // the last few metres of a river mouth shows as a notch in the coastline from
-                    // orbit, and there is nothing left for a river to carve once it is the sea.
+                    // BLEND toward the river; do not subtract from the ground. Subtracting keeps the
+                    // hillside and puts a slot in it, which is what made the first version read as a
+                    // stripe drawn across a slope. Interpolating toward the water surface pulls the
+                    // whole valley down with it, so the banks slope in and the metre-scale bands that
+                    // would otherwise cross the stream are flattened where the water is.
+                    //
+                    // Faded out as the ground approaches sea level: a valley blended into the last few
+                    // metres of a river mouth flattens the coastline, and there is nothing left for a
+                    // river to carve once it is the sea.
+                    // A valley only ever CUTS. The profile is built from the walk's coarse field, so
+                    // it sits above the fine field wherever the fine bands dip - blending toward it
+                    // unconditionally filled those dips and left the river running along a raised
+                    // bank, measured at 0.2 m of ground becoming 0.9 m. Taking the lower of the two
+                    // keeps the valley a valley.
                     double onLand = Smooth01(elevation / 0.06d);
-                    elevation -= RiverNetwork.Carve(proximity) * onLand;
-                    moisture = EnvironmentNoise.Clamp01(moisture + RiverNetwork.Wetting(proximity));
-                    channel = proximity * onLand;
+                    double weight = river.Weight * onLand;
+                    double target = Math.Min(river.TargetHeight, elevation) - (RiverNetwork.BedDepth * river.Channel);
+                    double carved = elevation + ((target - elevation) * weight);
+
+                    // A river may not turn land into sea. Without this the valley digs the last few
+                    // hundred metres of a course below the waterline and the palette paints the whole
+                    // floodplain ocean-blue - a broad flat band with hard edges, which is the stripe
+                    // this rework exists to remove, arriving by a different route.
+                    if (elevation > 0d) carved = Math.Max(carved, 0.002d);
+                    elevation = carved;
+                    channel = river.Channel * onLand;
+                    moisture = EnvironmentNoise.Clamp01(moisture + RiverNetwork.Wetting(channel));
                 }
             }
 

@@ -1388,3 +1388,20 @@ change.
   samples, so a channel measured that way scallops at the sampling frequency of its own path -
   measured at 0.999 / 0.848 / 0.999 along one straight reach. Point-to-segment is four extra lines and
   removes the artefact entirely.
+- **Subtracting a feature is not the same as inscribing one (2026-08-23).** A river cut as a fixed
+  slot keeps the hillside it crosses and reads as a groove scratched across a slope. Inscribing means
+  the surrounding ground is **blended toward** the feature over a compact support, so the land slopes
+  into it. The same distinction applies to any feature meant to belong to terrain rather than sit on
+  it - roads, craters, lake beds.
+- **A modifier that can raise ground will raise it somewhere you did not look.** Blending terrain
+  toward a profile built from a coarser field filled every dip the coarse field could not see, and the
+  river ended up on a raised bank. `min(profile, terrain)` is the whole fix. Ask of any elevation
+  modifier: which sign is it allowed to have?
+- **Discrete direction choices show up as right angles.** Steepest descent over eight compass points
+  makes staircases wherever the ground is nearly flat across one step. Take the gradient from all the
+  samples and carry momentum between steps - the standard particle-erosion trick - and the same walk
+  produces curves.
+- **Structure that must exist has to be generated deliberately.** Rivers spaced far enough apart not
+  to corrugate the land never meet, so the network had zero confluences and read as parallel
+  scratches. Tributaries are a second pass with their own spacing, kept only if they join. Hoping an
+  emergent property emerges is not a plan.

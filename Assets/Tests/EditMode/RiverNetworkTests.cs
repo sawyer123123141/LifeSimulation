@@ -42,7 +42,7 @@ namespace LifeSimulation.Tests.EditMode
                 double y = Math.Sin(latitude);
                 double z = cosLatitude * Math.Cos(longitude);
 
-                Assert.That(second.Proximity(x, y, z), Is.EqualTo(first.Proximity(x, y, z)),
+                Assert.That(second.Influence(x, y, z).Weight, Is.EqualTo(first.Influence(x, y, z).Weight),
                     "rivers stopped being deterministic in the seed");
             }
         }
@@ -76,7 +76,7 @@ namespace LifeSimulation.Tests.EditMode
                     double x = cosLatitude * Math.Sin(longitude);
                     double y = Math.Sin(latitude);
                     double z = cosLatitude * Math.Cos(longitude);
-                    if (rivers.Proximity(x, y, z) > 0d) continue;
+                    if (rivers.Influence(x, y, z).Touches) continue;
 
                     PlanetSample without = PlanetTerrain.Sample(Seed, plates, x, y, z, MaximumFrequency, settings);
                     PlanetSample with = PlanetTerrain.Sample(Seed, plates, x, y, z, MaximumFrequency, settings, rivers);
@@ -92,12 +92,36 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
-        public void AChannelCutsDownAndNeverUp()
+        public void RiversMergeRatherThanCross()
+        {
+            RiverNetwork rivers = Build(out PlateStructure _, out TerrainSettings _);
+
+            // Confluences are what make this a network rather than a set of parallel scratches. Zero
+            // of them means every walk ran to the sea alone, which reads as scoring, not drainage.
+            Assert.That(rivers.ConfluenceCount, Is.GreaterThan(0), "no river joined another");
+        }
+
+        [Test]
+        public void TheWaterSurfaceNeverClimbs()
+        {
+            RiverNetwork rivers = Build(out PlateStructure _, out TerrainSettings _);
+
+            // The property the first version lacked. It offset the terrain, so its "river" climbed
+            // every bump it crossed - which is most of why it read as a stripe rather than a river.
+            // Checked on the courses themselves: sampling along a straight line crosses several
+            // rivers, and a height jump between two of them is not a river climbing.
+            Assert.That(rivers.EveryCourseDescends(), Is.True,
+                "a river segment ends higher than it starts");
+        }
+
+        [Test]
+        public void AValleyPullsTheGroundDownTowardTheWater()
         {
             RiverNetwork rivers = Build(out PlateStructure plates, out TerrainSettings settings);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
 
             int touched = 0;
+            int cut = 0;
             for (int row = 0; row < 96; row++)
             {
                 for (int column = 0; column < 96; column++)
@@ -108,24 +132,27 @@ namespace LifeSimulation.Tests.EditMode
                     double x = cosLatitude * Math.Sin(longitude);
                     double y = Math.Sin(latitude);
                     double z = cosLatitude * Math.Cos(longitude);
-                    double proximity = rivers.Proximity(x, y, z);
-                    if (proximity <= 0d) continue;
+                    RiverNetwork.RiverInfluence influence = rivers.Influence(x, y, z);
+                    if (!influence.Touches) continue;
 
                     touched++;
                     PlanetSample without = PlanetTerrain.Sample(Seed, plates, x, y, z, MaximumFrequency, settings);
                     PlanetSample with = PlanetTerrain.Sample(Seed, plates, x, y, z, MaximumFrequency, settings, rivers);
 
+                    // A valley only ever cuts. Blending toward the profile without this rule filled
+                    // every dip the coarse walk could not see and left the river on a raised bank -
+                    // measured at 0.2 m of ground becoming 0.9 m.
                     Assert.That(with.Elevation, Is.LessThanOrEqualTo(without.Elevation + 1e-6f),
                         "a river raised the ground");
-                    Assert.That(without.Elevation - with.Elevation,
-                        Is.LessThanOrEqualTo((float)RiverNetwork.Carve(1d) + 1e-6f),
-                        "a channel cut deeper than one channel depth");
                     Assert.That(with.Moisture, Is.GreaterThanOrEqualTo(without.Moisture - 1e-6f),
                         "a river dried the ground beside it");
+                    if (with.Elevation < without.Elevation - 1e-5f) cut++;
                 }
             }
 
             Assert.That(touched, Is.GreaterThan(0), "no channel crossed the coastal window at all");
+            Assert.That(cut, Is.GreaterThan(0),
+                "no point in any valley was lowered, so the valley is doing nothing");
         }
     }
 }

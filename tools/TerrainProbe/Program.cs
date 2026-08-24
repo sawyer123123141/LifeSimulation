@@ -259,6 +259,10 @@ namespace LifeSimulation.TerrainProbe
                 + $"{rivers.PointCount} path points, built in {clock.ElapsedMilliseconds} ms");
 
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
+            bool snapped = rivers.SnapToNearestMouth(ref centreLatitude, ref centreLongitude);
+            Console.WriteLine(snapped
+                ? "arena centre snapped to a river mouth"
+                : "no river mouth near the coastal centre; window unmoved");
             double maximumFrequency = MaximumFrequencyFor(25d);
 
             // How much of a 50-unit window a river touches at all, and how deep the deepest cut is.
@@ -266,6 +270,7 @@ namespace LifeSimulation.TerrainProbe
             int wet = 0;
             double deepest = 0d;
             double bestProximity = 0d;
+            int open = 0;
             double bestLatitude = centreLatitude;
             double bestLongitude = centreLongitude;
             for (int row = 0; row < side; row++)
@@ -275,14 +280,14 @@ namespace LifeSimulation.TerrainProbe
                     double latitude = centreLatitude + (((row / (double)(side - 1)) - 0.5d) * 50d / 500d);
                     double longitude = centreLongitude + (((column / (double)(side - 1)) - 0.5d) * 50d / 500d);
                     double cosLatitude = Math.Cos(latitude);
-                    double proximity = rivers.Proximity(
+                    RiverNetwork.RiverInfluence influence = rivers.Influence(
                         cosLatitude * Math.Sin(longitude), Math.Sin(latitude), cosLatitude * Math.Cos(longitude));
-                    if (proximity <= 0d) continue;
+                    if (!influence.Touches) continue;
 
                     wet++;
-                    if (proximity > bestProximity)
+                    if (influence.Channel > bestProximity)
                     {
-                        bestProximity = proximity;
+                        bestProximity = influence.Channel;
                         bestLatitude = latitude;
                         bestLongitude = longitude;
                     }
@@ -293,23 +298,32 @@ namespace LifeSimulation.TerrainProbe
                         Seed, plates, latitude, longitude, maximumFrequency, settings);
                     double cut = without.Elevation - withRiver.Elevation;
                     if (cut > deepest) deepest = cut;
+                    if (influence.Channel > 0.5d) open++;
                 }
             }
 
-            Console.WriteLine($"coastal window: {wet} of {side * side} samples touched by a channel "
-                + $"({100d * wet / (side * side):0.0}%), deepest cut {deepest:0.0000} elevation units "
+            Console.WriteLine($"coastal window: {wet} of {side * side} samples inside a valley "
+                + $"({100d * wet / (side * side):0.0}%), {open} of them open water "
+                + $"({100d * open / (side * side):0.0}%), deepest cut {deepest:0.0000} elevation units "
                 + $"= {deepest * 30d:0.0} m");
 
-            // A profile straight across the widest part of one channel, to see the banks.
-            Console.WriteLine("profile across a channel, metres from centre -> cut in metres:");
-            for (int step = -8; step <= 8; step++)
+            // A cross section through the widest part of one channel. The question a valley answers
+            // and a slot does not is whether the ground BESIDE the water moved: a profile that only
+            // changes within the bed is a groove, however deep it is.
+            Console.WriteLine("cross section, metres from centre -> ground before and after:");
+            for (int step = -16; step <= 16; step += 2)
             {
-                double offset = step * 0.6d / 500d;
-                double latitude = bestLatitude + offset;
+                double latitude = bestLatitude + (step * 0.6d / 500d);
                 double cosLatitude = Math.Cos(latitude);
-                double proximity = rivers.Proximity(
-                    cosLatitude * Math.Sin(bestLongitude), Math.Sin(latitude), cosLatitude * Math.Cos(bestLongitude));
-                Console.WriteLine($"   {step * 0.6d,5:0.0}  proximity {proximity:0.000}  cut {RiverNetwork.Carve(proximity) * 30d:0.00} m");
+                double px = cosLatitude * Math.Sin(bestLongitude);
+                double py = Math.Sin(latitude);
+                double pz = cosLatitude * Math.Cos(bestLongitude);
+
+                RiverNetwork.RiverInfluence sample = rivers.Influence(px, py, pz);
+                double after = PlanetTerrain.Sample(Seed, plates, px, py, pz, maximumFrequency, settings, rivers).Elevation;
+                double before = PlanetTerrain.Sample(Seed, plates, px, py, pz, maximumFrequency, settings).Elevation;
+                Console.WriteLine($"   {step * 0.6d,6:0.0}  valley {sample.Weight:0.000}  water {sample.Channel:0.000}"
+                    + $"  {before * 30d,7:0.0} m -> {after * 30d,7:0.0} m");
             }
         }
     }

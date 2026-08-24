@@ -680,10 +680,43 @@ Walked downhill once per world, recorded as segments, carved at sample time. Ful
   is what makes a river read.
 - **Sampling without a network is bit-for-bit the old sample.** The backdrop globe is deliberately
   given none - 19-unit triangles cannot see a 5 m channel.
-- Re-ran the 480-run sweep with rivers in the simulation field: **nothing moved** (WaterEfficiency
-  t -2.35, NutrientUptake t +2.05, unchanged from the river-free run). 2.4% of the window is not an
-  ecological event.
 - **507 / 19 / 33 / 1 green**, Unity compile clean.
+
+### Rivers v2: the first version read as stripes, and the reason was structural
+
+Reported as "very bad, looks like random strips in the land". It was: v1 subtracted a fixed slot from
+whatever ground it crossed, so the water surface rose and fell with the hillside and the land beside
+it never sloped in. Every fix below is standard practice somewhere in the literature; the table in
+`docs/terrain-caves-and-rivers.md` pairs each with the symptom it removes.
+
+- **Monotone profile** - running minimum along the course, smoothed, minimum re-applied.
+- **Valley blend with compact support** - terrain interpolated toward the water surface over a 3-9 m
+  half-width, so banks slope in. Peytavie et al., *Procedural Riverscapes*.
+- **The valley only ever cuts** (`min(profile, terrain)`). Blending unconditionally filled dips the
+  coarse walk could not see and left the river on a **raised bank** - measured, 0.2 m of ground
+  became 0.9 m.
+- **A river may not turn land into sea.** Cutting below the waterline near a mouth painted a wide flat
+  ocean-blue band with hard edges - the same stripe arriving by another route.
+- **Gradient from the whole sample ring plus momentum** (inertia 0.55). Steepest descent over eight
+  compass points produced right-angled staircases; the render showed them plainly.
+- **Two passes.** Trunks at 75 m separation, then tributaries at 22 m **kept only if they join** an
+  existing course. Trunks alone never meet: the network had **zero confluences** before this.
+- **Tapered heads** over the first 20%, or a course appears at full width partway up a hillside.
+
+Seed 42: **58 courses, 2,005 segments, 1.1 s**. A snapped arena window holds **34.5% valley, 5.8%
+open water**, deepest cut **4.1 m**. The arena snaps **two thirds down** a course, not to the mouth -
+a mouth-centred window is an estuary and fills with water.
+
+Re-ran the 480-run plant sweep with valley rivers in the simulation field: **still nothing
+conclusive**. Paired terrain-minus-flat, contest-on, `MoistureTolerance` **+0.0402 (t +2.57)** and
+`WaterEfficiency` **-0.0189 (t -2.10)** are the only cells past |t| = 2 in twenty-two comparisons.
+`MoistureTolerance` is at least mechanistically plausible now - rivers are wet corridors - but two
+marginal cells out of twenty-two is what twenty-two comparisons produce, and neither is claimed.
+
+**509 / 19 / 33 / 1 green**, Unity compile clean. Two tests failed while this landed and both were
+right to: `RiversMergeRatherThanCross` caught the missing tributary pass, and
+`ElevationMatchesTheTerrainGeneratorExactly` caught the snap being applied by the field and not by
+the check - the join guard working.
 
 **Next on this thread is R2 (flow accumulation), and it should NOT be started yet** - it needs the
 region/chunk system adaptive detail also needs, or it gets built twice.
