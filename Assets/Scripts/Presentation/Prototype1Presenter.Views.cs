@@ -81,9 +81,14 @@ namespace LifeSimulation.Presentation
                     float hue = (id.Value * 0.61803398875f) % 1f;
                     view.GetComponent<Renderer>().material.color = Color.HSVToRGB(hue, 0.55f, 0.95f);
                     _creatureViews.Add(id, view);
-                    if (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off)
+                    // Born while a preview or the planet view is up: stay hidden until the arena
+                    // comes back. The planet view pauses the world, so this is only reachable if
+                    // something spawns a creature while paused - but a view that appears in the
+                    // middle of a globe shot is exactly the sort of thing nobody notices until it
+                    // is in a screenshot.
+                    if (_sphericalArena
+                        || (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off))
                     {
-                        // Born while a preview is up: stay hidden until the arena comes back.
                         view.gameObject.SetActive(false);
                     }
                 }

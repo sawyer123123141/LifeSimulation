@@ -54,6 +54,7 @@ namespace LifeSimulation.Presentation
 
         /// <summary>Set while a terrain preview is open, so the fixed-pixel HUD does not cover it.</summary>
         private bool _hudHidden;
+        private bool _pausedBeforePlanetView;
 
         /// <summary>
         /// Look-at-it view of the fields, decoupled from the 50-unit arena. Cycled with <c>K</c>.
@@ -307,6 +308,7 @@ namespace LifeSimulation.Presentation
                 UpdatePlanetBackdrop();
                 RebuildTerrainViews();
                 ApplyCameraRange();
+                ApplyPlanetView(_sphericalArena);
             }
 
             if (Input.GetKeyDown(KeyCode.J)) _terrainTuningPanel.Toggle();

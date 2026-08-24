@@ -163,7 +163,12 @@ namespace LifeSimulation.Presentation
 
         public Mode Advance(SimulationWorld world)
         {
-            Current = (Mode)(((int)Current + 1) % 4);
+            // Three, not four. The fourth was a globe of its own, built as one fixed mesh at
+            // draw radius 60 - and O now shows the real planet at true radius with level of detail,
+            // which is the same view done properly. Two planets on two keys, one of them worse, is
+            // a choice nobody wants to have to make. Mode.Planet is left in the enum because the
+            // preview still knows how to build one; nothing reaches it from the key any more.
+            Current = (Mode)(((int)Current + 1) % 3);
             Rebuild(world);
             return Current;
         }

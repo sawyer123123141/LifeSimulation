@@ -211,6 +211,61 @@ namespace LifeSimulation.Presentation
         }
 
         /// <summary>
+        /// Enter or leave the planet view.
+        ///
+        /// <para><b>O used to only add.</b> It curved the arena onto its planet and drew the globe,
+        /// and left everything else exactly where it was: creatures walking about, resources, the
+        /// HUD over the top, and the simulation ticking away underneath a view nobody was watching
+        /// the simulation in. A mode that only adds is not a mode.</para>
+        ///
+        /// <para>What is hidden and what is not: creatures, resources, the sea and the HUD go,
+        /// because none of them belong in a view of a whole world. <b>The arena ground stays</b> -
+        /// it is the finest patch of the planet's surface, and the backdrop deliberately drops the
+        /// chunks underneath it, so hiding it would open a hole where the arena is.</para>
+        ///
+        /// <para>The simulation pauses, and the pause state from before is restored on the way out,
+        /// so leaving the planet view does not silently start a run somebody had deliberately
+        /// stopped.</para>
+        /// </summary>
+        private void ApplyPlanetView(bool active)
+        {
+            if (active)
+            {
+                // A flat preview and the planet are two different scenes; opening one closes the
+                // other rather than drawing both into the same frame.
+                if (_terrainPreview != null && _terrainPreview.Current != TerrainPreview.Mode.Off)
+                {
+                    _terrainPreview.Hide();
+                    ApplyTerrainPreviewMode(TerrainPreview.Mode.Off);
+                }
+
+                _pausedBeforePlanetView = _isPaused;
+                _isPaused = true;
+            }
+            else
+            {
+                _isPaused = _pausedBeforePlanetView;
+            }
+
+            _hudHidden = active;
+
+            if (_waterSurface != null)
+            {
+                _waterSurface.SetActive(!active && _world != null && _world.Config.ElevationFieldEnabled);
+            }
+
+            foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
+            {
+                if (pair.Value != null) pair.Value.gameObject.SetActive(!active);
+            }
+
+            for (int index = 0; index < _resourceViews.Count; index++)
+            {
+                if (_resourceViews[index] != null) _resourceViews[index].gameObject.SetActive(!active);
+            }
+        }
+
+        /// <summary>
         /// Live terrain tuning. The correct height and smoothing cannot be derived - they depend on
         /// how the relief reads beside a 1-unit creature - so they are dialled here rather than
         /// guessed in source and recompiled.
