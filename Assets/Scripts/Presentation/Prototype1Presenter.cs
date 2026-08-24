@@ -1044,7 +1044,7 @@ namespace LifeSimulation.Presentation
                 // Orbit the planet's centre once far enough out, and let the pitch go nearly overhead
                 // and well below the horizon - a globe is looked at from any angle, unlike ground.
                 cameraController.SetRange(
-                    ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 0.5f,
+                    ArenaProjection.PlanetRadius * 3.2f, ArenaProjection.PlanetRadius * 2f,
                     zoomStep: 0.30f, distantFocus: ArenaProjection.Centre,
                     minimumPitch: -85f, maximumPitch: 89f);
                 _simulationCamera.farClipPlane = ArenaProjection.PlanetRadius * 8f;

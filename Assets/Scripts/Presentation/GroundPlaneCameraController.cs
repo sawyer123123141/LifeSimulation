@@ -124,8 +124,20 @@ namespace LifeSimulation.Presentation
 
         private void LateUpdate()
         {
+            float scroll = Input.mouseScrollDelta.y;
+            float previousDistance = _distance;
             _distance = Mathf.Clamp(
-                _distance - (Input.mouseScrollDelta.y * _distance * _zoomStep), MinimumDistance, _maximumDistance);
+                _distance - (scroll * _distance * _zoomStep), MinimumDistance, _maximumDistance);
+
+            // Zoom toward whatever is under the cursor, not toward wherever the camera already
+            // pointed. Without this the only reachable place is the focus, so a feature spotted on
+            // the far side of a continent cannot be approached - you zoom in on the middle of the
+            // view and then have to pan back out to find it again.
+            if (scroll > 0f && previousDistance > MinimumDistance && TryCursorPoint(out Vector3 cursor))
+            {
+                float closed = Mathf.Clamp01(1f - (_distance / previousDistance));
+                _focus = Vector3.Lerp(_focus, cursor, closed);
+            }
 
             if (Input.GetMouseButton(1))
             {
@@ -151,6 +163,46 @@ namespace LifeSimulation.Presentation
             ApplyTransform();
         }
 
+        /// <summary>
+        /// Where the cursor is pointing on the world's surface.
+        ///
+        /// <para>Solved against the sphere or the ground plane rather than raycast against colliders,
+        /// because the terrain is a bare mesh with no collider on it - a raycast would hit creatures
+        /// and resources and nothing else, so zooming would only work when the cursor happened to be
+        /// over an animal.</para>
+        /// </summary>
+        private bool TryCursorPoint(out Vector3 point)
+        {
+            point = default;
+            var camera = GetComponent<Camera>();
+            if (camera == null) return false;
+
+            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+            if (ArenaProjection.Spherical)
+            {
+                Vector3 toCentre = ray.origin - ArenaProjection.Centre;
+                float radius = ArenaProjection.PlanetRadius;
+                float along = Vector3.Dot(toCentre, ray.direction);
+                float outside = Vector3.Dot(toCentre, toCentre) - (radius * radius);
+                float discriminant = (along * along) - outside;
+                if (discriminant < 0f) return false;
+
+                // Near root: the front of the planet, which is the half being looked at.
+                float hit = -along - Mathf.Sqrt(discriminant);
+                if (hit < 0f) return false;
+
+                point = ray.GetPoint(hit);
+                return true;
+            }
+
+            if (Mathf.Abs(ray.direction.y) < 1e-4f) return false;
+            float toGround = -ray.origin.y / ray.direction.y;
+            if (toGround < 0f) return false;
+
+            point = ray.GetPoint(toGround);
+            return true;
+        }
+
         private void ApplyTransform()
         {
             // Hand over from orbiting the ground to orbiting the planet as the camera retreats. The
@@ -159,7 +211,7 @@ namespace LifeSimulation.Presentation
             Vector3 focus = _focus;
             if (_hasDistantFocus && _maximumDistance > DefaultMaximumDistance)
             {
-                float t = Mathf.InverseLerp(DefaultMaximumDistance, _maximumDistance, _distance);
+                float t = Mathf.InverseLerp(_maximumDistance * 0.45f, _maximumDistance, _distance);
                 focus = Vector3.Lerp(_focus, _distantFocus, Mathf.SmoothStep(0f, 1f, t));
             }
 
