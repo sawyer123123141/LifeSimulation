@@ -1449,3 +1449,11 @@ change.
   tripled the triangle count, because raising the band limit by a level makes the coarse chunks
   denser too and those are most of the sphere. Reverted, and the number is in the comment so nobody
   tries it twice.
+- **A liveness test against the fingerprint proves nothing (2026-08-24).** `ComputeStateFingerprint`
+  folds in `ComputeConfigurationHash`, so two worlds differing only by a flag have different
+  fingerprints whether or not the flag does anything. The test passes, the flag could be a no-op, and
+  the matching inertness test cannot be satisfied at all. **`ComputeBehaviorHash` is the config-free
+  one** and is what "did these evolve the same way" means.
+- **The project's own guards are the fastest reviewer.** Adding one flag failed three tests
+  immediately: the manifest did not mention it, the configuration hash did not cover it, and the
+  pinned property count disagreed. None of that needed a person to notice.

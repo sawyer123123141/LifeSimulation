@@ -154,7 +154,8 @@ namespace LifeSimulation.Simulation.Core
             bool plantSeedProductionRateEnabled = false,
             bool safetyGatedMateRendezvousEnabled = false,
             bool homeRangeAffinityEnabled = false,
-            bool terrainDrivenEnvironmentEnabled = false)
+            bool terrainDrivenEnvironmentEnabled = false,
+            bool slopeMovementCostEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -195,6 +196,7 @@ namespace LifeSimulation.Simulation.Core
             PlantFertilityAdaptationEnabled = plantFertilityAdaptationEnabled;
             ElevationFieldEnabled = elevationFieldEnabled;
             TerrainDrivenEnvironmentEnabled = terrainDrivenEnvironmentEnabled;
+            SlopeMovementCostEnabled = slopeMovementCostEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -330,6 +332,36 @@ namespace LifeSimulation.Simulation.Core
         public bool TerrainDrivenEnvironmentEnabled { get; }
 
         /// <summary>
+        /// Whether climbing costs a creature anything.
+        ///
+        /// <para><b>This is the other half of the join.</b> With
+        /// <see cref="TerrainDrivenEnvironmentEnabled"/> on, terrain decides where food grows - but
+        /// the ground itself is still flat as far as a creature is concerned, and walking up a
+        /// mountain costs exactly what walking across a plain costs. Relief that nothing has to climb
+        /// is scenery with an ecology painted on it.</para>
+        ///
+        /// <para>The mechanism is deliberately the smallest one that exists: energy drain is already
+        /// proportional to distance travelled, so a climb is charged <b>as extra distance</b>. No new
+        /// creature state, no second energy path, and nothing to keep in step with the existing one.
+        /// See <see cref="SlopeClimbCost"/> for the exchange rate.</para>
+        ///
+        /// <para><b>Requires elevation.</b> Without <see cref="TerrainDrivenEnvironmentEnabled"/> or
+        /// <see cref="ElevationFieldEnabled"/> the field reports no elevation, every climb is zero,
+        /// and this flag does nothing - which is inert, not broken.</para>
+        /// </summary>
+        public bool SlopeMovementCostEnabled { get; }
+
+        /// <summary>
+        /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
+        ///
+        /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
+        /// times as expensive as walking the same distance on the flat, and one of those five is the
+        /// distance itself. It is a coefficient, not a measurement of this world, and it is here so
+        /// it can be changed in one place when there is something to fit it to.</para>
+        /// </summary>
+        public const float SlopeClimbCost = 4f;
+
+        /// <summary>
         /// Lets a vulnerable seedling resist takeover with its own <c>SeedlingResilience</c>,
         /// turning the single largest non-heritable term in plant fitness into a selectable one -
         /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md. Requires
@@ -365,7 +397,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 1;
+        public const int ConfigurationHashVersion = 2;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -430,6 +462,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, PlantFertilityAdaptationEnabled ? 1UL : 0UL);
             hash = Hash(hash, ElevationFieldEnabled ? 1UL : 0UL);
             hash = Hash(hash, TerrainDrivenEnvironmentEnabled ? 1UL : 0UL);
+            hash = Hash(hash, SlopeMovementCostEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

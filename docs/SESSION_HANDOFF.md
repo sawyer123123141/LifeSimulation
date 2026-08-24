@@ -1041,14 +1041,32 @@ Every instrument here exists because each missed something another caught.
 - Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement. The `J` panel
   has an **altitude cooling** slider, which is the coefficient that decides it.
 
-### THE OPEN DECISION — terrain is still cosmetic
+### Terrain is no longer cosmetic — both halves exist, one is unmeasured
 
-`PlanetTerrain` is **presentation only**. The arena ground is now built from it, so creatures are
-*drawn* standing on real relief - but the simulation still samples its own `EnvironmentField` for
-moisture, fertility and temperature, and **a hill costs a creature nothing**.
+**Half one, the field (`terrainDrivenEnvironmentEnabled`, done 2026-08-23).** Moisture, temperature
+and elevation come from the terrain generator. The plant corpus was re-measured under it; see the
+Phase G experiments.
 
-The join the integration design describes - "world generation produces a fertility field; plants turn
-that field into food; creatures eat food" - has not been made. Making it is a **simulation** change:
-new flag defaulting false, prove flag-off byte-identical, then **re-measure every plant result**,
-because all of them are scoped to the old field.
+**Half two, the slope (`slopeMovementCostEnabled`, added 2026-08-24, DEFAULT OFF AND UNMEASURED).**
+Climbing costs energy. The mechanism is the smallest one available: energy drain is already
+proportional to `DistanceSinceLastNeeds`, so a climb is charged **as extra distance** -
+`climb x PlanetTerrain.MetresPerElevationUnit x SimulationConfig.SlopeClimbCost`, uphill only, no new
+creature state. `SlopeClimbCost` is 4, the human figure, and is a coefficient rather than a
+measurement of this world.
+
+`SlopeMovementCostTests` pins three things: it is live with terrain under it, it is **exactly** inert
+without elevation, and it is off by default. All three compare `ComputeBehaviorHash`, not
+`ComputeStateFingerprint` - **the fingerprint folds in the configuration hash, so it differs the
+moment any flag differs, which makes a liveness test pass vacuously.** That mistake was made and
+caught here.
+
+**What has NOT been done: the measurement.** Nothing is known about what slope cost does to a
+population - not survival, not gene shift, not whether creatures avoid hills or starve on them.
+Until that exists the flag stays off. The measurement needs a paired-seed sweep like
+`tools/PlantSweep` but scoped to creatures, and **no such instrument exists** - that is the real cost
+of turning this on, and it should be built before the flag is, not after.
+
+**Note: `ConfigurationHashVersion` went 1 to 2**, per its own rule, because the covered field set
+changed. It seeds the configuration hash, so **every V2 fingerprint shifts** - no recorded value was
+found in the docs or pinned in a test, and V1 `ComputeStateHash` values are untouched.
 

@@ -70,6 +70,17 @@ namespace LifeSimulation.Simulation.World
         public const float HighGround = 0.55f;
 
         /// <summary>
+        /// Metres of height per unit of elevation. One unit is about thirty metres.
+        ///
+        /// <para>The presentation layer has had this number since the arena mesh was built - it is
+        /// <c>TerrainMeshBuilder.ElevationToWorldUnits</c>, and the drawn planet's relief fraction
+        /// works out to the same 30 at true radius. It lives here as well now that the simulation
+        /// charges for climbing, because a slope cost in elevation units is not a quantity anybody
+        /// can reason about. <b>The two must agree</b>: they describe one world.</para>
+        /// </summary>
+        public const float MetresPerElevationUnit = 30f;
+
+        /// <summary>
         /// Highest safely renderable frequency for a view with this many samples around a full turn.
         /// </summary>
         public static double MaximumFrequencyFor(int samplesAroundEquator)

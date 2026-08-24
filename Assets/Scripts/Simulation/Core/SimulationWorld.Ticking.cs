@@ -2,6 +2,7 @@ using System;
 using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Resources;
+using LifeSimulation.Simulation.World;
 using LifeSimulation.Simulation.Spatial;
 using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Diagnostics;
@@ -190,7 +191,33 @@ namespace LifeSimulation.Simulation.Core
                     GetEffectivePhenotype(index).MaximumSpeed,
                     Config.FixedDeltaTime,
                     Arena);
+
+                ChargeForClimbing(ref movement);
             }
+        }
+
+        /// <summary>
+        /// Bill a creature for the height it just gained.
+        ///
+        /// <para>Energy drain is already proportional to <c>DistanceSinceLastNeeds</c>, so the whole
+        /// of "a hill costs something" is charging a climb as extra distance. Descending is free:
+        /// going downhill is cheaper than level ground for a real animal only within a narrow range
+        /// of gradients, and paying creatures to walk downhill is a strange incentive to introduce by
+        /// accident.</para>
+        ///
+        /// <para>Off, this method reads nothing and writes nothing, which is what keeps the flag
+        /// byte-identical rather than merely close.</para>
+        /// </summary>
+        private void ChargeForClimbing(ref MovementState movement)
+        {
+            if (!Config.SlopeMovementCostEnabled) return;
+
+            float climb = Environment.Sample(movement.Position).Elevation
+                - Environment.Sample(movement.PreviousPosition).Elevation;
+            if (climb <= 0f) return;
+
+            movement.DistanceSinceLastNeeds +=
+                climb * PlanetTerrain.MetresPerElevationUnit * SimulationConfig.SlopeClimbCost;
         }
 
         private void TickDecisions(long tick)
