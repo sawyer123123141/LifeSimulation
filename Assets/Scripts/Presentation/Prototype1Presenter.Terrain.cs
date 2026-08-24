@@ -227,6 +227,21 @@ namespace LifeSimulation.Presentation
         /// so leaving the planet view does not silently start a run somebody had deliberately
         /// stopped.</para>
         /// </summary>
+        /// <summary>How long the tuning values must sit still before the planet is re-meshed.</summary>
+        private const float PlanetRebuildSettle = 0.2f;
+
+        /// <summary>
+        /// Re-mesh the planet if a tuning change has settled. Called every frame; costs a comparison.
+        /// </summary>
+        private void UpdatePlanetRebuild()
+        {
+            if (_planetRebuildDue <= 0f || Time.unscaledTime < _planetRebuildDue) return;
+
+            _planetRebuildDue = 0f;
+            EnsureArenaPlates();
+            UpdatePlanetBackdrop();
+        }
+
         private void ApplyPlanetView(bool active)
         {
             if (active)
@@ -303,11 +318,10 @@ namespace LifeSimulation.Presentation
             // the planet view open, every slider on the J panel moved the arena mesh underneath and
             // left the globe on screen showing the previous world. A tuning control whose effect is
             // not visible in the view you are tuning in is not a tuning control.
-            if (_sphericalArena)
-            {
-                EnsureArenaPlates();
-                UpdatePlanetBackdrop();
-            }
+            // Marked, not done. A slider being dragged fires this every frame, and re-meshing the
+            // planet takes longer than a frame - so doing it here restarted the work continuously and
+            // it never finished. The rebuild happens once the values stop moving.
+            if (_sphericalArena) _planetRebuildDue = Time.unscaledTime + PlanetRebuildSettle;
         }
 
         /// <summary>
@@ -444,15 +458,23 @@ namespace LifeSimulation.Presentation
             // arena and left the globe behind it showing the previous world.
             int seed = _world.Config.WorldSeed;
             int revision = TerrainView.SettingsRevision;
-            if (_planetSurfaceSeed != seed || _planetSurfaceRevision != revision)
+            if (_planetSurfaceSeed != seed)
             {
                 _planetSurface.Configure(
                     _simulationCamera, TerrainMeshBuilder.CreateTerrainMaterial(), seed, _arenaPlates,
                     ArenaTerrainSettings(), ArenaProjection.PlanetRadius,
                     TerrainMeshBuilder.PlanetReliefFraction, Vector3.up);
-                _planetSurfaceSeed = seed;
-                _planetSurfaceRevision = revision;
             }
+            else if (_planetSurfaceRevision != revision)
+            {
+                // Same world, different dials. Configure would throw away nine hundred GameObjects
+                // and their meshes and stream them all back; the tree's shape depends only on where
+                // the camera is, and tuning does not move the camera. Only the geometry is stale.
+                _planetSurface.Reshape(seed, _arenaPlates, ArenaTerrainSettings());
+            }
+
+            _planetSurfaceSeed = seed;
+            _planetSurfaceRevision = revision;
 
             _planetBackdrop.SetActive(true);
         }

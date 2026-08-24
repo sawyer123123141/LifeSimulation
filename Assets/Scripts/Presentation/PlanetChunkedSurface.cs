@@ -33,6 +33,17 @@ namespace LifeSimulation.Presentation
         /// </summary>
         private const int BuildsPerFrame = 6;
 
+        /// <summary>
+        /// Chunk meshes rebuilt per frame when the terrain settings changed rather than the camera.
+        ///
+        /// <para>Higher than the streaming budget because a re-mesh has nothing else to do: the tree
+        /// is already the right shape, the GameObjects already exist, and the previous geometry is
+        /// still on screen while this works through it.</para>
+        /// </summary>
+        private const int ReshapeBuildsPerFrame = 16;
+
+        private bool _reshaping;
+
         private sealed class Node
         {
             public Vector3 CornerA;
@@ -76,6 +87,44 @@ namespace LifeSimulation.Presentation
 
             Clear();
             BuildRoots();
+        }
+
+        /// <summary>
+        /// Re-point at the same world with different terrain settings, <b>keeping the tree</b>.
+        ///
+        /// <para><see cref="Configure"/> throws every node away and builds twenty roots again, which
+        /// means destroying about nine hundred GameObjects and their meshes in one frame and then
+        /// streaming them all back at six a frame. That is affordable once. It is not affordable
+        /// every frame a tuning slider is moving, which is what it was doing.</para>
+        ///
+        /// <para>The tree's <i>shape</i> depends only on where the camera is, and a settings change
+        /// does not move the camera - so the nodes are all still correct. Only their geometry is
+        /// stale. Dropping the meshes and leaving the structure turns a full rebuild into a lazy
+        /// re-mesh of whatever is actually on screen.</para>
+        /// </summary>
+        public void Reshape(int seed, PlateStructure plates, TerrainSettings settings)
+        {
+            _seed = seed;
+            _plates = plates;
+            _settings = settings;
+            for (int index = 0; index < _roots.Count; index++) MarkStale(_roots[index]);
+            _reshaping = true;
+        }
+
+        /// <summary>
+        /// Mark a subtree's geometry stale without removing it.
+        ///
+        /// <para><b>The old mesh stays on screen until its replacement exists.</b> Destroying it here
+        /// would leave every chunk holding nothing until the queue reached it, so the planet would
+        /// dissolve and come back a piece at a time. Stale geometry for a moment is a far smaller lie
+        /// than no geometry.</para>
+        /// </summary>
+        private void MarkStale(Node node)
+        {
+            node.Built = false;
+            if (node.Children == null) return;
+
+            for (int index = 0; index < node.Children.Length; index++) MarkStale(node.Children[index]);
         }
 
         private void Clear()
@@ -170,14 +219,18 @@ namespace LifeSimulation.Presentation
             Vector3 local = transform.InverseTransformPoint(viewpoint);
             for (int pass = 0; pass < passes; pass++)
             {
-                _budget = BuildsPerFrame;
+                int allowance = _reshaping ? ReshapeBuildsPerFrame : BuildsPerFrame;
+                _budget = allowance;
                 bool settled = true;
                 for (int index = 0; index < _roots.Count; index++)
                 {
                     settled &= Select(_roots[index], local);
                 }
 
-                if (settled && _budget == BuildsPerFrame) return;
+                if (!settled || _budget != allowance) continue;
+
+                _reshaping = false;
+                return;
             }
         }
 
@@ -330,8 +383,12 @@ namespace LifeSimulation.Presentation
                 node.View.AddComponent<MeshFilter>();
             }
 
-            node.View.GetComponent<MeshFilter>().sharedMesh =
-                TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Planet Chunk");
+            var filter = node.View.GetComponent<MeshFilter>();
+
+            // A re-mesh touches every chunk on screen, and a Mesh is not collected along with the
+            // object that referenced it - so the one being replaced goes now.
+            if (filter.sharedMesh != null) Discard(filter.sharedMesh);
+            filter.sharedMesh = TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Planet Chunk");
             node.Built = true;
         }
 
