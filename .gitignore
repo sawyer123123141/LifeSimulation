@@ -117,6 +117,10 @@ tools/HeadlessTests/bin/
 tools/HeadlessTests/obj/
 !tools/HeadlessTests/*.csproj
 
+tools/PlantSweep/bin/
+tools/PlantSweep/obj/
+!tools/PlantSweep/*.csproj
+
 tools/TerrainProbe/bin/
 tools/TerrainProbe/obj/
 !tools/TerrainProbe/*.csproj
