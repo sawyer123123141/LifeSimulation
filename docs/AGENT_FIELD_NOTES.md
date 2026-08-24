@@ -27,12 +27,12 @@ to you within a week. Names below are stable.
 
 | File | Responsibility | Entry points you will actually want |
 |---|---|---|
-| `Core/SimulationWorld.cs` (~1580 lines) | The tick loop and all system wiring. Everything connects here. | `Step`, `TickDecisions`, `TickMovement`, `TickNeeds`, `ComputeStateHash`, `GetMovementTarget`, `TryScoreBestRememberedPlace` |
+| `Core/SimulationWorld.cs` (844 lines, **plus `.Ticking` 643, `.Hashing` 427, `.Statistics` 193 partials**) | The tick loop and all system wiring. Everything connects here. | `Step`, `TickDecisions`, `TickMovement`, `TickNeeds`, `ComputeStateHash`, `GetMovementTarget`, `TryScoreBestRememberedPlace` |
 | `Core/SimulationConfig.cs` | Every tuning constant and feature flag; the `CreatePrototypeNDefaults` factories | `CreatePrototype4Defaults`, `DecisionPolicyVersion`, `ComputeMemorySlotCount` |
 | `Core/SimulationTypes.cs` | All state structs and enums | `MemoryState`, `PlaceMemory`, `CreatureNeeds`, `MovementState`, `RandomDomain`, `SimulationStatistics` |
 | `Core/CreatureStore.cs` | Struct-of-arrays creature storage; swap-remove on death | `GetNeedsRefAt`, `GetMemoryRefAt`, `GetPlaceMemoryRefAt`, `TryGetIndex` |
 | `Core/DeterministicRandom.cs` | **Never edit.** All randomness. | `Float01` |
-| `Behavior/DecisionSystem.cs` (~980 lines) | Both decision policies | `DecideIntentUtilityV1` (P4 uses this), `DecideFromLearnedOutcomes`, `Decide` (Legacy), `ScoreResourceCandidates`, `ScoreRememberedResource` |
+| `Behavior/DecisionSystem.cs` (592 lines, **plus `.Scoring` 324 and `.Legacy` 130 partials**) | Both decision policies | `DecideIntentUtilityV1` (P4 uses this), `DecideFromLearnedOutcomes`, `Decide` (Legacy), `ScoreResourceCandidates`, `ScoreRememberedResource` |
 | `Behavior/MemorySystem.cs` | Scalar memory and the (dead) place memory | `RememberResource`, `RecordFailedSearch`, `LearnResourceOutcome`, `TickDecay` |
 | `Behavior/ForagingEconomics.cs` | Patch scoring, commitment, give-up | `PatchScore`, `ThreatAvoidance`, `CommitmentBonus`, `ShouldAbandon` |
 | `Behavior/HomeRangeSystem.cs` | P4a's dedicated, flag-gated soft home-range arithmetic. This is intentionally separate from inert place memory. | `RecordSuccess`, `TickDecay`, `GetCandidateBonus` |
@@ -61,9 +61,21 @@ to you within a week. Names below are stable.
 | `Analysis/GeneticClusterHistory.cs` (~1310 lines) | Conservative ancestry-supported cluster continuity/split/merge/extinction analysis. Analysis-only; never simulation truth. Known decomposition debt. | `Record` |
 | `Analysis/P5HistoryPanelSession.cs` | Pure host-triggered bridge that samples the world at a fixed cadence and feeds the P5 panel. Lives in Simulation so headless tests can cover it; the presenter owns and advances it. | `CreateForWorld`, `Advance` |
 
+### World generation — `Assets/Scripts/Simulation/World/`
+
+Pure C# with **no UnityEngine types**, which is what lets `tools/TerrainProbe` compile and measure it
+without Unity. Prototyped in Presentation, promoted in `8c82c77`.
+
+| File | Responsibility |
+|---|---|
+| `PlanetTerrain.cs` | signed elevation, moisture, temperature. **Requires a `TerrainSettings` argument** - there is deliberately no ambient default here |
+| `PlateStructure.cs` | tectonic plates; each sample carries **two** candidate neighbours and a crossfade weight |
+| `TerrainSettings.cs` | every tunable, one object |
+
 ### Elsewhere
 
-- `Assets/Scripts/Presentation/Prototype1Presenter.cs` — Unity view, playtest
+- `Assets/Scripts/Presentation/Prototype1Presenter.cs` (1033 lines, **plus `.Hud` 194,
+  `.Terrain` 536 and `.Views` 180 partials**) — Unity view, playtest
   hotkeys (`B/D/F/P/C/T/G/M/E`, `5/6/7/9`, `N`, `H`), the creature inspector,
   and the P5 evidence panel. `_world` is non-serialized;
   `EnsureInitialized()` guards domain reloads during Play mode.
@@ -1297,3 +1309,44 @@ change.
   the flat vertices before curving, because "how high is the ground at this arena position" is a
   question in simulation coordinates; reading it off curved vertices would fold the planet's radius
   into every creature's height.
+- **Derive a shared limit, never pick it twice (2026-08-23).** When the simulation began reading
+  terrain it had to sample at the frequency the arena mesh resolves - computed the same way
+  `BuildPatch` computes it, not chosen to look similar. A blunter or sharper field means a creature
+  climbing a bump nobody drew, and the join would be a lie in the small while looking correct in
+  every screenshot.
+- **Hold the output ranges when you replace the source of a field.** Moisture .15 to 1, temperature
+  .20 to 1, fertility .20 to 1 were kept exactly when terrain took over from independent noise, so
+  the coming re-measure reports the **shape** of the field changing rather than its scale. Rescaling
+  at the same time would move every plant result for a reason that has nothing to do with terrain,
+  and nothing could be attributed afterwards.
+- **A mutable static is fine in Presentation and forbidden in Simulation.** The tuning panel's
+  settings object was the right trade while generation was presentation-only. Moving generation into
+  Simulation, the same static becomes behaviour outside `SimulationConfig` - invisible to the
+  configuration hash, so two worlds with equal hashes could diverge and every fingerprint guarantee
+  quietly stops holding. Promotion means **removing the ambient default**, not carrying it along.
+- **Presentation has no instrument that means anything.** Four bugs shipped in a row on the spherical
+  view, every one compiling cleanly and passing 503 tests: behaviour wired into a terrain path most
+  scenarios never take, a `Camera.main` lookup that never resolves when the presenter builds its own
+  camera, a rig with no yaw at all, and a focus that panning clamped and zooming did not. **Say
+  plainly that a presentation feature is unverified**, name the two or three things most likely wrong,
+  and let the human look - do not report it as working.
+- **Use the reference the file already uses.** `Camera.main` only finds a camera tagged MainCamera;
+  the rest of the presenter used `_simulationCamera`, the one it builds itself. The new method's null
+  check swallowed the mismatch and the feature silently did nothing. When adding to an existing file,
+  copy how its neighbours reach the same object.
+- **One clamp, used by everything that moves the value.** Panning clamped the camera focus; zooming
+  toward the cursor did not, so a shallow ray meeting the ground far away flung the focus out of the
+  world in a single notch. Two writers, one invariant, one of them enforcing it.
+- **A big file can be split without reading it (2026-08-23).** A scanner that tracks brace depth -
+  ignoring braces inside strings and comments - lifts whole members with their doc comments into
+  `partial class` files. Nothing is rewritten and no member changes class, so behaviour cannot change.
+  `Prototype1Presenter` 1886 to 1033, `SimulationWorld` 2058 to 844, `DecisionSystem` 1021 to 592, in
+  one pass each, compiling first time, **with none of the files entering context**. Simulation splits
+  are additionally proved by 503 green tests including every pinned hash literal.
+- **Oversized files cost usage on every unrelated search.** The presenter was 95 KB and every grep for
+  one hook paid for all of it; two of this session's bugs came from wiring behaviour into paths inside
+  it that had not been read. Split mechanically **before** working in a file that big, not after.
+- **A mechanical split has a limit, and it should be reported rather than forced.**
+  `GeneticClusterHistory` (1324 lines) has almost nothing at class indent - the bulk is nested types -
+  so the pass finds nothing to move. That is a decomposition needing comprehension, which is a
+  different and larger job. Say so instead of half-doing it.

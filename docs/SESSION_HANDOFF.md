@@ -1,8 +1,12 @@
-# Session Handoff — 2026-08-22
+# Session Handoff — 2026-08-23
 
-**Head at handoff: the terrain brainstorm commit** on `origin/main`. Terrain work paused mid-way;
-**read `docs/terrain-brainstorm-2026-08-23.md` before touching terrain again** - it explains why five
-rounds of changes produced no visible difference, and the answer is arithmetic, not taste.
+**Head at handoff: `6b87771`** (`refactor: split SimulationWorld and DecisionSystem into partial
+classes`), pushed to `origin/main`. Working tree clean. **503 / 19 / 33 / 1 green**, Unity compile
+clean. Nineteen commits this session, `9442bd0` through `6b87771`; see Phase F.
+
+**Read `docs/terrain-brainstorm-2-2026-08-23.md` and `docs/reference-implementations.md` before
+touching terrain**, and `docs/terrain-caves-and-rivers.md` before adding to it. The first explains
+why the original design was structurally wrong rather than under-tuned.
 
 Two documentation commits sit between that and the previous handoff state (`c197061`): `d40f7ea`
 rewrote this file, and the docs commit that follows `7343653` records the fingerprint work below.
@@ -78,6 +82,25 @@ Twenty commits, `f0a691d` through `c197061`. Three phases.
 | `eead1b1` | creature-scale terrain; the arena now stands on the planet |
 | `29fb83e` | the sea was a flat primitive plane |
 | `6136493`, `c326d72` | terrain handoff rewritten; next-session decision recorded |
+
+---
+
+### Phase F — terrain tuning, the join, and a round world (2026-08-23)
+
+| commit | what |
+|---|---|
+| `9442bd0` | tunables become `TerrainSettings`; creature-scale bands retuned; `J` panel |
+| `3832b23` | `tools/TerrainProbe`; each window sampled at **its own** resolvable frequency |
+| `9c1c6f2` | the retune recorded with its sweep |
+| `c9b73d8` | every panel control describes itself |
+| `d5d04b0`, `a111e6b` | flat views can be aimed anywhere; live biome readout |
+| `ce71fcb`, `1e8e2df` | **the 82 degree wall: second-nearest plate changing hands** |
+| `38fea7c` | caves and rivers: what they need, before the join fixed the shape |
+| `8c82c77` | generation moves into `Simulation`, with no ambient settings |
+| `6c35905` | **the join** - terrain drives the environment, behind a flag |
+| `2e1f2af`, `ed7879b` | `O`: the arena drawn on the planet it is a window on |
+| `96990b8`, `165cb8f`, `56ba489`, `354b9e9`, `b336b7d` | four camera/toggle bugs, all mine |
+| `6b87771` | `SimulationWorld` and `DecisionSystem` split into partials |
 
 ---
 
@@ -341,6 +364,32 @@ exactly as the old `if` did, and the retuned numbers reproduce the sweep row for
 amplitude the instant the camera crosses the threshold, so zooming changed the character of the
 ground rather than its detail. Now faded across half an octave (`BandWeight`).
 
+**The 82 degree wall (FIXED, `ce71fcb`).** Reported as "big cut offs" when jumping to another
+continent. Not colour - geometry. At latitude 48.7 the field stepped **0.277 to 0.528 between samples
+1.04 metres apart, a grade of 7.24**, with *identical* shelf and *identical* seam distance on both
+sides, reading **Divergent** on one and **ContinentalCollision** on the other.
+
+Cause: boundary kind and intensity belong to a **pair** of plates, so they change the instant a
+different plate becomes second-nearest - along a line through the cell interior, far from any seam,
+where the seam blend has already saturated to **1.000** and smooths nothing. Blending the shelf fixed
+the seam and could never have fixed this.
+
+Fix: carry **both** candidate neighbours and crossfade on how close they are to swapping
+(`SwapTransition = 0.12` radians = 60 m). Where they change places their distances are equal, so both
+sides evaluate the same half-and-half mixture.
+
+| | before | after |
+|---|---:|---:|
+| worst step, lat 48.7 | **7.24** | **2.80** |
+| max grade, lat 40.1 | 5.92 | 2.80 |
+| max grade, lat 22.9 | 5.32 | 1.05 |
+| medians and biome mix | — | unchanged to within a point |
+
+**First hypothesis was WRONG and cost nothing because it was measured, not argued:** a suspected
+off-by-one in the seam smoothstep (`Smooth01(0)` returning 0.5, which would have made every seam
+discontinuous). It returns 0. The plate-state print on either side of the worst step named the real
+cause in two minutes.
+
 **Three scale errors, each worth remembering:**
 - `MaximumSlope` 0.55 was a **3% grade** — wrong by 20x, and it crushed every band above ~10
   cycles/radian to centimetres. Now 6 (a 36% grade).
@@ -348,6 +397,58 @@ ground rather than its detail. Now faded across half an octave (`BandWeight`).
   the same ground **eight times flatter the closer you looked**. Now a constant 30.
 - The hill band is a **77 m wavelength**, so **less than one hill spanned the 50 m arena**. Local
   (9 m) and micro (3 m) bands added.
+
+---
+
+### The join (DONE behind a flag — `6c35905`)
+
+`terrainDrivenEnvironmentEnabled`, **default false, last optional constructor parameter**. On, the
+simulation's moisture, temperature and elevation come from `PlanetTerrain` - the same function, seed,
+window centre and detail limit the arena mesh is built from.
+
+- **Flag-off is byte-identical.** The suite pins V1 state hashes as literals; 499 of them pass
+  unchanged.
+- **Detail limit is derived, not chosen:** the simulation samples at the frequency the 193-sample
+  arena mesh resolves. Reading a sharper field would mean a creature climbing a bump nobody drew.
+- **Output ranges deliberately held** where the plant systems were calibrated - moisture .15 to 1,
+  temperature .20 to 1 before lapse, fertility .20 to 1, elevation 0 to 1 - so any difference the
+  re-measure finds is the **shape** of the field changing, not its scale.
+- Sea bed reads as elevation **zero**, not negative: elevation is a lapse-rate input, and ground below
+  the waterline being warmer than the shore is not a claim worth making.
+- Four tests (`TerrainDrivenEnvironmentTests`). The load-bearing one asserts the field's elevation
+  **equals the generator's own sample at five spread positions** - one point agrees even with a wrong
+  window centre or swapped axes. A manipulation check pins that the field actually varies.
+- The **manifest drift guard fired on the first run**: a flag the manifest does not name makes a
+  result irreproducible. That is the guard working, not a failure.
+
+### A round world, without a spherical simulation (`2e1f2af`)
+
+**`O`** draws the arena curved onto the planet it is a window on. **Presentation only** - positions
+stay `SimVector2` on a flat 50-unit square with Euclidean distances, mapped by `ArenaProjection`
+after the tick. No hash moves, no flag, nothing re-measured.
+
+- The planet's centre sits at **(0, -500, 0)**, so the arena's centre lands on the origin with its
+  normal up. There the mapping is the **identity**, which is why the camera rig kept working.
+- **True scale was free.** The globe preview draws at radius 60 with relief fraction 0.06 - 3.6 units
+  per elevation unit; at radius 500 the same fraction is **30**, exactly the arena's own figure. The
+  two views were always the same shape at different sizes. **I predicted the mountains would shrink;
+  they do not.**
+- The patch is curved by remapping the flat builder's output, never by a second spherical builder.
+- Ground heights are cached from the **flat** vertices, before curving: "how high is the ground here"
+  is a question in simulation coordinates.
+
+### File sizes (`6b87771`, and the presenter split before it)
+
+| file | before | after |
+|---|---:|---:|
+| `Prototype1Presenter` | 1886 | **1033** + Hud 194, Terrain 536, Views 180 |
+| `SimulationWorld` | 2058 | **844** + Ticking 643, Hashing 427, Statistics 193 |
+| `DecisionSystem` | 1021 | **592** + Scoring 324, Legacy 130 |
+
+Done **mechanically**: a scanner lifts whole members by brace depth, ignoring braces inside strings
+and comments; nothing rewritten, no member changing class. The simulation splits are verified by 503
+green tests including every pinned hash literal. **No file was read into context to do it** - the
+script is in the session scratchpad and is worth promoting to `tools/` if it is wanted again.
 
 ---
 
@@ -406,6 +507,26 @@ Each of these was a confident diagnosis of the striped combs, and each changed n
 The test that actually worked: **render the same mesh unlit.** The stripes vanished completely,
 which separated shading from geometry in one image. It should have been first, not seventh.
 
+### The spherical view — partly unverified, and known imperfect
+
+- **`PatchLift` is 0.02 units and is probably far too small.** The backdrop globe is subdivision 5 -
+  about **19-unit triangle edges at true scale**, roughly seven triangles under the whole 50-unit
+  arena - and it samples elevation at ~13 cycles/radian against the patch's **965**. The two surfaces
+  can disagree by more than 0.02, in which case the coarse globe pokes through the fine patch. Not
+  seen either way; fix is a larger lift or a slightly smaller backdrop radius.
+- The user reports it as "**a bit buggy**" without specifics. Not diagnosed.
+- The pan clamp is still a **box in x/z**, not an orbit, so it will fight at planet distance.
+- **Four bugs shipped in a row on this feature**, all from wiring behaviour into paths not read
+  carefully: the terrain path most scenarios never take (`96990b8`), a `Camera.main` lookup that never
+  resolves (`165cb8f`), no yaw at all (`56ba489`), and a focus that zooming never re-clamped
+  (`b336b7d`). **Presentation has no headless check that means anything** - a human in Play mode is
+  the only instrument.
+
+### `GeneticClusterHistory` is still 1324 lines
+
+Not split. Its members do not sit at class indent - the bulk is nested types - so the mechanical pass
+finds nothing to move, and a real decomposition means reading it. Known debt; left deliberately.
+
 ### Unverified by me
 
 The breeding-readiness inspector UI (`15c7a5a`) compiles and passes tests but was **never seen in
@@ -454,7 +575,25 @@ population as an upper bound — sound for that decision, but it is a bound, not
     ceiling. Two bands both clipped to it sum to relief no ground has - measured median land grade
     0.243 against 0.085 for the planet bands alone. If a chosen amplitude is above the ceiling, the
     number in the source is fiction.
-13. **Terrain tunables live in `TerrainSettings`, not in `const` fields.** They are judged by eye
+13. **No ambient settings in `Simulation`.** `PlanetTerrain.Sample` and friends **require** a
+    `TerrainSettings` argument. While generation lived in Presentation a mutable static was the right
+    trade for a slider panel; in Simulation it would be behaviour-changing state outside
+    `SimulationConfig`, invisible to the configuration hash, so two worlds with equal hashes could
+    diverge. The viewer's mutable instance lives in `Presentation.TerrainView` and can only affect
+    what is drawn. **Making terrain tunable per world means putting the values in the config and
+    hashing them** - a deliberate later step, not a convenience.
+14. **The boundary landform must be crossfaded between BOTH candidate neighbours.** Kind and
+    intensity belong to a pair of plates, so a rank swap is a discontinuity even where the seam blend
+    has saturated. This is the same rule as decision 9, one layer down: **ranking is a lookup.**
+15. **The simulation stays 2D; a round world is a display transform.** Positions are `SimVector2` on
+    a flat 50-unit square with Euclidean distances. `ArenaProjection` maps them onto the sphere after
+    the tick. Do not "fix" this by making the spatial model spherical without deciding to pay for it:
+    distance stops being Euclidean, the perception grid has no drop-in equivalent, and **every
+    recorded distance changes meaning**.
+16. **Splits are mechanical or they do not happen.** Members are lifted whole by brace depth, nothing
+    rewritten, no member changing class - so a split cannot alter behaviour and needs no reading. A
+    split that requires understanding the file is a different, larger job.
+17. **Terrain tunables live in `TerrainSettings`, not in `const` fields.** They are judged by eye
     against a one-metre creature at three zoom levels; that judgement cannot be made from source, and
     an edit-and-reload loop is why the previous round took fifteen passes. `PlanetTerrain.Active` is
     deliberately mutable global state - there is one terrain - and the explicit parameter on
@@ -470,44 +609,28 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-**User decision, 2026-08-23: next session is either the terrain/ecology join or terrain tuning.
-Nothing else.** Both are described below. Do not start LOD, erosion, or the P4a/P5 backlog without
-asking - they were considered and deliberately not chosen.
+**Step three of the join: enable it in a scenario and re-measure the plant corpus.** Steps one and
+two are done and inert (`8c82c77`, `6c35905`); the flag is default false and flag-off is
+byte-identical.
 
-### Option A — the join: make terrain drive the ecology
+1. Enable `terrainDrivenEnvironmentEnabled` **in the terrain scenario only**.
+2. **Re-measure every plant result.** All of them are scoped to the old flat field - the corpus is in
+   section 2 and the revalidation docs. This is the expensive part and it is not optional. Expect a
+   long compute job.
+3. **`LivenessTests` will fail on `plantTemperatureAdaptationEnabled`.** It is pinned inert *only*
+   because the old field returns Temperature = 1.0 everywhere. **That failure is the designed
+   signal** - move the flag out of `KnownInertFlags`; do not "fix" the test.
 
-Terrain is currently **cosmetic**. The arena ground is built from `PlanetTerrain`, so creatures are
-drawn standing on real relief, but the simulation samples its own `EnvironmentField` for moisture,
-fertility and temperature, and **a hill costs a creature nothing**.
+Report the new numbers **against the recorded ones**, not on their own. Output ranges were held
+deliberately so any difference is the shape of the field changing rather than its scale.
 
-`2026-08-14-system-integration-design.md` describes the join: *world generation produces a fertility
-field; plants turn that field into food; creatures eat food.* Making it is what turns two systems
-into one simulation.
+### Also open, smaller
 
-**Do it in this order, and do not shortcut it:**
-
-1. New `SimulationConfig` flag, default false, last optional constructor parameter.
-2. **Prove flag-off is byte-identical.** Standing rule for any new behaviour here.
-3. Enable it in the terrain scenario only.
-4. **Re-measure every plant result.** All of them are scoped to the old field - see the plant corpus
-   in §2 and the revalidation docs. This is the expensive part and it is not optional.
-
-Expect `LivenessTests` to fail on `plantTemperatureAdaptationEnabled` once temperature genuinely
-varies: it is pinned inert *only* because `EnvironmentField` returns Temperature = 1.0 everywhere.
-That failure is the designed signal - move the flag out of `KnownInertFlags`, do not "fix" the test.
-
-### Option B — terrain tuning
-
-Presentation only, no re-measure. Known open items, in the order they are likely to matter:
-
-- **Ice cover looks high** - 0.074 of surface at the last measurement.
-- **A small stepped comb** remains on some steep ridges.
-- **Water swell** amplitude and wavelength have never been judged against a creature.
-- **Biome palette** balance, now that the Whittaker blend works.
-
-**Measure before changing a coefficient.** Both instruments are in §10, and the history of this work
-is that reasoning about the field produced six wrong diagnoses while the instruments produced the
-answers.
+- **`PatchLift`** almost certainly needs raising - see section 3.
+- **Painted rivers (R1)** from `docs/terrain-caves-and-rivers.md`: additive, presentation-only, no new
+  machinery. The natural next visible thing after the re-measure.
+- Ice is heavy at high latitude; **Altitude cooling** on the `J` panel is the control. Judge it in the
+  view now that the view can be aimed.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
 `ComputeStateHash` — V1 is a frozen historical identifier and is deliberately incomplete. Never
@@ -530,7 +653,7 @@ dotnet test --no-build --filter "FullyQualifiedName~LivenessTests&FullyQualified
 dotnet test --no-build --filter "FullyQualifiedName~RiskAversionIsLiveOnlyWhenThreatsExist"
 ```
 
-**Green at handoff: 499 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
+**Green at handoff: 503 / 19 / 33 / 1.** RiskAversion alone takes ~16 s; silence is not a hang.
 
 Presentation changes additionally need a Unity compile — the headless project excludes
 `Assets/Scripts/Presentation`:
@@ -564,6 +687,11 @@ either close the editor or run the menu items.
 ```powershell
 dotnet run --project tools\TerrainProbe -c Release
 ```
+
+The probe lives at `tools/TerrainProbe` and compiles the generator directly - it is pure C#, which
+is why it works without Unity - reporting **grade** (median, p90, max), **named biome mix**, and the
+**worst single step with the plate state on either side of it**. That last one is what named the
+82-degree wall; a median cannot see a wall.
 
 That compiles `PlanetTerrain`, `PlateStructure` and `TerrainSettings` directly - they are pure C# -
 and prints the adjacent-sample grade for each flat view at **its own** resolvable frequency, with and
@@ -700,6 +828,13 @@ reading gave the architecture.
 | `TerrainSettings` | **every tunable, in one object.** Pure C#, no Unity types, so an offline probe can compile it |
 | `TerrainTuningPanel` | the `J` panel: live sliders over `PlanetTerrain.Active` |
 | `tools/TerrainProbe` | **field measurement without Unity** - the editor instruments cannot run while the editor holds the lock |
+| `TerrainView` | Presentation's mutable settings instance, for the panel. **Simulation never reads it** |
+| `ArenaProjection` | maps a flat simulation position onto the planet, for drawing only |
+| `PlanetBiome.Classification` | biome naming, free of UnityEngine, so the probe can count biomes |
+
+**Generation lives in `Assets/Scripts/Simulation/World/`** (`PlanetTerrain`, `PlateStructure`,
+`TerrainSettings`) since `8c82c77`. Presentation consumes it; the simulation reads it when the join
+flag is on.
 
 ### Defects found and fixed, with the measurement that found each
 
