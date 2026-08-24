@@ -1350,3 +1350,19 @@ change.
   `GeneticClusterHistory` (1324 lines) has almost nothing at class indent - the bulk is nested types -
   so the pass finds nothing to move. That is a decomposition needing comprehension, which is a
   different and larger job. Say so instead of half-doing it.
+- **A field can be correct, live, and still deliver nothing (2026-08-23).** Terrain-driven
+  environment passed every equality test against the generator and changed the state hash in every
+  seed, and moved no plant conclusion - because a 50-unit arena is 0.1 radian on a 500-unit planet,
+  and continental climate is nearly constant across it. The terrain field is *more uniform* than the
+  hand-written one it replaced (moisture sd 0.005 against 0.283 at seed 161). **Measure the field's
+  variance over the window before concluding anything from a null result**, or "no difference" and
+  "no signal" are indistinguishable.
+- **Run the control arm yourself when the original instrument is gone.** The recorded plant corpus
+  came from an uncommitted probe, so any difference against it is unattributable between the change
+  and the harness. Running flat and terrain arms in one sweep makes the comparison internal - and the
+  flat arm doubles as a fidelity check against the recorded numbers (`SeedProductionRate` reproduced
+  43/120 up exactly). **Commit the instrument**, which is why `tools/PlantSweep` exists.
+- **Check the scenario's constants, not just its flags.** The sweep first ran at
+  `SimulationConfig`'s default `maximumPopulation` of 1,000 rather than the recorded 48, and the cap
+  never bound: populations ran to 134 with extinctions in half the seeds. Every flag was right and
+  the ecology was wrong.

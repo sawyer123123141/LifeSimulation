@@ -609,20 +609,41 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-**Step three of the join: enable it in a scenario and re-measure the plant corpus.** Steps one and
-two are done and inert (`8c82c77`, `6c35905`); the flag is default false and flag-off is
-byte-identical.
+**Step three of the join is DONE and its answer is negative (`88a236b`).** 480 runs, 120 seeds,
+12,000 ticks, flat versus terrain-driven crossed with the establishment contest. Full writeup in
+`docs/experiments/p4-terrain-join-2026-08-23.md`; the instrument is `tools/PlantSweep`, committed.
 
-1. Enable `terrainDrivenEnvironmentEnabled` **in the terrain scenario only**.
-2. **Re-measure every plant result.** All of them are scoped to the old flat field - the corpus is in
-   section 2 and the revalidation docs. This is the expensive part and it is not optional. Expect a
-   long compute job.
-3. **`LivenessTests` will fail on `plantTemperatureAdaptationEnabled`.** It is pinned inert *only*
-   because the old field returns Temperature = 1.0 everywhere. **That failure is the designed
-   signal** - move the flag out of `KnownInertFlags`; do not "fix" the test.
+**No plant conclusion moves.** Paired terrain-minus-flat per seed, contest-on: `WaterEfficiency`
+-0.0233 (t -2.72) is the only cell past |t| = 2 in twenty-two comparisons and is not claimed;
+everything else sits under |t| = 1.9. Extinctions are uncorrelated between fields (2 both, 12
+terrain-only, 6 flat-only, 100 neither).
 
-Report the new numbers **against the recorded ones**, not on their own. Output ranges were held
-deliberately so any difference is the shape of the field changing rather than its scale.
+**The reason is the real finding: the join makes the arena MORE uniform, not less.** Across 1,681
+positions in the +/-25 arena, terrain moisture has sd **0.050 / 0.037 / 0.005** at seeds 42 / 71 /
+161 against the flat field's **0.240 / 0.240 / 0.283**; temperature sd **0.014** against 0.189 at
+seed 161. The arena is 50 units wide = **0.1 radian** on a 500-unit planet, and terrain climate
+varies on continental scales. Terrain also runs systematically warmer: mean temperature 0.75-0.79
+against 0.39-0.43.
+
+**The flag is left OFF everywhere, including the terrain playtest.** Turning it on would flatten
+that scenario's climate heatmap and buy nothing. This is a deliberate deviation from the queued
+instruction, which assumed the join would add spatial structure.
+
+**`plantTemperatureAdaptationEnabled` was already out of `KnownInertFlags`** - removed when the
+procedural fields landed, with the reason recorded in the list's comment. The queued step three
+predicted that failure; it had already happened.
+
+### The decision this hands over
+
+Making terrain matter to the simulation needs one of two things, and they are different claims:
+
+1. **Widen metres-per-unit.** At 1 unit = 1 m the arena is a hillside. A unit worth ~100 m would
+   cross real climate - and **changes what every recorded distance means** (decision 15).
+2. **A local noise band on top of the planetary climate.** Terrain sets the mean, local noise
+   supplies within-arena variation. Cheaper, distances untouched, closest to what the flat field
+   already does.
+
+Not chosen. The measurement only rules out doing nothing.
 
 ### Also open, smaller
 
