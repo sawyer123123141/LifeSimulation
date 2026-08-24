@@ -1366,3 +1366,12 @@ change.
   `SimulationConfig`'s default `maximumPopulation` of 1,000 rather than the recorded 48, and the cap
   never bound: populations ran to 134 with extinctions in half the seeds. Every flag was right and
   the ecology was wrong.
+- **A null result is only worth having once the signal exists (2026-08-23).** "Terrain changes no
+  plant conclusion" meant nothing while the terrain field was flatter than the field it replaced.
+  After a local band restored comparable spread (moisture sd .207 against .240), the same null became
+  a finding: the corpus is robust to where its environment comes from. **Re-run the null after
+  fixing the thing that made it uninformative** - do not bank the first one.
+- **Regional signal plus local band, not one field doing both.** Terrain climate sets the arena's
+  mean and a zero-centred band supplies within-arena variation. The band's strength is chosen to
+  MATCH the previous field's spread, not to maximise it: past that point the regional value stops
+  mattering and the join is decorative again.

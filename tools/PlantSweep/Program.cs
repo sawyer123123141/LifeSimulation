@@ -261,7 +261,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 builder.AppendLine();
             }
 
-            string path = Path.Combine("docs", "experiments", "p4-terrain-join-2026-08-23.csv");
+            string path = Path.Combine("docs", "experiments", "p4-terrain-local-band-2026-08-23.csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }

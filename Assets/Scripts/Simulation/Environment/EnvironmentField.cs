@@ -85,6 +85,33 @@ namespace LifeSimulation.Simulation.Environment
         /// </summary>
         private const double LapseRate = .45d;
 
+        /// <summary>
+        /// How far the local band may move moisture and temperature away from the regional value,
+        /// in field units before the .15/.20 remap.
+        ///
+        /// <para>Chosen to restore the within-arena spread the procedural field had - roughly .24
+        /// in moisture and .19 in temperature over the arena - so the plant systems see a landscape
+        /// with the same amount of structure to select on, and any measured difference is the
+        /// <b>shape</b> of that structure rather than its amount. Raising these does not make the
+        /// world more varied so much as make the regional signal irrelevant.</para>
+        /// </summary>
+        private const double LocalMoistureStrength = .40d;
+        private const double LocalTemperatureStrength = .32d;
+
+        /// <summary>
+        /// Local variation around a regional value: warped fBm, centred on zero and spanning
+        /// -1 to +1, sampled at the same scale as the procedural field's own noise.
+        /// </summary>
+        private double LocalBand(int channel, double x, double y, double z)
+        {
+            double noise = EnvironmentNoise.Contrast(
+                EnvironmentNoise.WarpedFbm(
+                    _worldSeed, channel, x, y, z,
+                    octaves: 4, lacunarity: 2d, gain: .5d, warpStrength: .35d),
+                strength: 2.4d);
+            return (2d * noise) - 1d;
+        }
+
         public EnvironmentField(float moisture = 1f, float fertility = 1f, float temperature = 1f)
         {
             _constantSample = new EnvironmentSample(moisture, fertility, temperature);
@@ -227,17 +254,36 @@ namespace LifeSimulation.Simulation.Environment
             // below the waterline being *warmer* than the shore is not a claim this wants to make.
             double land = EnvironmentNoise.Clamp01(terrain.Elevation / PlanetTerrain.HighGround);
 
-            double moisture = .15d + (.85d * EnvironmentNoise.Clamp01(terrain.Moisture));
-            double temperature = .20d + (.80d * EnvironmentNoise.Clamp01(terrain.Temperature));
+            // Terrain climate sets the MEAN; a local band supplies the variation across the arena.
+            //
+            // Without the band the join delivers a more uniform field than the hand-written one it
+            // replaces: the arena is 50 units wide, which is 0.1 radian on a 500-unit planet, and
+            // moisture and temperature vary on continental scales. Measured over 1,681 arena
+            // positions, terrain moisture had a standard deviation of .005 at seed 161 against the
+            // procedural field's .283, and 480 runs found no plant conclusion moved - not because
+            // terrain is ecologically neutral but because there was nothing left to be neutral
+            // about. See docs/experiments/p4-terrain-join-2026-08-23.md.
+            //
+            // The band is centred on zero, so the regional value is still the average over the
+            // window: which continent the arena sits on decides whether it is wet or dry, and the
+            // band decides which end of the valley is wetter. Clamping keeps the recorded output
+            // ranges (.15 to 1, and .20 to 1 before lapse) intact.
+            SpherePoint(position, out double localX, out double localY, out double localZ);
+            double moistureLocal = LocalBand(channel: 224, x: localX, y: localY, z: localZ);
+            double temperatureLocal = LocalBand(channel: 240, x: localX, y: localY, z: localZ);
+
+            double moisture = .15d + (.85d * EnvironmentNoise.Clamp01(
+                EnvironmentNoise.Clamp01(terrain.Moisture) + (LocalMoistureStrength * moistureLocal)));
+            double temperature = .20d + (.80d * EnvironmentNoise.Clamp01(
+                EnvironmentNoise.Clamp01(terrain.Temperature) + (LocalTemperatureStrength * temperatureLocal)));
 
             // Fertility keeps the shape the procedural field established - independent noise ridged
             // at moderate moisture, so waterlogged and arid ground are both poor and the best soil is
             // contested. Only its moisture input changes, which is the point: fertility now follows
             // the rain shadows the terrain actually has.
-            SpherePoint(position, out double x, out double y, out double z);
             double fertilityNoise = EnvironmentNoise.Contrast(
                 EnvironmentNoise.WarpedFbm(
-                    _worldSeed, channel: 96, x, y, z,
+                    _worldSeed, channel: 96, localX, localY, localZ,
                     octaves: 3, lacunarity: 2d, gain: .5d, warpStrength: .2d),
                 strength: 2.0d);
             double moistureBalance = 1d - EnvironmentNoise.Clamp01(Math.Abs(moisture - .55d) * 1.8d);

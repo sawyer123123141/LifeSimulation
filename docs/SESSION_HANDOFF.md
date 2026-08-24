@@ -633,17 +633,34 @@ instruction, which assumed the join would add spatial structure.
 procedural fields landed, with the reason recorded in the list's comment. The queued step three
 predicted that failure; it had already happened.
 
-### The decision this hands over
+### The decision was taken: a local band, not a wider unit (`docs/experiments/p4-terrain-local-band-2026-08-23.md`)
 
-Making terrain matter to the simulation needs one of two things, and they are different claims:
+Of the two options, **option 2** is implemented: `SampleTerrain` treats terrain climate as the
+regional **mean** and adds a zero-centred local band to moisture and temperature at the procedural
+field's own noise scale. Option 1 - widening metres-per-unit - was **rejected**, because it changes
+what every recorded distance means (decision 15).
 
-1. **Widen metres-per-unit.** At 1 unit = 1 m the arena is a hillside. A unit worth ~100 m would
-   cross real climate - and **changes what every recorded distance means** (decision 15).
-2. **A local noise band on top of the planetary climate.** Terrain sets the mean, local noise
-   supplies within-arena variation. Cheaper, distances untouched, closest to what the flat field
-   already does.
-
-Not chosen. The measurement only rules out doing nothing.
+- **Spread restored:** moisture sd **0.207 / 0.192 / 0.178** at seeds 42 / 71 / 161, against the
+  procedural field's 0.240 / 0.240 / 0.283 and the band-less terrain's 0.050 / 0.037 / **0.005**.
+  Temperature 0.154 / 0.134 / 0.108 against 0.182 / 0.201 / 0.189 - lower because the window sits at
+  a warm latitude and the upward half of the band clips.
+- **Strengths are `LocalMoistureStrength = .40`, `LocalTemperatureStrength = .32`**, chosen to match
+  the procedural spread, not to maximise it. Raising them does not add variety, it deletes the
+  regional signal.
+- **Elevation is untouched** and still equals the generator's own sample exactly.
+- **No new config flag**, because the band sits inside the already-gated terrain path. Flag-off is
+  still byte-identical: **503 / 19 / 33 / 1 green**, Unity compile clean.
+- **Re-measured, 480 more runs: still no plant conclusion moves.** Paired terrain-minus-flat,
+  contest-on: `WaterEfficiency` -0.0221 (t -2.33) and `NutrientUptake` +0.0277 (t +2.06) are the
+  only cells past |t| = 2 in twenty-two comparisons; neither is claimed. **This null now means
+  something** - the field carries comparable structure and selection is indifferent to its source.
+- **`NutrientUptake` is the one to watch** if anything is followed up: its selection weakens under
+  terrain (contest-on flat -0.0536, t -5.39; terrain -0.0259, t -2.37), consistent with fertility
+  being the channel whose shape moved most.
+- **`p6-terrain-playtest` now sets `terrainDrivenEnvironmentEnabled: true`.** Only safe because the
+  band exists - without it that scenario's temperature heatmap would be one flat colour. **No
+  experiment configuration is touched**; `CreateFullEcosystemDefaults` still has the flag off, so
+  every recorded baseline stands.
 
 ### Also open, smaller
 

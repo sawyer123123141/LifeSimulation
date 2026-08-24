@@ -749,7 +749,12 @@ namespace LifeSimulation.Presentation
                 plantTemperatureAdaptationEnabled: true,
                 proceduralEnvironmentFieldsEnabled: true,
                 plantFertilityAdaptationEnabled: true,
-                elevationFieldEnabled: true);
+                elevationFieldEnabled: true,
+                // The playtest is the one scenario where the ground being looked at and the ground
+                // being simulated ought to be the same ground. Safe to switch on here only because
+                // the local band exists: without it this field is nearly constant across a 50-unit
+                // window and the temperature heatmap below would show one flat colour.
+                terrainDrivenEnvironmentEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";
