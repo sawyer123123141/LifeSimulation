@@ -137,6 +137,7 @@ namespace LifeSimulation.Presentation
             {
                 float closed = Mathf.Clamp01(1f - (_distance / previousDistance));
                 _focus = Vector3.Lerp(_focus, cursor, closed);
+                ClampFocus();
             }
 
             if (Input.GetMouseButton(1))
@@ -147,8 +148,7 @@ namespace LifeSimulation.Presentation
                 Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
                 var delta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
                 _focus -= ((right * delta.x) + (forward * delta.y)) * (_distance * .035f);
-                _focus.x = Mathf.Clamp(_focus.x, -_panLimit, _panLimit);
-                _focus.z = Mathf.Clamp(_focus.z, -_panLimit, _panLimit);
+                ClampFocus();
             }
 
             if (Input.GetMouseButton(0))
@@ -201,6 +201,20 @@ namespace LifeSimulation.Presentation
 
             point = ray.GetPoint(toGround);
             return true;
+        }
+
+        /// <summary>
+        /// Keep the focus inside the world.
+        ///
+        /// <para>Zooming toward the cursor moves the focus too, and a shallow ray meets the ground a
+        /// very long way off - so a single notch could fling the focus far outside the arena and the
+        /// zoom would appear to jump somewhere random. Panning clamped; zooming did not.</para>
+        /// </summary>
+        private void ClampFocus()
+        {
+            _focus.x = Mathf.Clamp(_focus.x, -_panLimit, _panLimit);
+            _focus.z = Mathf.Clamp(_focus.z, -_panLimit, _panLimit);
+            _focus.y = Mathf.Clamp(_focus.y, -_panLimit, _panLimit);
         }
 
         private void ApplyTransform()
