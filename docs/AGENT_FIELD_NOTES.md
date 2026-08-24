@@ -1439,3 +1439,13 @@ change.
   150 chunks; the renderer drew 908, because a chunk exists when its *parent* splits, not when it
   does. The test passed the whole time and asserted nothing true. **An estimator nobody has checked
   against a measurement is a comment with an assert in it.**
+- **Check whether an open worry is still true before acting on it (2026-08-24).** `PatchLift` had been
+  flagged for two sessions as "almost certainly too small". It was - against a backdrop that no longer
+  exists. Once the backdrop had level of detail, the two surfaces measured identical and the item
+  closed without a line of code. **A stale worry costs more than a stale fact, because it asks for
+  work.**
+- **An optimisation is a hypothesis until it is measured.** Doubling the chunk grid and dropping a
+  tree level looked like a strict win - same finest triangle, fewer chunks, one fewer seam. It
+  tripled the triangle count, because raising the band limit by a level makes the coarse chunks
+  denser too and those are most of the sphere. Reverted, and the number is in the comment so nobody
+  tries it twice.

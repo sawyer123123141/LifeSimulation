@@ -18,7 +18,16 @@ namespace LifeSimulation.Presentation
     /// </summary>
     public static class PlanetChunkLod
     {
-        /// <summary>Triangles per chunk edge. A power of two so a chunk's detail level is exact.</summary>
+        /// <summary>
+        /// Triangles per chunk edge. A power of two so a chunk's detail level is exact.
+        ///
+        /// <para><b>32 with a depth cap of 5 was tried and is worse.</b> The reasoning was that
+        /// bigger chunks would mean fewer of them and one less seam for the same finest triangle.
+        /// The finest triangle and the chunk count both held - 908 chunks became 764 - but the
+        /// triangle count went from 232k to 782k, because raising the band limit by a level makes
+        /// the *coarse* chunks four times denser as well, and those are most of the sphere. One
+        /// fewer seam is not worth three and a half times the geometry.</para>
+        /// </summary>
         public const int Segments = 16;
 
         /// <summary>

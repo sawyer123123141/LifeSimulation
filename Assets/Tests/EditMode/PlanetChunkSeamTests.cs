@@ -62,12 +62,52 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(worst, Is.LessThan(40d), "worst-case level-of-detail step, in metres");
         }
 
+        /// <summary>
+        /// How far the arena patch and the backdrop chunk under it can disagree.
+        ///
+        /// <para>The patch is 193 samples across 50 units - about 12,000 around the equator - and the
+        /// deepest chunk is about 5,300, so the patch carries octaves the backdrop does not. Where the
+        /// patch is lower than the chunk beneath it, the backdrop pokes through. <c>PatchLift</c> is
+        /// what holds them apart, and it was set to 0.02 by eye.</para>
+        /// </summary>
+        [Test]
+        public void ThePatchLiftClearsTheBackdropBeneathIt()
+        {
+            TerrainSettings settings = EnvironmentField.CreateTerrainSettings();
+            PlateStructure plates = PlateStructure.Create(Seed, settings);
+
+            double worst = 0d;
+            for (int index = 0; index < 4000; index++)
+            {
+                Direction(index, out double x, out double y, out double z);
+
+                double chunk = Elevation(plates, settings, x, y, z, 5342);
+                double patch = Elevation(plates, settings, x, y, z, 12060);
+                double step = (chunk - patch) * MetresPerElevation;
+                if (step > worst) worst = step;
+            }
+
+            TestContext.WriteLine("backdrop above patch, worst: " + worst.ToString("0.000") + " m");
+
+            // Measured at 0.000: the octave cap is reached before either band limit binds, so the two
+            // surfaces are the same surface and PatchLift has nothing to clear. This guards that -
+            // raise the octave cap and the patch gains detail the backdrop does not have, which is
+            // exactly when PatchLift stops being enough.
+            Assert.That(worst, Is.LessThan(0.02d), "must stay under ArenaProjection.PatchLift");
+        }
+
         /// <summary>Elevation at a direction, band-limited the way a chunk at this depth would.</summary>
         private static double ElevationAt(
             PlateStructure plates, TerrainSettings settings, double x, double y, double z, int depth)
         {
-            double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(
-                IcoSphereSamples(PlanetChunkLod.DetailLevelFor(depth)));
+            return Elevation(plates, settings, x, y, z, IcoSphereSamples(PlanetChunkLod.DetailLevelFor(depth)));
+        }
+
+        /// <summary>Elevation sampled at a stated resolution, in samples around the equator.</summary>
+        private static double Elevation(
+            PlateStructure plates, TerrainSettings settings, double x, double y, double z, int samples)
+        {
+            double maximumFrequency = PlanetTerrain.MaximumFrequencyFor(samples);
             return PlanetTerrain.Sample(Seed, plates, x, y, z, maximumFrequency, settings).Elevation;
         }
 

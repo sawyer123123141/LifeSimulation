@@ -731,8 +731,17 @@ piece of work and is not queued.
 
 **Chunks fully underneath the arena are dropped** (`HiddenByArena`), because the arena is drawn
 separately at a finer resolution. The ring straddling its border is still drawn, so there is no hole
-beside the patch edge. This does not fix `PatchLift`, which is still 0.02 and still probably too
-small - but the two surfaces now converge instead of diverging.
+beside the patch edge.
+
+**`PatchLift` is no longer suspect, and this is measured.** The patch samples about 12,000 around the
+equator and the deepest chunk about 5,300 - and they produce **identical elevation**, because the
+octave cap is reached before either band limit binds. The worry was real against the old
+subdivision-5 backdrop, which sampled 166. `PlanetChunkSeamTests` guards it: if the octave cap is
+ever raised, the patch gains detail the backdrop lacks and the test fails.
+
+**A seam is visible where two depths meet**, reported from Play mode. Removing it needs neighbour-aware
+morphing, which is a real piece of work and is not queued. **One cheap idea was tried and measured
+worse** - see `Segments`.
 
 ### The developer camera is now free-fly (`FreeFlyCameraController`, 2026-08-24)
 
@@ -773,7 +782,8 @@ dolly notch, and whether the speed floor is slow enough beside a creature.
 
 ### Also open, smaller
 
-- **`PatchLift`** almost certainly needs raising - see section 3.
+- ~~`PatchLift` needs raising~~ - **closed 2026-08-24, measured.** The backdrop and the patch agree
+  exactly now that the backdrop has level of detail. See the planet section above.
 - **Rivers are not on this list.** They were built, rejected and reverted; see the rivers section
   above. Nothing about them is to be attempted before the region/chunk system exists.
 - Ice is heavy at high latitude; **Altitude cooling** on the `J` panel is the control. Judge it in the
