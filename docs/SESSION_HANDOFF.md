@@ -502,7 +502,13 @@ not exist.
 - **The planet has adaptive level of detail** as of 2026-08-24 (`PlanetChunkedSurface`). See the
   section below. What is left of T6 is streaming cost, not detail.
 - A small **stepped comb** remains on some steep ridges.
-- **Ice cover looks high** at 0.074 of surface.
+- ~~Ice cover looks high at 0.074 of surface~~ - **closed 2026-08-24, measured.** `TerrainProbe
+  --ice`, seed 42 at the globe's band limit: **3.32% of the sphere, 20.9% of land, and 98.31% of it
+  beyond 60 degrees.** Earth carries about 3% of its surface as permanent ice. Non-polar ice is 1.7%
+  of the total and the highest of it sits at elevation 0.657 - mountain tops, which is where it
+  belongs. The recorded 0.074 does not match 0.0332 and the quantity behind it is not stated; what is
+  measured now is area share of the sphere at the resolution the planet is drawn at. **Nothing is
+  wrong with the ice, and no coefficient was touched.**
 - **Terrain is cosmetic.** Creatures are drawn on relief; a hill costs them nothing.
 
 ### Terrain — hypotheses tried and REFUTED, do not retry
@@ -799,8 +805,8 @@ dolly notch, and whether the speed floor is slow enough beside a creature.
   exactly now that the backdrop has level of detail. See the planet section above.
 - **Rivers are not on this list.** They were built, rejected and reverted; see the rivers section
   above. Nothing about them is to be attempted before the region/chunk system exists.
-- Ice is heavy at high latitude; **Altitude cooling** on the `J` panel is the control. Judge it in the
-  view now that the view can be aimed.
+- ~~Ice is heavy at high latitude~~ - **that is what high latitude is for.** Closed with the item
+  above: the ice is 98% polar, which is the shape a planet is supposed to have.
 
 **Use `ComputeStateFingerprint()` for "do these two worlds evolve identically" questions.** Never
 `ComputeStateHash` — V1 is a frozen historical identifier and is deliberately incomplete. Never

@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="Ice.cs" />
     <Compile Include="..\..\Assets\Scripts\Presentation\PlanetBiome.Classification.cs" />
     <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
   </ItemGroup>

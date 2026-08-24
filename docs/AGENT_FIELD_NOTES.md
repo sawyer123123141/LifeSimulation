@@ -1484,3 +1484,9 @@ change.
   Population among the pairs where both arms survived came out at t = -2.27, which looks like the
   clearest number in the run. Survival is what the treatment affects, so conditioning on it selects
   the sample. It is in the write-up marked as not to be used.
+- **"Looks high" is a question about distribution, not about a total (2026-08-24).** Ice cover was on
+  the open list as too heavy. The total was never the deciding quantity: 3% of a surface is Earth-like
+  and 7% is plausible, while ice on every tropical mountain reads wrong at any total. Measuring
+  *where* it was - 98.31% beyond 60 degrees - closed the item without touching a coefficient. Third
+  stale worry closed by measurement in one session, after `PatchLift` and the claim that
+  `GeneticClusterHistory` could not be split.

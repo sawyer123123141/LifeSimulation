@@ -1,7 +1,8 @@
 # Slope cost, measured where it can act: suggestive, not established
 
 **2026-08-24. 120 runs, 60 paired seeds, 12,000 ticks. `tools/CreatureSweep --focused 60`.**
-Corpus: `p6-slope-cost-focused-2026-08-24.csv`.
+Corpus: `p6-slope-cost-focused-cap200-2026-08-24.csv`. The cap is in the filename because it
+turned out to be the condition that mattered most.
 
 **Not comparable with `p6-slope-cost-2026-08-24`** — different seeds, different population cap. It
 answers the same question under conditions chosen so the flag *can* act, rather than conditions

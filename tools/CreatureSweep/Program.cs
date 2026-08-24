@@ -52,7 +52,16 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _focused;
 
-        private const int FocusedPopulationCap = 200;
+        /// <summary>
+        /// Population ceiling for the focused arm, overridable per run.
+        ///
+        /// <para>200 was the first value and it overshot: raising the cap from the plant corpus's 48
+        /// gave survival room to move and also let populations boom and crash, so 33 of 60 pairs died
+        /// in <i>both</i> arms and the metric that had been saturated became one that was mostly
+        /// zero. It is an argument rather than a constant so a run's condition is chosen and recorded
+        /// rather than edited into the source.</para>
+        /// </summary>
+        private static int _focusedPopulationCap = 200;
         private const double MinimumClimbMetres = 5d;
 
         private static void Main(string[] args)
@@ -67,6 +76,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             {
                 _focused = true;
                 if (args.Length > 1 && int.TryParse(args[1], out int focusedSeeds)) _seedCount = focusedSeeds;
+                if (args.Length > 2 && int.TryParse(args[2], out int cap)) _focusedPopulationCap = cap;
             }
             else if (args.Length > 0 && int.TryParse(args[0], out int seeds))
             {
@@ -147,7 +157,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 worldSeed,
                 Founders,
                 defaults.Schedule,
-                _focused ? FocusedPopulationCap : MaximumPopulation,
+                _focused ? _focusedPopulationCap : MaximumPopulation,
                 FounderProfile.PhysiologyVariation,
                 cognitionEnabled: true,
                 physiologyEnabled: true,
@@ -259,7 +269,9 @@ namespace LifeSimulation.Tools.CreatureSweep
 
             string path = Path.Combine(
                 "docs", "experiments",
-                _focused ? "p6-slope-cost-focused-2026-08-24.csv" : "p6-slope-cost-2026-08-24.csv");
+                _focused
+                    ? "p6-slope-cost-focused-cap" + _focusedPopulationCap + "-2026-08-24.csv"
+                    : "p6-slope-cost-2026-08-24.csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }
@@ -293,7 +305,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             RunResult[] on = results.Where(result => result.Slope).OrderBy(result => result.Seed).ToArray();
             RunResult[] off = results.Where(result => !result.Slope).OrderBy(result => result.Seed).ToArray();
 
-            Console.WriteLine("paired, slope-on minus slope-off, " + on.Length + " seeds");
+            Console.WriteLine("paired, slope-on minus slope-off, " + on.Length + " seeds"
+                + (_focused ? ", population cap " + _focusedPopulationCap : string.Empty));
             Console.WriteLine();
             Console.WriteLine("column                  mean      t      n>0");
             Console.WriteLine(Summarise("population", on, off, result => result.Population));

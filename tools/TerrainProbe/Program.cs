@@ -45,9 +45,18 @@ namespace LifeSimulation.TerrainProbe
         /// <summary>The two flat views, by half width: `K` once, then twice.</summary>
         private static readonly double[] Views = { 200d, 100d };
 
-        private static void Main()
+        private static void Main(string[] args)
         {
             var current = new TerrainSettings();
+            if (args.Length > 0 && args[0] == "--ice")
+            {
+                // Sampled at the globe's own band limit, which is what a person looking at the
+                // planet actually sees - measuring ice at arena resolution would count specks the
+                // render never draws.
+                Ice.Report(Seed, current, MaximumFrequencyFor(200d));
+                return;
+            }
+
             PlateStructure plates = PlateStructure.Create(Seed, current);
             plates.GetCoastalCentre(out double centreLatitude, out double centreLongitude);
             Console.WriteLine($"seed {Seed}   default centre lat {centreLatitude:0.0000} lon {centreLongitude:0.0000}");
