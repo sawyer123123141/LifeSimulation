@@ -499,8 +499,8 @@ not exist.
 
 ### Terrain — open
 
-- **The planet has no adaptive LOD.** Subdivision fixed at 5 (~20k triangles, ~19 m each), so
-  zooming never adds detail. T6 work (chunk streaming, geometry LOD), not tuning.
+- **The planet has adaptive level of detail** as of 2026-08-24 (`PlanetChunkedSurface`). See the
+  section below. What is left of T6 is streaming cost, not detail.
 - A small **stepped comb** remains on some steep ridges.
 - **Ice cover looks high** at 0.074 of surface.
 - **Terrain is cosmetic.** Creatures are drawn on relief; a hill costs them nothing.
@@ -708,6 +708,32 @@ and `WaterEfficiency` -0.0189 (t -2.10) were the only cells past |t| = 2 in twen
 
 **Do not attempt rivers again before step 1 exists.**
 
+### The planet has level of detail (`PlanetChunkedSurface`, 2026-08-24)
+
+**Twenty icosahedron faces, each the root of a quadtree, split where the camera is.** The single
+subdivision-5 icosphere is gone from the runtime - it survives only in the offline capture, as the
+"before" half of a comparison. Depth caps at 6, which is a 0.54 m triangle: finer than a creature.
+
+**The detail is real.** Each chunk band-limits its elevation to its own grid
+(`PlanetChunkLod.DetailLevelFor` = depth + 4 icosphere subdivisions), so splitting adds octaves
+rather than re-drawing a smooth surface with more triangles. Sampling past the grid is what turned
+the globe into static originally, so the limit is derived per chunk, never chosen.
+
+**Measured, from the capture at 20 m altitude: 908 chunks, depths 1 to 6** - roughly 230k triangles
+and, more to the point, **908 renderers**. That draw-call count is the open cost question; nothing
+has profiled it in Play mode yet. Halving it is one line (`MaximumDepth` 5).
+
+**Seams.** Neighbouring depths disagree along their shared edge because they band-limit differently.
+`PlanetChunkSeamTests` measures it rather than leaving it to the eye: **worst case ~0.04 of a chunk
+edge** at every level - 0.285 m at depth 6, 3.8 m at depth 1. Skirts are sized at 0.05 of the edge,
+which clears it everywhere. Removing the disagreement entirely needs geomorphing, which is a separate
+piece of work and is not queued.
+
+**Chunks fully underneath the arena are dropped** (`HiddenByArena`), because the arena is drawn
+separately at a finer resolution. The ring straddling its border is still drawn, so there is no hole
+beside the patch edge. This does not fix `PatchLift`, which is still 0.02 and still probably too
+small - but the two surfaces now converge instead of diverging.
+
 ### The developer camera is now free-fly (`FreeFlyCameraController`, 2026-08-24)
 
 **The orbit rig is deleted.** `GroundPlaneCameraController` is gone; the camera is a position and a
@@ -745,11 +771,11 @@ it yet. **First thing to do next session: press Play, fly, and report.** Things 
 wrong are feel rather than logic - look sensitivity (4.5 degrees per unit of mouse movement), the
 dolly notch, and whether the speed floor is slow enough beside a creature.
 
-### Also open, smaller### Also open, smaller
+### Also open, smaller
 
 - **`PatchLift`** almost certainly needs raising - see section 3.
-- **Painted rivers (R1)** from `docs/terrain-caves-and-rivers.md`: additive, presentation-only, no new
-  machinery. The natural next visible thing after the re-measure.
+- **Rivers are not on this list.** They were built, rejected and reverted; see the rivers section
+  above. Nothing about them is to be attempted before the region/chunk system exists.
 - Ice is heavy at high latitude; **Altitude cooling** on the `J` panel is the control. Judge it in the
   view now that the view can be aimed.
 

@@ -361,16 +361,7 @@ namespace LifeSimulation.Presentation
             {
                 _planetBackdrop = new GameObject("Planet Backdrop");
                 _planetBackdrop.transform.position = ArenaProjection.Centre;
-
-                var surface = new GameObject("Planet Surface");
-                surface.transform.SetParent(_planetBackdrop.transform, false);
-                surface.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
-                TerrainMeshBuilder.BuildPlanet(
-                    _world.Config.WorldSeed, _arenaPlates,
-                    out Vector3[] planetVertices, out Color[] planetColors, out int[] planetTriangles,
-                    ArenaProjection.PlanetRadius, ArenaTerrainSettings());
-                surface.AddComponent<MeshFilter>().sharedMesh =
-                    TerrainMeshBuilder.FlatShaded(planetVertices, planetColors, planetTriangles, "Planet Surface");
+                _planetSurface = _planetBackdrop.AddComponent<PlanetChunkedSurface>();
 
                 var ocean = new GameObject("Planet Ocean");
                 ocean.transform.SetParent(_planetBackdrop.transform, false);
@@ -379,6 +370,22 @@ namespace LifeSimulation.Presentation
                     out Vector3[] oceanVertices, out int[] oceanTriangles, ArenaProjection.PlanetRadius);
                 ocean.AddComponent<MeshFilter>().sharedMesh =
                     TerrainMeshBuilder.FlatShaded(oceanVertices, null, oceanTriangles, "Planet Ocean");
+            }
+
+            // The surface is a quadtree that rebuilds itself as the camera moves, so it has to be
+            // pointed at the world again whenever the seed or the tuning panel changes it - the old
+            // single mesh was built once and never revisited, which is why turning a dial moved the
+            // arena and left the globe behind it showing the previous world.
+            int seed = _world.Config.WorldSeed;
+            int revision = TerrainView.SettingsRevision;
+            if (_planetSurfaceSeed != seed || _planetSurfaceRevision != revision)
+            {
+                _planetSurface.Configure(
+                    _simulationCamera, TerrainMeshBuilder.CreateTerrainMaterial(), seed, _arenaPlates,
+                    ArenaTerrainSettings(), ArenaProjection.PlanetRadius,
+                    TerrainMeshBuilder.PlanetReliefFraction, Vector3.up);
+                _planetSurfaceSeed = seed;
+                _planetSurfaceRevision = revision;
             }
 
             _planetBackdrop.SetActive(true);

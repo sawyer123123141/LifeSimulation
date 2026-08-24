@@ -53,6 +53,12 @@ namespace LifeSimulation.EditorTools
             // grassland 34%, scrub 29%, tundra 25%, ice 6%.
             RenderPatch(directory, "close-200-north", plates, 0.85d, centreLongitude, TerrainPreview.RegionHalfWidth);
 
+            // The same globe, drawn both ways, from a viewpoint near enough for the difference to
+            // exist: one fixed icosphere against the chunk tree. This pair is the evidence that
+            // level of detail does anything - at a distance the two are identical by construction.
+            RenderPlanetSurface(directory, "planet-surface-flat", plates, centreLatitude, centreLongitude, chunked: false);
+            RenderPlanetSurface(directory, "planet-surface-chunked", plates, centreLatitude, centreLongitude, chunked: true);
+
             RenderPlanet(directory, "planet", plates, centreLatitude, centreLongitude, markPatch: false);
             RenderPlanet(directory, "planet-marked", plates, centreLatitude, centreLongitude, markPatch: true);
 
@@ -126,14 +132,87 @@ namespace LifeSimulation.EditorTools
                 viewDirection: lookAt);
         }
 
+        /// <param name="providedContent">
+        /// A hierarchy to photograph instead of a single mesh - the chunked planet, which is a tree of
+        /// objects rather than one. The caller owns it and destroys it.
+        /// </param>
+        /// <param name="viewpoint">
+        /// An explicit camera position and target, for views that are not "back off far enough to see
+        /// the whole thing" - standing on the surface, for instance, which is the only framing that
+        /// shows whether close-up detail exists at all.
+        /// </param>
+        /// <summary>
+        /// The planet from just above its surface, drawn either as the one fixed icosphere or as the
+        /// chunk tree.
+        ///
+        /// <para>Framed 20 metres up and aimed along the ground rather than down at it, because the
+        /// question is what the surface looks like when someone flies to it. From orbit the two are
+        /// identical by construction - the tree does not split what is far away - so a distant shot
+        /// would show nothing either way, and the first attempt at this, taken from 900 metres, did
+        /// exactly that.</para>
+        /// </summary>
+        private static void RenderPlanetSurface(
+            string directory, string name, PlateStructure plates,
+            double centreLatitude, double centreLongitude, bool chunked)
+        {
+            double cosLatitude = System.Math.Cos(centreLatitude);
+            var lookAt = new Vector3(
+                (float)(cosLatitude * System.Math.Sin(centreLongitude)),
+                (float)System.Math.Sin(centreLatitude),
+                (float)(cosLatitude * System.Math.Cos(centreLongitude)));
+
+            float radius = ArenaProjection.PlanetRadius;
+            Vector3 eye = lookAt * (radius + 20f);
+
+            // Aim a long way along the surface, so the shot is a landscape rather than a map.
+            Vector3 along = Vector3.Cross(lookAt, Vector3.up).normalized;
+            if (along.sqrMagnitude < 0.5f) along = Vector3.Cross(lookAt, Vector3.forward).normalized;
+            Vector3 target = (lookAt + (along * 0.06f)).normalized * radius;
+
+            var root = new GameObject("Planet Surface Capture");
+            if (chunked)
+            {
+                var surface = root.AddComponent<PlanetChunkedSurface>();
+                surface.Configure(
+                    null, TerrainMeshBuilder.CreateTerrainMaterial(), Seed, plates, TerrainView.Settings,
+                    radius, TerrainMeshBuilder.PlanetReliefFraction, Vector3.up);
+
+                // Enough passes to drain the build queue at six chunks a pass; Refresh returns as soon
+                // as the tree settles, so this is a ceiling rather than a cost.
+                surface.Refresh(eye, passes: 400);
+                Debug.Log(name + " " + surface.Describe());
+            }
+            else
+            {
+                TerrainMeshBuilder.BuildPlanet(
+                    Seed, plates, out Vector3[] vertices, out Color[] colors, out int[] triangles,
+                    radius, TerrainView.Settings);
+                root.AddComponent<MeshFilter>().sharedMesh =
+                    TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Planet Surface");
+                root.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+            }
+
+            Capture(
+                directory, name, null, 0f, waterPlaneHalfWidth: 0f, waterSphere: false,
+                viewDirection: Vector3.zero, creatureScaleMarkers: false, providedContent: root,
+                viewpoint: eye, lookTarget: target);
+
+            Object.DestroyImmediate(root);
+        }
+
         private static void Capture(
             string directory, string name, Mesh mesh,
             float framingRadius, float waterPlaneHalfWidth, bool waterSphere, Vector3 viewDirection,
-            bool creatureScaleMarkers = false)
+            bool creatureScaleMarkers = false, GameObject providedContent = null,
+            Vector3? viewpoint = null, Vector3? lookTarget = null)
         {
-            var root = new GameObject("Capture");
-            root.AddComponent<MeshFilter>().sharedMesh = mesh;
-            root.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+            GameObject root = providedContent;
+            if (root == null)
+            {
+                root = new GameObject("Capture");
+                root.AddComponent<MeshFilter>().sharedMesh = mesh;
+                root.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+            }
 
             GameObject water = null;
             if (waterPlaneHalfWidth > 0f)
@@ -211,7 +290,20 @@ namespace LifeSimulation.EditorTools
             camera.nearClipPlane = 0.5f;
             camera.farClipPlane = 5000f;
 
-            if (viewDirection == Vector3.zero)
+            if (viewpoint.HasValue)
+            {
+                Vector3 eye = viewpoint.Value;
+                Vector3 aim = lookTarget ?? Vector3.zero;
+                cameraObject.transform.position = eye;
+                cameraObject.transform.rotation = Quaternion.LookRotation(
+                    (aim - eye).normalized, eye.normalized);
+
+                // Standing on a 500-unit sphere: anything nearer than a few centimetres is inside the
+                // viewer's own boots, and the far clip has to reach the horizon.
+                camera.nearClipPlane = 0.05f;
+                camera.farClipPlane = 4000f;
+            }
+            else if (viewDirection == Vector3.zero)
             {
                 // Flat views: the same pitch and distance FreeFlyCameraController frames the arena
                 // at, so a capture matches what the Game view opens on.
@@ -242,7 +334,7 @@ namespace LifeSimulation.EditorTools
             camera.targetTexture = null;
             Object.DestroyImmediate(target);
             Object.DestroyImmediate(image);
-            Object.DestroyImmediate(root);
+            if (providedContent == null) Object.DestroyImmediate(root);
             Object.DestroyImmediate(keyObject);
             Object.DestroyImmediate(fillObject);
             Object.DestroyImmediate(cameraObject);

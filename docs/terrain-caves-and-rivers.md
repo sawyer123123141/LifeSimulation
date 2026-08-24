@@ -170,9 +170,13 @@ one, and it should be made before the meshing work rather than after.
 ## Order, and what has to exist first
 
 1. **The terrain/ecology join** — in progress. Terrain has to mean something before adding more of it.
-2. **R1 painted rivers** — additive, cheap, tells us whether rivers read at this scale.
-3. **Chunked regions with level of detail (T6)** — the shared prerequisite. Zooming the planet still
-   adds no detail; subdivision is fixed at 5.
+2. ~~R1 painted rivers~~ — **built, rejected, reverted.** See the postmortem above.
+3. **Chunked regions with level of detail (T6)** — **DONE, 2026-08-24** (`PlanetChunkedSurface`).
+   Twenty base faces, a quadtree each, split by camera distance; each chunk band-limited to its own
+   grid. This is the prerequisite the rivers chain was waiting on, but note what it is *not*: the
+   chunks are a **rendering** structure, built and thrown away as the camera moves, and they are
+   still a pure function of position. Drainage needs a **persistent** grid that can be written to.
+   The chunk tree is the shape of that grid, not the grid itself.
 4. **R2 flow accumulation**, then hydraulic erosion on the same machinery.
 5. **Caves**, once chunks exist and once there is an ecological reason for one.
 

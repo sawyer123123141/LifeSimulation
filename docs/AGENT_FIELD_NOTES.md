@@ -1431,3 +1431,11 @@ change.
   camera's speed, height bounds and pitch limit are pure functions in `FreeCameraMotion` with no
   Unity types, so the headless project compiles them. **A MonoBehaviour is not a place to keep
   rules.**
+- **Measure an artefact before fixing it (2026-08-24).** A sawtooth seam in the chunked planet looked
+  exactly like an oversized skirt. Shrinking the skirt fourfold changed the render by zero bytes -
+  the seam was a flat-shaded coastline quantised to the triangle grid, which is the art style. Two
+  renders and a measurement cost less than the fix would have.
+- **A cost model has to be calibrated against the thing it models.** `ApproximateLeafCount` predicted
+  150 chunks; the renderer drew 908, because a chunk exists when its *parent* splits, not when it
+  does. The test passed the whole time and asserted nothing true. **An estimator nobody has checked
+  against a measurement is a comment with an assert in it.**

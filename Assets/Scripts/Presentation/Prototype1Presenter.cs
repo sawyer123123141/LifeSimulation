@@ -256,6 +256,12 @@ namespace LifeSimulation.Presentation
                 _isPaused = !_isPaused;
             }
 
+            // Flying takes the letter keys. WASDQE are movement while the right button is held, and
+            // three of them - D drought, E starter habitat, F food scarcity - also restart the
+            // simulation, so without this, strafing right threw away the run being watched. The
+            // camera reads the same button, so the two agree on when flight is happening.
+            if (Input.GetMouseButton(1)) return;
+
             if (Input.GetKeyDown(KeyCode.Alpha1)) _speedMultiplier = 1f;
             if (Input.GetKeyDown(KeyCode.Alpha2)) _speedMultiplier = 2f;
             if (Input.GetKeyDown(KeyCode.Alpha4)) _speedMultiplier = 4f;
@@ -479,6 +485,9 @@ namespace LifeSimulation.Presentation
         private bool _sphericalArena;
 
         private GameObject _planetBackdrop;
+        private PlanetChunkedSurface _planetSurface;
+        private int _planetSurfaceSeed = int.MinValue;
+        private int _planetSurfaceRevision = int.MinValue;
 
         private float _terrainHeightScale = 14f;
 
