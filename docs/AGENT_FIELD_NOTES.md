@@ -1415,3 +1415,9 @@ change.
   reasoning for doing painted rivers before real hydrology, and it cost two implementations to
   discover something derivable from the data structure. Prototype first when the *unknown* is
   perceptual; reason first when the unknown is structural.
+- **When the user asks whether to wait for a prerequisite, answer about the GOAL, not the patch
+  (2026-08-23).** Asked "if we should wait and revisit after something else is built, do that
+  instead", the answer given was "this fix needs no prerequisite" - true of the valley blend, false of
+  what was actually wanted, which was rivers that drain, erode and animate. Those need the chunk
+  system, and the doc said so before either attempt started. **A question about sequencing is a
+  question about the objective.**

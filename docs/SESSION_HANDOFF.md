@@ -1,8 +1,22 @@
 # Session Handoff — 2026-08-23
 
-**Head at handoff: `6b87771`** (`refactor: split SimulationWorld and DecisionSystem into partial
-classes`), pushed to `origin/main`. Working tree clean. **503 / 19 / 33 / 1 green**, Unity compile
-clean. Nineteen commits this session, `9442bd0` through `6b87771`; see Phase F.
+**Head at handoff: `c58b444`** (`revert: rivers, both attempts`), pushed to `origin/main`. Working
+tree clean apart from the untracked Unity `.meta` files, `Assets/_Recovery/` and
+`ProjectSettings/PackageManagerSettings.asset` that are **never to be staged**. **503 / 19 / 33 / 1
+green**, Unity compile clean.
+
+### Phase G — the join measured, a local climate band, and rivers rejected (2026-08-23)
+
+| commit | what |
+|---|---|
+| `88a236b` | **the join moves no plant conclusion** - 480 runs - because it flattens the arena |
+| `d7caa52` | that negative result, and why a 50 m window cannot see continental climate |
+| `af43b76` | **terrain sets the regional climate, a local band supplies the variation** |
+| `d0d2199` | rivers, attempt one - carved as a slot |
+| `65e78ac` | rivers, attempt two - inscribed with a valley blend |
+| `c58b444` | **both reverted.** Painted rivers cannot drain, erode or animate |
+
+Earlier phases and their nineteen commits (`9442bd0` through `6b87771`) are in Phase F below.
 
 **Read `docs/terrain-brainstorm-2-2026-08-23.md` and `docs/reference-implementations.md` before
 touching terrain**, and `docs/terrain-caves-and-rivers.md` before adding to it. The first explains
@@ -692,6 +706,31 @@ and `WaterEfficiency` -0.0189 (t -2.10) were the only cells past |t| = 2 in twen
 4. **A water surface mesh** with flow vectors, which is the only way rivers animate.
 
 **Do not attempt rivers again before step 1 exists.**
+
+### The developer camera needs replacing, and it is the next thing worth building
+
+**Stated plainly by the user: they do not like it.** It is an orbit rig - left drag orbits, right drag
+pans, wheel zooms - and it has been the single worst-behaved part of the project. Four bugs shipped in
+a row in one session (`96990b8`, `165cb8f`, `56ba489`, `b336b7d`), and the ones that remain are
+structural rather than incidental:
+
+- **The pan clamp is a box in x/z.** On a sphere that is wrong everywhere except the arena centre, and
+  it fights the user at planet distance.
+- **Orbiting cannot get anywhere.** Reaching a feature means zoom-to-cursor, then pan, then re-orbit;
+  there is no way to simply go somewhere and look around.
+- **Two focus rules** - the arena focus and the handover toward the planet centre - interact, and that
+  interaction is where the last two bugs came from.
+- **No headless instrument exists for it**, so every regression was found by a human in Play mode.
+
+**What to build instead: a free-fly developer camera.** Position and orientation, not a focus point
+and an orbit around it. WASD or arrows along the view axes, mouse look while a button is held, a
+boost modifier, vertical controls, speed scaled by height above the surface so it is usable both at
+creature scale and at planet scale. Keep one key that frames the arena, because that is the one thing
+the orbit rig is good at. **A free camera has no clamp problem** - there is nothing to clamp but a
+position - which deletes the entire class of bug above.
+
+Worth doing before more terrain work, because every terrain judgement so far has been made through a
+camera that fights the person making it.
 
 ### Also open, smaller
 
