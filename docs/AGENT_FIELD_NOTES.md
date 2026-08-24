@@ -1499,3 +1499,12 @@ change.
   standing responds within a lifetime; a gene needs selection, generations and a strong enough
   pressure. The slope cost moved `occupied_slope` and no gene at all, which is the coherent result -
   and it was measurable with no new simulation state, from positions that already existed.
+- **A paired arm-against-arm design cannot see selection (2026-08-24).** Three creature sweeps
+  reported flat gene tables, and every one of them was blind to the question by construction: a trait
+  under strong selection in both arms cancels exactly. Asked the other way - drift from founders
+  against a neutral control - two traits moved by a quarter of their range at t = 11 and t = 7.9.
+  **Check what a design is capable of detecting before reading its null as an absence.**
+- **Print the baseline, not just the change.** Drift toward the centre of a bounded range is what
+  symmetric mutation does on its own, so a shift is only selection if you know where the gene
+  started. Every gene here began at 0.50, which is what rules the artefact out - and it is the exact
+  failure that got `p4-defense-selection-demonstrated` retracted on the day it was written.

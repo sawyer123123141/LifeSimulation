@@ -143,6 +143,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             public double OccupiedElevation;
             public double OccupiedSlope;
             public double[] Genes;
+            public double[] Founder;
         }
 
         /// <summary>
@@ -215,7 +216,23 @@ namespace LifeSimulation.Tools.CreatureSweep
             var world = new SimulationWorld(config);
             Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
 
-            for (int tick = 0; tick < Ticks; tick++)
+            // Founder means, taken once statistics have actually been sampled.
+            //
+            // Statistics are rebuilt every BaseFrequencyHz / StatisticsHz ticks, not every tick, so
+            // reading them after a single step returns a default-valued struct - every gene zero.
+            // Measured against that, all thirteen genes "drifted" by +0.49 at t = 30, control
+            // included, which is the population mean rather than any movement. One second of warm-up
+            // costs nothing against 12,000 ticks and gives a real baseline.
+            int warmup = Math.Max(2, config.Schedule.BaseFrequencyHz / config.Schedule.StatisticsHz);
+            for (int tick = 0; tick < warmup; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+            }
+
+            double[] founder = Genes(world.Statistics);
+
+            for (int tick = warmup; tick < Ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
@@ -234,6 +251,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 OccupiedElevation = elevation,
                 OccupiedSlope = slope,
                 Genes = Genes(statistics),
+                Founder = founder,
             };
         }
 
@@ -319,12 +337,83 @@ namespace LifeSimulation.Tools.CreatureSweep
                 Console.WriteLine(Summarise(GeneNames[index], on, off, result => result.Genes[index]));
             }
 
+            ReportDrift(off);
+
             Console.WriteLine();
             Console.WriteLine("extinct: slope-on " + on.Count(result => result.Extinct)
                 + ", slope-off " + off.Count(result => result.Extinct));
             Console.WriteLine();
             Console.WriteLine("Fourteen columns at |t| = 2: expect roughly one to cross by chance.");
             Console.WriteLine("neutral_marker is the control - it responds to nothing.");
+        }
+
+        /// <summary>
+        /// Whether the genes moved <b>at all</b>, measured against where the founders started.
+        ///
+        /// <para>The paired arm-against-arm table cannot answer this. A trait under strong selection
+        /// in both arms cancels exactly, so "the flag moved nothing" and "nothing is happening" look
+        /// identical there. This asks the other question: over one run, did the population drift away
+        /// from its founders, and did it do so further than <c>NeutralMarker</c> - a gene that is
+        /// carried, inherited and mutated exactly like the others and affects nothing at all.</para>
+        ///
+        /// <para><b>The control is the whole test.</b> Every gene drifts: finite populations lose
+        /// variance to chance, and the founders are not the survivors. Selection is the claim that a
+        /// gene drifted <i>further than a gene with no consequences did</i>.</para>
+        /// </summary>
+        private static void ReportDrift(RunResult[] arm)
+        {
+            Console.WriteLine();
+            Console.WriteLine("drift from founders, baseline arm, " + arm.Length + " runs");
+            Console.WriteLine();
+            // The founder value is printed because a bounded gene that starts away from the middle
+            // moves toward it under symmetric mutation alone. Without this column, regression to the
+            // centre and selection are the same picture.
+            Console.WriteLine("gene                  founder     mean       t     |mean| vs control");
+
+            double control = Math.Abs(MeanDrift(arm, GeneNames.Length - 1));
+            for (int gene = 0; gene < GeneNames.Length; gene++)
+            {
+                var deltas = new List<double>();
+                foreach (RunResult result in arm)
+                {
+                    double delta = result.Genes[gene] - result.Founder[gene];
+                    if (!double.IsNaN(delta)) deltas.Add(delta);
+                }
+
+                if (deltas.Count < 2) continue;
+
+                double mean = deltas.Average();
+                double variance = deltas.Sum(value => (value - mean) * (value - mean)) / (deltas.Count - 1);
+                double error = Math.Sqrt(variance / deltas.Count);
+                double t = error <= 0d ? 0d : mean / error;
+                double ratio = control <= 0d ? double.NaN : Math.Abs(mean) / control;
+
+                var founders = new List<double>();
+                foreach (RunResult result in arm)
+                {
+                    if (!double.IsNaN(result.Founder[gene])) founders.Add(result.Founder[gene]);
+                }
+
+                Console.WriteLine(
+                    GeneNames[gene].PadRight(19)
+                    + Format(founders.Count == 0 ? double.NaN : founders.Average()).PadLeft(9)
+                    + Format(mean).PadLeft(9)
+                    + Format(t).PadLeft(8)
+                    + ratio.ToString("0.00").PadLeft(10)
+                    + (gene == GeneNames.Length - 1 ? "   <- control" : string.Empty));
+            }
+        }
+
+        private static double MeanDrift(RunResult[] arm, int gene)
+        {
+            var deltas = new List<double>();
+            foreach (RunResult result in arm)
+            {
+                double delta = result.Genes[gene] - result.Founder[gene];
+                if (!double.IsNaN(delta)) deltas.Add(delta);
+            }
+
+            return deltas.Count == 0 ? 0d : deltas.Average();
         }
 
         private static string Summarise(

@@ -1060,6 +1060,28 @@ Every instrument here exists because each missed something another caught.
 - Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement. The `J` panel
   has an **altitude cooling** slider, which is the coefficient that decides it.
 
+### Selection is happening, and it had never been measured (2026-08-24)
+
+**`docs/experiments/p6-selection-is-happening-2026-08-24.md`.** Every creature measurement on record
+compared arm against arm, which is blind to selection by construction - a trait under selection in
+both arms cancels exactly. Drift from founders, against the `NeutralMarker` control:
+
+| gene | founder | drift | t | vs control |
+|---|---|---|---|---|
+| temperature_tolerance | 0.480 | **+0.277** | **11.03** | 29x |
+| lifespan_tendency | 0.517 | **+0.257** | **7.90** | 27x |
+| urgency_exponent | 0.500 | -0.052 | -4.34 | 5.4x |
+| neutral_marker | 0.500 | -0.010 | -0.72 | 1.0x |
+
+**Every gene starts at 0.50**, so regression to the centre cannot explain a shift of +0.277 away from
+it - that column is what makes this a finding rather than the retracted claim in
+`p4-defense-selection-demonstrated-2026-08-18.md`. The other ten traits sit inside the control's
+range: **no detectable selection there**, which is not the same as inert.
+
+**Not explained:** why these three. Temperature tolerance moving alongside the terrain join - which
+is what introduced a real temperature field - is a hypothesis this run does not test, and is the
+obvious next measurement.
+
 ### Terrain is no longer cosmetic — both halves exist, one is unmeasured
 
 **Half one, the field (`terrainDrivenEnvironmentEnabled`, done 2026-08-23).** Moisture, temperature
