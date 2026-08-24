@@ -1085,7 +1085,25 @@ off.** A decisive version needs a scenario built for the question rather than in
 plant corpus - population uncapped, resources placed so reaching them means climbing, and a
 distance-travelled statistic.
 
-**Half the corpus had no hill in it,** and `CreatureSweep --relief` is what makes that readable: the
+**A second, focused run fixed both limitations** (`--focused`, 60 relief-bearing seeds, cap 200,
+`docs/experiments/p6-slope-cost-focused-2026-08-24.md`). Every pair diverged - 0 identical hashes -
+and the result is **suggestive, not established**: extinction 46 against 38, but the paired test is
+what counts and the discordant pairs are 13 against 5, McNemar chi-squared 2.72 against 3.84 for
+p = .05.
+
+**Every gene column in that run is an artefact, and the control proves it.** All of them moved by
+about the same amount including `NeutralMarker` (t = -1.79), which responds to nothing - so the
+movement is composition from differential extinction, not selection. The two cells past |t| = 2 sit
+inside the control's own spread. The headline population figure of -27.5 is the extinction signal in
+different units, since it counts dead worlds as zero.
+
+**What that run cost:** the cap of 200 made the ecology fragile - 33 of 60 pairs went extinct in both
+arms - so it measures a stressed population being pushed rather than a healthy one being selected on.
+And the new occupancy metrics need both arms to have survivors, which only 9 pairs did. **Next
+condition: cap around 100, more seeds.** `occupied_elevation` and `occupied_slope` are computed from
+creature positions and the environment field, so they needed no new simulation state at all.
+
+**Half the first corpus had no hill in it,** and `CreatureSweep --relief` is what makes that readable: the
 arena window is 0.1 radian on a coastal centre, and what lands in it ranges from 25 m of relief with
 22 m of climb per traverse (seed 55) to a perfectly flat ocean floor (seed 161). 58 of 120 pairs were
 byte-identical. Restricting to the 62 that diverged doubles every mean and **leaves every t

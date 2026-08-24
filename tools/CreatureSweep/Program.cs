@@ -41,6 +41,20 @@ namespace LifeSimulation.Tools.CreatureSweep
 
         private static int _seedCount = 120;
 
+        /// <summary>
+        /// The focused arm: seeds chosen for having a hill, and population headroom to die into.
+        ///
+        /// <para>The first sweep's null carried two limitations it could not overcome. Half the
+        /// arenas were flat, so half the pairs were byte-identical; and 96 of 120 pairs finished at
+        /// the population cap, so a survival effect smaller than the headroom could not appear. This
+        /// mode removes both. The cap is <b>not</b> the plant corpus's 48, deliberately - which means
+        /// results here are not comparable with that corpus and are not meant to be.</para>
+        /// </summary>
+        private static bool _focused;
+
+        private const int FocusedPopulationCap = 200;
+        private const double MinimumClimbMetres = 5d;
+
         private static void Main(string[] args)
         {
             if (args.Length > 0 && args[0] == "--relief")
@@ -49,15 +63,33 @@ namespace LifeSimulation.Tools.CreatureSweep
                 return;
             }
 
-            if (args.Length > 0 && int.TryParse(args[0], out int seeds)) _seedCount = seeds;
+            if (args.Length > 0 && args[0] == "--focused")
+            {
+                _focused = true;
+                if (args.Length > 1 && int.TryParse(args[1], out int focusedSeeds)) _seedCount = focusedSeeds;
+            }
+            else if (args.Length > 0 && int.TryParse(args[0], out int seeds))
+            {
+                _seedCount = seeds;
+            }
+
+            int[] chosen;
+            if (_focused)
+            {
+                Console.Error.WriteLine("selecting seeds with at least " + MinimumClimbMetres + " m of climb");
+                chosen = Relief.WithRelief(FirstSeed, _seedCount, MinimumClimbMetres);
+                Console.Error.WriteLine("  " + chosen.Length + " seeds, highest " + chosen[chosen.Length - 1]);
+            }
+            else
+            {
+                chosen = new int[_seedCount];
+                for (int index = 0; index < _seedCount; index++) chosen[index] = FirstSeed + index;
+            }
 
             var runs = new List<RunSpec>();
             foreach (bool slope in new[] { false, true })
             {
-                for (int seed = FirstSeed; seed < FirstSeed + _seedCount; seed++)
-                {
-                    runs.Add(new RunSpec(slope, seed));
-                }
+                foreach (int seed in chosen) runs.Add(new RunSpec(slope, seed));
             }
 
             Console.Error.WriteLine(runs.Count + " runs of " + Ticks + " ticks");
@@ -98,6 +130,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             public int Population;
             public bool Extinct;
             public double Energy;
+            public double OccupiedElevation;
+            public double OccupiedSlope;
             public double[] Genes;
         }
 
@@ -113,7 +147,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 worldSeed,
                 Founders,
                 defaults.Schedule,
-                MaximumPopulation,
+                _focused ? FocusedPopulationCap : MaximumPopulation,
                 FounderProfile.PhysiologyVariation,
                 cognitionEnabled: true,
                 physiologyEnabled: true,
@@ -178,6 +212,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             }
 
             SimulationStatistics statistics = world.Statistics;
+            Relief.Occupancy(world, out double elevation, out double slope);
             return new RunResult
             {
                 Slope = spec.Slope,
@@ -186,6 +221,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 Population = statistics.Population,
                 Extinct = statistics.Population == 0,
                 Energy = statistics.MeanEnergyFraction,
+                OccupiedElevation = elevation,
+                OccupiedSlope = slope,
                 Genes = Genes(statistics),
             };
         }
@@ -202,7 +239,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 Ticks));
             builder.AppendLine();
 
-            builder.Append("arm,seed,hash,population,extinct,energy");
+            builder.Append("arm,seed,hash,population,extinct,energy,occupied_elevation,occupied_slope");
             foreach (string name in GeneNames) builder.Append(",").Append(name);
             builder.AppendLine();
 
@@ -213,12 +250,16 @@ namespace LifeSimulation.Tools.CreatureSweep
                     .Append(result.Hash).Append(",")
                     .Append(result.Population).Append(",")
                     .Append(result.Extinct ? 1 : 0).Append(",")
-                    .Append(Format(result.Energy));
+                    .Append(Format(result.Energy)).Append(",")
+                    .Append(Format(result.OccupiedElevation)).Append(",")
+                    .Append(Format(result.OccupiedSlope));
                 foreach (double gene in result.Genes) builder.Append(",").Append(Format(gene));
                 builder.AppendLine();
             }
 
-            string path = Path.Combine("docs", "experiments", "p6-slope-cost-2026-08-24.csv");
+            string path = Path.Combine(
+                "docs", "experiments",
+                _focused ? "p6-slope-cost-focused-2026-08-24.csv" : "p6-slope-cost-2026-08-24.csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }
@@ -257,6 +298,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             Console.WriteLine("column                  mean      t      n>0");
             Console.WriteLine(Summarise("population", on, off, result => result.Population));
             Console.WriteLine(Summarise("energy", on, off, result => result.Energy));
+            Console.WriteLine(Summarise("occupied_elevation", on, off, result => result.OccupiedElevation));
+            Console.WriteLine(Summarise("occupied_slope", on, off, result => result.OccupiedSlope));
             for (int gene = 0; gene < GeneNames.Length; gene++)
             {
                 int index = gene;
@@ -298,72 +341,23 @@ namespace LifeSimulation.Tools.CreatureSweep
         }
 
         /// <summary>
-        /// What the ground under the arena actually looks like.
+        /// What the ground under each arena looks like, seed by seed.
         ///
         /// <para><b>Without this the sweep's null is unreadable.</b> "Charging for climbs changes
-        /// nothing" could mean creatures are indifferent to real hills, or it could mean there are no
-        /// hills to be indifferent to - opposite findings that the trait table cannot tell apart. The
-        /// same question sank the terrain join's first result, and the answer there was that the
-        /// arena is 0.1 radian across and climate is continental.</para>
-        ///
-        /// <para>Reported per seed: the spread of elevation over the arena in metres, and the climb a
-        /// creature accumulates crossing it - which is what the cost is actually charged on.</para>
+        /// nothing" could mean creatures are indifferent to real hills, or that there are no hills to
+        /// be indifferent to - opposite findings the trait table cannot tell apart. The same question
+        /// sank the terrain join's first result.</para>
         /// </summary>
         private static void ReportRelief()
         {
-            const int Steps = 41;
-            const float Half = 25f;
-
-            Console.WriteLine("seed   range_m     sd_m   climb_per_25m");
+            Console.WriteLine("seed   climb_per_25m");
             foreach (int seed in new[] { 42, 55, 71, 100, 120, 161 })
             {
-                EnvironmentField field = EnvironmentField.CreateTerrainDriven(seed);
-                var heights = new double[Steps, Steps];
-                double lowest = double.MaxValue;
-                double highest = double.MinValue;
-                double total = 0d;
-
-                for (int row = 0; row < Steps; row++)
-                {
-                    for (int column = 0; column < Steps; column++)
-                    {
-                        float x = -Half + (2f * Half * column / (Steps - 1));
-                        float y = -Half + (2f * Half * row / (Steps - 1));
-                        double metres = field.Sample(new SimVector2(x, y)).Elevation
-                            * PlanetTerrain.MetresPerElevationUnit;
-                        heights[row, column] = metres;
-                        if (metres < lowest) lowest = metres;
-                        if (metres > highest) highest = metres;
-                        total += metres;
-                    }
-                }
-
-                double mean = total / (Steps * Steps);
-                double variance = 0d;
-                double climb = 0d;
-                for (int row = 0; row < Steps; row++)
-                {
-                    for (int column = 0; column < Steps; column++)
-                    {
-                        double difference = heights[row, column] - mean;
-                        variance += difference * difference;
-
-                        // Uphill only, along one row: the same thing the cost charges for.
-                        if (column > 0)
-                        {
-                            double step = heights[row, column] - heights[row, column - 1];
-                            if (step > 0d) climb += step;
-                        }
-                    }
-                }
-
                 Console.WriteLine(
-                    seed.ToString().PadRight(7)
-                    + Format(highest - lowest).PadLeft(8)
-                    + Format(Math.Sqrt(variance / (Steps * Steps))).PadLeft(9)
-                    + Format(climb / Steps).PadLeft(15));
+                    seed.ToString().PadRight(7) + Format(Relief.ClimbPerTraverse(seed)).PadLeft(14));
             }
         }
+
 
         private static string Format(double value)
         {

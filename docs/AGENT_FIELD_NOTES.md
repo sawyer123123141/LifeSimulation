@@ -1471,3 +1471,16 @@ change.
   handoff said its members were not at class indent and the bulk was nested types. Neither was true -
   the nested types were the last 55 lines. Thirty seconds of looking beat two sessions of trusting
   the note. Same shape as the `PatchLift` closure.
+- **When every column moves together, including the control, it is composition and not effect
+  (2026-08-24).** The focused slope run moved all fourteen gene means by about the same amount at
+  |t| around 1.4 to 2.0, two of them past 2. `NeutralMarker` moved with them - and it cannot respond
+  to anything - so the cause was differential extinction changing who was left to average, not
+  selection. **Without the control column that table reads as a finding.**
+- **Removing a ceiling can replace one problem with a worse one.** Raising the population cap from 48
+  to 200 gave survival room to move, and also let populations overshoot and crash: 33 of 60 pairs
+  went extinct in both arms, against 2 or 3 in 120 at the old cap. The metric that was saturated
+  became the metric that is now mostly zero. Change a limit by a step, not by a factor of four.
+- **Do not report a comparison conditioned on a post-treatment variable as if it were evidence.**
+  Population among the pairs where both arms survived came out at t = -2.27, which looks like the
+  clearest number in the run. Survival is what the treatment affects, so conditioning on it selects
+  the sample. It is in the write-up marked as not to be used.
