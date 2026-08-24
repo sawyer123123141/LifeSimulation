@@ -1457,3 +1457,12 @@ change.
 - **The project's own guards are the fastest reviewer.** Adding one flag failed three tests
   immediately: the manifest did not mention it, the configuration hash did not cover it, and the
   pinned property count disagreed. None of that needed a person to notice.
+- **Carry a control column in every selection sweep (2026-08-24).** `CreatureSweep` reports
+  `NeutralMarker`, a gene that responds to nothing by construction. In the four-seed smoke test it
+  came out at t = 2.44 - the largest mover in the table - which said "this is drift" before anyone
+  could read a story into the real columns. At 120 seeds it sat mid-pack, which is what made the null
+  believable rather than merely quiet.
+- **Check that the arms diverged at all before interpreting a null.** Half the slope-cost pairs were
+  byte-identical, because half the arenas are flat. That could have been dilution hiding an effect;
+  restricting to the pairs that diverged doubled the means and left every t identical, which settles
+  it. Two lines of analysis, no rerun.

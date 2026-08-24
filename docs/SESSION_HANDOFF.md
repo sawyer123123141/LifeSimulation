@@ -1060,11 +1060,23 @@ without elevation, and it is off by default. All three compare `ComputeBehaviorH
 moment any flag differs, which makes a liveness test pass vacuously.** That mistake was made and
 caught here.
 
-**What has NOT been done: the measurement.** Nothing is known about what slope cost does to a
-population - not survival, not gene shift, not whether creatures avoid hills or starve on them.
-Until that exists the flag stays off. The measurement needs a paired-seed sweep like
-`tools/PlantSweep` but scoped to creatures, and **no such instrument exists** - that is the real cost
-of turning this on, and it should be built before the flag is, not after.
+**The measurement exists now, and it is a null.** `tools/CreatureSweep`, 240 runs over 120 paired
+seeds: **nothing crosses |t| = 2 in fourteen columns**, and the `NeutralMarker` control - a gene that
+responds to nothing by construction - sits mid-pack among the columns that supposedly could respond.
+Extinctions 2 against 3. Full account in `docs/experiments/p6-slope-cost-2026-08-24.md`.
+
+**Read the limitations before treating that as settled.** 96 of 120 pairs finished at the population
+cap of 48, so a survival effect smaller than the headroom cannot appear; and nothing records distance
+travelled, so a behavioural response is not distinguishable from indifference. **The flag stays
+off.** A decisive version needs a scenario built for the question rather than inherited from the
+plant corpus - population uncapped, resources placed so reaching them means climbing, and a
+distance-travelled statistic.
+
+**Half the corpus had no hill in it,** and `CreatureSweep --relief` is what makes that readable: the
+arena window is 0.1 radian on a coastal centre, and what lands in it ranges from 25 m of relief with
+22 m of climb per traverse (seed 55) to a perfectly flat ocean floor (seed 161). 58 of 120 pairs were
+byte-identical. Restricting to the 62 that diverged doubles every mean and **leaves every t
+unchanged**, so the null is a finding rather than dilution.
 
 **Note: `ConfigurationHashVersion` went 1 to 2**, per its own rule, because the covered field set
 changed. It seeds the configuration hash, so **every V2 fingerprint shifts** - no recorded value was
