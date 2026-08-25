@@ -857,30 +857,39 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-### Read this first: what is actually open (2026-08-24)
+### Everything in the previous list is closed (2026-08-24, late)
 
-1. ~~Replicate the lean scarcity arm~~ ~~and the dose-response~~ - **both done, both hold.**
-   `p6-dose-response-80seeds-2026-08-24.md`: 80 seeds at every level, body_size -0.0133 / -0.0252 /
-   -0.0697 at t = -2.01 / -3.23 / -2.73 for moderate / lean / scarce, control under |t| = 1.13.
-   Monotonic, same order as n = 30. **It also corrected two earlier claims** - the moderate level
-   *is* distinguishable from the control at 80 seeds, and the "three traits under selection" count is
-   at least six. Comparing magnitudes *between* levels remains unsound (survivor conditioning; 79, 55
-   and 12 worlds survived) and the z = 2.1 for moderate against scarce is recorded with that flag.
-2. ~~**Why temperature tolerance.**~~ **Done, and the answer was not the join** -
-   `p6-why-temperature-tolerance-2026-08-24.md`. It is a saturating gene against a placeholder sine.
-   What it opened instead: **make temperature a real field**. Every other environmental quantity now
-   comes from terrain and this one is `20 + 8*sin(0.18x + 0.11y)`, which is why the model's strongest
-   adaptation is to a decoration. Doing it means the amplitude and shape become world properties in
-   `SimulationConfig`, hashed, and it re-baselines every thermal result on record - so it is a
-   decision to take deliberately, not a tidy-up.
-3. ~~**`CreatureAppearance`** as a pure `(Genome) -> appearance` function.~~ **Built** -
-   `CreatureAppearance.cs` (the struct, no `UnityEngine` types) and `CreatureAppearanceRules.cs` (the
-   mapping), eight headless tests. **What remains is step 3 of `docs/creature-appearance.md`:** apply
-   it at the one call site in `Prototype1Presenter.Views.cs`, behind the unbound `U` key, per
-   creature and never by population mean. That half is what a model swap would redo, so it waits for
-   real models. Note the hue channel **saturates** - the doc explains that the spread going from
-   mottled to uniform is the picture, not the mean.
-4. Rivers remain blocked behind a persistent grid. **Do not restart them.**
+The four items that stood here - the dose-response replication, why temperature tolerance,
+`CreatureAppearance`, and rivers - are done or deliberately blocked. What that work opened is below,
+ordered by what is actually worth doing next.
+
+**1. The gate dose-response.** The largest finding of the session is that the mate-seeking gate is
+the dominant selective channel: at `--gate=0.45`, `urgency_exponent` goes from t = -14.55 to
+**t = -0.44** and four other traits go quiet with it
+(`p6-the-mating-gate-is-the-selection-2026-08-24.md`). **That is one alternative value, not a curve.**
+Run 0.55, 0.60 and 0.65 and see whether the collapse is graded or a cliff. Costs three commands, no
+new code - `--gate=` already exists. **This is the obvious next thing.**
+
+**2. Profile Play mode.** The terrain brief review (`docs/terrain-brief-review-2026-08-24.md`) is
+right that this is the biggest hole: **nothing in Play mode has ever been observed**, 908 chunks
+means 908 renderers, and no optimisation should be ranked until that number exists. **Needs a human**
+- I cannot run the editor.
+
+**3. `CreatureAppearance` step 3.** Apply the mapping at the one call site in
+`Prototype1Presenter.Views.cs`, behind the unbound `U` key, per creature and never by population
+mean. **Waits for real models** - that half is what a model swap would redo. The pure half is built
+and tested.
+
+**4. A carrying-capacity-limited habitat** - section 9's item C5, and it has been the most important
+measurement debt for longer than anything else here. Every plant result is scoped by a population
+pinned at a cap. **Scenario design, not an audit.**
+
+**5. Health recovery as a default.** Flagged in `p6-health-recovery-2026-08-24.md`: it *removes an
+artefact* rather than adding realism, which makes it different in kind from the slope cost and the
+terrain temperature. It is the first flag to flip whenever a re-baseline is taken deliberately.
+**Do not flip it casually** - it re-baselines everything.
+
+**Do not restart rivers.** Still blocked behind a persistent grid.
 
 ## 5b. Next task (the older queue)
 
