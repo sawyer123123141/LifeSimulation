@@ -549,13 +549,25 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   Read in two places, both `shortfall ^ (0.5 + 2.5*gene)` on a shortfall in `[0,1]`, so **lower is
   monotonically better** and there is no trade-off. **Nine conditions out of nine negative**,
   -0.035 to -0.055, |t| from 3.2 to **19.4**, the most reproducible selection signal in the model.
-- **The cause is the saturation defect already on record.** `ComputeNeedGain` returns exactly 1.0 for
-  every active patch at every hunger level (`DecisionSystem.Scoring.cs:270` says so in a comment), so
-  nothing charges a creature for eating when it is barely hungry, and the gene's intended trade-off
-  cannot exist. **The repair is to unsaturate `ComputeNeedGain`, not to touch the gene** - and it
-  would also restore the differential grazing that `plantQualityPreferenceEnabled` works around.
-  **It re-baselines essentially every creature and plant result on record.** Largest unpulled lever in
-  the decision system; deliberately not pulled.
+- **The cause is NOT established, and the first explanation committed for it was wrong.** That doc
+  originally blamed the `ComputeNeedGain` saturation and proposed unsaturating it. **The proposed
+  repair is backwards**: the term is `min(1, patchAmount * perUnitGain / missing)`, "what fraction of
+  my shortfall can this patch fill", and removing the clamp would make food *more* attractive to a
+  full creature. The clamp is correct and the term was never the diminishing-returns term - `urgency`
+  itself is. Correction is in the doc rather than edited away.
+- **Current best hypothesis: the reproduction gates.** `CanReproduce` needs energy, hydration **and
+  health all >= 70%** (`ReproductionSystem.cs:215`) and `CanSeekMate` needs all three **>= 80%**
+  (`:224`). A creature below 80% cannot even look for a mate, so topping up is a *precondition* for
+  breeding rather than a competitor with it - under which eagerness is correct and **the gene may not
+  be broken at all**.
+- **The experiment that settles it, and it is small:** make the gate thresholds configurable and
+  re-measure the urgency drift at a lower gate. Weakens -> gates are the cause, gene is healthy.
+  Persists -> something else, keep looking. Nine corpora already supply the comparison arm. The gates
+  themselves are a recorded user decision and are **not** being questioned - only used as an
+  instrument.
+- **Uniform grazing is real and separate.** `ComputeNeedGain` pinning at 1 does mean patches are not
+  differentiated by size, which is a genuine plant-defense problem and why
+  `plantQualityPreferenceEnabled` exists. It is not the explanation for this gene.
 - **Four genes start monomorphic:** `UrgencyExponent`, `TravelSensitivity`, `RiskAversion` and
   `NeutralMarker` all show founder exactly `0.5000` in every run, because the founder profile does not
   vary them. **Their response is mutation-limited, not selection-limited** - which is how t = -19.4

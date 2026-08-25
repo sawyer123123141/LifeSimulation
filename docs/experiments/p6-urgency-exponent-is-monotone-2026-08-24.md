@@ -1,4 +1,10 @@
-# `UrgencyExponent` is a monotone benefit, and the saturation defect is why
+# `UrgencyExponent` is a monotone benefit — and my first explanation of why was wrong
+
+> **CORRECTION, same day, before anyone acted on it.** The original version of this doc blamed the
+> `ComputeNeedGain` saturation and proposed "unsaturate it" as the repair. **Both halves are wrong**,
+> and the proposed repair is backwards. The measured result — nine conditions, nine times negative —
+> is unaffected and stands. The corrected reasoning is below, along with what the original said, so
+> the error is on the record rather than quietly edited away.
 
 **2026-08-24. No new runs — read off nine corpora already committed.** 80 seeds each, 12,000 ticks,
 population cap 100.
@@ -27,27 +33,49 @@ before I care.*
 | 0.5 (founder) | 1.75 | 0.297 |
 | 1.0 | 3.0 | 0.125 |
 
-## Why lower is monotonically better, which is the defect
+## What I said first, and why it is wrong
 
-The foraging score is `urgency * needGain * quality - travelBurden - dangerPenalty`. **`needGain`
-saturates**, and the source already says so in a comment at `DecisionSystem.Scoring.cs:270`:
+The original claim was that `ComputeNeedGain` saturating is what removes the gene's trade-off, and
+that the repair is to unsaturate it. **The repair is backwards.**
 
-> every active food patch returns exactly 1.0, roughly 10x over the clamp, at every hunger level down
-> to 5% energy … foraging reduces to urgency minus travel and danger
+```
+ComputeNeedGain = min(1, resource.Amount * perUnitGain / missing)
+```
 
-So the term that should punish over-eagerness — *this patch is not worth the trip for a need you
-barely have* — **carries no information**. Food is always maximally valuable at every hunger level.
-Nothing charges a creature for going to eat when it is only slightly hungry, beyond the travel it
-would pay anyway.
+That is *what fraction of my shortfall can this patch fill*. It pins at 1 because patches hold far
+more than one creature's shortfall — which is correct behaviour. **Removing the clamp would let the
+term exceed 1 and make food MORE attractive to a nearly full creature, not less.** The clamp is the
+thing keeping it sane.
 
-**That is what makes the gene monotone.** The trade-off it was designed to express — react early and
-waste time, react late and starve — only exists if the value of eating depends on how hungry you are.
-It does not.
+It was also the wrong term to accuse. `needGain` is a **patch-adequacy filter** — *is this patch big
+enough to be worth it* — and was never the diminishing-returns term.
 
-The **70%/70% reproduction gate** compounds it. A creature must be well fed *and* well watered to
-breed, so prioritising needs is prioritising reproduction; there is no fitness left over for the
-alternatives urgency competes against. (The gate is a recorded user decision and is not in question
-here — it is the reason the gradient is one-directional rather than the thing to change.)
+## Why lower actually looks better
+
+**The diminishing-returns term is `urgency` itself**, which is to say the gene is its own punishment
+term and controls how sharply it bites. And the punishments that sit outside it do exist:
+
+- `travelBurden` is absolute, in fractions of energy and hydration capacity, and a low-urgency score
+  genuinely loses to it — `Math.Max(0f, ...)` clamps the whole score to zero.
+- **opportunity cost is real**: the decision picks a single highest-scoring candidate, so foraging
+  displaces mating, fleeing and resting.
+
+So the trade-off is not missing. The likelier reason it does not bind is the **reproduction gates**,
+which are far higher than they look:
+
+| gate | threshold | source |
+|---|---|---|
+| can reproduce | energy, hydration **and health all ≥ 70%** | `ReproductionSystem.cs:215` |
+| can even *seek* a mate | all three **≥ 80%** | `ReproductionSystem.cs:224` |
+
+**A creature below 80% cannot go looking for a mate at all.** So topping up is not competing with
+breeding — it is a *precondition* for it, and the opportunity cost of foraging early is close to
+zero for any creature that is not already near full. Under gates that high, eagerness is not a bug in
+the gene. It may be the correct answer to the world as designed.
+
+The gates are a recorded user decision and are not being questioned. The point is that **they, not a
+saturated term, are the most likely explanation** — and that is a hypothesis, which is exactly what
+the first version of this doc failed to say about its own.
 
 ## Nine conditions, nine times negative
 
@@ -90,21 +118,31 @@ quiet in the healthy rows.
 | gene | shape | consequence |
 |---|---|---|
 | `MetabolicPace` | **all cost, no reader on the benefit side** | population sells it |
-| `UrgencyExponent` | **all benefit, the punishing term is saturated away** | population buys it |
+| `UrgencyExponent` | **monotone benefit in this world** — cause not yet established | population buys it |
 
-Neither is a trade-off, and neither is visible to a liveness harness, because both reach behaviour.
+Neither is a trade-off *as measured*, and neither is visible to a liveness harness, because both reach
+behaviour. **The two are not equally settled**: `MetabolicPace` having no benefit-side reader is a
+fact about the source, while `UrgencyExponent` being monotone is a measurement whose cause is still a
+hypothesis.
 `p6-metabolic-pace-is-a-pure-cost-2026-08-24.md` is the other half of this.
 
-## Deliberately not fixed, and what the fix would be
+## So is there anything to fix?
 
-The honest repair is **not** to touch `UrgencyExponent`. It is to **unsaturate `ComputeNeedGain`**, so
-that a patch is worth less to a creature that barely needs it. That single change would give the gene
-its intended trade-off, and it would also restore the differential grazing that
-`plantQualityPreferenceEnabled` exists to work around — the same comment names plant defense as a
-casualty of uniform grazing.
+**Possibly nothing.** If the gates are the driver, the gene is reporting the truth about this world:
+when you cannot even look for a mate below 80% of three separate needs, being quick to eat is simply
+correct, and a population discovering that is the simulation working.
 
-**It would re-baseline essentially every creature and plant result on record**, which is why it is
-written down rather than done. It is the largest single lever in the decision system that nobody has
-pulled.
+**The experiment that would settle it** needs no new mechanism — only the gate thresholds made
+configurable, and the urgency drift re-measured at a lower gate:
 
-Recorded so the choice is made on purpose.
+- if the downward pressure **weakens**, the gates are the cause and the gene is healthy
+- if it **persists unchanged**, something else is driving it and this doc is still not finished
+
+That is a config value and one sweep, against nine corpora that already provide the comparison. It is
+the next thing to do, and it is a much smaller and better-aimed change than the one this doc
+originally proposed.
+
+**The uniform-grazing problem is real and separate.** `ComputeNeedGain` pinning at 1 does mean patches
+are not differentiated by size, which is a genuine issue for plant defense and is why
+`plantQualityPreferenceEnabled` exists. That stands on its own and is not the explanation for this
+gene.
