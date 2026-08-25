@@ -158,7 +158,8 @@ namespace LifeSimulation.Simulation.Core
             bool slopeMovementCostEnabled = false,
             bool terrainDrivenTemperatureEnabled = false,
             bool metabolicIngestionEnabled = false,
-            float reproductionNeedFraction = DefaultReproductionNeedFraction)
+            float reproductionNeedFraction = DefaultReproductionNeedFraction,
+            bool healthRecoveryEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -203,6 +204,7 @@ namespace LifeSimulation.Simulation.Core
             TerrainDrivenTemperatureEnabled = terrainDrivenTemperatureEnabled;
             MetabolicIngestionEnabled = metabolicIngestionEnabled;
             ReproductionNeedFraction = reproductionNeedFraction;
+            HealthRecoveryEnabled = healthRecoveryEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -432,6 +434,20 @@ namespace LifeSimulation.Simulation.Core
         public float ReproductionNeedFraction { get; }
 
         /// <summary>
+        /// When set, a well-fed and well-watered creature slowly heals.
+        ///
+        /// <para><b>Health has never regenerated.</b> Five subtractions in <c>NeedsSystem</c> and no
+        /// addition anywhere, so it was a one-way ratchet from birth - and health is one of the three
+        /// conditions on the mate-seeking gate, which makes a fifth of health lost equivalent to
+        /// permanent sterility rather than to injury.</para>
+        ///
+        /// <para>Off by default because it is a real ecological change and **every recorded result was
+        /// measured without it**. See <c>NeedsSystem.RecoverHealth</c> for the rate and the
+        /// conditions.</para>
+        /// </summary>
+        public bool HealthRecoveryEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -477,7 +493,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 5;
+        public const int ConfigurationHashVersion = 6;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -546,6 +562,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, TerrainDrivenTemperatureEnabled ? 1UL : 0UL);
             hash = Hash(hash, MetabolicIngestionEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, ReproductionNeedFraction);
+            hash = Hash(hash, HealthRecoveryEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

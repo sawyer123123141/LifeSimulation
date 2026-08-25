@@ -150,6 +150,12 @@ namespace LifeSimulation.Simulation.Core
                 {
                     NeedsSystem.ApplyTemperatureStress(ref needs, Creatures.GetPhenotypeAt(index), Climate.Celsius(movement.Position, CurrentTick + 1), deltaTime);
                 }
+                if (Config.HealthRecoveryEnabled)
+                {
+                    // After the damage, deliberately: a creature standing in a hot band nets a loss
+                    // and only makes the ground back once it leaves.
+                    NeedsSystem.RecoverHealth(ref needs, Creatures.GetPhenotypeAt(index), deltaTime);
+                }
                 movement.DistanceSinceLastNeeds = 0f;
                 if (needs.Health <= 0f)
                 {

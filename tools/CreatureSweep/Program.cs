@@ -103,6 +103,9 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static float _reproductionNeedFraction = SimulationConfig.DefaultReproductionNeedFraction;
 
+        /// <summary>Healing, as an arm. Off by default; every recorded result predates it.</summary>
+        private static bool _healthRecovery;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -110,6 +113,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--join=off") _join = false;
                 if (argument == "--terrain-temperature") _terrainTemperature = true;
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
+                if (argument == "--health-recovery") _healthRecovery = true;
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -272,7 +276,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 slopeMovementCostEnabled: slope,
                 terrainDrivenTemperatureEnabled: _terrainTemperature,
                 metabolicIngestionEnabled: _metabolicIngestion,
-                reproductionNeedFraction: _reproductionNeedFraction);
+                reproductionNeedFraction: _reproductionNeedFraction,
+                healthRecoveryEnabled: _healthRecovery);
         }
 
         private static readonly string[] GeneNames =

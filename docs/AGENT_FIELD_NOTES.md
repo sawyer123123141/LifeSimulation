@@ -1624,3 +1624,19 @@ change.
 - **Watch the control in every arm separately.** The slack-gate arm's control moved to t = 2.55 while
   the default arm's sat at 0.17. Same code, same seeds, different noise floor. A t of 2 does not mean
   the same thing in two arms of the same experiment.
+- **A quantity that is only ever subtracted from is worth checking for (2026-08-24).** `Health` had
+  five subtractions and no addition anywhere in the simulation, which is invisible to every test
+  because nothing asserts a value can go up. It mattered because health gates reproduction, so the
+  ratchet meant permanent sterility rather than injury. **Grep for the writes to a field, not the
+  reads, and look at their signs.**
+- **Two mechanisms found in the source tonight, two overstatements.** The `ComputeNeedGain` saturation
+  was not the cause of the urgency drift, and the health ratchet explains only 19% of the thermal
+  selection. **Finding a real mechanism in the code is not the same as finding the dominant one** -
+  say "contributes" until the measurement says otherwise.
+- **t-statistics are not comparable across arms with different survival.** The health-recovery arm has
+  zero extinctions against one, and every column's |t| rose. None of that is attributable to healing;
+  a cleaner arm has less composition noise. **Compare the column the run was designed to test, and say
+  out loud that the rest moved for a different reason.**
+- **A ratio against a near-zero control is a display artefact.** With the control at -0.0000 the "vs
+  control" column printed 30,988x. Ratios need a denominator with a floor, or the column needs to be
+  read as t.

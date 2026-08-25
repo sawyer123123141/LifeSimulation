@@ -35,6 +35,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             var totals = new long[7];
             var energy = new List<double>();
             var hydration = new List<double>();
+            var health = new List<double>();
+            var sterile = new List<double>();
             long population = 0;
             int extinct = 0;
 
@@ -63,6 +65,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 totals[(int)DeathCause.Predation] += statistics.PredationDeathCount;
                 energy.Add(statistics.MeanEnergyFraction);
                 hydration.Add(statistics.MeanHydrationFraction);
+                health.Add(HealthFraction(world, gate + SimulationConfig.MateSeekingNeedMargin, out double sterileShare));
+                sterile.Add(sterileShare);
                 population += statistics.Population;
             }
 
@@ -83,7 +87,40 @@ namespace LifeSimulation.Tools.CreatureSweep
                 + " (seek a mate) on all three needs");
             Console.WriteLine("  mean energy fraction    " + Mean(energy).ToString("0.0000"));
             Console.WriteLine("  mean hydration fraction " + Mean(hydration).ToString("0.0000"));
+            // Health never regenerates - five subtractions in NeedsSystem and no addition anywhere -
+            // so this is a one-way ratchet, and it is one of the THREE conditions on the gate above.
+            // A creature that loses a fifth of its health is permanently unable to seek a mate.
+            Console.WriteLine("  mean health fraction    " + Mean(health).ToString("0.0000"));
+            Console.WriteLine("  below the health gate   " + (100d * Mean(sterile)).ToString("0.0") + "%  <- cannot seek a mate, ever");
             Console.WriteLine("  mean final population   " + (counted == 0 ? 0d : (double)population / counted).ToString("0.0"));
+        }
+
+        /// <summary>
+        /// Mean health as a fraction of capacity, and the share of the living that are under the
+        /// mate-seeking gate on health alone.
+        ///
+        /// <para><b>Health never regenerates.</b> <c>NeedsSystem</c> subtracts from it in five places
+        /// and nothing anywhere adds to it, so it is a one-way ratchet from birth - and it is one of
+        /// the three conditions on the gate. A creature that loses a fifth of its health is not
+        /// injured, it is <b>permanently sterile</b> for the rest of its life.</para>
+        /// </summary>
+        private static double HealthFraction(SimulationWorld world, float seekGate, out double sterileShare)
+        {
+            double total = 0d;
+            int under = 0;
+            int counted = 0;
+            for (int index = 0; index < world.CreatureCount; index++)
+            {
+                float capacity = world.Creatures.GetPhenotypeAt(index).HealthCapacity;
+                if (capacity <= 0f) continue;
+                float fraction = world.GetCreatureNeedsAt(index).Health / capacity;
+                total += fraction;
+                if (fraction < seekGate) under++;
+                counted++;
+            }
+
+            sterileShare = counted == 0 ? double.NaN : (double)under / counted;
+            return counted == 0 ? double.NaN : total / counted;
         }
 
         private static void Write(string name, long count, long total)

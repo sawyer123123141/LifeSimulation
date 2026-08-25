@@ -85,6 +85,7 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "TerrainDrivenEnvironmentEnabled", config.TerrainDrivenEnvironmentEnabled);
             Line(builder, "TerrainDrivenTemperatureEnabled", config.TerrainDrivenTemperatureEnabled);
             Line(builder, "MetabolicIngestionEnabled", config.MetabolicIngestionEnabled);
+            Line(builder, "HealthRecoveryEnabled", config.HealthRecoveryEnabled);
             Line(builder, "ReproductionNeedFraction", config.ReproductionNeedFraction.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
             Line(builder, "SlopeMovementCostEnabled", config.SlopeMovementCostEnabled);
             Line(builder, "PlantEstablishmentContestEnabled", config.PlantEstablishmentContestEnabled);

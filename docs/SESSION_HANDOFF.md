@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **584 headless tests green**, Unity compile clean.
+that are **never to be staged**. **592 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -543,8 +543,25 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   **The test is site depletion and mean energy between the two configurations**, which the drift table
   does not carry. A *private* benefit - faster recovery, shorter handling, shorter reproduction
   cooldown - would not be diluted by competitors.
-- **Or rename it.** If `MetabolicPace` is to stay a cost gene, `DigestionRate` should stop being
-  called that, because it does not make digestion faster. Design decision, deliberately not taken.
+- **Renaming was never a fix and was wrongly offered as one.** A trait axis with no upside at any
+  value is a missing mechanic, not a bad allele. The real repair is a **private** benefit.
+- **Health never regenerated, and that is a second real defect** - `p6-health-recovery-2026-08-24.md`.
+  Five subtractions in `NeedsSystem`, no addition anywhere, so health was a one-way ratchet - and it
+  is one of the three conditions on the mate-seeking gate, which makes a fifth of health lost equal to
+  **permanent sterility**, not injury. `healthRecoveryEnabled` closes it: 0.5% of capacity per second,
+  only while over half full on energy and hydration, applied after the damage so a hot band still nets
+  a loss. Default false.
+- **The ratchet was a contributing cause, not the explanation.** Predicted healing would visibly
+  weaken the thermal selection; measured **+0.2879 (t 26.03) to +0.2323 (t 23.89)** - a 19% reduction.
+  Real, right direction, **not** the driver. The arithmetic account in
+  `p6-why-temperature-tolerance-2026-08-24.md` remains primary.
+- **Do not compare the other columns across those two arms.** The recovery arm has **zero extinctions
+  against one** and a control at t = -0.0039, so it is simply cleaner; every other |t| rises and none
+  of it is attributable. The report's "vs control" ratio column divides by ~0 there and prints numbers
+  like 30,988x - **meaningless in that arm, read the t values.**
+- **Immediate next step, now unblocked:** `MetabolicPace` scaling health recovery. Faster metabolism
+  heals faster is private, undilutable, and points straight at the gate that decides fitness - which
+  is exactly what the ingestion attempt lacked. It was impossible while there was no healing.
 - **`UrgencyExponent` is the same family, opposite sign** - `p6-urgency-exponent-is-monotone-2026-08-24.md`.
   Read in two places, both `shortfall ^ (0.5 + 2.5*gene)` on a shortfall in `[0,1]`, so **lower is
   monotonically better** and there is no trade-off. **Nine conditions out of nine negative**,
@@ -1017,7 +1034,7 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 584 green
+dotnet test tools/HeadlessTests            # 592 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief
