@@ -1595,3 +1595,16 @@ change.
   `metabolic_pace` at t = -3.12, which looks like the strongest result in the run until you see
   `neutral_marker` at **t = +3.31** on 4 surviving worlds of 80. Without the control that row would
   have been written up.
+- **A huge t with a tiny shift means mutation-limited, not weak (2026-08-24).** `UrgencyExponent`
+  drifts -0.04 at t = -19.4, which reads as contradictory until you notice **founder is exactly
+  0.5000 in every run**: four genes are monomorphic in the founder profile, so selection has nothing
+  standing to act on and waits for mutation to supply it. **Read the founder column before calling a
+  gradient weak** - the gradient and the response are different quantities.
+- **The same defect looks different from the gene side and the system side.** "Grazing is uniform
+  because `ComputeNeedGain` saturates" was already a comment in the source and a known plant-side
+  problem. From the gene side it is why `UrgencyExponent` has no trade-off and is under the most
+  reproducible selection in the model. **When a gene turns out to be monotone, the missing punishment
+  is usually somewhere else and already known about.**
+- **Nine corpora on disk answered a question that would have cost nine new sweeps.** Two genes were
+  fully characterised tonight without running anything new. **Before designing a run, grep the
+  corpora already committed for the column you care about.**

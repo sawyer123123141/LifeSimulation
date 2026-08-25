@@ -545,6 +545,21 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   cooldown - would not be diluted by competitors.
 - **Or rename it.** If `MetabolicPace` is to stay a cost gene, `DigestionRate` should stop being
   called that, because it does not make digestion faster. Design decision, deliberately not taken.
+- **`UrgencyExponent` is the same family, opposite sign** - `p6-urgency-exponent-is-monotone-2026-08-24.md`.
+  Read in two places, both `shortfall ^ (0.5 + 2.5*gene)` on a shortfall in `[0,1]`, so **lower is
+  monotonically better** and there is no trade-off. **Nine conditions out of nine negative**,
+  -0.035 to -0.055, |t| from 3.2 to **19.4**, the most reproducible selection signal in the model.
+- **The cause is the saturation defect already on record.** `ComputeNeedGain` returns exactly 1.0 for
+  every active patch at every hunger level (`DecisionSystem.Scoring.cs:270` says so in a comment), so
+  nothing charges a creature for eating when it is barely hungry, and the gene's intended trade-off
+  cannot exist. **The repair is to unsaturate `ComputeNeedGain`, not to touch the gene** - and it
+  would also restore the differential grazing that `plantQualityPreferenceEnabled` works around.
+  **It re-baselines essentially every creature and plant result on record.** Largest unpulled lever in
+  the decision system; deliberately not pulled.
+- **Four genes start monomorphic:** `UrgencyExponent`, `TravelSensitivity`, `RiskAversion` and
+  `NeutralMarker` all show founder exactly `0.5000` in every run, because the founder profile does not
+  vary them. **Their response is mutation-limited, not selection-limited** - which is how t = -19.4
+  produces a shift of only 0.04, and why the control is so quiet in the healthy rows.
 - **The amplitude test is still not run**, and it matters less now: the flag above changes the
   field's structure while deliberately holding the 12-28 degree span, so the ceiling argument is
   untouched by it either way.
