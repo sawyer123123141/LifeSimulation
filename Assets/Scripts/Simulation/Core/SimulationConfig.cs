@@ -159,7 +159,8 @@ namespace LifeSimulation.Simulation.Core
             bool terrainDrivenTemperatureEnabled = false,
             bool metabolicIngestionEnabled = false,
             float reproductionNeedFraction = DefaultReproductionNeedFraction,
-            bool healthRecoveryEnabled = false)
+            bool healthRecoveryEnabled = false,
+            bool metabolicHealingEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -205,6 +206,7 @@ namespace LifeSimulation.Simulation.Core
             MetabolicIngestionEnabled = metabolicIngestionEnabled;
             ReproductionNeedFraction = reproductionNeedFraction;
             HealthRecoveryEnabled = healthRecoveryEnabled;
+            MetabolicHealingEnabled = metabolicHealingEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -448,6 +450,20 @@ namespace LifeSimulation.Simulation.Core
         public bool HealthRecoveryEnabled { get; }
 
         /// <summary>
+        /// When set, <see cref="Genome.MetabolicPace"/> scales health recovery by the same
+        /// <c>0.7 + 0.8*pace</c> factor it already applies to the energy and water drains.
+        ///
+        /// <para><b>The third attempt at giving that gene a benefit, and the first private one.</b>
+        /// Ingestion failed because contested sites are divided between requesters, so every
+        /// competitor eating faster cancels it. Nobody can consume someone else's healing, and healing
+        /// feeds the mate-seeking gate, which is where fitness is decided.</para>
+        ///
+        /// <para><b>Requires <see cref="HealthRecoveryEnabled"/>.</b> Without healing there is nothing
+        /// to accelerate and this does nothing - inert, not broken.</para>
+        /// </summary>
+        public bool MetabolicHealingEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -493,7 +509,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 6;
+        public const int ConfigurationHashVersion = 7;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -563,6 +579,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, MetabolicIngestionEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, ReproductionNeedFraction);
             hash = Hash(hash, HealthRecoveryEnabled ? 1UL : 0UL);
+            hash = Hash(hash, MetabolicHealingEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

@@ -154,7 +154,10 @@ namespace LifeSimulation.Simulation.Core
                 {
                     // After the damage, deliberately: a creature standing in a hot band nets a loss
                     // and only makes the ground back once it leaves.
-                    NeedsSystem.RecoverHealth(ref needs, Creatures.GetPhenotypeAt(index), deltaTime);
+                    float metabolicScale = Config.MetabolicHealingEnabled
+                        ? 0.7f + (0.8f * Creatures.GetGenomeAt(index).MetabolicPace)
+                        : 1f;
+                    NeedsSystem.RecoverHealth(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, metabolicScale);
                 }
                 movement.DistanceSinceLastNeeds = 0f;
                 if (needs.Health <= 0f)

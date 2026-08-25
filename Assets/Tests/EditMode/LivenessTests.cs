@@ -283,6 +283,7 @@ namespace LifeSimulation.Tests.EditMode
             "foragingEconomicsEnabled",
             "kinRecognitionEnabled",
             "learnedResourceQualityEnabled",
+            "metabolicHealingEnabled",
             "multiThreatPerceptionEnabled",
 
             // plantTemperatureAdaptationEnabled was listed here between a4304bd and the procedural
@@ -292,6 +293,13 @@ namespace LifeSimulation.Tests.EditMode
             // it diverged at tick 40 and this test failed - which was the designed signal - so it was
             // removed. The four that remain are inert because their readers sit on the Legacy path,
             // which no configuration reaches; those will not resolve themselves.
+            //
+            // metabolicHealingEnabled is inert here for a THIRD reason, and a benign one: it scales
+            // health recovery by metabolic pace, and this configuration has healthRecoveryEnabled
+            // off, so there is no healing to scale. Same shape as slopeMovementCostEnabled needing
+            // elevation. It becomes live the moment recovery is on, which HealthRecoveryTests pins
+            // from both directions - inert without healing, live with it. If it ever reports live
+            // *here*, something has started healing creatures without being asked to.
         };
 
         [Test]

@@ -1640,3 +1640,15 @@ change.
 - **A ratio against a near-zero control is a display artefact.** With the control at -0.0000 the "vs
   control" column printed 30,988x. Ratios need a denominator with a floor, or the column needs to be
   read as t.
+- **A continuous cost needs a continuous benefit (2026-08-24).** `MetabolicPace` charges energy and
+  water *every second* and both benefits tried pay only sometimes - ingestion while eating (and it is
+  shared, so competitors cancel it), healing while injured (and mean health is 0.9939, so nearly
+  never). Neither moved the gene. **Before designing a trade-off, check that the two sides are
+  collected on the same schedule**, not just that they point in opposite directions.
+- **Predicting a null and getting it is worth as much as predicting an effect.** The healing benefit
+  was predicted to do nothing, for a stated reason - the channel is idle - and it did nothing. That
+  turned a third failed attempt into the explanation for all three.
+- **A flag that is inert for a benign reason belongs on the known-inert list with the reason.**
+  `metabolicHealingEnabled` cannot act without `healthRecoveryEnabled`, the same shape as slope cost
+  needing elevation. Pinning it there means the guard now fails if it ever becomes live *without*
+  healing, which would mean something is healing creatures unasked.

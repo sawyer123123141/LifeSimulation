@@ -105,14 +105,23 @@ namespace LifeSimulation.Simulation.Biology
         /// thermal damage rate - a creature standing in a hot band still loses ground, and only
         /// recovers once it leaves.</para>
         /// </summary>
-        public static void RecoverHealth(ref CreatureNeeds needs, Phenotype phenotype, float deltaTime)
+        /// <param name="metabolicScale">
+        /// <c>0.7 + 0.8 * MetabolicPace</c> when metabolic healing is on, otherwise 1.
+        ///
+        /// <para>This is the honest benefit for a gene that had none. <c>MetabolicPace</c> raises the
+        /// energy and water drains by that exact factor and buys nothing, and the ingestion attempt
+        /// failed because ingestion is a <b>shared</b> channel - every competitor eating faster
+        /// cancels it. Healing is private: nobody else can consume it. It also feeds the
+        /// mate-seeking gate, which is where fitness is actually decided.</para>
+        /// </param>
+        public static void RecoverHealth(ref CreatureNeeds needs, Phenotype phenotype, float deltaTime, float metabolicScale = 1f)
         {
             if (needs.Energy < phenotype.EnergyCapacity * HealthRecoveryNeedFraction) return;
             if (needs.Hydration < phenotype.HydrationCapacity * HealthRecoveryNeedFraction) return;
 
             needs.Health = Math.Min(
                 phenotype.HealthCapacity,
-                needs.Health + (phenotype.HealthCapacity * HealthRecoveryFractionPerSecond * deltaTime));
+                needs.Health + (phenotype.HealthCapacity * HealthRecoveryFractionPerSecond * metabolicScale * deltaTime));
         }
 
         public static void ApplyTemperatureStress(ref CreatureNeeds needs, Phenotype phenotype, float temperature, float deltaTime)

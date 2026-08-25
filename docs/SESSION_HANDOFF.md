@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **592 headless tests green**, Unity compile clean.
+that are **never to be staged**. **594 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -559,9 +559,26 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   against one** and a control at t = -0.0039, so it is simply cleaner; every other |t| rises and none
   of it is attributable. The report's "vs control" ratio column divides by ~0 there and prints numbers
   like 30,988x - **meaningless in that arm, read the t values.**
-- **Immediate next step, now unblocked:** `MetabolicPace` scaling health recovery. Faster metabolism
-  heals faster is private, undilutable, and points straight at the gate that decides fitness - which
-  is exactly what the ingestion attempt lacked. It was impossible while there was no healing.
+- **DONE, and it failed as predicted** - `p6-metabolic-pace-has-no-benefit-that-fits-2026-08-24.md`.
+  `metabolicHealingEnabled` scales recovery by pace: private, undilutable, feeds the gate. Predicted
+  little or no effect because mean health is **0.9939** and almost nobody is ever injured. Measured
+  **-0.0050 at t = -1.01** against -0.0020 at t = -0.36 without the scaling. Being private was
+  necessary and nowhere near sufficient.
+- **The reason all three attempts fail is the real result.** The drains are paid **continuously**;
+  ingestion pays only while eating *and is shared*, healing pays only while injured *and injury is
+  rare*. **A continuously-charged gene cannot be balanced by an occasionally-collectable benefit**, and
+  every continuously-paying channel left - movement speed, perception, food yield, water efficiency -
+  **is already another gene's job**, so doubling up would make them non-identifiable.
+- **Recommendation, and it is now on merit rather than surrender: rename it.** `MetabolicPace` and
+  `DigestionRate` should become something like `BasalCostMultiplier` and `WaterLossRate`. The gene is
+  a live axis selection acts on, which is more than several columns manage; the population sensibly
+  selling it stops being a bug once the name stops promising a trade-off. Deleting it is defensible
+  but disturbs every recorded genome layout. **User decision, not taken.**
+- **Both flags stay committed and default false** as the record of what was tried, so re-running
+  either costs one command rather than one rediscovery.
+- **`metabolicHealingEnabled` is on the `KnownInertFlags` list in `LivenessTests`** - it is inert
+  without `healthRecoveryEnabled`, the same shape as slope cost needing elevation. **If it ever
+  reports live there, something is healing creatures unasked.**
 - **`UrgencyExponent` is the same family, opposite sign** - `p6-urgency-exponent-is-monotone-2026-08-24.md`.
   Read in two places, both `shortfall ^ (0.5 + 2.5*gene)` on a shortfall in `[0,1]`, so **lower is
   monotonically better** and there is no trade-off. **Nine conditions out of nine negative**,
@@ -1034,7 +1051,7 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 592 green
+dotnet test tools/HeadlessTests            # 594 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief

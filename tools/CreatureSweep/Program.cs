@@ -106,6 +106,9 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// <summary>Healing, as an arm. Off by default; every recorded result predates it.</summary>
         private static bool _healthRecovery;
 
+        /// <summary>Metabolic pace scaling healing - the first private benefit that gene has had.</summary>
+        private static bool _metabolicHealing;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -114,6 +117,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--terrain-temperature") _terrainTemperature = true;
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (argument == "--health-recovery") _healthRecovery = true;
+                if (argument == "--metabolic-healing") { _healthRecovery = true; _metabolicHealing = true; }
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -277,7 +281,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 terrainDrivenTemperatureEnabled: _terrainTemperature,
                 metabolicIngestionEnabled: _metabolicIngestion,
                 reproductionNeedFraction: _reproductionNeedFraction,
-                healthRecoveryEnabled: _healthRecovery);
+                healthRecoveryEnabled: _healthRecovery,
+                metabolicHealingEnabled: _metabolicHealing);
         }
 
         private static readonly string[] GeneNames =

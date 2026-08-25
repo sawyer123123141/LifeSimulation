@@ -1,5 +1,11 @@
 # `MetabolicPace` buys nothing, and the population is selling it
 
+> **Two benefits were tried and both failed** - see
+> `p6-metabolic-pace-has-no-benefit-that-fits-2026-08-24.md`. Faster ingestion is shared and gets
+> diluted; faster healing is private but almost never collectable, because mean health is 0.9939. The
+> costs are paid continuously and no available benefit is. The conclusion below stands and is now
+> better supported than when it was written.
+
 **2026-08-24. No new runs — this is read off six corpora already committed.**
 `p6-dose-response-{moderate,lean,scarce}-80seeds` and
 `p6-terrain-temperature-sweep{,-lean,-scarce}-80seeds`, 80 seeds each, baseline arm.
