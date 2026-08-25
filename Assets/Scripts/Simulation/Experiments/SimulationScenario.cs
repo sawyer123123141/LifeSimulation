@@ -105,6 +105,46 @@ namespace LifeSimulation.Simulation.Experiments
         public int ResourceCount => _resources.Length;
 
         /// <summary>
+        /// The same layout with less in it: every amount, capacity and regeneration rate multiplied.
+        ///
+        /// <para><b>Why derive rather than write a second scenario.</b> Scarcity has to differ from
+        /// abundance in exactly one thing, or a difference between them is not attributable. Swapping
+        /// in a scenario from another family instead - `ObservationStable` for
+        /// `ConsumerDefenseCalibrationModerate` - was tried and killed every run in both arms,
+        /// because those layouts are calibrated against different founder counts and flags. Same
+        /// positions, same plant genomes, same dormant sites; less food and water.</para>
+        ///
+        /// <para>Dormant sites are scaled too. Their amount is already zero and it is their capacity
+        /// that decides what they become if they are ever activated, so leaving it alone would make a
+        /// scarce world quietly generous the moment a site woke up.</para>
+        /// </summary>
+        public SimulationScenario Scaled(string id, float factor)
+        {
+            if (factor <= 0f || float.IsNaN(factor) || float.IsInfinity(factor))
+            {
+                throw new ArgumentOutOfRangeException(nameof(factor));
+            }
+
+            var scaled = new ResourceDefinition[_resources.Length];
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition source = _resources[index];
+                scaled[index] = new ResourceDefinition(
+                    source.Kind,
+                    source.Position,
+                    source.InteractionRadius,
+                    source.InitialAmount * factor,
+                    source.Capacity * factor,
+                    source.RegenerationPerSecond * factor,
+                    source.IsActive,
+                    source.NutritionMultiplier,
+                    source.PlantGenome);
+            }
+
+            return new SimulationScenario(id, scaled, _founderPlacement);
+        }
+
+        /// <summary>
         /// Deterministic fingerprint of the actual layout: every resource definition and the
         /// founder placement.
         ///

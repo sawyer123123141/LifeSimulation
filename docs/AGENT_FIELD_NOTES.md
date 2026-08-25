@@ -1508,3 +1508,18 @@ change.
   symmetric mutation does on its own, so a shift is only selection if you know where the gene
   started. Every gene here began at 0.50, which is what rules the artefact out - and it is the exact
   failure that got `p4-defense-selection-demonstrated` retracted on the day it was written.
+- **A dead run has no gene means, and including it corrupts every column (2026-08-24).** Extinct
+  worlds report every gene as zero, so their "drift" is minus the founder value on all thirteen
+  columns at once. With them in, the lean scarcity arm showed everything down ~0.21 with the control
+  moving identically and every ratio at 1.0. **Exclude them - and then say out loud that doing so
+  conditions on survival**, which the treatment affects, so magnitudes stop being comparable between
+  conditions even though directions remain sound.
+- **Vary one thing by deriving it, not by swapping in a neighbour.** A "scarcity" arm built by
+  substituting a scenario from another family killed 30 of 30 runs in both arms - those layouts are
+  calibrated against different founder counts and flags. `SimulationScenario.Scaled(id, factor)`
+  multiplies the amounts of the *calibrated* layout instead, so scarcity differs from abundance in
+  exactly one respect and a difference is attributable.
+- **Check the mechanism in the source before predicting or denying an outcome.** "Do creatures shrink
+  when food is scarce" was answerable by reading three lines: mass is `0.6 * 4^BodySize`, it is
+  charged against energy per distance and water per second, and nothing pays for being large. The
+  prediction followed from the code, and the measurement then confirmed it with a dose-response.

@@ -53,6 +53,17 @@ namespace LifeSimulation.Tools.CreatureSweep
         private static bool _focused;
 
         /// <summary>
+        /// Which world the runs happen in. Scarcity is the condition where body size should matter:
+        /// mass is <c>0.6 * 4^BodySize</c>, a fourfold range, and it drives energy per distance and
+        /// water per second. Nothing pays a creature for being large - the only thing it buys is a
+        /// bigger carcass, which feeds whoever eats it - so the pressure is downward and ought to
+        /// bite hardest when there is least to eat and drink.
+        /// </summary>
+        private static SimulationScenario _scenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
+
+        private static string _scenarioName = "moderate";
+
+        /// <summary>
         /// Population ceiling for the focused arm, overridable per run.
         ///
         /// <para>200 was the first value and it overshot: raising the cap from the plant corpus's 48
@@ -66,6 +77,24 @@ namespace LifeSimulation.Tools.CreatureSweep
 
         private static void Main(string[] args)
         {
+            foreach (string argument in args)
+            {
+                if (!argument.StartsWith("--scenario=")) continue;
+
+                _scenarioName = argument.Substring("--scenario=".Length);
+                _scenario = _scenarioName switch
+                {
+                    // Same layout, less in it. A scenario from another family is not a scarcity
+                    // arm - ObservationStable was tried and killed every run in both arms, because
+                    // those layouts are calibrated against different founder counts and flags.
+                    "scarce" => Prototype4Scenarios.ConsumerDefenseCalibrationModerate.Scaled(
+                        "p6-defense-calibration-scarce", 0.35f),
+                    "lean" => Prototype4Scenarios.ConsumerDefenseCalibrationModerate.Scaled(
+                        "p6-defense-calibration-lean", 0.6f),
+                    _ => Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
+                };
+            }
+
             if (args.Length > 0 && args[0] == "--relief")
             {
                 ReportRelief();
@@ -214,7 +243,7 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             SimulationConfig config = CreateConfig(spec.Seed, spec.Slope);
             var world = new SimulationWorld(config);
-            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+            _scenario.ApplyTo(world);
 
             // Founder means, taken once statistics have actually been sampled.
             //
@@ -260,7 +289,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             var builder = new StringBuilder();
             builder.Append(ExperimentManifest.Describe(
                 CodeRevision(),
-                Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
+                _scenario,
                 CreateConfig(FirstSeed, slope: true),
                 FirstSeed,
                 _seedCount,
@@ -288,7 +317,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             string path = Path.Combine(
                 "docs", "experiments",
                 _focused
-                    ? "p6-slope-cost-focused-cap" + _focusedPopulationCap + "-2026-08-24.csv"
+                    ? "p6-slope-cost-focused-cap" + _focusedPopulationCap + "-" + _scenarioName + "-2026-08-24.csv"
                     : "p6-slope-cost-2026-08-24.csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
@@ -360,10 +389,28 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// variance to chance, and the founders are not the survivors. Selection is the claim that a
         /// gene drifted <i>further than a gene with no consequences did</i>.</para>
         /// </summary>
-        private static void ReportDrift(RunResult[] arm)
+        private static void ReportDrift(RunResult[] all)
         {
+            // Extinct runs are excluded, and they have to be. A dead world reports every gene mean as
+            // zero, so its "drift" is minus the founder value on every column at once - which drags
+            // the whole table down uniformly, control included, and looks exactly like the artefact
+            // it is. Reading a gene mean off a population that does not exist is the mistake, not the
+            // exclusion.
+            //
+            // This does condition on survival, which the environment affects. It is sound for "did
+            // the survivors change" and unsound for comparing drift magnitudes between scenarios with
+            // different death rates - so the extinction counts are reported beside it.
+            RunResult[] arm = all.Where(result => result.Population > 0).ToArray();
+            if (arm.Length < 2)
+            {
+                Console.WriteLine();
+                Console.WriteLine("drift from founders: only " + arm.Length + " runs survived, nothing to report");
+                return;
+            }
+
             Console.WriteLine();
-            Console.WriteLine("drift from founders, baseline arm, " + arm.Length + " runs");
+            Console.WriteLine("drift from founders, baseline arm, " + arm.Length + " surviving of "
+                + all.Length + " runs, scenario " + _scenarioName);
             Console.WriteLine();
             // The founder value is printed because a bounded gene that starts away from the middle
             // moves toward it under symmetric mutation alone. Without this column, regression to the

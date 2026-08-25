@@ -1,9 +1,30 @@
-# Session Handoff — 2026-08-23
+# Session Handoff — 2026-08-24
 
-**Head at handoff: `c58b444`** (`revert: rivers, both attempts`), pushed to `origin/main`. Working
-tree clean apart from the untracked Unity `.meta` files, `Assets/_Recovery/` and
-`ProjectSettings/PackageManagerSettings.asset` that are **never to be staged**. **503 / 19 / 33 / 1
-green**, Unity compile clean.
+**Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
+untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
+that are **never to be staged**. **563 headless tests green**, Unity compile clean.
+
+### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
+
+| commit | what |
+|---|---|
+| `3af2583` | **free-fly developer camera** replaces the orbit rig; speed scales with height |
+| `1a59da8` | **the planet has level of detail** - quadtree per face, 19 m facets down to 0.54 m |
+| `9a21544` | chunk-sizing idea measured and reverted; **`PatchLift` closed** |
+| `84ca29e` | `O` is a mode: hides UI, pauses, cleans up. `K` drops its redundant second planet |
+| `3a40b0e` | **climbing costs energy**, behind a flag, off and unmeasured |
+| `d76b021` | `tools/CreatureSweep`; slope cost moves nothing at the plant corpus's conditions |
+| `1ffccb7` | the `J` panel reaches the planet, not just the arena under it |
+| `8fcc96e` | re-mesh the planet in place once tuning settles - the drag lag |
+| `5a089f1` | **`GeneticClusterHistory` split**, 1324 lines into four partials |
+| `56c44e5` | focused slope run: suggestive on survival, gene table an artefact |
+| `1977e3a` | **ice measured and closed** - 3.32% of surface, 98.31% polar |
+| `4a4bd37` | slope cost puts creatures on flatter ground; **on for the `Y` playtest** |
+| `b542c5b` | **selection is happening** - measured against founders for the first time |
+| `04ef603` | plan for making adaptation visible, deliberately unbuilt |
+| *this commit* | **body size shrinks under scarcity**, and this handoff |
+
+Phase G and earlier are below.
 
 ### Phase G — the join measured, a local climate band, and rivers rejected (2026-08-23)
 
@@ -468,6 +489,23 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
 
 ## 3. Unresolved findings
 
+### Added 2026-08-24
+
+- **Why temperature tolerance.** +0.309 at t = 14.4 and it rises in every condition tested - by far
+  the strongest selection in the model, and unexplained. The terrain join introduced the temperature
+  field it plausibly responds to; that is a hypothesis, not a result.
+- **Slope cost on survival is suggestive only.** Extinction 46 against 38 of 60 at cap 200, but the
+  paired test is 13 discordant against 5, **McNemar 2.72 against 3.84 for p = .05**. Direction
+  consistent, significance not reached.
+- **Ten of thirteen traits show no detectable selection** in the scenarios tested. That is "not here",
+  not "inert".
+- **The level-of-detail seam is visible** where two depths meet. Removing it needs neighbour-aware
+  morphing; the cheap fix was tried and measured worse.
+- **908 chunks means 908 renderers** at ground level. Never profiled in Play mode. Merging finished
+  chunks into fewer renderers is the batching fix if it ever matters.
+- **Nothing in Play mode has been seen by me.** The camera, the planet view, the `J` panel fix and the
+  tuning-drag performance are all verified by compile and by offline capture only.
+
 ### The three low-occupancy plant conclusions are UNVERIFIABLE
 
 `p4-site-abundance-seed-production-rate-2026-08-20.md`,
@@ -578,6 +616,25 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 4. Decisions that must NOT be reopened
 
+### Added 2026-08-24
+
+- **Rivers stay reverted.** Blocked behind a persistent grid; the postmortem is in
+  `docs/terrain-caves-and-rivers.md`. Painted rivers cannot drain, erode or animate.
+- **`Segments = 16`, `MaximumDepth = 6` on the chunk tree.** 32 with a cap of 5 was tried: same finest
+  triangle, 908 chunks became 764, and **triangles went 232k to 782k** because raising the band limit
+  makes the coarse chunks four times denser and those are most of the sphere. The numbers are in the
+  comment on `Segments`.
+- **`PatchLift` is fine at 0.02.** The patch and the deepest chunk produce *identical* elevation - the
+  octave cap binds before either band limit does. `PlanetChunkSeamTests` fails if the octave cap is
+  ever raised, which is when it would stop being true.
+- **The ice is fine.** 3.32% of surface, 20.86% of land, **98.31% beyond 60 degrees**. No coefficient
+  was touched and none should be.
+- **`K` does not show a planet.** Its fourth cycle entry was the old single-mesh globe at draw radius
+  60; `O` shows the real planet at true radius with level of detail. Do not add it back.
+- **Do not use `--scenario=stable` or `=scarcity` in `CreatureSweep`.** Different scenario family,
+  different calibration, 30 of 30 extinct in both arms.
+- **Do not measure selection with a paired arm-against-arm design.** It cancels exactly.
+
 1. **Soft home-range affinity is closed as a measured negative.** Flag stays default `false`; code,
    tests and key `R` stay; spec and plan carry SUPERSEDED banners. Do not tune
    `DefaultHomeRangeBonusMaximum`, the falloff distance or the learning fraction — the **sign** of
@@ -642,6 +699,21 @@ population as an upper bound — sound for that decision, but it is a bound, not
 ---
 
 ## 5. Next task
+
+### Read this first: what is actually open (2026-08-24)
+
+1. ~~Replicate the lean scarcity arm~~ - **done, holds.** 80 seeds, 55 surviving: body_size -0.0252
+   at t = -3.23 with the control at t = 0.07. The remaining scarcity question is whether the
+   *dose-response* survives replication; only the lean level has been re-run.
+2. **Why temperature tolerance.** It is the strongest selection in the model by a distance
+   (+0.31, t = 14.4) and nothing explains it. The terrain join is what introduced a real temperature
+   field, so the test is the join on against off, drift measured against founders. **Not** arm against
+   arm - see the lesson below about what that design can detect.
+3. **`CreatureAppearance`** as a pure `(Genome) -> appearance` function, per `docs/creature-appearance.md`.
+   Safe to build before real models land; the applied half is not.
+4. Rivers remain blocked behind a persistent grid. **Do not restart them.**
+
+## 5b. Next task (the older queue)
 
 **Step three of the join is DONE and its answer is negative (`88a236b`).** 480 runs, 120 seeds,
 12,000 ticks, flat versus terrain-driven crossed with the establishment contest. Full writeup in
@@ -818,6 +890,26 @@ refuses without provenance; that is deliberate.
 ---
 
 ## 6. Test commands
+
+### The creature instruments (2026-08-24)
+
+```powershell
+dotnet test tools/HeadlessTests            # 563 green
+dotnet run --project tools/CreatureSweep -c Release -- --focused 30 100 --scenario=lean
+dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
+dotnet run --project tools/CreatureSweep -c Release -- --relief
+dotnet run --project tools/TerrainProbe -c Release -- --ice
+```
+
+`--focused <seeds> <cap> [--scenario=moderate|lean|scarce]`. Seeds are filtered to at least 5 m of
+climb per traverse. **`--scenario=stable` and `=scarcity` exist but are traps** - those are
+observation-family layouts calibrated for different founder counts, and they kill every run in both
+arms. Use `lean` and `scarce`, which are `Scaled` copies of the calibrated layout.
+
+Every run prints two tables: the paired arm-against-arm comparison, and **drift from founders**, which
+is the one that can see selection.
+
+## 6b. Test commands (older)
 
 From `tools/HeadlessTests`:
 
@@ -1072,6 +1164,36 @@ model swap - a pure `(Genome) -> CreatureAppearance` function, testable headless
 `FreeCameraMotion` - from the part that does not, which is the three lines in
 `Prototype1Presenter.Views.cs` that assume a capsule and one material. Building the pure half early is
 safe; building the applied half early is what would be redone.
+
+### Body size shrinks under scarcity, with a dose-response (2026-08-24)
+
+**`docs/experiments/p6-body-size-shrinks-under-scarcity-2026-08-24.md`.** The mechanism was already
+there: `bodyMass = 0.6 * 4^BodySize` is a fourfold range, charged against energy per distance and
+water per second, and **nothing pays a creature for being large** - the only thing size buys is a
+bigger carcass, which feeds whoever eats it.
+
+Drift from founders, baseline arm, extinct runs excluded, 30 seeds per level:
+
+| resources | body_size drift | t | vs control | control t | extinct |
+|---|---|---|---|---|---|
+| moderate 1.0x | -0.0160 | -1.20 | 2.6x | +1.22 | 1 / 30 |
+| lean 0.6x | **-0.0394** | **-2.19** | 21.8x | +0.36 | 13 / 30 |
+| scarce 0.35x | **-0.0769** | **-2.34** | 20.9x | -0.23 | 24 / 30 |
+
+**Monotonic**: halve the resources and the shrinking roughly doubles. Not distinguishable from the
+control at full resources - scarcity is what makes mass expensive enough to matter.
+
+**Replicated at 80 seeds** (55 surviving): body_size **-0.0252, t = -3.23**, control +0.0002 at
+t = 0.07. Direction and significance hold; the magnitude is smaller than the 30-seed run's -0.0394,
+so read these as direction and rough size, not as a coefficient. `temperature_tolerance` in the same
+run is +0.2999 at t = 24.3 - **1664x the control**.
+
+**Survivor conditioning is real and is why the extinction counts sit beside every row.** Drift is over
+surviving runs and scarcity causes the deaths, so magnitudes are not comparable *between* levels. At
+0.35x only 6 of 30 survived; read that row as direction, not size.
+
+**`SimulationScenario.Scaled(id, factor)` is new** - it multiplies every amount, capacity and
+regeneration of an existing layout, so a scarcity arm differs from abundance in exactly one thing.
 
 ### Selection is happening, and it had never been measured (2026-08-24)
 
