@@ -1652,3 +1652,14 @@ change.
   `metabolicHealingEnabled` cannot act without `healthRecoveryEnabled`, the same shape as slope cost
   needing elevation. Pinning it there means the guard now fails if it ever becomes live *without*
   healing, which would mean something is healing creatures unasked.
+- **Count the blast radius before a rename, and include the corpora (2026-08-24).** Renaming
+  `MetabolicPace` looked cheap - 18 code files, one script. The real cost was **10 committed CSV
+  corpora carrying `metabolic_pace` as a column header** plus 82 mentions across 38 docs: the rename
+  would have severed every recorded result from the code it describes. **An authoritative doc comment
+  at the definition captures the entire benefit of a rename at none of its cost**, whenever the
+  problem is "this name misleads" rather than "this name is used wrongly".
+- **"Adds realism" and "removes an artefact" deserve different defaults.** The slope cost and the
+  terrain temperature add something a designer chose. Health recovery removes something nobody chose -
+  a quantity that only decrements happened to gate a quantity that decides fitness. That distinction
+  is the argument for which flags should eventually flip to default on, and it is worth recording per
+  flag rather than rediscovering.

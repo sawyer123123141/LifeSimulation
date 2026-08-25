@@ -60,6 +60,36 @@ namespace LifeSimulation.Simulation.Biology
 
         public float BodySize { get; }
         public float MovementSpeed { get; }
+        /// <summary>
+        /// <b>A pure cost. Read this before assuming otherwise — the name promises a trade-off that
+        /// does not exist.</b>
+        ///
+        /// <para>This gene reaches the phenotype in exactly two places, and both are charges:
+        /// <see cref="Phenotype.DigestionRate"/>, which is the <b>water drain per second</b>, and
+        /// <see cref="Phenotype.BasalEnergyCostMultiplier"/>, the <b>energy drain per second</b>.
+        /// Across its range it raises both by a factor of 2.14 and returns <b>nothing</b>. Nothing
+        /// anywhere converts a faster metabolism into more food, faster eating, better yield or
+        /// quicker recovery — <see cref="FoodEfficiency"/> owns those.</para>
+        ///
+        /// <para>The population sells it accordingly: downward in five of six measured conditions
+        /// (<c>docs/experiments/p6-metabolic-pace-is-a-pure-cost-2026-08-24.md</c>).</para>
+        ///
+        /// <para><b>Three benefits were tried and all three failed</b>, and the reason is worth
+        /// knowing before a fourth is attempted: the drains are paid <i>continuously</i>, while
+        /// faster ingestion pays only while eating — and is shared, so competitors cancel it — and
+        /// faster healing pays only while injured, which mean health of 0.9939 makes nearly never.
+        /// <b>A continuously charged gene cannot be balanced by an occasionally collectable
+        /// benefit</b>, and every continuously paying channel left is already another gene's job.
+        /// See <c>p6-metabolic-pace-has-no-benefit-that-fits-2026-08-24.md</c>. The two attempts
+        /// survive as <c>SimulationConfig.MetabolicIngestionEnabled</c> and
+        /// <c>MetabolicHealingEnabled</c>, both default false.</para>
+        ///
+        /// <para><b>Deliberately not renamed.</b> The honest name would be something like
+        /// <c>BasalCostMultiplier</c>, but <c>metabolic_pace</c> is a column in ten committed CSV
+        /// corpora and appears 82 times across 38 documents. Renaming would break the link between
+        /// every recorded result and the code it describes, which costs more than the misleading name
+        /// does now that this comment exists.</para>
+        /// </summary>
         public float MetabolicPace { get; }
         public float VisionRange { get; }
         public float WaterEfficiency { get; }
@@ -323,6 +353,14 @@ namespace LifeSimulation.Simulation.Biology
         public float VisionRange { get; }
         public float FoodYield { get; }
         public float IngestionRate { get; }
+        /// <summary>
+        /// <b>Misnamed: this does not make digestion faster.</b> It is the <b>water loss rate</b>,
+        /// <c>0.7 + 0.8 * MetabolicPace</c>, and its only production reader multiplies the hydration
+        /// drain in <c>NeedsSystem.Tick</c>. <c>DecisionSystem.EstimateTravelBurden</c> reads it to
+        /// <i>predict</i> that same drain. Nothing consumes food any faster because of it.
+        ///
+        /// <para>See <see cref="Genome.MetabolicPace"/> for why the name survives.</para>
+        /// </summary>
         public float DigestionRate { get; }
         public float WaterLossMultiplier { get; }
         public float BasalEnergyCostMultiplier { get; }

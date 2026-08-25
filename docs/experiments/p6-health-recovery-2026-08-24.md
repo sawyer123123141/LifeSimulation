@@ -78,11 +78,33 @@ creature is **over half full on both energy and hydration**.
 - **Body-size neutral**, being a fraction of capacity rather than a flat rate.
 - Applied **after** the damage in the tick, deliberately.
 
+## Three conditions, and it never hurts
+
+Baseline-arm extinctions, 80 seeds per level, against the identical seeds without healing:
+
+| level | extinct, default | **extinct, with healing** |
+|---|---|---|
+| moderate | 1 / 80 | **0 / 80** |
+| lean | 25 / 80 | **14 / 80** |
+| scarce | 68 / 80 | 68 / 80 |
+| **total** | **94 / 240** | **82 / 240** |
+
+**Better, better, identical — z = 1.14 on the pooled counts.** Not significant, but unlike the
+terrain-temperature flag, which was consistently *worse* under scarcity, this one is never worse at
+any level and is markedly better at lean, where 11 worlds that used to die now survive.
+
+Controls stay quiet in both new arms: lean t = −0.08, scarce t = −0.12.
+
 ## Status
 
-**Default false.** Every recorded result on this project was measured without healing. Zero
-extinctions in 80 seeds is one condition — it is not three, and the flag has not earned a default or
-a place in the `Y` playtest on that basis.
+**Switched on for the `Y` terrain playtest. Configuration default stays false**, and every recorded
+result on this project was measured without healing.
+
+**A note for the next deliberate re-baseline.** Unlike the slope cost and the terrain temperature,
+which *add* realism, this one **removes an artefact**: transient injury causing permanent sterility
+is not a modelling choice anybody made, it is what falls out of a quantity that only decrements
+gating a quantity that decides fitness. That makes it the strongest candidate in the flag list to
+become the default the next time a re-baseline is being taken on purpose.
 
 **What this unblocks.** `MetabolicPace` is a pure-cost gene
 (`p6-metabolic-pace-is-a-pure-cost-2026-08-24.md`) whose obvious honest benefit is *faster metabolism

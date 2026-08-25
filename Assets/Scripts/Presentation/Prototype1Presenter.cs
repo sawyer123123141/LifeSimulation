@@ -785,7 +785,15 @@ namespace LifeSimulation.Presentation
                 // ignores altitude and latitude contradicts it. See
                 // docs/experiments/p6-terrain-temperature-2026-08-24.md. Configuration default stays
                 // false; every recorded thermal result was measured without it.
-                terrainDrivenTemperatureEnabled: true);
+                terrainDrivenTemperatureEnabled: true,
+                // And an injury is an injury rather than a life sentence. Health only ever
+                // decremented - five subtractions in NeedsSystem and no addition anywhere - and it is
+                // one of the three conditions on the mate-seeking gate, so losing a fifth of it meant
+                // permanent sterility. Measured across the same three conditions: extinctions
+                // 94 of 240 to 82, better at moderate and lean and identical at scarce, never worse.
+                // See docs/experiments/p6-health-recovery-2026-08-24.md. Configuration default stays
+                // false; every recorded result predates it.
+                healthRecoveryEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";

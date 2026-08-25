@@ -569,13 +569,25 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   rare*. **A continuously-charged gene cannot be balanced by an occasionally-collectable benefit**, and
   every continuously-paying channel left - movement speed, perception, food yield, water efficiency -
   **is already another gene's job**, so doubling up would make them non-identifiable.
-- **Recommendation, and it is now on merit rather than surrender: rename it.** `MetabolicPace` and
-  `DigestionRate` should become something like `BasalCostMultiplier` and `WaterLossRate`. The gene is
-  a live axis selection acts on, which is more than several columns manage; the population sensibly
-  selling it stops being a bug once the name stops promising a trade-off. Deleting it is defensible
-  but disturbs every recorded genome layout. **User decision, not taken.**
+- **DECIDED: do NOT rename, and this reverses the recommendation above it.** Counted first: 18 code
+  files (trivially scriptable) but **38 doc files, 82 mentions, and `metabolic_pace` as a column in
+  10 committed CSV corpora.** Renaming breaks the link between every recorded result and the code it
+  describes - new runs stop matching old ones, and rewriting old CSVs means editing experimental
+  records. **The whole benefit was "a name stops misleading a reader", which an authoritative doc
+  comment at the definition delivers at zero cost to the corpus.** Those comments are now on
+  `Genome.MetabolicPace` and `Phenotype.DigestionRate` and carry the full story including why the name
+  survives. Deleting the gene is likewise rejected - it disturbs every recorded genome layout.
 - **Both flags stay committed and default false** as the record of what was tried, so re-running
   either costs one command rather than one rediscovery.
+- **`healthRecoveryEnabled` is ON for the `Y` playtest, config default still false.** Measured across
+  the same three conditions the other flags got: baseline-arm extinctions **94 of 240 to 82** -
+  1 to 0 at moderate, **25 to 14** at lean, 68 to 68 at scarce. z = 1.14, not significant, but **never
+  worse at any level**, unlike the terrain temperature which was consistently worse under scarcity.
+  Controls quiet in both new arms (t = -0.08, -0.12).
+- **Health recovery is the strongest candidate to become a DEFAULT at the next deliberate
+  re-baseline.** Unlike the slope cost and terrain temperature, which *add* realism, it **removes an
+  artefact**: a quantity that only ever decrements gating a quantity that decides fitness was nobody's
+  design choice. Not done now because it re-baselines everything.
 - **`metabolicHealingEnabled` is on the `KnownInertFlags` list in `LivenessTests`** - it is inert
   without `healthRecoveryEnabled`, the same shape as slope cost needing elevation. **If it ever
   reports live there, something is healing creatures unasked.**
