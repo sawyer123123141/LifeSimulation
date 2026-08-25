@@ -15,6 +15,8 @@ thermal trajectory - 40 seeds, 12000 ticks, 0 extinct (excluded from every row)
   11000 |                0.7769 |         0.5061 | 40
   12000 |                0.7790 |         0.5061 | 40
 
+endpoint across worlds: min 0.6337  p25 0.7363  median 0.7645  p75 0.8357  max 0.9797  sd 0.0744
+
 realised |T - 20| at occupied positions, 39735 samples
   mean 4.277  p50 4.641  p90 7.644  p99 7.993  max 8.000
   gene that covers p99: 0.749   gene that covers max: 0.750

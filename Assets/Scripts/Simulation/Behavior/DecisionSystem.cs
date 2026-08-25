@@ -3,6 +3,8 @@ using LifeSimulation.Simulation.Biology;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Resources;
 
+using LifeSimulation.Simulation.Environment;
+
 namespace LifeSimulation.Simulation.Behavior
 {
     public enum CreatureAction : byte
@@ -372,7 +374,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool plantQualityPreferenceEnabled = false,
             bool safetyGatedMateRendezvousEnabled = false,
             HomeRangeState homeRange = default,
-            bool homeRangeAffinityEnabled = false)
+            bool homeRangeAffinityEnabled = false,
+            ClimateField climate = default)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
@@ -380,7 +383,7 @@ namespace LifeSimulation.Simulation.Behavior
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
                 threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled,
                 selfId, selfLineage, otherLineage, kinRecognitionEnabled, plantQualityPreferenceEnabled,
-                safetyGatedMateRendezvousEnabled, homeRange, homeRangeAffinityEnabled);
+                safetyGatedMateRendezvousEnabled, homeRange, homeRangeAffinityEnabled, climate);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -419,7 +422,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool plantQualityPreferenceEnabled = false,
             bool safetyGatedMateRendezvousEnabled = false,
             HomeRangeState homeRange = default,
-            bool homeRangeAffinityEnabled = false)
+            bool homeRangeAffinityEnabled = false,
+            ClimateField climate = default)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -467,7 +471,7 @@ namespace LifeSimulation.Simulation.Behavior
             float thermalScore = 0f;
             if (physiologyEnabled)
             {
-                thermalScore = ThermoregulationSystem.ScoreThermalComfort(phenotype, origin, tick);
+                thermalScore = ThermoregulationSystem.ScoreThermalComfort(phenotype, origin, tick, climate);
                 if (thermalScore >= 0.15f)
                 {
                     candidates.TryAdd(new DecisionCandidate(CreatureIntent.SeekThermalComfort, -1, default, thermalScore));

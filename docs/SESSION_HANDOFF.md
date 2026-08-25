@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **571 headless tests green**, Unity compile clean.
+that are **never to be staged**. **577 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -499,10 +499,22 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   and costs about 1% of upkeep. Measured: the mean plateaus at **0.7790 at 40 seeds** (0.7475 with
   the join off), realised `|T - 20|` maxes at **8.000**, covering gene **0.750**. Running the join arm
   anyway removed 0.044 of 0.285 and none of the shape.
-- **The temperature field is a placeholder and it is the strongest selection in the model.** No
-  seasons, no altitude, no latitude, no terrain. The gene is behaving correctly; the environment is
-  not an environment. This is the real open item.
-- **The amplitude test is not run.** Moving the sine's amplitude should move the plateau to
+- ~~**The temperature field is a placeholder.**~~ **Fixed behind a flag** -
+  `terrainDrivenTemperatureEnabled`, default false, flag-off byte-identical.
+  `p6-terrain-temperature-2026-08-24.md`. `ClimateField` is where a creature's degrees come from; a
+  `default` instance *is* the sine, which is what makes flag-off free of a branch at every call site.
+  **What it changes:** the between-world standard deviation of the endpoint goes 0.0744 to 0.1454,
+  variance ratio 3.8 on 39 and 39 df. The sine gave every arena the same climate; terrain gives one a
+  temperate continent and another a cold one, and one world ended **below its founders** - the first
+  time the gene's maintenance cost has been visible.
+- **`terrainDrivenTemperatureEnabled` is not cleared to default on.** 0 of 40 extinct in both arms is
+  one condition, one cap, one scenario. The slope cost needed three before it was switched on for the
+  `Y` playtest. **Next measurement: `--focused 80 100 --terrain-temperature`** against the same seeds
+  without it, drift from founders, not arm against arm.
+- **The amplitude test is still not run**, and it matters less now: the flag above changes the
+  field's structure while deliberately holding the 12-28 degree span, so the ceiling argument is
+  untouched by it either way.
+- **The old amplitude note.** Moving the sine's amplitude should move the plateau to
   `(amplitude - 2) / 8`. It needs the amplitude in `SimulationConfig`, hashed, with a
   `ConfigurationHashVersion` bump and the value threaded through `ThermoregulationSystem` and the
   decision path - production surgery to confirm something the formula already fixes. Worth doing when
@@ -926,11 +938,11 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 571 green
+dotnet test tools/HeadlessTests            # 577 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief
-dotnet run --project tools/CreatureSweep -c Release -- --thermal 40 100 [--join=off]
+dotnet run --project tools/CreatureSweep -c Release -- --thermal 40 100 [--join=off] [--terrain-temperature]
 dotnet run --project tools/TerrainProbe -c Release -- --ice
 ```
 

@@ -1558,3 +1558,18 @@ change.
   levels, survival from 79 worlds down to 12, and the temperature-tolerance *endpoint* moving 0.02
   while the drift moved 0.07. **Read the whole table of a run you already paid for** before designing
   the next one.
+- **A placeholder can be replaced without re-baselining anything (2026-08-24).** Creature temperature
+  moved from a fixed sine to the world's own climate field, and every recorded thermal result still
+  reproduces, because a `default ClimateField` **is** the sine. Making the neutral value of a new type
+  the old behaviour is cheaper than a branch at every call site and impossible to get half-right - one
+  test comparing `default` against `TemperatureField` over the arena pins it.
+- **Write the prediction down even when it is wrong, especially then.** The prediction was that a
+  terrain-driven temperature would be nearly uniform over a 50-unit arena and so produce smaller
+  deviations. **Deviations barely moved** - mean 3.92 against 4.28, the full 8-degree span reached in
+  both. What changed was between worlds, not within one: the endpoint's standard deviation across 40
+  worlds went 0.0744 to 0.1454. Having the wrong prediction on the page is what made the right
+  distinction obvious.
+- **Look at the spread across runs, not only the mean of them.** Both arms above have a perfectly
+  reasonable mean and they are completely different environments. A uniform field applies the same
+  pressure to every world; a real one gives one arena a temperate continent and another a cold one,
+  and only the variance shows it.

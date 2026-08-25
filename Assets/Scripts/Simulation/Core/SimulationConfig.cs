@@ -155,7 +155,8 @@ namespace LifeSimulation.Simulation.Core
             bool safetyGatedMateRendezvousEnabled = false,
             bool homeRangeAffinityEnabled = false,
             bool terrainDrivenEnvironmentEnabled = false,
-            bool slopeMovementCostEnabled = false)
+            bool slopeMovementCostEnabled = false,
+            bool terrainDrivenTemperatureEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -197,6 +198,7 @@ namespace LifeSimulation.Simulation.Core
             ElevationFieldEnabled = elevationFieldEnabled;
             TerrainDrivenEnvironmentEnabled = terrainDrivenEnvironmentEnabled;
             SlopeMovementCostEnabled = slopeMovementCostEnabled;
+            TerrainDrivenTemperatureEnabled = terrainDrivenTemperatureEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -352,6 +354,30 @@ namespace LifeSimulation.Simulation.Core
         public bool SlopeMovementCostEnabled { get; }
 
         /// <summary>
+        /// When set, a creature's temperature comes from the world's <c>EnvironmentField</c> instead
+        /// of <c>TemperatureField</c>, the fixed sine <c>20 + 8*sin(0.18x + 0.11y)</c>.
+        ///
+        /// <para><b>The third half of the join, and the one that was missed.</b>
+        /// <see cref="TerrainDrivenEnvironmentEnabled"/> gave plants a real climate and
+        /// <see cref="SlopeMovementCostEnabled"/> gave the ground a cost, but creature
+        /// thermoregulation kept reading a decoration with no latitude, no altitude, no seasons and
+        /// no terrain. That decoration is the strongest selection pressure in the model - the
+        /// population moves a quarter of the trait range at t = 24 against a control at t = 0.07.
+        /// See <c>docs/experiments/p6-why-temperature-tolerance-2026-08-24.md</c>.</para>
+        ///
+        /// <para><b>The degree span is deliberately unchanged</b> at 12 to 28. Tolerance is
+        /// <c>2 + 8*gene</c>, so an 8-degree half-span is what puts the saturation ceiling at gene
+        /// 0.75; holding it fixed means this flag changes the field's <i>spatial structure</i> and
+        /// nothing else, and any change in the measured equilibrium is attributable to that alone.
+        /// See <c>ClimateField</c>.</para>
+        ///
+        /// <para><b>Requires the join.</b> Without <see cref="TerrainDrivenEnvironmentEnabled"/> or
+        /// <see cref="ProceduralEnvironmentFieldsEnabled"/> the field has no climate to offer and
+        /// this reads whatever the plain field returns - inert, not broken.</para>
+        /// </summary>
+        public bool TerrainDrivenTemperatureEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -397,7 +423,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 2;
+        public const int ConfigurationHashVersion = 3;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -463,6 +489,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, ElevationFieldEnabled ? 1UL : 0UL);
             hash = Hash(hash, TerrainDrivenEnvironmentEnabled ? 1UL : 0UL);
             hash = Hash(hash, SlopeMovementCostEnabled ? 1UL : 0UL);
+            hash = Hash(hash, TerrainDrivenTemperatureEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

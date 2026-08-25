@@ -67,6 +67,19 @@ namespace LifeSimulation.Tools.CreatureSweep
                     + " | " + tolerance[slot].Count);
             }
 
+            // Between-world spread at the end, which is where the placeholder and a real field differ
+            // most: a sine applies the same pressure to every world, while terrain gives one arena a
+            // temperate continent and another a cold one.
+            var endpoints = new List<double>(tolerance[Checkpoints]);
+            endpoints.Sort();
+            Console.WriteLine();
+            Console.WriteLine("endpoint across worlds: min " + Format(endpoints, 0d)
+                + "  p25 " + Format(endpoints, 0.25d)
+                + "  median " + Format(endpoints, 0.5d)
+                + "  p75 " + Format(endpoints, 0.75d)
+                + "  max " + Format(endpoints, 1d)
+                + "  sd " + StandardDeviation(tolerance[Checkpoints]).ToString("0.0000"));
+
             deviations.Sort();
             Console.WriteLine();
             Console.WriteLine("realised |T - 20| at occupied positions, " + deviations.Count + " samples");
@@ -142,8 +155,24 @@ namespace LifeSimulation.Tools.CreatureSweep
             for (int index = 0; index < world.CreatureCount; index++)
             {
                 MovementState movement = world.GetCreatureMovementAt(index);
-                into.Add(Math.Abs(TemperatureField.Sample(movement.Position, world.CurrentTick) - 20f));
+                // The world's own climate, not TemperatureField - otherwise the --terrain-temperature
+                // arm would report deviations from a field its creatures are not living in.
+                into.Add(Math.Abs(world.Climate.Celsius(movement.Position, world.CurrentTick) - 20f));
             }
+        }
+
+        private static string Format(List<double> sorted, double fraction)
+        {
+            return Percentile(sorted, fraction).ToString("0.0000");
+        }
+
+        private static double StandardDeviation(List<double> values)
+        {
+            if (values.Count < 2) return double.NaN;
+            double mean = values.Average();
+            double total = 0d;
+            foreach (double value in values) total += (value - mean) * (value - mean);
+            return Math.Sqrt(total / (values.Count - 1));
         }
 
         private static double Mean(List<double> values)

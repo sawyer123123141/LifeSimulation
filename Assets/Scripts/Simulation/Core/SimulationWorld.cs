@@ -64,6 +64,9 @@ namespace LifeSimulation.Simulation.Core
                     ? EnvironmentField.CreateTerrainDriven(Config.WorldSeed)
                     : EnvironmentField.CreateProcedural(Config.WorldSeed, Config.ElevationFieldEnabled)
                 : Config.PlantCohortsEnabled ? EnvironmentField.CreateMoistureGradient() : new EnvironmentField();
+            Climate = Config.TerrainDrivenTemperatureEnabled
+                ? ClimateField.FromTerrain(Environment)
+                : default;
             Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
             CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
@@ -86,6 +89,12 @@ namespace LifeSimulation.Simulation.Core
         }
 
         public SimulationConfig Config { get; }
+
+        /// <summary>
+        /// Where a creature's temperature in degrees comes from. A <c>default</c> instance is the
+        /// fixed sine every recorded thermal result was measured against.
+        /// </summary>
+        public ClimateField Climate { get; }
         public CreatureStore Creatures { get; }
         public ResourceStore Resources { get; }
         public PlantPatchStore Plants { get; }
@@ -367,7 +376,7 @@ namespace LifeSimulation.Simulation.Core
 
             if (Config.PhysiologyEnabled && decision.Action == CreatureAction.SeekThermalComfort)
             {
-                return ThermoregulationSystem.FindNearbyComfortTarget(position, tick, Arena);
+                return ThermoregulationSystem.FindNearbyComfortTarget(position, tick, Arena, Climate);
             }
 
             if (decision.Action == CreatureAction.Rest)

@@ -84,11 +84,18 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _join = true;
 
+        /// <summary>
+        /// Creature temperature from the world's climate instead of the fixed sine, as an arm. Off by
+        /// default, so every recorded result reproduces.
+        /// </summary>
+        private static bool _terrainTemperature;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
             {
                 if (argument == "--join=off") _join = false;
+                if (argument == "--terrain-temperature") _terrainTemperature = true;
                 if (!argument.StartsWith("--scenario=")) continue;
 
                 _scenarioName = argument.Substring("--scenario=".Length);
@@ -234,7 +241,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 plantInvaderEstablishmentContestEnabled: true,
                 plantSeedProductionRateEnabled: true,
                 terrainDrivenEnvironmentEnabled: _join,
-                slopeMovementCostEnabled: slope);
+                slopeMovementCostEnabled: slope,
+                terrainDrivenTemperatureEnabled: _terrainTemperature);
         }
 
         private static readonly string[] GeneNames =

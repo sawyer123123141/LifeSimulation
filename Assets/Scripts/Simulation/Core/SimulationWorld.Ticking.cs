@@ -148,7 +148,7 @@ namespace LifeSimulation.Simulation.Core
                 NeedsSystem.Tick(ref needs, Creatures.GetPhenotypeAt(index), deltaTime, movement.DistanceSinceLastNeeds, Config.RestBehaviorEnabled, isResting);
                 if (Config.PhysiologyEnabled)
                 {
-                    NeedsSystem.ApplyTemperatureStress(ref needs, Creatures.GetPhenotypeAt(index), TemperatureField.Sample(movement.Position, CurrentTick + 1), deltaTime);
+                    NeedsSystem.ApplyTemperatureStress(ref needs, Creatures.GetPhenotypeAt(index), Climate.Celsius(movement.Position, CurrentTick + 1), deltaTime);
                 }
                 movement.DistanceSinceLastNeeds = 0f;
                 if (needs.Health <= 0f)
@@ -370,7 +370,8 @@ namespace LifeSimulation.Simulation.Core
                         Config.PlantQualityPreferenceEnabled,
                         Config.SafetyGatedMateRendezvousEnabled,
                         Config.HomeRangeAffinityEnabled ? Creatures.GetHomeRangeRefAt(index) : default,
-                        Config.HomeRangeAffinityEnabled);
+                        Config.HomeRangeAffinityEnabled,
+                        Climate);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);
@@ -503,7 +504,7 @@ namespace LifeSimulation.Simulation.Core
                 }
                 if (Config.PhysiologyEnabled && Config.DecisionPolicyVersion == DecisionPolicyVersion.Legacy)
                 {
-                    decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision, ref diagnostics);
+                    decision = ThermoregulationSystem.PreferThermalComfort(phenotype, movement.Position, tick, decision, ref diagnostics, Climate);
                 }
                 CreatureDecision selectedIntent = decision;
                 if (Config.CognitionEnabled

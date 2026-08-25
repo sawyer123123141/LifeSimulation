@@ -70,7 +70,9 @@ covers the whole world and buys nothing above it. Measured means climb 0.28 over
 ticks and **0.004 over the last 4,000**, resting near 0.78.
 
 So the colour changes for two thirds of a run and then stops, and **every population ends roughly the
-same colour**. That is not a reason to drop the channel. It relocates what the picture is of:
+same colour** - though only while `terrainDrivenTemperatureEnabled` is off. With it on, endpoints
+spread from 0.34 to 0.92 across worlds (`p6-terrain-temperature-2026-08-24.md`) and two runs visibly
+differ, which makes the channel better rather than worse. That is not a reason to drop the channel. It relocates what the picture is of:
 
 - **The mean is the boring half.** It goes cream to orange, once, and freezes.
 - **The spread is the finding.** Founders scatter across the ramp around 0.50 - blue, cream and
