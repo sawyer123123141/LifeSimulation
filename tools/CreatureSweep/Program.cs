@@ -128,6 +128,15 @@ namespace LifeSimulation.Tools.CreatureSweep
                 return;
             }
 
+            if (args.Length > 0 && args[0] == "--deaths")
+            {
+                _focused = true;
+                int deathSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDeaths) ? parsedDeaths : 20;
+                if (args.Length > 2 && int.TryParse(args[2], out int deathCap)) _focusedPopulationCap = deathCap;
+                Deaths.Report(deathSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                return;
+            }
+
             if (args.Length > 0 && args[0] == "--relief")
             {
                 ReportRelief();
