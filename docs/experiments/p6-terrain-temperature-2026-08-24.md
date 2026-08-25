@@ -71,14 +71,56 @@ finish.
 pressure into one that varies by a factor a control gene does not touch (control endpoints 0.5061 and
 0.5059).
 
-**Does not:** say the flag is safe to default on. Extinction was 0 of 40 in both arms here, which is
-one condition at one population cap in one scenario — the slope cost needed three conditions before
-it was turned on for anything, and this deserves the same. **The next measurement is a full paired
-sweep**, `--focused 80 100 --terrain-temperature` against the same seeds without it, reading drift
-from founders rather than arm against arm.
+**Does not:** on its own settle whether the flag is safe. That needed three conditions, and they are
+below.
 
 **Nor is the ceiling gone.** A world with a harsh continent still saturates at 0.75 for the same
 arithmetic reason; what varies is how many worlds have a reason to get there.
+
+## Three conditions, 80 seeds each — the safety question
+
+Same discipline the slope cost got: measured at three resource levels before being switched on
+anywhere. `--focused 80 100 --terrain-temperature [--scenario=lean|scarce]`, baseline arm, against
+the identical seeds without the flag (`p6-dose-response-*-80seeds-2026-08-24.txt`).
+
+| level | extinct, sine | extinct, terrain | surviving, sine | surviving, terrain |
+|---|---|---|---|---|
+| moderate | 1 / 80 | **0 / 80** | 79 | **80** |
+| lean | 25 / 80 | 33 / 80 | 55 | 47 |
+| scarce | 68 / 80 | 72 / 80 | 12 | 8 |
+| **total** | **94 / 240** | **105 / 240** | | |
+
+**No detected survival cost: z = 1.02 on the pooled counts.** Better at moderate, worse at both
+scarcity levels, and the largest single gap — lean, 33 against 25 — is z = 1.32 on its own.
+**Direction is consistently worse under scarcity and the test is underpowered to resolve it**, which
+is the same honest position the slope cost ended in. It is not evidence of safety under scarcity; it
+is an absence of evidence of harm.
+
+## What it does to selection
+
+| gene | moderate | lean | scarce (n = 8) |
+|---|---|---|---|
+| temperature_tolerance, sine | +0.2879 (26.0) | +0.2999 (24.3) | +0.3552 (16.5) |
+| **temperature_tolerance, terrain** | **+0.1251 (9.04)** | **+0.1954 (10.0)** | +0.2046 (3.80) |
+| lifespan_tendency, sine | +0.2752 (17.4) | +0.2274 (12.5) | +0.0536 (1.21) |
+| **lifespan_tendency, terrain** | **+0.2956 (22.8)** | **+0.2575 (12.5)** | +0.1350 (1.88) |
+| control, terrain | +0.0006 (0.37) | −0.0079 (−1.91) | −0.0122 (−0.51) |
+
+**Selection on temperature tolerance roughly halves at every level**, and **lifespan tendency
+strengthens at every level** — overtaking it to become the strongest trait in the model at moderate
+and lean. That reordering is the substance of this change: the model's dominant adaptation is no
+longer a response to a placeholder.
+
+**The lean control is noisy at t = −1.91**, so the noise floor there is much higher than at moderate
+and columns near |t| = 2 in that condition mean little. `metabolic_pace` is the one candidate worth
+another look — it lands at −2.88 with the flag and −2.99 without it, so it is not caused by this
+change.
+
+## Switched on for the `Y` playtest, default still false
+
+Same call as the slope cost, for the same reason: `Y` is the scenario whose purpose is that terrain
+means something, and a creature that ignores altitude and latitude contradicts it. The configuration
+default stays `false`, and **every recorded thermal result on this project was measured without it**.
 
 ## Consequence for `docs/creature-appearance.md`
 

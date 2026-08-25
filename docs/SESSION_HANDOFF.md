@@ -507,10 +507,16 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   variance ratio 3.8 on 39 and 39 df. The sine gave every arena the same climate; terrain gives one a
   temperate continent and another a cold one, and one world ended **below its founders** - the first
   time the gene's maintenance cost has been visible.
-- **`terrainDrivenTemperatureEnabled` is not cleared to default on.** 0 of 40 extinct in both arms is
-  one condition, one cap, one scenario. The slope cost needed three before it was switched on for the
-  `Y` playtest. **Next measurement: `--focused 80 100 --terrain-temperature`** against the same seeds
-  without it, drift from founders, not arm against arm.
+- **`terrainDrivenTemperatureEnabled` is on for the `Y` playtest, default still false.** Three
+  conditions at 80 seeds each: **105 extinct of 240 against 94, z = 1.02** - no detected survival
+  cost, but consistently worse under scarcity (lean 33 against 25, z = 1.32) and **underpowered to
+  resolve it**. Absence of evidence of harm, not evidence of safety. Selection on
+  temperature_tolerance **roughly halves at every level** (+0.288 to +0.125 at moderate) while
+  lifespan_tendency strengthens (+0.275 to +0.296) and **becomes the strongest trait in the model**.
+  Every recorded thermal result was measured with the flag off.
+- **The lean control is noisy at t = -1.91** in the terrain-temperature run. Columns near |t| = 2 in
+  that condition mean little. `metabolic_pace` is the one candidate worth another look - -2.88 with
+  the flag, -2.99 without, so it is not caused by this change.
 - **The amplitude test is still not run**, and it matters less now: the flag above changes the
   field's structure while deliberately holding the 12-28 degree span, so the ceiling argument is
   untouched by it either way.

@@ -775,7 +775,17 @@ namespace LifeSimulation.Presentation
                 // docs/experiments/p6-slope-cost-cap100-2026-08-24.md. The configuration default
                 // stays false; this is a scenario choice, and every recorded plant result was
                 // measured without it.
-                slopeMovementCostEnabled: true);
+                slopeMovementCostEnabled: true,
+                // And the cold at the top of it is real. Same three conditions, same discipline:
+                // 80 seeds at each of moderate, lean and scarce found no detected survival cost
+                // (105 extinct of 240 against 94, z = 1.02) while halving the selection on
+                // temperature tolerance and doubling the spread between worlds - the standard
+                // deviation of the endpoint across 40 worlds goes 0.074 to 0.145. This is the
+                // scenario whose whole purpose is that terrain means something, and a creature that
+                // ignores altitude and latitude contradicts it. See
+                // docs/experiments/p6-terrain-temperature-2026-08-24.md. Configuration default stays
+                // false; every recorded thermal result was measured without it.
+                terrainDrivenTemperatureEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";
