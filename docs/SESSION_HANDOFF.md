@@ -1060,6 +1060,19 @@ Every instrument here exists because each missed something another caught.
 - Ice cover looks high; the ice fraction was 0.074 of surface at the last measurement. The `J` panel
   has an **altitude cooling** slider, which is the coefficient that decides it.
 
+### Adaptation is invisible, and the plan for that is a document on purpose
+
+**`docs/creature-appearance.md`.** Selection moves temperature tolerance by a quarter of its range and
+nothing on screen changes: size is driven by the body-size gene, which is one of the ten traits under
+no detectable selection, and colour is driven by the current action. **P5 does not fix this** - it is
+an analysis layer that can say a population split and draws nothing.
+
+**Not built, deliberately: real models are expected soon.** The doc separates the part that survives a
+model swap - a pure `(Genome) -> CreatureAppearance` function, testable headlessly like
+`FreeCameraMotion` - from the part that does not, which is the three lines in
+`Prototype1Presenter.Views.cs` that assume a capsule and one material. Building the pure half early is
+safe; building the applied half early is what would be redone.
+
 ### Selection is happening, and it had never been measured (2026-08-24)
 
 **`docs/experiments/p6-selection-is-happening-2026-08-24.md`.** Every creature measurement on record
