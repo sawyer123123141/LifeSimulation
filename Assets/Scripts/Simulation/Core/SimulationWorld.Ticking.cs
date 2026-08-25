@@ -371,7 +371,8 @@ namespace LifeSimulation.Simulation.Core
                         Config.SafetyGatedMateRendezvousEnabled,
                         Config.HomeRangeAffinityEnabled ? Creatures.GetHomeRangeRefAt(index) : default,
                         Config.HomeRangeAffinityEnabled,
-                        Climate);
+                        Climate,
+                        Config.ReproductionNeedFraction);
                     if (Config.CognitionEnabled)
                     {
                         ref MemoryState memory = ref Creatures.GetMemoryRefAt(index);

@@ -20,7 +20,8 @@ namespace LifeSimulation.Simulation.Behavior
             float threatIntensity,
             float threatFalloffDistance,
             bool safetyGatedMateRendezvousEnabled,
-            ref DecisionCandidateBuffer candidates)
+            ref DecisionCandidateBuffer candidates,
+            float reproductionNeedFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
             if (safetyGatedMateRendezvousEnabled
                 && threat.IsValid
@@ -31,8 +32,8 @@ namespace LifeSimulation.Simulation.Behavior
             }
 
             if (!mate.IsValid
-                || !ReproductionSystem.CanSeekMate(needs, phenotype, reproduction)
-                || !ReproductionSystem.CanSeekMate(mateNeeds, matePhenotype, mateReproduction))
+                || !ReproductionSystem.CanSeekMate(needs, phenotype, reproduction, reproductionNeedFraction)
+                || !ReproductionSystem.CanSeekMate(mateNeeds, matePhenotype, mateReproduction, reproductionNeedFraction))
             {
                 return;
             }

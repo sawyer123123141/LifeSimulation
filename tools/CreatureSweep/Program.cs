@@ -96,6 +96,13 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _metabolicIngestion;
 
+        /// <summary>
+        /// The reproduction gate, as an instrument. Default is the original 0.7 literal; the gate
+        /// itself is a recorded design decision and is varied here only to see how much of the
+        /// pressure on `UrgencyExponent` travels with it.
+        /// </summary>
+        private static float _reproductionNeedFraction = SimulationConfig.DefaultReproductionNeedFraction;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -103,6 +110,11 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--join=off") _join = false;
                 if (argument == "--terrain-temperature") _terrainTemperature = true;
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
+                if (argument.StartsWith("--gate=")
+                    && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
+                {
+                    _reproductionNeedFraction = gate;
+                }
                 if (!argument.StartsWith("--scenario=")) continue;
 
                 _scenarioName = argument.Substring("--scenario=".Length);
@@ -259,7 +271,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 terrainDrivenEnvironmentEnabled: _join,
                 slopeMovementCostEnabled: slope,
                 terrainDrivenTemperatureEnabled: _terrainTemperature,
-                metabolicIngestionEnabled: _metabolicIngestion);
+                metabolicIngestionEnabled: _metabolicIngestion,
+                reproductionNeedFraction: _reproductionNeedFraction);
         }
 
         private static readonly string[] GeneNames =

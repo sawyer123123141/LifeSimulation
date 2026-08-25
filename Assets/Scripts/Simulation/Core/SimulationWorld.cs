@@ -79,7 +79,7 @@ namespace LifeSimulation.Simulation.Core
             _foragingEnergyGained = new float[Math.Max(Config.InitialPopulation, 1)];
             _resourceRequests = new ResourceRequest[Math.Max(Config.InitialPopulation, 1)];
             _resourceAllocations = new float[_resourceRequests.Length];
-            _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation, Config.PhysiologyEnabled, Config.MateSelectionEnabled);
+            _reproduction = new ReproductionSystem(Creatures, Arena, Config.InitialPopulation, Config.PhysiologyEnabled, Config.MateSelectionEnabled, Config.ReproductionNeedFraction);
             Events = new SimulationEventBuffer(capacity: 1024);
 
             for (int index = 0; index < Config.InitialPopulation; index++)

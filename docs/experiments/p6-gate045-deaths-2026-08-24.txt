@@ -1,0 +1,12 @@
+
+death causes over 29 surviving runs of 30 (6189 deaths attributed)
+  starvation       163     2.6%
+  dehydration        8     0.1%
+  age             5704    92.2%
+  health           314     5.1%
+  predation          0     0.0%
+
+the gates sit at 0.45 (breed) and 0.55 (seek a mate) on all three needs
+  mean energy fraction    0.7165
+  mean hydration fraction 0.7852
+  mean final population   99.9

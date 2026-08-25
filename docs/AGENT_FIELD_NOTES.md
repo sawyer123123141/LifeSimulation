@@ -1608,3 +1608,19 @@ change.
 - **Nine corpora on disk answered a question that would have cost nine new sweeps.** Two genes were
   fully characterised tonight without running anything new. **Before designing a run, grep the
   corpora already committed for the column you care about.**
+- **Ask which channel is open before building the instrument (2026-08-24).** Two hypotheses both
+  predicted the `UrgencyExponent` sign - fertility via the reproduction gates, or survival via
+  starvation. Counting causes of death cost **one run** and retired the survival one outright:
+  starvation and dehydration were 15 of 5,619 deaths against 96.9% old age. The configuration value,
+  hash bump and guard updates were then spent on the one surviving explanation instead of on both.
+- **Byte-identical output is a bug report until proven otherwise.** A gate change produced two files
+  identical to the baseline, which looked like a clean null. It was a wiring miss - the threshold
+  reached `CanReproduce` but not `CanSeekMate`. **It was also a finding**: lowering only the lower
+  gate does nothing, because the higher one binds first. Chase identity before writing it up.
+- **A parameter you cannot vary is a hypothesis you cannot test.** The 0.7/0.8 literals had been
+  stable for the life of the project and turned out to be the dominant selective channel in it -
+  slackening them removed selection on five traits at once. **When a constant is load-bearing, make
+  it a knob before arguing about it.**
+- **Watch the control in every arm separately.** The slack-gate arm's control moved to t = 2.55 while
+  the default arm's sat at 0.17. Same code, same seeds, different noise floor. A t of 2 does not mean
+  the same thing in two arms of the same experiment.

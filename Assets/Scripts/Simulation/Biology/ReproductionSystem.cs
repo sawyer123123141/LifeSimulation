@@ -13,6 +13,8 @@ namespace LifeSimulation.Simulation.Biology
         private const float LegacyReproductionEnergyCostFraction = 0.2f;
         private const float MateDistance = 2f;
 
+        private readonly float _needFraction;
+
         private readonly CreatureStore _creatures;
         private readonly bool _physiologyEnabled;
         private readonly bool _mateSelectionEnabled;
@@ -21,8 +23,9 @@ namespace LifeSimulation.Simulation.Biology
         private int[] _candidates;
         private bool[] _matched;
 
-        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false)
+        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false, float needFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
+            _needFraction = needFraction;
             _creatures = creatures ?? throw new ArgumentNullException(nameof(creatures));
             _physiologyEnabled = physiologyEnabled;
             _mateSelectionEnabled = mateSelectionEnabled;
@@ -207,23 +210,38 @@ namespace LifeSimulation.Simulation.Biology
         {
             CreatureNeeds needs = _creatures.GetNeedsAt(index);
             Phenotype phenotype = _creatures.GetPhenotypeAt(index);
-            return CanReproduce(needs, phenotype, _creatures.GetReproductionRefAt(index));
+            return CanReproduce(needs, phenotype, _creatures.GetReproductionRefAt(index), _needFraction);
         }
 
-        public static bool CanReproduce(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction)
+        /// <summary>
+        /// <paramref name="needFraction"/> is the gate on all three needs. The default reproduces the
+        /// original literal exactly, so nothing recorded moves.
+        ///
+        /// <para>It is a parameter because it turned out to be the most likely explanation for the
+        /// strongest selection signal in the model, and a hypothesis you cannot vary is not one you
+        /// can test. See <c>docs/experiments/p6-nothing-starves-2026-08-24.md</c> - the population
+        /// sits at 0.806 mean energy against the 0.80 seek-a-mate threshold, which is a homeostat
+        /// held against the gate rather than an ecological equilibrium.</para>
+        /// </summary>
+        public static bool CanReproduce(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction, float needFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
-            return needs.Energy >= phenotype.EnergyCapacity * 0.7f
-                && needs.Hydration >= phenotype.HydrationCapacity * 0.7f
-                && needs.Health >= phenotype.HealthCapacity * 0.7f
+            return needs.Energy >= phenotype.EnergyCapacity * needFraction
+                && needs.Hydration >= phenotype.HydrationCapacity * needFraction
+                && needs.Health >= phenotype.HealthCapacity * needFraction
                 && needs.Age >= AdultAgeSeconds
                 && reproduction.CooldownRemaining <= 0f;
         }
 
-        public static bool CanSeekMate(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction)
+        /// <summary>
+        /// Seeking a mate is gated a tenth higher than breeding, which is the original relationship
+        /// between the two literals and is preserved as an offset rather than a second knob.
+        /// </summary>
+        public static bool CanSeekMate(CreatureNeeds needs, Phenotype phenotype, ReproductionState reproduction, float needFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
-            return needs.Energy >= phenotype.EnergyCapacity * 0.8f
-                && needs.Hydration >= phenotype.HydrationCapacity * 0.8f
-                && needs.Health >= phenotype.HealthCapacity * 0.8f
+            float seekFraction = needFraction + SimulationConfig.MateSeekingNeedMargin;
+            return needs.Energy >= phenotype.EnergyCapacity * seekFraction
+                && needs.Hydration >= phenotype.HydrationCapacity * seekFraction
+                && needs.Health >= phenotype.HealthCapacity * seekFraction
                 && needs.Age >= AdultAgeSeconds
                 && reproduction.CooldownRemaining <= 0f;
         }

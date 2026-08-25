@@ -560,11 +560,29 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   (`:224`). A creature below 80% cannot even look for a mate, so topping up is a *precondition* for
   breeding rather than a competitor with it - under which eagerness is correct and **the gene may not
   be broken at all**.
-- **The experiment that settles it, and it is small:** make the gate thresholds configurable and
-  re-measure the urgency drift at a lower gate. Weakens -> gates are the cause, gene is healthy.
-  Persists -> something else, keep looking. Nine corpora already supply the comparison arm. The gates
-  themselves are a recorded user decision and are **not** being questioned - only used as an
-  instrument.
+- **DONE, and the answer is emphatic** - `p6-the-mating-gate-is-the-selection-2026-08-24.md`. At
+  `--gate=0.45`, `urgency_exponent` goes from **-0.0353 (t = -14.55) to -0.0006 (t = -0.44)**. Not
+  reduced - **gone**, to a fifth of the control's own movement. **The gene is healthy and there is
+  nothing to fix in it.**
+- **The gate is the dominant selective channel in the model.** Slackening it removes selection on
+  **five traits at once** - urgency, movement speed, body size, travel sensitivity, metabolic pace -
+  every one of them a trait whose route to fitness ran through clearing the threshold. Two get
+  *stronger*: lifespan_tendency +0.275 to **+0.314 (t 27.8)** and fertility_investment +0.059 to
+  **+0.088 (t 7.36)**, which is what pays once the threshold is cheap.
+- **Of the two literals, 0.80 is the one that binds.** Lowering only `CanReproduce` (0.70) changes
+  **nothing at all** - a creature that cannot seek a mate below 0.80 is already past 0.70 when it
+  finds one. Found by a wiring bug that produced byte-identical output and was nearly reported as a
+  null.
+- **Mechanism confirmed from the other side:** mean energy tracks the gate, 0.8058 to **0.7165**, and
+  starvation goes 8 deaths (0.1%) to 163 (2.6%) - creatures are no longer held at 80% by the need to
+  court.
+- **Caveat on the slack arm:** its control moves to **t = 2.55** against 0.17 at the default, so its
+  noise floor is much higher and columns near |t| = 2 there mean little. The headline is unaffected -
+  `urgency_exponent` at |t| = 0.44 sits *below* its own control.
+- **`ReproductionNeedFraction` is a config value now**, default `0.7f` = the original literal, so
+  everything recorded reproduces. **The gate remains a recorded design decision.** This measures how
+  much rests on it; it is not an argument for changing it. **Not done: a dose-response across gate
+  values** - one alternative value is not a curve.
 - **Uniform grazing is real and separate.** `ComputeNeedGain` pinning at 1 does mean patches are not
   differentiated by size, which is a genuine plant-defense problem and why
   `plantQualityPreferenceEnabled` exists. It is not the explanation for this gene.

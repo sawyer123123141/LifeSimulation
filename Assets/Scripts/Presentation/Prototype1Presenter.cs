@@ -1003,7 +1003,7 @@ namespace LifeSimulation.Presentation
                 }
 
                 adults++;
-                if (ReproductionSystem.CanReproduce(needs, _world.Creatures.GetPhenotypeAt(index), _world.Creatures.GetReproductionRefAt(index)))
+                if (ReproductionSystem.CanReproduce(needs, _world.Creatures.GetPhenotypeAt(index), _world.Creatures.GetReproductionRefAt(index), _world.Config.ReproductionNeedFraction))
                 {
                     fertile++;
                 }

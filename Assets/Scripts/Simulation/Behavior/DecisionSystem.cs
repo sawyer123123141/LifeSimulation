@@ -375,7 +375,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool safetyGatedMateRendezvousEnabled = false,
             HomeRangeState homeRange = default,
             bool homeRangeAffinityEnabled = false,
-            ClimateField climate = default)
+            ClimateField climate = default,
+            float reproductionNeedFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
             return DecideIntentUtilityV1(
                 needs, genome, phenotype, resources, origin, foodCandidates, waterCandidates, carcass, memory,
@@ -383,7 +384,8 @@ namespace LifeSimulation.Simulation.Behavior
                 default, default, default, default, default, false, tick, out diagnostics, economicsEnabled,
                 threatFalloffDistance, otherCandidates, multiThreatPerceptionEnabled, restBehaviorEnabled,
                 selfId, selfLineage, otherLineage, kinRecognitionEnabled, plantQualityPreferenceEnabled,
-                safetyGatedMateRendezvousEnabled, homeRange, homeRangeAffinityEnabled, climate);
+                safetyGatedMateRendezvousEnabled, homeRange, homeRangeAffinityEnabled, climate,
+                reproductionNeedFraction);
         }
 
         public static CreatureDecision DecideIntentUtilityV1(
@@ -423,7 +425,8 @@ namespace LifeSimulation.Simulation.Behavior
             bool safetyGatedMateRendezvousEnabled = false,
             HomeRangeState homeRange = default,
             bool homeRangeAffinityEnabled = false,
-            ClimateField climate = default)
+            ClimateField climate = default,
+            float reproductionNeedFraction = SimulationConfig.DefaultReproductionNeedFraction)
         {
             var candidates = new DecisionCandidateBuffer();
             float bestFoodScore = -1f;
@@ -487,7 +490,7 @@ namespace LifeSimulation.Simulation.Behavior
             }
             if (reproductionEnabled)
             {
-                ScoreMate(needs, phenotype, reproduction, mate, mateNeeds, matePhenotype, mateReproduction, threat, threatIntensity, threatFalloffDistance, safetyGatedMateRendezvousEnabled, ref candidates);
+                ScoreMate(needs, phenotype, reproduction, mate, mateNeeds, matePhenotype, mateReproduction, threat, threatIntensity, threatFalloffDistance, safetyGatedMateRendezvousEnabled, ref candidates, reproductionNeedFraction);
             }
             diagnostics = new DecisionDiagnostics(bestFoodScore, bestWaterScore, foodCandidates.Count > 0, waterCandidates.Count > 0)
                 .WithPredationScores(fleeScore, huntScore)

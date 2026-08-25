@@ -31,6 +31,7 @@ namespace LifeSimulation.Tools.CreatureSweep
     {
         public static void Report(int seedCount, int ticks, Func<int, SimulationConfig> configure, SimulationScenario scenario)
         {
+            float gate = configure(Program.FirstSeed).ReproductionNeedFraction;
             var totals = new long[7];
             var energy = new List<double>();
             var hydration = new List<double>();
@@ -77,7 +78,9 @@ namespace LifeSimulation.Tools.CreatureSweep
             Write("predation", totals[(int)DeathCause.Predation], named);
 
             Console.WriteLine();
-            Console.WriteLine("the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs");
+            Console.WriteLine("the gates sit at " + gate.ToString("0.00") + " (breed) and "
+                + (gate + SimulationConfig.MateSeekingNeedMargin).ToString("0.00")
+                + " (seek a mate) on all three needs");
             Console.WriteLine("  mean energy fraction    " + Mean(energy).ToString("0.0000"));
             Console.WriteLine("  mean hydration fraction " + Mean(hydration).ToString("0.0000"));
             Console.WriteLine("  mean final population   " + (counted == 0 ? 0d : (double)population / counted).ToString("0.0"));

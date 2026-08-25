@@ -157,7 +157,8 @@ namespace LifeSimulation.Simulation.Core
             bool terrainDrivenEnvironmentEnabled = false,
             bool slopeMovementCostEnabled = false,
             bool terrainDrivenTemperatureEnabled = false,
-            bool metabolicIngestionEnabled = false)
+            bool metabolicIngestionEnabled = false,
+            float reproductionNeedFraction = DefaultReproductionNeedFraction)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -201,6 +202,7 @@ namespace LifeSimulation.Simulation.Core
             SlopeMovementCostEnabled = slopeMovementCostEnabled;
             TerrainDrivenTemperatureEnabled = terrainDrivenTemperatureEnabled;
             MetabolicIngestionEnabled = metabolicIngestionEnabled;
+            ReproductionNeedFraction = reproductionNeedFraction;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -401,6 +403,34 @@ namespace LifeSimulation.Simulation.Core
         /// </summary>
         public bool MetabolicIngestionEnabled { get; }
 
+        /// <summary>The original literal. Every recorded result was measured at this value.</summary>
+        public const float DefaultReproductionNeedFraction = 0.7f;
+
+        /// <summary>
+        /// Seeking a mate is gated a tenth above breeding, preserving the original pair of literals
+        /// (0.7 and 0.8) as one knob and a fixed offset rather than two independent knobs.
+        /// </summary>
+        public const float MateSeekingNeedMargin = 0.1f;
+
+        /// <summary>
+        /// The fraction of energy, hydration <b>and</b> health a creature needs to breed;
+        /// <see cref="MateSeekingNeedMargin"/> higher to go looking for a mate at all.
+        ///
+        /// <para><b>Why this is a knob.</b> It is the leading explanation for the strongest selection
+        /// signal in the model. `UrgencyExponent` falls in nine conditions out of nine, and the
+        /// survival channel is closed - starvation and dehydration together account for 15 of 5,619
+        /// deaths, against 96.9% old age. Meanwhile mean energy sits at <b>0.806 against a 0.80
+        /// threshold</b>: the population is held against the gate, so time spent above it is breeding
+        /// opportunity and eagerness buys more of it. See
+        /// <c>docs/experiments/p6-nothing-starves-2026-08-24.md</c>.</para>
+        ///
+        /// <para><b>The gate itself is a recorded design decision and is not being questioned.</b>
+        /// This exists so it can be used as an instrument - vary it, and see how much of the pressure
+        /// on `UrgencyExponent` goes with it. The default is the original literal, so the flag-off
+        /// path is byte-identical.</para>
+        /// </summary>
+        public float ReproductionNeedFraction { get; }
+
         /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
@@ -447,7 +477,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 4;
+        public const int ConfigurationHashVersion = 5;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -515,6 +545,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, SlopeMovementCostEnabled ? 1UL : 0UL);
             hash = Hash(hash, TerrainDrivenTemperatureEnabled ? 1UL : 0UL);
             hash = Hash(hash, MetabolicIngestionEnabled ? 1UL : 0UL);
+            hash = HashFloat(hash, ReproductionNeedFraction);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
