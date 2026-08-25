@@ -515,8 +515,19 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
   lifespan_tendency strengthens (+0.275 to +0.296) and **becomes the strongest trait in the model**.
   Every recorded thermal result was measured with the flag off.
 - **The lean control is noisy at t = -1.91** in the terrain-temperature run. Columns near |t| = 2 in
-  that condition mean little. `metabolic_pace` is the one candidate worth another look - -2.88 with
-  the flag, -2.99 without, so it is not caused by this change.
+  that condition mean little.
+- ~~`metabolic_pace` is a candidate worth another look.~~ **Looked at, and the answer was in the
+  source** - `p6-metabolic-pace-is-a-pure-cost-2026-08-24.md`. `MetabolicPace` raises the water drain
+  (`NeedsSystem.cs:49`) and the energy drain (`NeedsSystem.cs:45`) by 2.14x across its range and
+  **has no third reader at all** - nothing converts it into food, yield, or speed, and
+  `DigestionRate` does not make digestion faster. Downward in **five of six** already-committed
+  conditions, monotonic in scarcity, strongest at lean/sine with **t = -2.99 against a control at
+  +0.07**. No new runs were needed.
+- **A pure-cost gene passes every liveness test by construction, and nothing here tests for a
+  benefit.** `GeneLivenessAnalysis` asks whether a gene reaches behaviour; a cost reaches behaviour.
+  This is the shape `PlantGeneLivenessAnalysis` already names for plant `TemperatureTolerance`.
+  **Open question: should `MetabolicPace` buy something?** Giving it one re-baselines every creature
+  result on record, so it is a design decision, deliberately not taken.
 - **The amplitude test is still not run**, and it matters less now: the flag above changes the
   field's structure while deliberately holding the 12-28 degree span, so the ceiling argument is
   untouched by it either way.

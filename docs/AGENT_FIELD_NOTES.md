@@ -1573,3 +1573,12 @@ change.
   reasonable mean and they are completely different environments. A uniform field applies the same
   pressure to every world; a real one gives one arena a temperate continent and another a cold one,
   and only the variance shows it.
+- **Liveness is not the same as having a benefit (2026-08-24).** `GeneLivenessAnalysis` asks whether
+  perturbing a gene changes the behaviour hash. A gene that only ever costs something changes the
+  behaviour hash, so it passes - and `MetabolicPace` has been passing while raising two drains 2.14x
+  across its range and returning nothing. **A caller search finds the readers; only reading them
+  tells you which side of the ledger they are on.**
+- **A column that keeps crossing in one condition is a question about the mechanism, not about
+  seeds.** `metabolic_pace` crossed |t| = 2 at lean and only at lean, twice. The reflex is more runs;
+  the answer took one reader search and needed **no new simulation at all** - six corpora already on
+  disk had the dose-response in them.
