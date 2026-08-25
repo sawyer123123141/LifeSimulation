@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **563 headless tests green**, Unity compile clean.
+that are **never to be staged**. **571 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -725,8 +725,13 @@ population as an upper bound — sound for that decision, but it is a bound, not
    adaptation is to a decoration. Doing it means the amplitude and shape become world properties in
    `SimulationConfig`, hashed, and it re-baselines every thermal result on record - so it is a
    decision to take deliberately, not a tidy-up.
-3. **`CreatureAppearance`** as a pure `(Genome) -> appearance` function, per `docs/creature-appearance.md`.
-   Safe to build before real models land; the applied half is not.
+3. ~~**`CreatureAppearance`** as a pure `(Genome) -> appearance` function.~~ **Built** -
+   `CreatureAppearance.cs` (the struct, no `UnityEngine` types) and `CreatureAppearanceRules.cs` (the
+   mapping), eight headless tests. **What remains is step 3 of `docs/creature-appearance.md`:** apply
+   it at the one call site in `Prototype1Presenter.Views.cs`, behind the unbound `U` key, per
+   creature and never by population mean. That half is what a model swap would redo, so it waits for
+   real models. Note the hue channel **saturates** - the doc explains that the spread going from
+   mottled to uniform is the picture, not the mean.
 4. Rivers remain blocked behind a persistent grid. **Do not restart them.**
 
 ## 5b. Next task (the older queue)
@@ -910,7 +915,7 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 563 green
+dotnet test tools/HeadlessTests            # 571 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 30 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief

@@ -1,6 +1,10 @@
 # Making adaptation visible — design, not yet built
 
-**Status: planned, deliberately unbuilt (2026-08-24).** Real creature models are expected soon and
+**Status: step 2 built, steps 1/3/4 outstanding (2026-08-24).** The pure mapping is committed as
+`Assets/Scripts/Presentation/CreatureAppearance.cs` and `CreatureAppearanceRules.cs`, with eight
+headless tests. Nothing is applied to any renderer yet - that is the half a model swap would redo.
+
+**Original status: planned, deliberately unbuilt (2026-08-24).** Real creature models are expected soon and
 this must not be work that has to be undone. What follows is written so that the part which survives
 a model swap is separated from the part which does not.
 
@@ -48,7 +52,7 @@ Two channels, because there are two questions a viewer asks — *what is it doin
 
 | channel | shows | why |
 |---|---|---|
-| hue | **temperature tolerance** (cold-adapted → heat-adapted) | the trait with the strongest measured selection, so it is the one that visibly moves |
+| hue | **temperature tolerance** (cold-adapted → heat-adapted) | the trait with the strongest measured selection - but see the saturation warning below |
 | brightness or outline | current action | keeps the behaviour read the HUD legend already documents |
 | size | body-size gene, unchanged | already correct |
 
@@ -57,10 +61,30 @@ how anyone reads behaviour at a glance. Put genome tinting behind a toggle — `
 against every binding in `HandleInput`; note `WASDQE` are camera keys while the right mouse is held).
 Toggling is also the honest presentation: two pictures of the same population answer two questions.
 
+## The hue channel saturates, and that changes what to watch
+
+`docs/experiments/p6-why-temperature-tolerance-2026-08-24.md` explains why thermal tolerance is the
+strongest selection in the model, and the explanation has a consequence for this design. The gene
+**plateaus**: the temperature field deviates by at most 8 degrees, tolerance is `2 + 8*gene`, so 0.75
+covers the whole world and buys nothing above it. Measured means climb 0.28 over the first 8,000
+ticks and **0.004 over the last 4,000**, resting near 0.78.
+
+So the colour changes for two thirds of a run and then stops, and **every population ends roughly the
+same colour**. That is not a reason to drop the channel. It relocates what the picture is of:
+
+- **The mean is the boring half.** It goes cream to orange, once, and freezes.
+- **The spread is the finding.** Founders scatter across the ramp around 0.50 - blue, cream and
+  orange animals mixed together - and selection kills the cold tail until the crowd is uniform. **A
+  mottled population becoming a monochrome one is the clearest picture of directional selection this
+  model can produce.**
+
+Which also means the applied step should not average anything or tint by the population mean. Per
+creature, or the whole point is lost.
+
 ## What would make it worth building
 
-A run of the `Y` playtest where the population visibly changes colour as thermal tolerance climbs
-0.48 → 0.76. That is the same finding as the CSV, in a form that needs no CSV.
+A run of the `Y` playtest where the founder crowd is visibly mottled and, by around tick 8,000, is
+uniformly heat-adapted. That is the same finding as the CSV, in a form that needs no CSV.
 
 ## The genuinely P5-shaped version, later
 
@@ -73,9 +97,14 @@ mapping behind it.
 ## Order
 
 1. Real models land.
-2. `CreatureAppearance` as a pure function, with tests.
+2. ~~`CreatureAppearance` as a pure function, with tests.~~ **Done.** `CreatureAppearance` is the
+   struct - three colour channels and a scale multiplier, no `UnityEngine` types at all -
+   and `CreatureAppearanceRules.FromGenome` is the mapping. The scale ramp reproduces the view's
+   existing `0.7 → 1.35` on `BodySize` **exactly**, pinned by a test, so adopting it cannot silently
+   resize anything. `NeutralMarker` reaching no channel is also pinned by a test: giving the drift
+   control a visible channel would make drift and selection look alike.
 3. Apply it at the one call site, behind the `U` toggle.
 4. Cluster colouring when P5 clustering is trusted.
 
 Doing 2 before 1 is safe — it touches no rendering. Doing 3 before 1 is the part that would be
-redone, and is the reason this is a document rather than a commit.
+redone, and is the reason step 3 is still a document rather than a commit.

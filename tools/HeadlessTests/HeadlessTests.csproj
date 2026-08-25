@@ -27,6 +27,8 @@
          was found. Everything else under Presentation stays out of this project. -->
     <Compile Include="../../Assets/Scripts/Presentation/FreeCameraMotion.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/PlanetChunkLod.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/CreatureAppearance.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/CreatureAppearanceRules.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />
   </ItemGroup>
