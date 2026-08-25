@@ -1,5 +1,10 @@
 # Creatures get smaller when there is less to eat, and the effect scales with scarcity
 
+> **Superseded in part by `p6-dose-response-80seeds-2026-08-24.md` (80 seeds per level).** The
+> ordering and direction replicate. **One claim below is wrong at the larger n:** this doc says the
+> moderate level is not distinguishable from the control, and at 80 seeds it is - t = −2.01 against a
+> control at +0.17. Prefer the 80-seed magnitudes.
+
 **2026-08-24. 30 paired seeds per level, 12,000 ticks, population cap 100, terrain join on.**
 `tools/CreatureSweep --focused 30 100 --scenario={moderate,lean,scarce}`, baseline (slope-off) arm.
 

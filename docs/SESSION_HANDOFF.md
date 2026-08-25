@@ -510,8 +510,15 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
 - **Slope cost on survival is suggestive only.** Extinction 46 against 38 of 60 at cap 200, but the
   paired test is 13 discordant against 5, **McNemar 2.72 against 3.84 for p = .05**. Direction
   consistent, significance not reached.
-- **Ten of thirteen traits show no detectable selection** in the scenarios tested. That is "not here",
-  not "inert".
+- ~~**Ten of thirteen traits show no detectable selection.**~~ **Seven, at 80 seeds.**
+  `fertility_investment`, `movement_speed` and `body_size` join the list, consistent across three
+  resource levels. `metabolic_pace` and `vision_range` cross at lean only and stay undecided. The
+  original phrasing was "not here, not inert" and that is exactly what it turned out to mean - **the
+  statement was about the sample size.**
+- **`lifespan_tendency` collapses under scarcity** (+0.275 / +0.227 / +0.054) while
+  **`fertility_investment` strengthens** (+0.059 / +0.060 / +0.097). Consistent across three levels,
+  neither established. Fewer better-provisioned offspring when resources thin is the textbook
+  direction, and it is the only trait whose effect grows as the world gets worse.
 - **The level-of-detail seam is visible** where two depths meet. Removing it needs neighbour-aware
   morphing; the cheap fix was tried and measured worse.
 - **908 chunks means 908 renderers** at ground level. Never profiled in Play mode. Merging finished
@@ -715,9 +722,13 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ### Read this first: what is actually open (2026-08-24)
 
-1. ~~Replicate the lean scarcity arm~~ - **done, holds.** 80 seeds, 55 surviving: body_size -0.0252
-   at t = -3.23 with the control at t = 0.07. The remaining scarcity question is whether the
-   *dose-response* survives replication; only the lean level has been re-run.
+1. ~~Replicate the lean scarcity arm~~ ~~and the dose-response~~ - **both done, both hold.**
+   `p6-dose-response-80seeds-2026-08-24.md`: 80 seeds at every level, body_size -0.0133 / -0.0252 /
+   -0.0697 at t = -2.01 / -3.23 / -2.73 for moderate / lean / scarce, control under |t| = 1.13.
+   Monotonic, same order as n = 30. **It also corrected two earlier claims** - the moderate level
+   *is* distinguishable from the control at 80 seeds, and the "three traits under selection" count is
+   at least six. Comparing magnitudes *between* levels remains unsound (survivor conditioning; 79, 55
+   and 12 worlds survived) and the z = 2.1 for moderate against scarce is recorded with that flag.
 2. ~~**Why temperature tolerance.**~~ **Done, and the answer was not the join** -
    `p6-why-temperature-tolerance-2026-08-24.md`. It is a saturating gene against a placeholder sine.
    What it opened instead: **make temperature a real field**. Every other environmental quantity now
@@ -916,7 +927,7 @@ refuses without provenance; that is deliberate.
 
 ```powershell
 dotnet test tools/HeadlessTests            # 571 green
-dotnet run --project tools/CreatureSweep -c Release -- --focused 30 100 --scenario=lean
+dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief
 dotnet run --project tools/CreatureSweep -c Release -- --thermal 40 100 [--join=off]

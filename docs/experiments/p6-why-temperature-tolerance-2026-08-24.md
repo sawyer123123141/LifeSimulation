@@ -101,6 +101,22 @@ across uncomfortable ground. **n = 3 is not a result** and this is recorded so i
 belief that it is one. The realised maximum is 8.000 exactly as in every other condition, because
 that is field geometry and no ecology can change it.
 
+## Confirmed a second way, by accident
+
+The dose-response sweeps (`p6-dose-response-80seeds-2026-08-24.md`) were run for body size and
+happen to test the ceiling too. If the endpoint is set by the field, it should not care about the
+ecology:
+
+| resource level | founder | drift | **endpoint** | surviving |
+|---|---|---|---|---|
+| moderate (1.0x) | 0.4794 | +0.2879 | **0.767** | 79 / 80 |
+| lean (0.6x) | 0.4629 | +0.2999 | **0.763** | 55 / 80 |
+| scarce (0.35x) | 0.4275 | +0.3552 | **0.783** | 12 / 80 |
+
+**A factor of three in resources, survival from 79 worlds down to 12, and the endpoint moves by
+0.02.** The drift differs only because the founders differ. The destination is a property of the
+field.
+
 ## What this does not close
 
 **The amplitude test has not been run.** The decisive confirmation is to change the sine's amplitude

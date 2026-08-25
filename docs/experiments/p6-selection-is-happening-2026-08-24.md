@@ -1,5 +1,11 @@
 # Natural selection is happening, on three traits out of thirteen
 
+> **The count is wrong at a larger sample - see `p6-dose-response-80seeds-2026-08-24.md`.** At 80
+> seeds per level the list is at least **six**, adding `fertility_investment`, `movement_speed` and
+> `body_size`, each consistent across three resource levels against a control under |t| = 1.13.
+> "No detectable selection" here was a statement about n = 40, not about the traits - which is why
+> the phrasing below is "not here" rather than "inert". Everything else in this doc stands.
+
 **2026-08-24. 40 runs, 12,000 ticks, population cap 100, terrain join on.**
 `tools/CreatureSweep --focused 40 100`, baseline (slope-off) arm.
 

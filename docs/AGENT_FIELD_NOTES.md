@@ -1548,3 +1548,13 @@ change.
   dominates selection because it is adapting to a decorative sine with no seasons, altitude, latitude
   or terrain. The gene is fine. **When a result is much larger than everything around it, ask what it
   is responding to before asking why it is strong.**
+- **"No detectable selection" is a claim about n, and it expires (2026-08-24).** Forty seeds put ten
+  of thirteen traits in the undetected bucket. Eighty seeds pulled three of them out, each consistent
+  across three resource levels against a control under |t| = 1.13. **Before recording a null, record
+  the sample size beside it** - and prefer "not here" to "inert", which is the phrasing that made
+  this correction cheap rather than embarrassing.
+- **A sweep run for one question often answers another for free.** The dose-response sweeps were run
+  for body size and happened to contain the decisive test of the thermal ceiling: three resource
+  levels, survival from 79 worlds down to 12, and the temperature-tolerance *endpoint* moving 0.02
+  while the drift moved 0.07. **Read the whole table of a run you already paid for** before designing
+  the next one.

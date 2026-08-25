@@ -1,0 +1,54 @@
+selecting seeds with at least 5 m of climb
+  80 seeds, highest 618
+160 runs of 12000 ticks
+  20/160
+  40/160
+  60/160
+  80/160
+  100/160
+  120/160
+  140/160
+  160/160
+wrote docs\experiments\p6-slope-cost-focused-cap100-lean-2026-08-24.csv
+paired, slope-on minus slope-off, 80 seeds, population cap 100
+
+column                  mean      t      n>0
+population             -20.7500 -3.0221    18/80
+energy                  -0.0945 -1.7139    23/80
+occupied_elevation      -0.5437 -1.1044    11/30
+occupied_slope          -0.0632 -1.4717    12/30
+body_size               -0.0896 -2.4809    21/80
+movement_speed          -0.0973 -2.4268    27/80
+metabolic_pace          -0.1038 -2.9570    23/80
+vision_range            -0.0813 -2.0758    28/80
+water_efficiency        -0.0823 -2.2814    26/80
+food_efficiency         -0.0858 -2.2861    27/80
+temperature_tolerance   -0.1225 -2.1319    31/80
+fertility_investment    -0.0793 -1.6447    28/80
+lifespan_tendency       -0.1211 -2.1814    26/80
+urgency_exponent        -0.0806 -2.4370    21/80
+travel_sensitivity      -0.0876 -2.4540    28/80
+risk_aversion           -0.0858 -2.3489    31/80
+neutral_marker          -0.0885 -2.4225    21/80
+
+drift from founders, baseline arm, 55 surviving of 80 runs, scenario lean
+
+gene                  founder     mean       t     |mean| vs control
+body_size             0.5006  -0.0252 -3.2332    139.84
+movement_speed        0.4947   0.0303  3.0141    167.89
+metabolic_pace        0.5028  -0.0252 -2.9872    139.59
+vision_range          0.4938   0.0228  2.6916    126.75
+water_efficiency      0.4953  -0.0079 -1.0502     43.77
+food_efficiency       0.5101   0.0163  1.9089     90.64
+temperature_tolerance   0.4629   0.2999 24.2674   1664.43
+fertility_investment   0.4895   0.0597  3.3444    331.48
+lifespan_tendency     0.4941   0.2274 12.5420   1261.75
+urgency_exponent      0.5000  -0.0474-13.3192    262.81
+travel_sensitivity    0.5000  -0.0050 -1.5221     27.88
+risk_aversion         0.5000  -0.0017 -0.5538      9.69
+neutral_marker        0.5000   0.0002  0.0714      1.00   <- control
+
+extinct: slope-on 39, slope-off 25
+
+Fourteen columns at |t| = 2: expect roughly one to cross by chance.
+neutral_marker is the control - it responds to nothing.
