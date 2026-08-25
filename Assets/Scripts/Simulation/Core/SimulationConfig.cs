@@ -156,7 +156,8 @@ namespace LifeSimulation.Simulation.Core
             bool homeRangeAffinityEnabled = false,
             bool terrainDrivenEnvironmentEnabled = false,
             bool slopeMovementCostEnabled = false,
-            bool terrainDrivenTemperatureEnabled = false)
+            bool terrainDrivenTemperatureEnabled = false,
+            bool metabolicIngestionEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -199,6 +200,7 @@ namespace LifeSimulation.Simulation.Core
             TerrainDrivenEnvironmentEnabled = terrainDrivenEnvironmentEnabled;
             SlopeMovementCostEnabled = slopeMovementCostEnabled;
             TerrainDrivenTemperatureEnabled = terrainDrivenTemperatureEnabled;
+            MetabolicIngestionEnabled = metabolicIngestionEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -378,6 +380,28 @@ namespace LifeSimulation.Simulation.Core
         public bool TerrainDrivenTemperatureEnabled { get; }
 
         /// <summary>
+        /// When set, <see cref="Genome.MetabolicPace"/> raises <c>IngestionRate</c> by the same
+        /// <c>0.7 + 0.8*pace</c> factor it already applies to the energy and water drains.
+        ///
+        /// <para><b>Why this exists.</b> Without it the gene is a pure cost with no third reader -
+        /// nothing converts a faster metabolism into food, yield or speed - and the population is
+        /// steadily selling it, downward in five of six measured conditions. A liveness harness
+        /// cannot notice: it asks whether a gene reaches behaviour, and a cost reaches behaviour. See
+        /// <c>docs/experiments/p6-metabolic-pace-is-a-pure-cost-2026-08-24.md</c>.</para>
+        ///
+        /// <para><b>Not a free win.</b> Ingestion is a real rate limit - a creature requests
+        /// <c>IngestionRate * dt</c> per tick from a site, and contested sites are divided between
+        /// requesters - so a faster eater finishes sooner <i>and</i> takes a larger share. But the
+        /// drains are paid every second while the intake only pays while standing at food that still
+        /// has some left, so the balance should depend on how much there is to eat. That is the
+        /// prediction this flag exists to test, not an assumption it encodes.</para>
+        ///
+        /// <para><b>Default false, and every recorded creature result was measured without it.</b>
+        /// Turning it on changes what a gene means, which is a design decision rather than a fix.</para>
+        /// </summary>
+        public bool MetabolicIngestionEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -423,7 +447,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 3;
+        public const int ConfigurationHashVersion = 4;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -490,6 +514,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, TerrainDrivenEnvironmentEnabled ? 1UL : 0UL);
             hash = Hash(hash, SlopeMovementCostEnabled ? 1UL : 0UL);
             hash = Hash(hash, TerrainDrivenTemperatureEnabled ? 1UL : 0UL);
+            hash = Hash(hash, MetabolicIngestionEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

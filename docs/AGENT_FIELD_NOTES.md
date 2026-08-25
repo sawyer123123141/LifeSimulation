@@ -1582,3 +1582,16 @@ change.
   seeds.** `metabolic_pace` crossed |t| = 2 at lean and only at lean, twice. The reflex is more runs;
   the answer took one reader search and needed **no new simulation at all** - six corpora already on
   disk had the dose-response in them.
+- **Build the flag to answer the question, then let it say no (2026-08-24).** `MetabolicPace` was a
+  pure cost, so it got the obvious benefit behind a flag and a written prediction of a sign flip
+  across the resource ladder. **There was no sign flip** - the bleed halved and stopped there. The
+  flag, the tests and the corpus stay committed anyway, because the next person now starts from a
+  measurement rather than from the same argument.
+- **A benefit routed through a shared resource is diluted by everyone else having it.** Faster
+  ingestion sounds like a private gain and is not: contested sites are divided between requesters, so
+  every competitor getting faster partly cancels it. **When adding a trait benefit, ask whether the
+  channel is private or common before predicting its sign.**
+- **The control is what makes a row discardable rather than tempting.** The scarce condition produced
+  `metabolic_pace` at t = -3.12, which looks like the strongest result in the run until you see
+  `neutral_marker` at **t = +3.31** on 4 surviving worlds of 80. Without the control that row would
+  have been written up.

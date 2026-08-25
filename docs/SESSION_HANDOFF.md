@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **577 headless tests green**, Unity compile clean.
+that are **never to be staged**. **584 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -526,8 +526,25 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
 - **A pure-cost gene passes every liveness test by construction, and nothing here tests for a
   benefit.** `GeneLivenessAnalysis` asks whether a gene reaches behaviour; a cost reaches behaviour.
   This is the shape `PlantGeneLivenessAnalysis` already names for plant `TemperatureTolerance`.
-  **Open question: should `MetabolicPace` buy something?** Giving it one re-baselines every creature
-  result on record, so it is a design decision, deliberately not taken.
+  **`metabolicIngestionEnabled` now exists to answer that** - default false, flag-off byte-identical,
+  ingestion scaled by the same `0.7 + 0.8*pace` factor the drains use.
+- **The benefit halves the bleed and does not make the gene a trade-off** -
+  `p6-metabolic-ingestion-2026-08-24.md`. Predicted a sign flip across the resource ladder; **there
+  is none.** At lean the drift goes -0.0252 (t = -2.99) to **-0.0129 (t = -1.55)**, below
+  significance, and at moderate the gene is flat at t = -0.21. The gene went from being sold to being
+  held, not to being bought. **Default stays false and it is NOT on for `Y`** - unlike the slope cost
+  and the terrain temperature, it did not do what it was built to do.
+- **The scarce row of that run is unreadable and must not be quoted**: `neutral_marker` at
+  **t = +3.31** on 4 surviving worlds of 80. The -0.1267 at t = -3.12 beside it is composition, not
+  selection.
+- **Untested hypothesis worth keeping:** ingestion is a *shared* channel, so faster eating may deplete
+  contested sites sooner and partly cancel its own benefit - a commons effect that would explain both
+  the missing sign flip and the extinction direction (94 to 107 of 240, z = 1.20, not significant).
+  **The test is site depletion and mean energy between the two configurations**, which the drift table
+  does not carry. A *private* benefit - faster recovery, shorter handling, shorter reproduction
+  cooldown - would not be diluted by competitors.
+- **Or rename it.** If `MetabolicPace` is to stay a cost gene, `DigestionRate` should stop being
+  called that, because it does not make digestion faster. Design decision, deliberately not taken.
 - **The amplitude test is still not run**, and it matters less now: the flag above changes the
   field's structure while deliberately holding the 12-28 degree span, so the ceiling argument is
   untouched by it either way.
@@ -955,7 +972,7 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 577 green
+dotnet test tools/HeadlessTests            # 584 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief

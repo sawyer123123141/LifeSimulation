@@ -21,6 +21,7 @@ namespace LifeSimulation.Simulation.Core
         private ForagingState[] _foraging;
         private HomeRangeState[] _homeRanges;
         private PlaceMemory[] _placeMemories;
+        private readonly bool _metabolicIngestionEnabled;
         private readonly int _maximumMemorySlots;
         private readonly Dictionary<CreatureId, int> _indexById;
         private long _nextId;
@@ -28,8 +29,9 @@ namespace LifeSimulation.Simulation.Core
         /// <summary>Read-only peek at the next id to be assigned. Exists only for state fingerprinting; never set.</summary>
         public long NextIdPeek => _nextId;
 
-        public CreatureStore(int initialCapacity, int maximumMemorySlots = 0)
+        public CreatureStore(int initialCapacity, int maximumMemorySlots = 0, bool metabolicIngestionEnabled = false)
         {
+            _metabolicIngestionEnabled = metabolicIngestionEnabled;
             if (initialCapacity < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(initialCapacity));
@@ -150,7 +152,7 @@ namespace LifeSimulation.Simulation.Core
             var id = new CreatureId(_nextId++);
             _identities[Count] = id;
             _genomes[Count] = genome;
-            _phenotypes[Count] = Phenotype.FromGenome(genome);
+            _phenotypes[Count] = Phenotype.FromGenome(genome, _metabolicIngestionEnabled);
             _needs[Count] = CreatureNeeds.Full(_phenotypes[Count]);
             _movement[Count] = new MovementState(position);
             _decisions[Count] = new CreatureDecision(CreatureAction.Wander, -1, 0f);
@@ -201,7 +203,7 @@ namespace LifeSimulation.Simulation.Core
         {
             ValidateIndex(index);
             _genomes[index] = genome;
-            _phenotypes[index] = Phenotype.FromGenome(genome);
+            _phenotypes[index] = Phenotype.FromGenome(genome, _metabolicIngestionEnabled);
         }
 
         public Phenotype GetPhenotypeAt(int index)

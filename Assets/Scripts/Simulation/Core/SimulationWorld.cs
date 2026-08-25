@@ -55,7 +55,7 @@ namespace LifeSimulation.Simulation.Core
         {
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Config.Validate();
-            Creatures = new CreatureStore(Config.InitialPopulation, Config.MaximumMemorySlots);
+            Creatures = new CreatureStore(Config.InitialPopulation, Config.MaximumMemorySlots, Config.MetabolicIngestionEnabled);
             Resources = new ResourceStore(initialCapacity: 8);
             Plants = new PlantPatchStore(initialCapacity: 8);
             PlantSites = new PlantSiteRegistry(initialCapacity: 8);

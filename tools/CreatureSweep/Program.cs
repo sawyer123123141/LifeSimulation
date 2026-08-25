@@ -90,12 +90,19 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _terrainTemperature;
 
+        /// <summary>
+        /// Metabolic pace buying faster ingestion, as an arm. Off by default; every recorded creature
+        /// result was measured with the gene as a pure cost.
+        /// </summary>
+        private static bool _metabolicIngestion;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
             {
                 if (argument == "--join=off") _join = false;
                 if (argument == "--terrain-temperature") _terrainTemperature = true;
+                if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (!argument.StartsWith("--scenario=")) continue;
 
                 _scenarioName = argument.Substring("--scenario=".Length);
@@ -242,7 +249,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 plantSeedProductionRateEnabled: true,
                 terrainDrivenEnvironmentEnabled: _join,
                 slopeMovementCostEnabled: slope,
-                terrainDrivenTemperatureEnabled: _terrainTemperature);
+                terrainDrivenTemperatureEnabled: _terrainTemperature,
+                metabolicIngestionEnabled: _metabolicIngestion);
         }
 
         private static readonly string[] GeneNames =

@@ -375,7 +375,24 @@ namespace LifeSimulation.Simulation.Biology
                 Persistence);
         }
 
-        public static Phenotype FromGenome(Genome genome)
+        /// <summary>
+        /// <paramref name="metabolicIngestionEnabled"/> gives <see cref="Genome.MetabolicPace"/> the
+        /// benefit it never had.
+        ///
+        /// <para>Without it the gene is a <b>pure cost</b>: it raises the water drain
+        /// (<c>NeedsSystem.cs:49</c>) and the energy drain (<c>NeedsSystem.cs:45</c>) by 2.14x across
+        /// its range and has no third reader anywhere - nothing converts a faster metabolism into
+        /// food, yield or speed, so <c>DigestionRate</c> does not in fact make digestion faster. The
+        /// population is selling it: downward in five of six measured conditions. See
+        /// <c>docs/experiments/p6-metabolic-pace-is-a-pure-cost-2026-08-24.md</c>.</para>
+        ///
+        /// <para>With it, ingestion is scaled by <b>the same</b> <c>0.7 + 0.8*pace</c> factor the two
+        /// drains already use, so a creature with twice the metabolism burns twice as fast and eats
+        /// twice as fast. That is deliberately not a free win: <b>the cost is paid every second and
+        /// the benefit only while standing at food that still has some left</b>, which should make
+        /// the gene's optimum depend on how much there is to eat rather than sit at zero.</para>
+        /// </summary>
+        public static Phenotype FromGenome(Genome genome, bool metabolicIngestionEnabled = false)
         {
             float bodyMass = 0.6f * (float)Math.Pow(4d, genome.BodySize);
             float maintenance = 1f
@@ -406,7 +423,9 @@ namespace LifeSimulation.Simulation.Biology
                 1f + (3f * genome.MovementSpeed),
                 4f + (12f * genome.VisionRange),
                 0.75f + (0.65f * genome.FoodEfficiency),
-                1.25f - (0.3f * genome.FoodEfficiency),
+                metabolicIngestionEnabled
+                    ? (1.25f - (0.3f * genome.FoodEfficiency)) * (0.7f + (0.8f * genome.MetabolicPace))
+                    : 1.25f - (0.3f * genome.FoodEfficiency),
                 0.7f + (0.8f * genome.MetabolicPace),
                 1f - (0.55f * genome.WaterEfficiency),
                 (float)Math.Pow(bodyMass, 0.75d) * (0.7f + (0.8f * genome.MetabolicPace)) * maintenance,
