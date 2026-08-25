@@ -1523,3 +1523,28 @@ change.
   when food is scarce" was answerable by reading three lines: mass is `0.6 * 4^BodySize`, it is
   charged against energy per distance and water per second, and nothing pays for being large. The
   prediction followed from the code, and the measurement then confirmed it with a dose-response.
+- **Trace the call path before testing a causal story (2026-08-24).** The queued explanation for the
+  strongest selection in the model was "the terrain join introduced the temperature field", and one
+  grep killed it: creature thermoregulation reads `TemperatureField.Sample`, a fixed sine, while the
+  join builds the `EnvironmentField` that feeds plants. Both arms of that experiment would have been
+  the same experiment. **A hypothesis about a mechanism is checkable against the wiring for free, and
+  the run only becomes worth doing once the wiring permits the answer.**
+- **An endpoint hides the shape; checkpoints show it.** Every creature measurement until now read the
+  gene means once, at the end. Sampled twelve times instead, temperature tolerance moved 0.28 in the
+  first 8,000 ticks and **0.004 in the last 4,000** - a plateau, which is a completely different
+  claim from a drift and points straight at a saturating mechanism. Endpoint drift and trajectory are
+  different instruments; a flat tail is invisible to the first.
+- **Derive the equilibrium, then check the number.** Tolerance is `2 + 8*gene` against a field
+  bounded at 8 degrees, so the benefit runs out at gene 0.75 exactly and the residual cost is ~1% of
+  upkeep. Predicted 0.750; measured plateau 0.7475 with the join off and 0.7790 at 40 seeds with it
+  on. **An arithmetic prediction that lands is worth more than a larger sample of an unexplained
+  effect** - and the slight overshoot is itself informative, because an asymmetric landscape (health
+  loss below, 1% upkeep above) rests its mean above the point where the benefit ended.
+- **Measure the environment the animals actually experienced, not the one on paper.** Sampling
+  `|T - 20|` under every living creature is what fixed the ceiling at 8.000 and turned "0.75 in
+  principle" into "0.75 in this world". It needed no new simulation state - positions and the field
+  were both already there. Same trick as `occupied_slope`.
+- **The strongest signal in a model can be an artefact of a placeholder.** Temperature tolerance
+  dominates selection because it is adapting to a decorative sine with no seasons, altitude, latitude
+  or terrain. The gene is fine. **When a result is much larger than everything around it, ask what it
+  is responding to before asking why it is strong.**

@@ -36,7 +36,7 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// <summary>Matches tools/PlantSweep exactly, so the two corpora are comparable.</summary>
         private const int Ticks = 12000;
         private const int Founders = 12;
-        private const int FirstSeed = 42;
+        internal const int FirstSeed = 42;
         private const int MaximumPopulation = 48;
 
         private static int _seedCount = 120;
@@ -75,10 +75,20 @@ namespace LifeSimulation.Tools.CreatureSweep
         private static int _focusedPopulationCap = 200;
         private const double MinimumClimbMetres = 5d;
 
+        /// <summary>
+        /// The terrain join, as an arm rather than a fixture. It exists for one question - whether
+        /// the join explains the temperature-tolerance selection - and the answer is already visible
+        /// in the source: the join builds an <c>EnvironmentField</c> for plants, while creature
+        /// thermoregulation reads the fixed <c>TemperatureField</c> sine. Running it anyway is what
+        /// turns a code-reading into a measurement.
+        /// </summary>
+        private static bool _join = true;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
             {
+                if (argument == "--join=off") _join = false;
                 if (!argument.StartsWith("--scenario=")) continue;
 
                 _scenarioName = argument.Substring("--scenario=".Length);
@@ -93,6 +103,15 @@ namespace LifeSimulation.Tools.CreatureSweep
                         "p6-defense-calibration-lean", 0.6f),
                     _ => Prototype4Scenarios.ConsumerDefenseCalibrationModerate,
                 };
+            }
+
+            if (args.Length > 0 && args[0] == "--thermal")
+            {
+                _focused = true;
+                int thermalSeeds = args.Length > 1 && int.TryParse(args[1], out int parsed) ? parsed : 20;
+                if (args.Length > 2 && int.TryParse(args[2], out int thermalCap)) _focusedPopulationCap = thermalCap;
+                Thermal.Report(thermalSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                return;
             }
 
             if (args.Length > 0 && args[0] == "--relief")
@@ -214,7 +233,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 plantEstablishmentContestEnabled: true,
                 plantInvaderEstablishmentContestEnabled: true,
                 plantSeedProductionRateEnabled: true,
-                terrainDrivenEnvironmentEnabled: true,
+                terrainDrivenEnvironmentEnabled: _join,
                 slopeMovementCostEnabled: slope);
         }
 

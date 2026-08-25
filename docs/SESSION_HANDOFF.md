@@ -491,9 +491,22 @@ script is in the session scratchpad and is worth promoting to `tools/` if it is 
 
 ### Added 2026-08-24
 
-- **Why temperature tolerance.** +0.309 at t = 14.4 and it rises in every condition tested - by far
-  the strongest selection in the model, and unexplained. The terrain join introduced the temperature
-  field it plausibly responds to; that is a hypothesis, not a result.
+- ~~**Why temperature tolerance.**~~ **Answered, and the hypothesis in this slot was wrong** -
+  `p6-why-temperature-tolerance-2026-08-24.md`. The terrain join cannot reach the gene: creature
+  thermoregulation reads `TemperatureField.Sample`, a fixed sine `20 + 8*sin(0.18x + 0.11y)` with no
+  terrain input, while the join builds the `EnvironmentField` that feeds plants. Tolerance in degrees
+  is `2 + 8*gene` against a field that deviates by at most 8, so **gene 0.75 covers the whole world**
+  and costs about 1% of upkeep. Measured: the mean plateaus at **0.7790 at 40 seeds** (0.7475 with
+  the join off), realised `|T - 20|` maxes at **8.000**, covering gene **0.750**. Running the join arm
+  anyway removed 0.044 of 0.285 and none of the shape.
+- **The temperature field is a placeholder and it is the strongest selection in the model.** No
+  seasons, no altitude, no latitude, no terrain. The gene is behaving correctly; the environment is
+  not an environment. This is the real open item.
+- **The amplitude test is not run.** Moving the sine's amplitude should move the plateau to
+  `(amplitude - 2) / 8`. It needs the amplitude in `SimulationConfig`, hashed, with a
+  `ConfigurationHashVersion` bump and the value threaded through `ThermoregulationSystem` and the
+  decision path - production surgery to confirm something the formula already fixes. Worth doing when
+  temperature becomes a real climate variable.
 - **Slope cost on survival is suggestive only.** Extinction 46 against 38 of 60 at cap 200, but the
   paired test is 13 discordant against 5, **McNemar 2.72 against 3.84 for p = .05**. Direction
   consistent, significance not reached.
@@ -705,10 +718,13 @@ population as an upper bound — sound for that decision, but it is a bound, not
 1. ~~Replicate the lean scarcity arm~~ - **done, holds.** 80 seeds, 55 surviving: body_size -0.0252
    at t = -3.23 with the control at t = 0.07. The remaining scarcity question is whether the
    *dose-response* survives replication; only the lean level has been re-run.
-2. **Why temperature tolerance.** It is the strongest selection in the model by a distance
-   (+0.31, t = 14.4) and nothing explains it. The terrain join is what introduced a real temperature
-   field, so the test is the join on against off, drift measured against founders. **Not** arm against
-   arm - see the lesson below about what that design can detect.
+2. ~~**Why temperature tolerance.**~~ **Done, and the answer was not the join** -
+   `p6-why-temperature-tolerance-2026-08-24.md`. It is a saturating gene against a placeholder sine.
+   What it opened instead: **make temperature a real field**. Every other environmental quantity now
+   comes from terrain and this one is `20 + 8*sin(0.18x + 0.11y)`, which is why the model's strongest
+   adaptation is to a decoration. Doing it means the amplitude and shape become world properties in
+   `SimulationConfig`, hashed, and it re-baselines every thermal result on record - so it is a
+   decision to take deliberately, not a tidy-up.
 3. **`CreatureAppearance`** as a pure `(Genome) -> appearance` function, per `docs/creature-appearance.md`.
    Safe to build before real models land; the applied half is not.
 4. Rivers remain blocked behind a persistent grid. **Do not restart them.**
@@ -898,6 +914,7 @@ dotnet test tools/HeadlessTests            # 563 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 30 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief
+dotnet run --project tools/CreatureSweep -c Release -- --thermal 40 100 [--join=off]
 dotnet run --project tools/TerrainProbe -c Release -- --ice
 ```
 
@@ -908,6 +925,12 @@ arms. Use `lean` and `scarce`, which are `Scaled` copies of the calibrated layou
 
 Every run prints two tables: the paired arm-against-arm comparison, and **drift from founders**, which
 is the one that can see selection.
+
+`--thermal <seeds> <cap>` is a third instrument and a different question: **one arm, twelve
+checkpoints**, so it shows the *shape* of a drift rather than its endpoint - which is how the
+temperature plateau became visible. It also samples the realised `|T - 20|` under every living
+creature, which is what fixes where the saturation ceiling is. `--join=off` turns the terrain join
+into an arm; it defaults on and every other mode is unchanged.
 
 ## 6b. Test commands (older)
 
