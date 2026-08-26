@@ -553,6 +553,54 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-26 — read this first; the list below it is the previous session's
+
+**Thirteen commits, `fd6eca8` to `0914369`.** Nothing below this block was deleted; several entries in
+it are now qualified by banners on the documents they cite.
+
+**Closed today**
+
+1. **Plant corpus re-run unpinned** (the item the session opened on) —
+   `p6-plant-corpus-revalidated-unpinned-2026-08-26.md`. Contest and join nulls hold with the
+   population free; qualification lifted **for those two comparisons only**.
+2. **The patch-quality channel is not free** — `p6-patch-quality-is-not-a-free-parameter-2026-08-26.md`.
+   Off vs on: population **-31.9 (t -6.42)**, occupancy **+0.201 (t +10.69)**, 0 of 240 hashes matching.
+3. **Starvation is a dial** — `p6-starvation-is-a-dial-2026-08-26.md` and
+   `p6-the-pressured-cell-is-a-plateau-2026-08-26.md`. 49.6% to 0.0% of deaths on two configuration
+   values; **brake 1.5 / regen 2.0 / cap 500 survives 30 of 30 with 16.2% starvation**, and nine
+   surrounding cells behave the same, so it is a plateau not a knife-edge.
+4. **The mating gate is also the density brake** — `p6-the-gate-is-a-survival-mechanism-2026-08-26.md`.
+   Survival **4 / 11 / 24 / 38 of 40** across gate 0.45-0.70 when the ecology limits the population,
+   against **40 of 40** at cap 100. The recorded dose-response could not see this; it is banner-qualified.
+5. **The predation founder profile was broken and is fixed** —
+   `p6-a-survivable-predator-prey-scenario-exists-2026-08-26.md`. It set six of twenty-four traits and
+   left the rest at the constructor's `0f`. **Fixing it was necessary and not sufficient**: the real
+   blocker was the gate. **`--predation --gate=0.45` in the pressured cell is the first survivable
+   predator-prey scenario this project has had** — 24-26 of 30, 146 births per run.
+6. **Both stuck flags adjudicated** — `p6-two-flags-adjudicated-at-last-2026-08-26.md`.
+   `kinRecognitionEnabled` off costs **29% of the population**; `multiThreatPerceptionEnabled` off
+   diverges **60 of 60** hashes. **`KnownInertFlags` deliberately unchanged** - see the field-notes
+   entry for why.
+7. **Predation selects** — `p6-predation-selects-on-defense-2026-08-26.md`. **defense +0.267,
+   t +10.97**; attack **t -3.84**; both health arms agree. The drift table had no combat genes at all
+   until today, so the question had never been askable.
+
+**Standing decision (section 4):** selection work in the pressured cell runs **both health arms**.
+
+**What is worth doing next**
+
+- **The whole predation result lives at gate 0.45, cap 500, regen 2.0 — one cell.** Robustness across
+  gate, cap and regeneration is the first thing to check before anything is built on it.
+- **"Losing a fight sterilises rather than kills" is a hypothesis.** Predation is 1-2% of deaths yet
+  defense is under t = 11 selection, and the proposed route is health damage feeding the mate gate.
+  Nothing reports the attack-damage path directly.
+- **`maneuverability` and `fear` are invisible to every instrument** - no `SimulationStatistics` mean
+  exists for them, so two of the six combat genes cannot be measured at all.
+- **The plant corpus's other nine corpora are still measured pinned.** Only contest and join were
+  re-validated.
+- **Do not restart rivers.** Unchanged.
+
+
 ### Everything in the previous list is closed (2026-08-24, late)
 
 The four items that stood here - the dose-response replication, why temperature tolerance,

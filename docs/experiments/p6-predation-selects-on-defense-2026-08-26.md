@@ -1,5 +1,13 @@
 # Predation selects — hard, on defense, and against attack
 
+> **MECHANISM WITHDRAWN, RESULT CONFIRMED — same day.**
+> `p6-defense-selection-is-robust-and-my-mechanism-was-wrong-2026-08-26.md`. The selection result holds
+> in **six cells** (defense t +4.97 to +10.97 across gate, cap and regeneration). **The fertility route
+> proposed below is refuted:** the predator cell has **1.8%** of the living under the health gate, not a
+> majority — while the herbivore cell at the same gate, with **no combat at all**, has **77.5%**. The
+> route is mortality, concentrated on the low-defense tail. Also checked: attack and defense carry the
+> **same** maintenance cost, so the asymmetry between them is not a cost difference.
+
 **2026-08-26.** `tools/CreatureSweep --focused 30 500 --regen=2.0 --brake=1.5 --predation --gate=0.45
 [--health-recovery] [--kin=off]`, 12,000 ticks, 60 runs per cell.
 
