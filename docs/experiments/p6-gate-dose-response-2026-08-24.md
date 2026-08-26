@@ -1,5 +1,14 @@
 # The gate does not switch selection on and off — it squeezes a margin, and the squeeze accelerates
 
+> **QUALIFIED 2026-08-26** — `p6-the-gate-is-a-survival-mechanism-2026-08-26.md`. Every point of this
+> curve was measured at **cap 100**, and "80 of 80 surviving at every gate value" is a property of the
+> **cap**, not of the gate. In a cell where the ecology limits the population instead
+> (cap 500, 2.0x regeneration, brake 1.5), survival across the same gate values runs
+> **4 / 11 / 24 / 38 of 40** at 0.45 / 0.55 / 0.65 / 0.70 — while the same slack gate at cap 100 leaves
+> **40 of 40** alive. **The gate is also the model's density brake**, which a cap-limited sweep cannot
+> see. The selection curve below is unaffected and **its shape reproduces** in the new cell
+> (-1.48 / -3.91 / -14.19 at 0.55 / 0.65 / 0.70).
+
 **2026-08-24. Five gate values, 80 seeds each, 12,000 ticks, cap 100, moderate resources.**
 `tools/CreatureSweep --focused 80 100 --gate=X` and `--deaths 30 100 --gate=X`.
 
