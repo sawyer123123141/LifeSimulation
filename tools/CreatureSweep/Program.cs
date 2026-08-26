@@ -414,9 +414,12 @@ namespace LifeSimulation.Tools.CreatureSweep
 
             string path = Path.Combine(
                 "docs", "experiments",
-                _focused
-                    ? "p6-slope-cost-focused-cap" + _focusedPopulationCap + "-" + _scenarioName + "-2026-08-24.csv"
-                    : "p6-slope-cost-2026-08-24.csv");
+                (_focused
+                    ? "p6-slope-cost-focused-cap" + _focusedPopulationCap + "-" + _scenarioName
+                    : "p6-slope-cost")
+                + ConfigurationSuffix()
+                + "-" + DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                + ".csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }
@@ -605,6 +608,42 @@ namespace LifeSimulation.Tools.CreatureSweep
             }
         }
 
+
+        /// <summary>
+        /// Every arm that changes what was run, in the filename.
+        ///
+        /// <para><b>Why.</b> This used to encode cap and scenario only, so the dose-response run, the
+        /// terrain-temperature run, the metabolic-ingestion run, five gate values and the graded
+        /// fertility runs all wrote to <b>one path</b> and each overwrote the last. What survived on
+        /// disk corresponded to no documented experiment. Four such files were deleted on 2026-08-26.
+        /// The same hazard was fixed in <c>tools/PlantSweep</c>; a corpus is the evidence for a
+        /// written conclusion, and a tool that silently rewrites one invalidates the record without
+        /// anybody noticing.</para>
+        ///
+        /// <para><c>--regen</c> and <c>--scale</c> are absent here deliberately: both already fold
+        /// into <c>_scenarioName</c>, which is in the name.</para>
+        /// </summary>
+        private static string ConfigurationSuffix()
+        {
+            var suffix = new StringBuilder();
+            suffix.Append("-").Append(_seedCount).Append("seeds");
+            if (!_join) suffix.Append("-joinoff");
+            if (_terrainTemperature) suffix.Append("-terraintemp");
+            if (_metabolicIngestion) suffix.Append("-ingestion");
+            if (_healthRecovery) suffix.Append("-healthrecovery");
+            if (_metabolicHealing) suffix.Append("-metabolichealing");
+            if (_gradedFertility)
+            {
+                suffix.Append("-brake").Append(_brakeStrength.ToString("0.0", CultureInfo.InvariantCulture));
+            }
+
+            if (Math.Abs(_reproductionNeedFraction - SimulationConfig.DefaultReproductionNeedFraction) > 1e-6f)
+            {
+                suffix.Append("-gate").Append(_reproductionNeedFraction.ToString("0.00", CultureInfo.InvariantCulture));
+            }
+
+            return suffix.ToString();
+        }
 
         private static string Format(double value)
         {
