@@ -22,7 +22,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 14531405954382358740UL;
+        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 2166304373863204553UL;
 
         [Test]
         public void PlantGrowthRateFixDoesNotAffectNonPlantCohortScenarios()
@@ -85,18 +85,26 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.InRange(0f, 1f));
             Assert.That(world.Creatures.GetGenomeAt(0).DietSpecialization, Is.InRange(0f, 1f));
             Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.Not.EqualTo(0f));
-            Assert.That(world.Creatures.GetGenomeAt(0).MemoryCapacity, Is.EqualTo(0f));
-            Assert.That(world.Creatures.GetGenomeAt(0).TemperatureTolerance, Is.EqualTo(0f));
+            // Non-combat families are NEUTRAL and identical across founders - that is the isolation
+            // this test is about, and it is what makes an outcome attributable to the combat family.
+            // These were pinned at 0f until 2026-08-26, which is not neutral: it is the constructor
+            // default arriving through two positional constructors, and it made founders sterile,
+            // short-lived and unable to tolerate any temperature. See
+            // p6-the-founder-fix-was-necessary-and-not-sufficient-2026-08-26.md.
+            Assert.That(world.Creatures.GetGenomeAt(0).MemoryCapacity, Is.EqualTo(0.5f));
+            Assert.That(world.Creatures.GetGenomeAt(0).TemperatureTolerance, Is.EqualTo(0.5f));
+            Assert.That(world.Creatures.GetGenomeAt(1).TemperatureTolerance,
+                Is.EqualTo(world.Creatures.GetGenomeAt(0).TemperatureTolerance));
+            Assert.That(world.Creatures.GetGenomeAt(1).Attack,
+                Is.Not.EqualTo(world.Creatures.GetGenomeAt(0).Attack));
             // Fertility and lifespan are now SET by the profile, not left at the constructor's 0f.
             // They were pinned at zero here because this test asserts the profile touches only its
             // own trait family - which it still does, per the two assertions above. Zero fertility
             // was a side effect of that isolation, never the intent: it gave every predator founder
             // the 90s lifespan floor and the longest reproduction interval, and produced zero births
             // across 90 runs. See p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md.
-            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.InRange(0f, 1f));
-            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.Not.EqualTo(0f));
-            Assert.That(world.Creatures.GetGenomeAt(0).LifespanTendency, Is.InRange(0f, 1f));
-            Assert.That(world.Creatures.GetGenomeAt(0).LifespanTendency, Is.Not.EqualTo(0f));
+            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.EqualTo(0.5f));
+            Assert.That(world.Creatures.GetGenomeAt(0).LifespanTendency, Is.EqualTo(0.5f));
         }
 
         [Test]
@@ -872,7 +880,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedLegacyHash = 14531405954382358740UL;
+        private const ulong ExpectedLegacyHash = 2166304373863204553UL;
 
         [Test]
         public void PredationEconomicsDisabledProducesIdenticalHashToPreExistingLegacyBehavior()
@@ -1151,7 +1159,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void MultiThreatPerceptionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1203,7 +1211,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedRestBehaviorDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedRestBehaviorDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void RestBehaviorDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1468,7 +1476,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedJuvenileCapabilityDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedJuvenileCapabilityDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void JuvenileCapabilityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1497,7 +1505,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedParentalFollowingDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedParentalFollowingDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void ParentalFollowingDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1585,7 +1593,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedKinRecognitionDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedKinRecognitionDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void KinRecognitionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1655,7 +1663,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedLearnedResourceQualityDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedLearnedResourceQualityDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void LearnedResourceQualityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1685,7 +1693,7 @@ namespace LifeSimulation.Tests.EditMode
         // lifespanTendency (both were falling through to the constructor default of 0f, which gave
         // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
         // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
-        private const ulong ExpectedMateSelectionDisabledHash = 14531405954382358740UL;
+        private const ulong ExpectedMateSelectionDisabledHash = 2166304373863204553UL;
 
         [Test]
         public void MateSelectionDisabledProducesIdenticalHashToPreExistingBehavior()

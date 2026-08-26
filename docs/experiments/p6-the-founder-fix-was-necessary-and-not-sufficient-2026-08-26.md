@@ -1,5 +1,12 @@
 # The predation founder fix is necessary and not sufficient — the profile zeroes every trait family but its own
 
+> **RESOLVED SAME DAY** — `p6-a-survivable-predator-prey-scenario-exists-2026-08-26.md`. The remaining
+> families were populated (all non-combat traits neutral at 0.5, approved). Health deaths fell to
+> **0.3%** and reproduction **still did not happen** at the default gate: 0.3 births per run, 0 of 30
+> surviving. **The genome was never the blocker.** Sweeping the mate-seeking gate in the same cell
+> gives **24-26 of 30 surviving and 146-280 births per run at gate 0.45 or slacker**, with predation
+> firing at 7-90 attack hits per run. A survivable predator-prey scenario now exists.
+
 **2026-08-26**, later the same day than
 `p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md`, which diagnosed zero births as
 `fertilityInvestment` and `lifespanTendency` falling through to the constructor's `0f`. **The fix was

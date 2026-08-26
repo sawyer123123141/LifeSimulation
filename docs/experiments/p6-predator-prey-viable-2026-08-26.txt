@@ -1,0 +1,216 @@
+###### cap100
+
+death causes over ALL 30 runs, extinct included (365 deaths attributed)
+  starvation        16     4.4%
+  dehydration       13     3.6%
+  age              312    85.5%
+  health            10     2.7%
+  predation         14     3.8%
+  births per run          0.2   attack hits per run 3.5
+
+death causes over 0 surviving runs of 30 (0 deaths attributed)
+  starvation         0      n/a
+  dehydration        0      n/a
+  age                0      n/a
+  health             0      n/a
+  predation          0      n/a
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    NaN
+  mean hydration fraction NaN
+  mean health fraction    NaN
+  below the health gate   NaN%  <- cannot seek a mate, ever
+  final population        mean NaN  min NaN  median NaN  max NaN  sd NaN
+
+###### gate0.35
+
+death causes over ALL 30 runs, extinct included (2596 deaths attributed)
+  starvation       557    21.5%
+  dehydration       62     2.4%
+  age             1906    73.4%
+  health            18     0.7%
+  predation         53     2.0%
+  births per run          183.6   attack hits per run 21.6
+
+death causes over 26 surviving runs of 30 (2543 deaths attributed)
+  starvation       552    21.7%
+  dehydration       61     2.4%
+  age             1861    73.2%
+  health            17     0.7%
+  predation         52     2.0%
+
+the gates sit at 0.35 (breed) and 0.45 (seek a mate) on all three needs
+  mean energy fraction    0.6011
+  mean hydration fraction 0.6973
+  mean health fraction    0.8566
+  below the health gate   4.3%  <- cannot seek a mate, ever
+  final population        mean 125.8  min 16  median 71  max 450  sd 119.52
+
+###### gate0.45-healthon
+
+death causes over ALL 30 runs, extinct included (1663 deaths attributed)
+  starvation        43     2.6%
+  dehydration       29     1.7%
+  age             1564    94.0%
+  health             2     0.1%
+  predation         25     1.5%
+  births per run          148.5   attack hits per run 9.3
+
+death causes over 25 surviving runs of 30 (1594 deaths attributed)
+  starvation        40     2.5%
+  dehydration       28     1.8%
+  age             1502    94.2%
+  health             1     0.1%
+  predation         23     1.4%
+
+the gates sit at 0.45 (breed) and 0.55 (seek a mate) on all three needs
+  mean energy fraction    0.6311
+  mean hydration fraction 0.7132
+  mean health fraction    0.9729
+  below the health gate   1.3%  <- cannot seek a mate, ever
+  final population        mean 126.0  min 10  median 104  max 500  sd 124.80
+
+###### gate0.45
+
+death causes over ALL 30 runs, extinct included (1638 deaths attributed)
+  starvation        66     4.0%
+  dehydration       23     1.4%
+  age             1520    92.8%
+  health            13     0.8%
+  predation         16     1.0%
+  births per run          146.0   attack hits per run 6.7
+
+death causes over 24 surviving runs of 30 (1557 deaths attributed)
+  starvation        59     3.8%
+  dehydration       21     1.3%
+  age             1450    93.1%
+  health            12     0.8%
+  predation         15     1.0%
+
+the gates sit at 0.45 (breed) and 0.55 (seek a mate) on all three needs
+  mean energy fraction    0.6350
+  mean hydration fraction 0.7151
+  mean health fraction    0.8772
+  below the health gate   1.8%  <- cannot seek a mate, ever
+  final population        mean 129.3  min 15  median 98  max 500  sd 126.06
+
+###### gate0.55
+
+death causes over ALL 30 runs, extinct included (758 deaths attributed)
+  starvation        28     3.7%
+  dehydration       18     2.4%
+  age              700    92.3%
+  health             3     0.4%
+  predation          9     1.2%
+  births per run          40.7   attack hits per run 2.8
+
+death causes over 14 surviving runs of 30 (540 deaths attributed)
+  starvation        19     3.5%
+  dehydration        9     1.7%
+  age              503    93.1%
+  health             2     0.4%
+  predation          7     1.3%
+
+the gates sit at 0.55 (breed) and 0.65 (seek a mate) on all three needs
+  mean energy fraction    0.6984
+  mean hydration fraction 0.7673
+  mean health fraction    0.8894
+  below the health gate   5.6%  <- cannot seek a mate, ever
+  final population        mean 58.9  min 4  median 16  max 186  sd 64.56
+
+###### gate020
+
+death causes over ALL 30 runs, extinct included (4920 deaths attributed)
+  starvation      1832    37.2%
+  dehydration      117     2.4%
+  age             2718    55.2%
+  health            27     0.5%
+  predation        226     4.6%
+  births per run          279.8   attack hits per run 90.1
+
+death causes over 25 surviving runs of 30 (4210 deaths attributed)
+  starvation      1317    31.3%
+  dehydration      113     2.7%
+  age             2533    60.2%
+  health            26     0.6%
+  predation        221     5.2%
+
+the gates sit at 0.20 (breed) and 0.30 (seek a mate) on all three needs
+  mean energy fraction    0.4868
+  mean hydration fraction 0.6610
+  mean health fraction    0.7869
+  below the health gate   8.8%  <- cannot seek a mate, ever
+  final population        mean 153.4  min 24  median 104  max 499  sd 133.88
+
+###### herbivore-reference
+
+death causes over ALL 30 runs, extinct included (6140 deaths attributed)
+  starvation       995    16.2%
+  dehydration        1     0.0%
+  age             5080    82.7%
+  health            64     1.0%
+  predation          0     0.0%
+  births per run          492.1   attack hits per run 0.0
+
+death causes over 30 surviving runs of 30 (6140 deaths attributed)
+  starvation       995    16.2%
+  dehydration        1     0.0%
+  age             5080    82.7%
+  health            64     1.0%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5827
+  mean hydration fraction 0.8211
+  mean health fraction    0.8598
+  below the health gate   20.9%  <- cannot seek a mate, ever
+  final population        mean 299.4  min 8  median 316  max 500  sd 146.83
+
+###### pressured-healthoff
+
+death causes over ALL 30 runs, extinct included (368 deaths attributed)
+  starvation        23     6.3%
+  dehydration       13     3.5%
+  age              319    86.7%
+  health             1     0.3%
+  predation         12     3.3%
+  births per run          0.3   attack hits per run 3.2
+
+death causes over 0 surviving runs of 30 (0 deaths attributed)
+  starvation         0      n/a
+  dehydration        0      n/a
+  age                0      n/a
+  health             0      n/a
+  predation          0      n/a
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    NaN
+  mean hydration fraction NaN
+  mean health fraction    NaN
+  below the health gate   NaN%  <- cannot seek a mate, ever
+  final population        mean NaN  min NaN  median NaN  max NaN  sd NaN
+
+###### pressured-healthon
+
+death causes over ALL 30 runs, extinct included (385 deaths attributed)
+  starvation        16     4.2%
+  dehydration       13     3.4%
+  age              339    88.1%
+  health             1     0.3%
+  predation         16     4.2%
+  births per run          1.2   attack hits per run 3.5
+
+death causes over 2 surviving runs of 30 (45 deaths attributed)
+  starvation         1     2.2%
+  dehydration        0     0.0%
+  age               42    93.3%
+  health             0     0.0%
+  predation          2     4.4%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.8061
+  mean hydration fraction 0.9084
+  mean health fraction    1.0000
+  below the health gate   0.0%  <- cannot seek a mate, ever
+  final population        mean 5.5  min 4  median 4  max 7  sd 2.12
+
