@@ -96,6 +96,39 @@ line exists to describe. It needs the same `(Genome) -> CreatureAppearance` seam
 identity as the input instead of one trait — which is another reason to put the seam in first and the
 mapping behind it.
 
+## When the real models land — sequencing, decided 2026-08-24
+
+A free pack of **eight animals with animations** is available. The order matters, and "drop in all
+eight" is the wrong first move for two specific reasons.
+
+**1. Profile with capsules first.** Nothing in Play mode has ever been measured, and there are already
+**908 chunk renderers** plus up to 100 creatures. Introduce animated skinned meshes with no baseline
+and a frame-time problem cannot be attributed — models or terrain. See
+`docs/terrain-brief-review-2026-08-24.md`, whose top item is the same point.
+
+**2. Eight models with no species is a fiction.** There are no species yet — P5 clustering is an
+*analysis* layer, not a creature type. Nothing in the model decides which of eight a creature should
+be, so the assignment would be arbitrary, and an arbitrary assignment teaches a viewer that
+**model = decoration**. When species do land and model should mean *species*, that lesson has to be
+un-taught. Better to show fewer models that mean something than eight that mean nothing.
+
+**The order:**
+
+1. **Profile Play mode with capsules.** Baseline frame time and draw calls.
+2. **Swap in ONE model.** Prove the pipeline: `CreatureAppearance` tinting still applies, animations
+   bind to `CreatureAction`, frame time holds at 100 creatures. The seam already exists, so this
+   edits one place.
+3. **Map the remaining models to an axis that is already real.** Predator against herbivore is
+   available today — `Aggression`, `Attack`, `DietSpecialization` — as is body-size class. Honest and
+   readable immediately. **Not random.**
+4. **Model per species cluster** when P5 clustering is trusted. That is step 4 below and the version
+   worth having.
+
+**The animation mapping is free.** `CreatureAction` already distinguishes wander, seek food, seek
+water, seek mate, flee, hunt, rest and eat — a behaviour state machine sitting there unused by the
+renderer. It is the largest legibility win available, because behaviour is currently a colour that
+has to be looked up in a legend.
+
 ## Order
 
 1. Real models land.

@@ -885,7 +885,16 @@ right that this is the biggest hole: **nothing in Play mode has ever been observ
 means 908 renderers, and no optimisation should be ranked until that number exists. **Needs a human**
 - I cannot run the editor.
 
-**3. `CreatureAppearance` step 3.** Apply the mapping at the one call site in
+**3. Real models — a pack of 8 animated animals is available.** Sequencing decided and written into
+`docs/creature-appearance.md`: **profile with capsules first** (no baseline exists and there are 908
+chunk renderers already), then **swap ONE model** to prove the pipeline, then map the rest to an axis
+that is real *today* - predator/herbivore via `Aggression`/`Attack`/`DietSpecialization`, or body-size
+class - and only assign **model per species cluster** once P5 clustering is trusted. **Do not assign
+eight models arbitrarily**: it teaches a viewer that model means decoration, which has to be un-taught
+when it should mean species. Animations map to `CreatureAction` for free, which is the biggest
+legibility win available.
+
+**3b. `CreatureAppearance` step 3.** Apply the mapping at the one call site in
 `Prototype1Presenter.Views.cs`, behind the unbound `U` key, per creature and never by population
 mean. **Waits for real models** - that half is what a model swap would redo. The pure half is built
 and tested.
