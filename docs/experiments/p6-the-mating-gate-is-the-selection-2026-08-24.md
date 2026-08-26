@@ -1,5 +1,13 @@
 # The mating gate was the selection: slacken it and five traits stop being selected at all
 
+> **PARTLY CORRECTED by `p6-gate-dose-response-2026-08-24.md`.** The headline result -
+> `urgency_exponent` from t = -14.55 to -0.44 - is confirmed and strengthened by five gate values.
+> **"Five traits" is not.** Read across the whole curve, only `urgency_exponent` has a clean graded
+> response; `travel_sensitivity` supports it but never passes |t| = 2.2; `movement_speed` is back to
+> t = 3.16 at a gate of 0.55 and so is not a gate response at all; and `body_size` and
+> `metabolic_pace` are noise across the curve, with marginal default-gate values to begin with. **The
+> figure was an artefact of comparing two points instead of five.**
+
 **2026-08-24. 80 seeds, 12,000 ticks, population cap 100, terrain join on, moderate resources.**
 `tools/CreatureSweep --focused 80 100 --gate=0.45` against the identical seeds at the default gate
 (`p6-dose-response-moderate-80seeds`). Death mix from `--deaths 30 100 --gate=0.45`.

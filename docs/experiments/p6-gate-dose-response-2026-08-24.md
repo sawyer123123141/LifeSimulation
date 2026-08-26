@@ -59,8 +59,35 @@ The strict setting is what makes those traits mean anything.
 buys, not what it should be. What it does say is that **the choice is consequential and sits on a
 knee**, so if it is ever moved it should be moved deliberately and re-measured, not nudged.
 
+## The other four traits — and a correction to the previous doc
+
+`p6-the-mating-gate-is-the-selection-2026-08-24.md` says **five traits stop being selected** when the
+gate is slackened to 0.45. That is true *at 0.45*. Read across the whole curve, it overstates the
+case, and only one other trait has a graded gate response:
+
+| gene | 0.45 | 0.55 | 0.60 | 0.65 | **0.70** |
+|---|---|---|---|---|---|
+| **urgency_exponent** | −0.44 | −1.02 | −2.01 | **−7.13** | **−14.55** |
+| travel_sensitivity | +0.12 | −0.24 | −0.21 | −1.53 | −2.20 |
+| movement_speed | +0.96 | **+3.16** | **+2.53** | **+3.55** | **+3.94** |
+| body_size | −0.70 | −0.34 | −1.11 | +0.34 | −2.01 |
+| metabolic_pace | −0.18 | −1.11 | −1.10 | −2.17 | +0.86 |
+
+- **`urgency_exponent` is the result.** Monotone across five values, spanning t = −0.44 to −14.55.
+- **`travel_sensitivity` supports it** — consistent direction, roughly monotone — but **never exceeds
+  |t| = 2.2**, so it is suggestive rather than established.
+- **`movement_speed` is not a gate response at all.** It is back to t = 3.16 at a gate of 0.55, where
+  urgency is still at 1.02. It goes quiet only at the extreme value, which is a different claim.
+- **`body_size` and `metabolic_pace` are noise across the curve**, and their default-gate values
+  (−2.01 and +0.86) were marginal to begin with — in a fourteen-column table where one crossing
+  |t| = 2 is what chance produces.
+
+**So the honest headline is narrower than the previous doc's:** the gate is demonstrably the driver
+for `urgency_exponent`, plausibly for `travel_sensitivity`, and the "five traits" figure was an
+artefact of comparing two points instead of five. **Reading the curve cost a grep and caught an
+overclaim that a single comparison had produced.**
+
 ## Scope
 
-One scenario, one population cap, one trait's response tracked across the curve. The other four
-traits that went quiet at 0.45 were not tracked at the intermediate values — that is the obvious
-extension and it costs nothing but the reading, since the corpora are committed.
+One scenario, one population cap. The correction above is the reason to distrust two-point
+comparisons in this project generally, not only this one.

@@ -872,8 +872,13 @@ each 0.05 multiplies the drift by roughly 2.7x. **The default gate sits on the s
   default it lives six thousandths above the line that decides whether it can breed. **Raising the
   gate raises the population's energy** - it is a feedback loop, which is why the cliff prediction
   failed: the level I expected the gate to cross moves with the gate.
-- **Cheap extension, corpora already committed:** the other four traits that went quiet at 0.45 were
-  not read at the intermediate gates. That costs a grep, not a run.
+- **DONE, and it caught an overclaim.** "Five traits stop being selected" was true at 0.45 and false
+  across the curve. Only `urgency_exponent` has a clean graded response (-0.44 to -14.55);
+  `travel_sensitivity` supports it but **never passes |t| = 2.2**; `movement_speed` is back to
+  **t = 3.16 at a gate of 0.55** so it is not a gate response at all; `body_size` and `metabolic_pace`
+  are noise across the curve and their default-gate values (-2.01, +0.86) were marginal anyway.
+  **A two-point comparison manufactured a five-trait claim that five points deleted.** Banner added to
+  the earlier doc.
 
 **2. Profile Play mode.** The terrain brief review (`docs/terrain-brief-review-2026-08-24.md`) is
 right that this is the biggest hole: **nothing in Play mode has ever been observed**, 908 chunks

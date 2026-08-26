@@ -1673,3 +1673,8 @@ change.
   is the driver". Five said "and the default sits on the steepest part of the curve, where a small
   change to the parameter is a large change to how hard the model selects" - which is the part that
   matters for tuning and was invisible from a single comparison.
+- **Two points make a slope out of anything (2026-08-24).** Comparing gate 0.70 against 0.45 said
+  "five traits stop being selected". Five gate values said one trait does, one might, and three were
+  noise whose default-gate values were marginal to begin with. **The extension cost a grep against
+  corpora already on disk and deleted a claim that had been written up and committed.** When a result
+  comes from exactly two conditions, the cheapest possible next thing is a third.
