@@ -1,0 +1,128 @@
+[21:58:00] performance — p6-terrain-playtest
+  frames sampled   355
+  median           3.14 ms   (318.10 fps)
+  p90              4.85 ms
+  p99              201.10 ms
+  worst frame      1555.24 ms
+  over 33 ms       10   (dropped below 30 fps)
+  over 100 ms      8   (visible freeze)
+  best frame       2.29 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       97
+  section              calls    worst ms    total ms
+    heatmap             357      197.97     1171.67
+[21:58:05] performance — p6-terrain-playtest
+  frames sampled   966
+  median           3.05 ms   (327.50 fps)
+  p90              3.94 ms
+  p99              38.34 ms
+  worst frame      210.63 ms
+  over 33 ms       11   (dropped below 30 fps)
+  over 100 ms      10   (visible freeze)
+  best frame       2.26 ms
+
+  creatures        5
+  renderers        37
+  triangles        80080
+  draw calls       112
+  section              calls    worst ms    total ms
+    heatmap             966      205.31     1953.02
+[21:58:10] performance — p6-terrain-playtest
+  frames sampled   1008
+  median           2.97 ms   (336.21 fps)
+  p90              3.93 ms
+  p99              18.49 ms
+  worst frame      205.78 ms
+  over 33 ms       10   (dropped below 30 fps)
+  over 100 ms      10   (visible freeze)
+  best frame       2.27 ms
+
+  creatures        6
+  renderers        38
+  triangles        80912
+  draw calls       136
+  section              calls    worst ms    total ms
+    heatmap            1008      200.38     1921.12
+[21:58:15] performance — drought
+  frames sampled   1469
+  median           2.70 ms   (370.43 fps)
+  p90              3.56 ms
+  p99              6.12 ms
+  worst frame      203.02 ms
+  over 33 ms       4   (dropped below 30 fps)
+  over 100 ms      4   (visible freeze)
+  best frame       2.10 ms
+
+  creatures        4
+  renderers        9
+  triangles        77240
+  draw calls       57
+  section              calls    worst ms    total ms
+    heatmap            1470      198.39      787.09
+[21:58:20] performance — drought
+  frames sampled   1751
+  median           2.73 ms   (366.59 fps)
+  p90              3.48 ms
+  p99              5.71 ms
+  worst frame      9.73 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.12 ms
+
+  creatures        4
+  renderers        9
+  triangles        77240
+  draw calls       59
+  section              calls    worst ms    total ms
+    heatmap            1751        1.56       11.84
+[21:58:25] performance — drought
+  frames sampled   1658
+  median           2.88 ms   (347.29 fps)
+  p90              3.69 ms
+  p99              5.53 ms
+  worst frame      13.73 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.16 ms
+
+  creatures        5
+  renderers        10
+  triangles        78072
+  draw calls       49
+  section              calls    worst ms    total ms
+    heatmap            1658        1.51       13.14
+[21:58:39] performance — drought
+  frames sampled   70
+  median           2.91 ms   (343.84 fps)
+  p90              3.87 ms
+  p99              9.08 ms
+  worst frame      13919.13 ms
+  over 33 ms       1   (dropped below 30 fps)
+  over 100 ms      1   (visible freeze)
+  best frame       2.27 ms
+
+  creatures        5
+  renderers        10
+  triangles        78072
+  draw calls       49
+  section              calls    worst ms    total ms
+    heatmap              70        1.47        1.49
+[21:58:48] performance — p6-terrain-playtest
+  frames sampled   160
+  median           3.21 ms   (311.82 fps)
+  p90              5.37 ms
+  p99              789.27 ms
+  worst frame      1476.83 ms
+  over 33 ms       8   (dropped below 30 fps)
+  over 100 ms      7   (visible freeze)
+  best frame       2.34 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       61
+  section              calls    worst ms    total ms
+    heatmap             164      192.95     1534.76

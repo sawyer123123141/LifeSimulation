@@ -140,10 +140,14 @@ namespace LifeSimulation.Presentation
                     CaptureRecentEvent();
                     _world.Events.Clear();
                     _accumulator -= _world.Config.FixedDeltaTime;
-                    _heatmapUpdateAccumulator += _world.Config.FixedDeltaTime;
                 }
             }
 
+            // Wall time, not simulated time. This used to advance inside the step loop by
+            // FixedDeltaTime, so at speed 8 the overlay rebuilt eight times as often - and each
+            // rebuild was measured at 192.95 ms. The refresh rate of a diagnostic overlay has no
+            // business scaling with the simulation speed multiplier.
+            _heatmapUpdateAccumulator += Time.unscaledDeltaTime;
             UpdatePlanetRebuild();
             UpdateTemperatureHeatmapIfNeeded();
             SynchronizePresentation();
