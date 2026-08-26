@@ -574,7 +574,20 @@ namespace LifeSimulation.Presentation
             _terrainMesh.RecalculateBounds();
         }
 
+        /// <summary>
+        /// Times the heatmap rebuild, which is the leading suspect for the stutter in the first real
+        /// performance reading: median 3.02 ms against a <b>worst frame of 197.52 ms</b>. This is
+        /// 128x128 = <b>16,384 terrain samples on the main thread every two seconds</b>. Suspicion is
+        /// not measurement, so it is measured rather than assumed.
+        /// </summary>
         private void UpdateTemperatureHeatmapIfNeeded()
+        {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            UpdateTemperatureHeatmapCore();
+            RecordSection("heatmap", timer.Elapsed.TotalMilliseconds);
+        }
+
+        private void UpdateTemperatureHeatmapCore()
         {
             if (_world == null || _heatmapUpdateAccumulator < HeatmapUpdateInterval)
             {

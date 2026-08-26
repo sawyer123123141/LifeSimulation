@@ -36,6 +36,39 @@ namespace LifeSimulation.Presentation
             _sincePerformanceReport = 0f;
             WritePerformanceReport();
             _frameTimes.Clear();
+            _sectionWorstMilliseconds.Clear();
+        }
+
+        /// <summary>
+        /// The worst time any named section has taken since the last report.
+        ///
+        /// <para>A frame-time percentile says a stutter happened; it cannot say what did it. The
+        /// first real reading had a median of 3.02 ms and a worst frame of 197.52 ms, which is a
+        /// hitch rather than a throughput problem, and hitches are always some periodic job running
+        /// on the main thread. Naming the job is the difference between a fix and a guess.</para>
+        /// </summary>
+        private readonly System.Collections.Generic.Dictionary<string, double> _sectionWorstMilliseconds =
+            new System.Collections.Generic.Dictionary<string, double>();
+
+        private void RecordSection(string section, double milliseconds)
+        {
+            if (milliseconds <= 0d) return;
+            _sectionWorstMilliseconds.TryGetValue(section, out double worst);
+            if (milliseconds > worst) _sectionWorstMilliseconds[section] = milliseconds;
+        }
+
+        private string DescribeSections()
+        {
+            if (_sectionWorstMilliseconds.Count == 0) return string.Empty;
+
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine("  worst single call, by section");
+            foreach (System.Collections.Generic.KeyValuePair<string, double> pair in _sectionWorstMilliseconds)
+            {
+                builder.AppendLine("    " + pair.Key.PadRight(16) + pair.Value.ToString("0.00") + " ms");
+            }
+
+            return builder.ToString();
         }
 
         private void WritePerformanceReport()
@@ -57,7 +90,8 @@ namespace LifeSimulation.Presentation
                         creatures: _world?.CreatureCount ?? 0,
                         renderers: renderers,
                         triangles: triangles,
-                        drawCalls: DrawCalls()));
+                        drawCalls: DrawCalls())
+                    + DescribeSections());
             }
             catch (IOException)
             {
