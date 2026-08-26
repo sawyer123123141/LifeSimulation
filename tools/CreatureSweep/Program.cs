@@ -126,6 +126,15 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _predation;
 
+        /// <summary>
+        /// The two flags `p4-inert-flags-readjudicated-2026-08-19.md` could not adjudicate, as arms.
+        /// Both sit inside `if (predationEnabled)` and had never had a living population with threats
+        /// to be measured in; `--predation --gate=0.45` in the pressured cell is one.
+        /// </summary>
+        private static bool _multiThreat = true;
+
+        private static bool _kinRecognition = true;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -160,6 +169,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 }
                 if (argument == "--metabolic-healing") { _healthRecovery = true; _metabolicHealing = true; }
                 if (argument == "--predation") _predation = true;
+                if (argument == "--multithreat=off") _multiThreat = false;
+                if (argument == "--kin=off") _kinRecognition = false;
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -300,11 +311,11 @@ namespace LifeSimulation.Tools.CreatureSweep
                 foragingEconomicsEnabled: true,
                 predationEconomicsEnabled: true,
                 decisionStaggerEnabled: true,
-                multiThreatPerceptionEnabled: true,
+                multiThreatPerceptionEnabled: _multiThreat,
                 restBehaviorEnabled: true,
                 juvenileCapabilityEnabled: true,
                 parentalFollowingEnabled: true,
-                kinRecognitionEnabled: true,
+                kinRecognitionEnabled: _kinRecognition,
                 learnedResourceQualityEnabled: true,
                 mateSelectionEnabled: true,
                 plantSiteCompetitionEnabled: true,
@@ -641,6 +652,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             var suffix = new StringBuilder();
             suffix.Append("-").Append(_seedCount).Append("seeds");
             if (_predation) suffix.Append("-predation");
+            if (!_multiThreat) suffix.Append("-multithreatoff");
+            if (!_kinRecognition) suffix.Append("-kinoff");
             if (!_join) suffix.Append("-joinoff");
             if (_terrainTemperature) suffix.Append("-terraintemp");
             if (_metabolicIngestion) suffix.Append("-ingestion");

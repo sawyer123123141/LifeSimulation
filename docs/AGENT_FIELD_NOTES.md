@@ -252,6 +252,21 @@ under FULL ecosystem mode where all four are on:
 > is extinct before 3,000 ticks with zero births on the plant calibration, so every verdict measured
 > there — in both directions — is measured on a corpse. See
 > `docs/experiments/p4-inert-flags-readjudicated-2026-08-19.md`.
+>
+> **ADJUDICATED 2026-08-26 — both are LIVE when exercised.**
+> `p6-two-flags-adjudicated-at-last-2026-08-26.md`. The scenario now exists: the predation founder
+> profile was never viable because it set six of twenty-four traits and left the rest at the
+> constructor's `0f` (fixed), and the remaining blocker was the mate-seeking gate, so
+> `--predation --gate=0.45` in the pressured cell gives 24-26 worlds of 30 with predation firing.
+> There: `kinRecognitionEnabled` off diverges **56 of 60** hashes and **costs 29% of the population**;
+> `multiThreatPerceptionEnabled` off diverges **60 of 60** and *raises* population 6-31%. Both health
+> arms agree.
+>
+> **`KnownInertFlags` and `LivenessTests` are unchanged and still correct** — they are scoped to the
+> widest *available* configuration, where no threats occur and both flags are genuinely bit-inert.
+> "Live in a scenario that has threats" and "inert in the pinned scenario" are both true, and the
+> pinned set is the one the build enforces. **Do not move them out of the known set on the strength of
+> the 2026-08-26 result.**
 | `plantTemperatureAdaptationEnabled` | **different reason — temporary.** Fully wired on the live path, but `EnvironmentField` returns `Temperature = 1` everywhere, and the adaptation expression collapses to the raw value at 1. **Move it out of `KnownInertFlags` when terrain fields land**; the test failing is the correct signal that it went live. |
 
 > The 2026-08-17 audit cleared all sixteen flags because each "has at least one
