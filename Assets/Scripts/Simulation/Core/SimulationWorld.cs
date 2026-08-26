@@ -44,6 +44,14 @@ namespace LifeSimulation.Simulation.Core
 
         /// <summary>Health removed by combat, cumulative. Diagnostics only; never hashed.</summary>
         private float _cumulativeCombatDamage;
+
+        private float _defenseAtDeathTotal;
+
+        private int _defenseAtDeathCount;
+
+        private float _defenseAtPredationDeathTotal;
+
+        private int _defenseAtPredationDeathCount;
         private int _predationDeathCount;
         private float _cumulativePlantGrowth;
         private float _cumulativePlantBiomassConsumed;
@@ -246,6 +254,21 @@ namespace LifeSimulation.Simulation.Core
             _pendingDeathCauses[_pendingDeathCount] = cause;
             _pendingDeathPositions[_pendingDeathCount] = Creatures.GetMovementAt(creatureIndex).Position;
             _pendingDeathCount++;
+
+            // Defense of the creature that is dying, accumulated here because this is the only place
+            // that still has its index. Added 2026-08-26 to answer the one question the combat
+            // instruments left open: `defense` is under t = 11 selection while predation kills 0.53
+            // creatures per run, and a small number of deaths falling on the LOW-defense tail
+            // outruns a large number falling at random. Comparing these means against the population
+            // mean is what separates the two; nothing reported it.
+            float dyingDefense = Creatures.GetGenomeAt(creatureIndex).Defense;
+            _defenseAtDeathTotal += dyingDefense;
+            _defenseAtDeathCount++;
+            if (cause == DeathCause.Predation)
+            {
+                _defenseAtPredationDeathTotal += dyingDefense;
+                _defenseAtPredationDeathCount++;
+            }
         }
 
         /// <summary>

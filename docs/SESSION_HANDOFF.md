@@ -596,12 +596,23 @@ it are now qualified by banners on the documents they cite.
    health of combat damage per run** across a population near 130. **Both mechanisms I proposed are
    withdrawn and no third is offered: defense selection is robust and unexplained.**
 
+9. **And the open question is answered** — `p6-death-is-concentrated-on-the-low-defense-tail-2026-08-26.md`.
+   `MeanDefenseAtDeath` and `MeanDefenseAtPredationDeath` added. Mean `defense` of the **predated** is
+   **0.2479** against **0.7190** for the living and 0.489 for the founders. **Predation kills rarely
+   and kills almost only the weakest-defended**, which is how 0.53 deaths per run produce t = 11.
+   Mechanism: **selective mortality on the low-defense tail** - measured, not inferred. The "all dead"
+   column is explained by timing and no claim is made from it.
+
 **What is worth doing next**
 
-- **THE open question: why is `defense` selected at all?** Neither fertility (1.8% sterile) nor
-  mortality (0.53 deaths per run) is visibly large enough. **The next measurement is the defense value
-  of the creatures that die** - one number, no instrument reports it, and it separates
-  "concentrated on the low-defense tail" from every other explanation.
+- **The controller comparison has still never been run** - does richer decision machinery pay in a
+  world that now has pressure? Paired arms, existing harness, the cell exists.
+- **Nine plant corpora are still measured pinned.** Only contest and join were re-validated.
+- **The slope arms in every predation run were never examined** - `--focused` doubles into slope-on
+  and slope-off and only the drift table was read.
+- **Not separated:** whether attackers target low-defense creatures or merely succeed against them
+  more often. `PredationSystem` makes success-rate concentration sufficient, so targeting need not be
+  invoked - but they are not distinguished.
 
 - **The whole predation result lives at gate 0.45, cap 500, regen 2.0 — one cell.** Robustness across
   gate, cap and regeneration is the first thing to check before anything is built on it.

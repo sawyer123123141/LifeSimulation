@@ -193,7 +193,9 @@ namespace LifeSimulation.Simulation.Core
                 _plantPatchSeconds,
                 meanManeuverabilityGene: maneuverabilityTotal * reciprocalPopulation,
                 meanFearGene: fearTotal * reciprocalPopulation,
-                cumulativeCombatDamage: _cumulativeCombatDamage);
+                cumulativeCombatDamage: _cumulativeCombatDamage,
+                meanDefenseAtDeath: _defenseAtDeathCount == 0 ? 0f : _defenseAtDeathTotal / _defenseAtDeathCount,
+                meanDefenseAtPredationDeath: _defenseAtPredationDeathCount == 0 ? 0f : _defenseAtPredationDeathTotal / _defenseAtPredationDeathCount);
         }
     }
 }

@@ -127,7 +127,9 @@ namespace LifeSimulation.Simulation.Core
             // in the middle would silently reassign every argument after the insertion point.
             float meanManeuverabilityGene = 0f,
             float meanFearGene = 0f,
-            float cumulativeCombatDamage = 0f)
+            float cumulativeCombatDamage = 0f,
+            float meanDefenseAtDeath = 0f,
+            float meanDefenseAtPredationDeath = 0f)
         {
             Tick = tick;
             Population = population;
@@ -166,6 +168,8 @@ namespace LifeSimulation.Simulation.Core
             MeanManeuverabilityGene = meanManeuverabilityGene;
             MeanFearGene = meanFearGene;
             CumulativeCombatDamage = cumulativeCombatDamage;
+            MeanDefenseAtDeath = meanDefenseAtDeath;
+            MeanDefenseAtPredationDeath = meanDefenseAtPredationDeath;
             MeanDietSpecializationGene = meanDietSpecializationGene;
             ViableHunterCount = viableHunterCount;
             MeanMemoryCapacityGene = meanMemoryCapacityGene;
@@ -234,6 +238,17 @@ namespace LifeSimulation.Simulation.Core
         /// rather than measured - this is the quantity that was missing.
         /// </summary>
         public float CumulativeCombatDamage { get; }
+
+        /// <summary>
+        /// Mean `Defense` of every creature that has died, and of those killed by predation. Compared
+        /// against <see cref="MeanDefenseGene"/> - the mean of the living - this says whether death
+        /// is concentrated on the low-defense tail, which is the remaining candidate explanation for
+        /// defense selection in a world where predation kills 0.53 creatures per run. Zero when no
+        /// death of that kind has occurred.
+        /// </summary>
+        public float MeanDefenseAtDeath { get; }
+
+        public float MeanDefenseAtPredationDeath { get; }
 
         public float MeanAttackGene { get; }
         public float MeanDefenseGene { get; }

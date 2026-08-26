@@ -1,5 +1,11 @@
 # The two invisible genes are now visible, combat damage is measured — and neither mechanism explains defense selection
 
+> **ANSWERED SAME DAY** — `p6-death-is-concentrated-on-the-low-defense-tail-2026-08-26.md`. The
+> remaining candidate named below was the right one. Mean `defense` of the **predated** is **0.2479**
+> against **0.7190** for the living and a founder mean of 0.489. **Predation kills rarely and kills
+> almost only the weakest-defended**, which is how 0.53 deaths per run produce t = 11. The mechanism
+> is selective mortality on the tail.
+
 **2026-08-26.** `tools/CreatureSweep --deaths 30 500 --regen=2.0 --brake=1.5 --predation --gate=0.45
 [--health-recovery]` and `--focused` in the same cell, 12,000 ticks.
 
