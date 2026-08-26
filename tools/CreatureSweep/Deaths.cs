@@ -37,7 +37,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             var hydration = new List<double>();
             var health = new List<double>();
             var sterile = new List<double>();
-            long population = 0;
+            var populations = new List<double>();
             int extinct = 0;
 
             for (int index = 0; index < seedCount; index++)
@@ -67,7 +67,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 hydration.Add(statistics.MeanHydrationFraction);
                 health.Add(HealthFraction(world, gate + SimulationConfig.MateSeekingNeedMargin, out double sterileShare));
                 sterile.Add(sterileShare);
-                population += statistics.Population;
+                populations.Add(statistics.Population);
             }
 
             int counted = seedCount - extinct;
@@ -92,7 +92,16 @@ namespace LifeSimulation.Tools.CreatureSweep
             // A creature that loses a fifth of its health is permanently unable to seek a mate.
             Console.WriteLine("  mean health fraction    " + Mean(health).ToString("0.0000"));
             Console.WriteLine("  below the health gate   " + (100d * Mean(sterile)).ToString("0.0") + "%  <- cannot seek a mate, ever");
-            Console.WriteLine("  mean final population   " + (counted == 0 ? 0d : (double)population / counted).ToString("0.0"));
+            // Population SPREAD is what separates a habitat from a ceiling. A carrying capacity
+            // produces a distribution; a cap produces a constant. Eleven committed corpora and 4,080
+            // runs have a population column with zero variance, which is why this is printed.
+            var sortedPopulations = new List<double>(populations);
+            sortedPopulations.Sort();
+            Console.WriteLine("  final population        mean " + Mean(populations).ToString("0.0")
+                + "  min " + Percentile(sortedPopulations, 0d).ToString("0")
+                + "  median " + Percentile(sortedPopulations, 0.5d).ToString("0")
+                + "  max " + Percentile(sortedPopulations, 1d).ToString("0")
+                + "  sd " + StandardDeviation(populations).ToString("0.00"));
         }
 
         /// <summary>
@@ -127,6 +136,22 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             string share = total == 0 ? "n/a" : (100d * count / total).ToString("0.0") + "%";
             Console.WriteLine("  " + name.PadRight(12) + count.ToString().PadLeft(8) + "   " + share.PadLeft(6));
+        }
+
+        private static double Percentile(List<double> sorted, double fraction)
+        {
+            if (sorted.Count == 0) return double.NaN;
+            int rank = (int)Math.Round(fraction * (sorted.Count - 1));
+            return sorted[Math.Min(sorted.Count - 1, Math.Max(0, rank))];
+        }
+
+        private static double StandardDeviation(List<double> values)
+        {
+            if (values.Count < 2) return double.NaN;
+            double mean = values.Average();
+            double total = 0d;
+            foreach (double value in values) total += (value - mean) * (value - mean);
+            return Math.Sqrt(total / (values.Count - 1));
         }
 
         private static double Mean(List<double> values)

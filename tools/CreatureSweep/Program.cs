@@ -117,6 +117,23 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--terrain-temperature") _terrainTemperature = true;
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (argument == "--health-recovery") _healthRecovery = true;
+                if (argument.StartsWith("--regen=")
+                    && float.TryParse(argument.Substring("--regen=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float regen))
+                {
+                    _scenarioName = "regen" + regen.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                    _scenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate.WithRegeneration(
+                        "p6-defense-calibration-" + _scenarioName, regen);
+                }
+                if (argument.StartsWith("--scale=")
+                    && float.TryParse(argument.Substring("--scale=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float scale))
+                {
+                    // An arbitrary scaling of the calibrated layout, for searching for the resource
+                    // level at which the population limits ITSELF rather than hitting the cap. The
+                    // named scenarios are fixed points on the same axis; this is the axis.
+                    _scenarioName = "scale" + scale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                    _scenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate.Scaled(
+                        "p6-defense-calibration-" + _scenarioName, scale);
+                }
                 if (argument == "--metabolic-healing") { _healthRecovery = true; _metabolicHealing = true; }
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))

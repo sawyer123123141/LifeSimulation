@@ -118,6 +118,47 @@ namespace LifeSimulation.Simulation.Experiments
         /// that decides what they become if they are ever activated, so leaving it alone would make a
         /// scarce world quietly generous the moment a site woke up.</para>
         /// </summary>
+        /// <summary>
+        /// Scales <b>regeneration only</b>, leaving standing stock and capacity alone.
+        ///
+        /// <para><b>Why this is a different axis from <see cref="Scaled"/>.</b> That one multiplies
+        /// amount, capacity and regeneration together, so the ratio between them is unchanged and the
+        /// ecology's <i>dynamics</i> are scale-invariant. Measured: at a cap of 250, resource levels
+        /// from 0.40x to 1.00x all collapse, 21 to 23 of 24 worlds extinct at every one. Scarcity is
+        /// not what causes boom-and-collapse — <b>the ratio of regrowth to standing stock is</b>, and
+        /// <see cref="Scaled"/> cannot move it by construction.</para>
+        ///
+        /// <para>A habitat whose forage regrows quickly cannot be stripped permanently, which is the
+        /// condition for a population to be limited by carrying capacity rather than by a cap. That
+        /// is the oldest measurement debt on this project: 4,080 recorded runs have a population
+        /// column pinned at 48 (<c>p4-cap-pinning-audit-2026-08-22.md</c>).</para>
+        /// </summary>
+        public SimulationScenario WithRegeneration(string id, float factor)
+        {
+            if (factor <= 0f || float.IsNaN(factor) || float.IsInfinity(factor))
+            {
+                throw new ArgumentOutOfRangeException(nameof(factor));
+            }
+
+            var scaled = new ResourceDefinition[_resources.Length];
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition source = _resources[index];
+                scaled[index] = new ResourceDefinition(
+                    source.Kind,
+                    source.Position,
+                    source.InteractionRadius,
+                    source.InitialAmount,
+                    source.Capacity,
+                    source.RegenerationPerSecond * factor,
+                    source.IsActive,
+                    source.NutritionMultiplier,
+                    source.PlantGenome);
+            }
+
+            return new SimulationScenario(id, scaled, _founderPlacement);
+        }
+
         public SimulationScenario Scaled(string id, float factor)
         {
             if (factor <= 0f || float.IsNaN(factor) || float.IsInfinity(factor))

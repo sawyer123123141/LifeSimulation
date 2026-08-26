@@ -1678,3 +1678,17 @@ change.
   noise whose default-gate values were marginal to begin with. **The extension cost a grep against
   corpora already on disk and deleted a claim that had been written up and committed.** When a result
   comes from exactly two conditions, the cheapest possible next thing is a third.
+- **An instrument that varies everything together varies nothing (2026-08-24).**
+  `SimulationScenario.Scaled` multiplies amount, capacity and regeneration by one factor, so the
+  ratios between them - which are what set an ecology's dynamics - never move. Five resource levels
+  from 0.40x to 1.00x all collapsed identically, and could not have done otherwise. **Before sweeping
+  a knob, check that it changes a ratio and not just a unit.**
+- **When a bound turns out to be load-bearing, say so.** The population cap was treated as a ceiling
+  on a self-regulating ecology for the life of the project. 2.0x regeneration survives 23 of 24 runs
+  at cap 250 and 3 of 20 at cap 500 - same ecology, same forage. **The cap was supplying the
+  regulation, not bounding it.** Same shape as the reproduction gate turning out to be the dominant
+  selective channel: the constants nobody questions are the ones doing the work.
+- **Report the spread, not the mean, whenever a ceiling might be involved.** Eleven committed corpora
+  and 4,080 runs have a population column with zero variance, and no summary statistic in them says
+  so. **A carrying capacity produces a distribution; a cap produces a constant** - printing sd would
+  have caught it years of runs earlier.

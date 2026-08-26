@@ -899,9 +899,27 @@ legibility win available.
 mean. **Waits for real models** - that half is what a model swap would redo. The pure half is built
 and tested.
 
-**4. A carrying-capacity-limited habitat** - section 9's item C5, and it has been the most important
-measurement debt for longer than anything else here. Every plant result is scoped by a population
-pinned at a cap. **Scenario design, not an audit.**
+**4. A carrying-capacity-limited habitat** - section 9's item C5, the oldest debt here. **Now
+diagnosed rather than merely described** - `p6-the-cap-is-the-stabiliser-2026-08-24.md`.
+- **Scarcity is not the cause and cannot be.** `Scaled` multiplies amount, capacity and regeneration
+  together, so the dynamics are **scale-invariant by construction**; measured, 0.40x to 1.00x all
+  collapse at cap 250 (21-23 of 24 extinct) and the level makes no difference.
+- **`WithRegeneration(id, factor)` is new** and moves the ratio `Scaled` cannot. Faster regrowth
+  converts collapse into survival at cap 250 (3 -> 23 of 24 at 2.0x), **then pins at the new cap**
+  (sd 0.65 at 3.0x - the same zero-variance ceiling, moved up).
+- **The finding: raise the ceiling out of the way and it collapses again.** 2.0x regeneration
+  survives **23 of 24 at cap 250 and 3 of 20 at cap 500**, same ecology. Starvation is **35-64% of
+  deaths at cap 500 against 0.1% at cap 100**. **The cap is not bounding a self-regulating ecology;
+  it is supplying the regulation.** The model has no density-dependent brake of its own.
+- **Candidate explanation, NOT established:** births are gated by step functions (70% / 80% of three
+  needs), so there is no "resources are tightening, breed less" signal - only "resources are gone,
+  nobody breeds and many starve". **A graded fertility response** is the standard shape that produces
+  equilibrium. **The test is to build one behind a flag** and see whether a population settles below a
+  cap it can reach. Two explanations tonight died at exactly this level of support, so treat it as a
+  lead.
+- `--regen=X` and `--scale=X` exist on `CreatureSweep`, and `--deaths` now reports population
+  **spread** (min/median/max/sd) - a carrying capacity makes a distribution, a cap makes a constant,
+  and eleven committed corpora could not tell them apart.
 
 **5. Health recovery as a default.** Flagged in `p6-health-recovery-2026-08-24.md`: it *removes an
 artefact* rather than adding realism, which makes it different in kind from the slope cost and the
