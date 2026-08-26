@@ -608,8 +608,10 @@ it are now qualified by banners on the documents they cite.
 - **The controller comparison has still never been run** - does richer decision machinery pay in a
   world that now has pressure? Paired arms, existing harness, the cell exists.
 - **Nine plant corpora are still measured pinned.** Only contest and join were re-validated.
-- **The slope arms in every predation run were never examined** - `--focused` doubles into slope-on
-  and slope-off and only the drift table was read.
+- ~~The slope arms in every predation run were never examined~~ **CHECKED, null** - 168 paired columns
+  across eight cells, **3 at |t| >= 2 against a chance expectation of 8.4**. The slope cost does not
+  interact with combat; the predation drift tables are safe to read as single-arm measurements.
+  Appendix in `p6-defense-selection-is-robust-and-my-mechanism-was-wrong-2026-08-26.md`.
 - **Not separated:** whether attackers target low-defense creatures or merely succeed against them
   more often. `PredationSystem` makes success-rate concentration sufficient, so targeting need not be
   invoked - but they are not distinguished.
