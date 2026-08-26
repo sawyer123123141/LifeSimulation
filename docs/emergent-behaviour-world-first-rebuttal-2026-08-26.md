@@ -116,10 +116,16 @@ ordering does not address.
    the channel was already on: `--quality=off` on `PlantSweep`. It changes a third of the population
    and a fifth of plant occupancy, and every hash. §1's "no information to exploit" does not survive
    it. Details and scope: `experiments/p6-patch-quality-is-not-a-free-parameter-2026-08-26.md`.
-2. **Re-measure the death mix at cap 250–500 with the brake at a scenario-appropriate strength.** If
-   starvation returns without new mechanisms, "nothing kills a creature" was a cap artefact.
+2. ~~**Re-measure the death mix at cap 250–500 with the brake at a scenario-appropriate strength.**~~
+   **DONE, 2026-08-26** — and the naive form of it was confounded, since suppressing starvation is what
+   the brake is for. Measured with the brake **on and off**, ten cells:
+   `experiments/p6-starvation-is-a-dial-2026-08-26.md`. Starvation runs **49.6% to 0.0%** of deaths
+   under one ecology across brake strength, so **"nothing kills a creature" is the default
+   configuration, not the model**. At **brake 1.5, 30 of 30 worlds survive with 16.2% starvation** —
+   a survivable world with real mortality pressure, no predation and no new mechanism.
 3. **Then, and only then, price predation** — against the recorded failure of the last attempt, not
-   against an estimate.
+   against an estimate. **Now with a survivable pressured configuration to attempt it in**, which the
+   2026-08-19 attempt did not have.
 
 **None of these is "build a neural controller".** The claim being rejected is the *ordering*, not the
 value of enriching the world.
