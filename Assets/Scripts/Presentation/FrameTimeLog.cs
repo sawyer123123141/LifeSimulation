@@ -68,6 +68,23 @@ namespace LifeSimulation.Presentation
 
         public double Median => Percentile(0.5d);
 
+        /// <summary>
+        /// Frames slower than a threshold. **This is what a user reporting "a lag spike every second
+        /// or two" is describing**, and no percentile can show it: at 60 frames a second, a spike
+        /// every two seconds is under 1% of frames, so it hides *below* the 99th percentile while
+        /// being the most obvious thing on screen.
+        /// </summary>
+        public int FramesSlowerThan(double milliseconds)
+        {
+            int count = 0;
+            for (int index = 0; index < _count; index++)
+            {
+                if (_milliseconds[index] > milliseconds) count++;
+            }
+
+            return count;
+        }
+
         /// <summary>Frames per second implied by the median frame, which is the honest headline.</summary>
         public double MedianFramesPerSecond
         {
@@ -92,6 +109,8 @@ namespace LifeSimulation.Presentation
                 "  p90              " + Format(Percentile(0.90d)) + " ms",
                 "  p99              " + Format(Percentile(0.99d)) + " ms",
                 "  worst frame      " + Format(Percentile(1d)) + " ms",
+                "  over 33 ms       " + FramesSlowerThan(33d) + "   (dropped below 30 fps)",
+                "  over 100 ms      " + FramesSlowerThan(100d) + "   (visible freeze)",
                 "  best frame       " + Format(Percentile(0d)) + " ms",
                 "",
                 "  creatures        " + creatures,

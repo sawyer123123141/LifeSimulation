@@ -199,7 +199,14 @@ namespace LifeSimulation.Presentation
         {
             if (_camera == null) return;
 
+            // Timed because this is the strongest remaining suspect for an intermittent stutter: it
+            // builds up to BuildsPerFrame chunks every frame, each one generating a mesh and calling
+            // RecalculateNormals on the main thread, and it only does work while the camera is
+            // MOVING. A reading taken while stationary would show none of it - which is very likely
+            // what the first clean profile captured.
+            var timer = System.Diagnostics.Stopwatch.StartNew();
             Refresh(_camera.transform.position, passes: 1);
+            PerformanceSections.Record("chunk build", timer.Elapsed.TotalMilliseconds);
         }
 
         /// <summary>
