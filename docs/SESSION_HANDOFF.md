@@ -659,6 +659,17 @@ artefact* rather than adding realism, which makes it different in kind from the 
 terrain temperature. It is the first flag to flip whenever a re-baseline is taken deliberately.
 **Do not flip it casually** - it re-baselines everything.
 
+**6. Emergent behaviour - can evolution invent behaviours nobody programmed?** Asked 2026-08-24.
+**Read `docs/emergent-behaviour-constraints-2026-08-24.md` before designing anything**, because three
+measurements from that session bear on the answer and were not available when the question was framed:
+**96.9% of deaths are old age with predation at zero and 15 starvations in 5,619**; **one threshold
+carries nearly all selection** (the 0.80 mating gate, t = -14.55 to -0.44 across five values); and
+**`ComputeNeedGain` saturates**, so the foraging decision carries no information a richer controller
+could exploit. The rival proposal a design must beat is **enrich the world before enriching the
+brain** - stated there as a hypothesis to argue against, not a conclusion. That doc also records a
+**contradiction**: place memory is on the do-not-touch list, and caching, territory and shelter all
+require it.
+
 **Do not restart rivers.** Still blocked behind a persistent grid.
 
 ## 8. Working-tree rules
