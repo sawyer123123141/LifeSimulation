@@ -1,5 +1,19 @@
 # "Nothing kills a creature" is two configuration values, and there is a setting where starvation and survival coexist
 
+> **FOLLOWED UP 2026-08-26** — `p6-the-pressured-cell-is-a-plateau-2026-08-26.md`. The brake-1.5 cell
+> was found by moving **one** axis, so it was checked for being a knife-edge: **it is not.** All nine
+> cells of brake 1.4–1.6 x regen 1.75–2.25 survive 29–30 of 30 with starvation between 4.2% and 27.2%.
+> **The cap is the one cliff, and it is a floor:** cap 250 takes starvation to 0.0%, while cap 500 and
+> cap 1000 are the same ecology (16.2% both, population self-limiting near 300). **Above 500 the cap
+> stops mattering.**
+>
+> The sterility channel named below is a **confound for every selection claim taken in these cells**,
+> not just a finding: health does not regenerate unless `healthRecoveryEnabled` is on, so drift is
+> conditioned on a breeding subpopulation health has already selected, and the selected fraction
+> **scales with the pressure** (27.1% down to 8.9% across the grid). With `--health-recovery` on, the
+> same cell keeps its pressure (13.2% starvation, 30/30) and sterility falls to 15.2% and becomes
+> recoverable rather than permanent.
+
 **2026-08-26.** `tools/CreatureSweep --deaths 30 <cap> [--regen=2.0] [--brake=X]`, 12,000 ticks,
 consumer-defense calibration layout. Ten cells, all from one build in one session. Console artefact:
 `p6-death-mix-cap-by-brake-2026-08-26.txt`.

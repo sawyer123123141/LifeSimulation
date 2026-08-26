@@ -1,0 +1,192 @@
+###### r1.75-b1.4-cap500
+
+death causes over 30 surviving runs of 30 (7659 deaths attributed)
+  starvation      2087    27.2%
+  dehydration        5     0.1%
+  age             5502    71.8%
+  health            65     0.8%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.4979
+  mean hydration fraction 0.8352
+  mean health fraction    0.8017
+  below the health gate   27.1%  <- cannot seek a mate, ever
+  final population        mean 264.6  min 3  median 305  max 489  sd 144.95
+
+###### r1.75-b1.5-cap500
+
+death causes over 30 surviving runs of 30 (6332 deaths attributed)
+  starvation      1224    19.3%
+  dehydration        4     0.1%
+  age             5029    79.4%
+  health            75     1.2%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5021
+  mean hydration fraction 0.8329
+  mean health fraction    0.8304
+  below the health gate   25.5%  <- cannot seek a mate, ever
+  final population        mean 255.3  min 5  median 283  max 470  sd 144.06
+
+###### r1.75-b1.6-cap500
+
+death causes over 30 surviving runs of 30 (4534 deaths attributed)
+  starvation       192     4.2%
+  dehydration        4     0.1%
+  age             4255    93.8%
+  health            83     1.8%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6574
+  mean hydration fraction 0.8320
+  mean health fraction    0.9303
+  below the health gate   10.4%  <- cannot seek a mate, ever
+  final population        mean 259.3  min 12  median 282  max 497  sd 124.22
+
+###### r2.0-b1.4-cap500
+
+death causes over 29 surviving runs of 30 (5635 deaths attributed)
+  starvation       609    10.8%
+  dehydration        0     0.0%
+  age             4943    87.7%
+  health            83     1.5%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6210
+  mean hydration fraction 0.8300
+  mean health fraction    0.8867
+  below the health gate   16.7%  <- cannot seek a mate, ever
+  final population        mean 314.4  min 7  median 315  max 500  sd 123.88
+
+###### r2.0-b1.5-cap1000
+
+death causes over 30 surviving runs of 30 (6142 deaths attributed)
+  starvation       997    16.2%
+  dehydration        1     0.0%
+  age             5080    82.7%
+  health            64     1.0%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5787
+  mean hydration fraction 0.8215
+  mean health fraction    0.8595
+  below the health gate   21.0%  <- cannot seek a mate, ever
+  final population        mean 302.4  min 8  median 316  max 532  sd 151.05
+
+###### r2.0-b1.5-cap250
+
+death causes over 30 surviving runs of 30 (5245 deaths attributed)
+  starvation         0     0.0%
+  dehydration        0     0.0%
+  age             5182    98.8%
+  health            63     1.2%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.7795
+  mean hydration fraction 0.8371
+  mean health fraction    0.9530
+  below the health gate   7.0%  <- cannot seek a mate, ever
+  final population        mean 224.6  min 22  median 249  max 250  sd 55.62
+
+###### r2.0-b1.5-cap500-healthrecovery
+
+death causes over 30 surviving runs of 30 (6672 deaths attributed)
+  starvation       880    13.2%
+  dehydration        2     0.0%
+  age             5725    85.8%
+  health            65     1.0%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5741
+  mean hydration fraction 0.8245
+  mean health fraction    0.9055
+  below the health gate   15.2%  <- cannot seek a mate, ever
+  final population        mean 330.6  min 56  median 325  max 500  sd 132.76
+
+###### r2.0-b1.5-cap500
+
+death causes over 30 surviving runs of 30 (6140 deaths attributed)
+  starvation       995    16.2%
+  dehydration        1     0.0%
+  age             5080    82.7%
+  health            64     1.0%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5827
+  mean hydration fraction 0.8211
+  mean health fraction    0.8598
+  below the health gate   20.9%  <- cannot seek a mate, ever
+  final population        mean 299.4  min 8  median 316  max 500  sd 146.83
+
+###### r2.0-b1.6-cap500
+
+death causes over 30 surviving runs of 30 (5574 deaths attributed)
+  starvation       602    10.8%
+  dehydration        4     0.1%
+  age             4893    87.8%
+  health            75     1.3%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6504
+  mean hydration fraction 0.8341
+  mean health fraction    0.9090
+  below the health gate   13.1%  <- cannot seek a mate, ever
+  final population        mean 287.0  min 40  median 290  max 488  sd 135.52
+
+###### r2.25-b1.4-cap500
+
+death causes over 30 surviving runs of 30 (6753 deaths attributed)
+  starvation      1048    15.5%
+  dehydration        6     0.1%
+  age             5626    83.3%
+  health            73     1.1%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.5608
+  mean hydration fraction 0.8247
+  mean health fraction    0.8570
+  below the health gate   22.0%  <- cannot seek a mate, ever
+  final population        mean 309.9  min 22  median 319  max 500  sd 160.37
+
+###### r2.25-b1.5-cap500
+
+death causes over 29 surviving runs of 30 (5738 deaths attributed)
+  starvation       658    11.5%
+  dehydration        1     0.0%
+  age             4996    87.1%
+  health            83     1.4%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6385
+  mean hydration fraction 0.8304
+  mean health fraction    0.9028
+  below the health gate   14.5%  <- cannot seek a mate, ever
+  final population        mean 314.3  min 11  median 335  max 500  sd 148.75
+
+###### r2.25-b1.6-cap500
+
+death causes over 30 surviving runs of 30 (5588 deaths attributed)
+  starvation       363     6.5%
+  dehydration        3     0.1%
+  age             5158    92.3%
+  health            64     1.1%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6791
+  mean hydration fraction 0.8274
+  mean health fraction    0.9371
+  below the health gate   8.9%  <- cannot seek a mate, ever
+  final population        mean 337.4  min 45  median 379  max 500  sd 138.62
+
