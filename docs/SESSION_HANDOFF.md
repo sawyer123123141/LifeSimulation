@@ -639,7 +639,17 @@ diagnosed rather than merely described** - `p6-the-cap-is-the-stabiliser-2026-08
 - **Consequence: the plant corpus's scope qualification now has a working configuration to be
   re-tested in** - cap 250 at brake 1.0, population unpinned and healthier than unbraked. The 60-seed
   contest and join comparisons are null in both arms, **but those used the confounded arm and are not
-  a re-validation.** **Re-running the plant corpus at brake 1.0 is the large next piece of work.**
+  a re-validation.** ~~**Re-running the plant corpus at brake 1.0 is the large next piece of work.**~~ **DONE
+  (2026-08-26)** - `p6-plant-corpus-revalidated-unpinned-2026-08-26.md`. 60 seeds, four cells, cap 250
+  at brake 1.0: population **63-67** under a cap of 250, **0 / 60 frozen in every cell**, extinction
+  10-15%. **The contest null and the join null both hold unpinned** - every |t| <= 1.64 on the contest
+  and <= 1.99 on the join, across 44 columns - while drift from founders in the same runs reads
+  **+8 to +11** on Dispersal, so the instrument is demonstrably not blind. **The qualification is
+  lifted for these two comparisons only**; the nine other corpora were measured pinned and are not
+  re-run. **One thing to test rather than claim:** `MoistureTolerance` is the only trait the join
+  moves (+0.045 / +0.048, t +1.87 / +1.99, and selection against it is -3.6/-3.9 flat versus
+  -0.64/-1.42 under terrain). **The two arms share seeds, so that is one observation, not two** -
+  it needs a fresh seed block, not a re-reading.
 - `--regen=X` and `--scale=X` exist on `CreatureSweep`, and `--deaths` now reports population
   **spread** (min/median/max/sd) - a carrying capacity makes a distribution, a cap makes a constant,
   and eleven committed corpora could not tell them apart.

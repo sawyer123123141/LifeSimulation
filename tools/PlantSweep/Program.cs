@@ -309,7 +309,10 @@ namespace LifeSimulation.Tools.PlantSweep
             string configuration = "cap" + _maximumPopulation
                 + (_gradedFertility ? "-brake" + _brakeStrength.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "")
                 + "-" + _seedCount + "seeds";
-            string path = Path.Combine("docs", "experiments", "p6-plant-" + configuration + "-2026-08-24.csv");
+            // The date is the run's own date, not a literal: a hardcoded one silently reuses a
+            // previous day's filename and overwrites that day's output.
+            string today = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            string path = Path.Combine("docs", "experiments", "p6-plant-" + configuration + "-" + today + ".csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }
