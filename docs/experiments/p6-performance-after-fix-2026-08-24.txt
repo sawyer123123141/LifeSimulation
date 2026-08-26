@@ -1,0 +1,336 @@
+[21:58:00] performance — p6-terrain-playtest
+  frames sampled   355
+  median           3.14 ms   (318.10 fps)
+  p90              4.85 ms
+  p99              201.10 ms
+  worst frame      1555.24 ms
+  over 33 ms       10   (dropped below 30 fps)
+  over 100 ms      8   (visible freeze)
+  best frame       2.29 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       97
+  section              calls    worst ms    total ms
+    heatmap             357      197.97     1171.67
+[21:58:05] performance — p6-terrain-playtest
+  frames sampled   966
+  median           3.05 ms   (327.50 fps)
+  p90              3.94 ms
+  p99              38.34 ms
+  worst frame      210.63 ms
+  over 33 ms       11   (dropped below 30 fps)
+  over 100 ms      10   (visible freeze)
+  best frame       2.26 ms
+
+  creatures        5
+  renderers        37
+  triangles        80080
+  draw calls       112
+  section              calls    worst ms    total ms
+    heatmap             966      205.31     1953.02
+[21:58:10] performance — p6-terrain-playtest
+  frames sampled   1008
+  median           2.97 ms   (336.21 fps)
+  p90              3.93 ms
+  p99              18.49 ms
+  worst frame      205.78 ms
+  over 33 ms       10   (dropped below 30 fps)
+  over 100 ms      10   (visible freeze)
+  best frame       2.27 ms
+
+  creatures        6
+  renderers        38
+  triangles        80912
+  draw calls       136
+  section              calls    worst ms    total ms
+    heatmap            1008      200.38     1921.12
+[21:58:15] performance — drought
+  frames sampled   1469
+  median           2.70 ms   (370.43 fps)
+  p90              3.56 ms
+  p99              6.12 ms
+  worst frame      203.02 ms
+  over 33 ms       4   (dropped below 30 fps)
+  over 100 ms      4   (visible freeze)
+  best frame       2.10 ms
+
+  creatures        4
+  renderers        9
+  triangles        77240
+  draw calls       57
+  section              calls    worst ms    total ms
+    heatmap            1470      198.39      787.09
+[21:58:20] performance — drought
+  frames sampled   1751
+  median           2.73 ms   (366.59 fps)
+  p90              3.48 ms
+  p99              5.71 ms
+  worst frame      9.73 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.12 ms
+
+  creatures        4
+  renderers        9
+  triangles        77240
+  draw calls       59
+  section              calls    worst ms    total ms
+    heatmap            1751        1.56       11.84
+[21:58:25] performance — drought
+  frames sampled   1658
+  median           2.88 ms   (347.29 fps)
+  p90              3.69 ms
+  p99              5.53 ms
+  worst frame      13.73 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.16 ms
+
+  creatures        5
+  renderers        10
+  triangles        78072
+  draw calls       49
+  section              calls    worst ms    total ms
+    heatmap            1658        1.51       13.14
+[21:58:39] performance — drought
+  frames sampled   70
+  median           2.91 ms   (343.84 fps)
+  p90              3.87 ms
+  p99              9.08 ms
+  worst frame      13919.13 ms
+  over 33 ms       1   (dropped below 30 fps)
+  over 100 ms      1   (visible freeze)
+  best frame       2.27 ms
+
+  creatures        5
+  renderers        10
+  triangles        78072
+  draw calls       49
+  section              calls    worst ms    total ms
+    heatmap              70        1.47        1.49
+[21:58:48] performance — p6-terrain-playtest
+  frames sampled   160
+  median           3.21 ms   (311.82 fps)
+  p90              5.37 ms
+  p99              789.27 ms
+  worst frame      1476.83 ms
+  over 33 ms       8   (dropped below 30 fps)
+  over 100 ms      7   (visible freeze)
+  best frame       2.34 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       61
+  section              calls    worst ms    total ms
+    heatmap             164      192.95     1534.76
+[22:58:56] performance — p6-terrain-playtest
+  frames sampled   515
+  median           3.65 ms   (273.63 fps)
+  p90              4.75 ms
+  p99              29.81 ms
+  worst frame      1770.73 ms
+  over 33 ms       5   (dropped below 30 fps)
+  over 100 ms      3   (visible freeze)
+  best frame       2.52 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       129
+  section              calls    worst ms    total ms
+    heatmap             517        8.26       27.90
+[22:59:01] performance — p6-terrain-playtest
+  frames sampled   1005
+  median           4.13 ms   (242.12 fps)
+  p90              6.07 ms
+  p99              15.33 ms
+  worst frame      51.08 ms
+  over 33 ms       2   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.69 ms
+
+  creatures        5
+  renderers        37
+  triangles        80080
+  draw calls       87
+  section              calls    worst ms    total ms
+    heatmap            1005        8.44      498.18
+[16:02:42] performance — p6-terrain-playtest
+  frames sampled   626
+  median           2.84 ms   (352.68 fps)
+  p90              5.92 ms
+  p99              25.15 ms
+  worst frame      1637.49 ms
+  over 33 ms       5   (dropped below 30 fps)
+  over 100 ms      3   (visible freeze)
+  best frame       2.08 ms
+
+  creatures        4
+  renderers        36
+  triangles        79248
+  draw calls       129
+  section              calls    worst ms    total ms
+    heatmap             628        8.56      201.45
+[16:02:47] performance — p6-terrain-playtest
+  frames sampled   1484
+  median           2.97 ms   (337.22 fps)
+  p90              3.82 ms
+  p99              10.32 ms
+  worst frame      30.85 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.27 ms
+
+  creatures        5
+  renderers        37
+  triangles        80080
+  draw calls       99
+  section              calls    worst ms    total ms
+    heatmap            1484        7.23      387.26
+[16:02:52] performance — p6-terrain-playtest
+  frames sampled   1537
+  median           2.88 ms   (347.63 fps)
+  p90              3.71 ms
+  p99              9.99 ms
+  worst frame      13.60 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.25 ms
+
+  creatures        6
+  renderers        38
+  triangles        80912
+  draw calls       105
+  section              calls    worst ms    total ms
+    heatmap            1537        8.65      389.15
+[16:02:57] performance — p6-terrain-playtest
+  frames sampled   1425
+  median           3.05 ms   (327.91 fps)
+  p90              4.12 ms
+  p99              11.05 ms
+  worst frame      13.44 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.28 ms
+
+  creatures        7
+  renderers        39
+  triangles        81744
+  draw calls       107
+  section              calls    worst ms    total ms
+    heatmap            1425        8.67      483.69
+[16:03:02] performance — p6-terrain-playtest
+  frames sampled   1371
+  median           3.17 ms   (315.41 fps)
+  p90              4.46 ms
+  p99              10.45 ms
+  worst frame      12.27 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.30 ms
+
+  creatures        8
+  renderers        40
+  triangles        82576
+  draw calls       109
+  section              calls    worst ms    total ms
+    heatmap            1371        7.69      503.70
+[16:03:07] performance — p6-terrain-playtest
+  frames sampled   1434
+  median           3.03 ms   (329.66 fps)
+  p90              4.11 ms
+  p99              11.03 ms
+  worst frame      13.67 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.32 ms
+
+  creatures        10
+  renderers        42
+  triangles        84240
+  draw calls       115
+  section              calls    worst ms    total ms
+    heatmap            1434        8.62      393.77
+[16:03:12] performance — p6-terrain-playtest
+  frames sampled   1475
+  median           2.97 ms   (336.61 fps)
+  p90              3.92 ms
+  p99              10.32 ms
+  worst frame      12.87 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.28 ms
+
+  creatures        11
+  renderers        43
+  triangles        85072
+  draw calls       121
+  section              calls    worst ms    total ms
+    heatmap            1475        8.68      391.35
+[16:03:17] performance — p6-terrain-playtest
+  frames sampled   1467
+  median           2.97 ms   (337.02 fps)
+  p90              4.05 ms
+  p99              10.28 ms
+  worst frame      17.46 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.32 ms
+
+  creatures        12
+  renderers        44
+  triangles        85904
+  draw calls       125
+  section              calls    worst ms    total ms
+    heatmap            1467        6.96      387.04
+[16:03:22] performance — p6-terrain-playtest
+  frames sampled   1467
+  median           2.97 ms   (336.21 fps)
+  p90              4.07 ms
+  p99              9.90 ms
+  worst frame      11.35 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.33 ms
+
+  creatures        13
+  renderers        45
+  triangles        86736
+  draw calls       119
+  section              calls    worst ms    total ms
+    heatmap            1467        7.15      387.93
+[16:03:27] performance — p6-terrain-playtest
+  frames sampled   1436
+  median           2.96 ms   (338.14 fps)
+  p90              4.18 ms
+  p99              10.65 ms
+  worst frame      12.88 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.28 ms
+
+  creatures        17
+  renderers        49
+  triangles        90064
+  draw calls       139
+  section              calls    worst ms    total ms
+    heatmap            1436        7.70      463.28
+[16:03:32] performance — p6-terrain-playtest
+  frames sampled   1397
+  median           2.95 ms   (338.56 fps)
+  p90              4.43 ms
+  p99              10.44 ms
+  worst frame      11.95 ms
+  over 33 ms       0   (dropped below 30 fps)
+  over 100 ms      0   (visible freeze)
+  best frame       2.30 ms
+
+  creatures        18
+  renderers        50
+  triangles        90896
+  draw calls       137
+  section              calls    worst ms    total ms
+    heatmap            1397        7.49      504.13
