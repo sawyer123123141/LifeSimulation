@@ -344,7 +344,15 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             "body_size", "movement_speed", "metabolic_pace", "vision_range", "water_efficiency",
             "food_efficiency", "temperature_tolerance", "fertility_investment", "lifespan_tendency",
-            "urgency_exponent", "travel_sensitivity", "risk_aversion", "neutral_marker",
+            "urgency_exponent", "travel_sensitivity", "risk_aversion",
+            // The combat family, added 2026-08-26. Without these the drift table could not see
+            // predation selection AT ALL - it reported thirteen genes, none of which predation
+            // touches, so "does predation select" was unanswerable by the instrument that was being
+            // pointed at it. `maneuverability` and `fear` are absent because `SimulationStatistics`
+            // exposes no mean for them; four of the six is what the statistics allow.
+            "attack", "defense", "aggression", "diet_specialization",
+            // MUST stay last: the drift report takes GeneNames.Length - 1 as the control column.
+            "neutral_marker",
         };
 
         private static double[] Genes(SimulationStatistics statistics)
@@ -357,6 +365,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 statistics.MeanTemperatureToleranceGene, statistics.MeanFertilityInvestmentGene,
                 statistics.MeanLifespanTendencyGene, statistics.MeanUrgencyExponentGene,
                 statistics.MeanTravelSensitivityGene, statistics.MeanRiskAversionGene,
+                statistics.MeanAttackGene, statistics.MeanDefenseGene,
+                statistics.MeanAggressionGene, statistics.MeanDietSpecializationGene,
                 statistics.MeanNeutralMarkerGene,
             };
         }
