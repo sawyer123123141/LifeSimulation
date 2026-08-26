@@ -28,6 +28,7 @@
     <Compile Include="../../Assets/Scripts/Presentation/FreeCameraMotion.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/PlanetChunkLod.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/CreatureAppearance.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/FrameTimeLog.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/CreatureAppearanceRules.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />

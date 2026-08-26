@@ -126,6 +126,7 @@ namespace LifeSimulation.Presentation
         private void Update()
         {
             EnsureInitialized();
+            SamplePerformance();
             HandleInput();
             if (!_isPaused)
             {
