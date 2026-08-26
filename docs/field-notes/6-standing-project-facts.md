@@ -950,3 +950,24 @@
 - **Numbers derived from reading code are not measurements, and should be labelled.** "908 chunks
   means 908 renderers" and "232k triangles" both came from walking the quadtree. Measured: 1,090 and
   566,272. The two recorded figures never reconciled with each other, which was the clue.
+
+## Standing facts added 2026-08-24 (late)
+
+- **Five flags exist that did not before**, all default false: terrainDrivenTemperatureEnabled,
+  healthRecoveryEnabled, metabolicIngestionEnabled, metabolicHealingEnabled, gradedFertilityEnabled.
+  Two configuration values joined them: ReproductionNeedFraction (0.7) and GradedFertilityStrength
+  (3.0). ConfigurationHashVersion is 9; the pinned property count is 53.
+- **The Y terrain playtest runs slopeMovementCost, terrainDrivenTemperature and healthRecovery.**
+  Graded fertility is deliberately NOT on it - it changes population dynamics at the root.
+- **metabolicHealingEnabled is on KnownInertFlags** in LivenessTests, because it cannot act without
+  healthRecoveryEnabled. If it ever reports live there, something is healing creatures unasked.
+- **The game writes Logs/performance.txt every five seconds while playing**, appending. Read it
+  rather than asking anyone to open the Profiler.
+- **tools/split_doc.py splits long markdown mechanically.** Use it before any document read at
+  session start passes a few hundred lines.
+- **tools/PlantSweep no longer writes to a committed corpus name.** It used to overwrite
+  p4-terrain-local-band-2026-08-23.csv on every run.
+- **CreatureSweep arms:** --thermal, --deaths, --relief, --focused, plus --join=off,
+  --terrain-temperature, --metabolic-ingestion, --metabolic-healing, --health-recovery,
+  --graded-fertility, --gate=X, --brake=X, --scale=X, --regen=X.
+

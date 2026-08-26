@@ -4,9 +4,108 @@
 > whole by `tools/split_doc.py`: **nothing was summarised or rewritten**. What stays here is
 > what a session needs immediately - unresolved findings, decisions not to reopen, the next
 > task, and the working-tree rules. The index below says what is in each file.
-**Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
-untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **603 headless tests green**, Unity compile clean.
+**Head at handoff: `b0830b8`** plus the commit carrying this handoff, pushed to `origin/main`.
+Working tree clean apart from the untracked Unity `.meta` files, `Assets/_Recovery/` and
+`ProjectSettings/PackageManagerSettings.asset` that are **never to be staged**.
+**611 headless tests green**, Unity compile clean.
+
+### Phase I — the reproduction gate, the cap, and the first Play-mode numbers (2026-08-24, late)
+
+**29 commits, `4387439` through `b0830b8`.** Five new flags, all default `false`; two switched on for
+the `Y` playtest only. **Nothing recorded moved.**
+
+| commit | what |
+|---|---|
+| `4387439` | **temperature tolerance is a saturating gene**; the terrain-join hypothesis refuted by the call path |
+| `3aa3f1a` | `CreatureAppearance` - the pure genome-to-appearance half that survives real models |
+| `775baa3` | dose-response replicates at 80 seeds; **corrects two earlier claims** |
+| `0700e27` | **`terrainDrivenTemperatureEnabled`** - creature temperature from the world, not a sine |
+| `c84de2a` | measured across three conditions; **on for `Y`** |
+| `6c87e06` | external terrain brief + a review that mostly disagrees with it |
+| `1a2f2cc` | **`MetabolicPace` is a pure cost**, and a liveness harness cannot see that |
+| `434e504` | benefit attempt 1 - faster ingestion. Shared channel, diluted, **declined** |
+| `e2c2581` | **`UrgencyExponent` is a monotone benefit** - 9 of 9 conditions negative |
+| `c165d0c` | **correction: the proposed repair was backwards.** `ComputeNeedGain`'s clamp is right |
+| `9a17c28` | **nothing starves** - 15 of 5,619 deaths - and the population is pinned to the mating gate |
+| `ad052ae` | **the mating gate is the dominant selective channel** |
+| `9926b36` | **`healthRecoveryEnabled`** - health was a one-way ratchet gating reproduction |
+| `88aebb6` | benefit attempt 2 - faster healing. Private but never collectable. **Three failures explained** |
+| `175c7b5` | health recovery **on for `Y`**; `MetabolicPace` documented, **not renamed** |
+| `159bb1a` | the gate dose-response: **a squeezed margin, not a switch** |
+| `3b4c7ea` | **reading the whole curve deletes the "five traits" claim** |
+| `403b04f` | sequencing for the 8-animal asset pack |
+| `7bbae9d` | **the population cap is the stabiliser, not the ceiling** |
+| `d663ac7` | **`gradedFertilityEnabled`** - a carrying capacity at last; the oldest debt closes |
+| `77a8f6e` | **qualified: the brake generalises, its strength does not.** 3 wrecks the plant ecology, 1 is right |
+| `928944a` | **fix: `PlantSweep` was overwriting a committed corpus on every run** |
+| `a381c28` | the game writes `Logs/performance.txt` itself |
+| `37ca115` | per-section timing |
+| `c02ce34` | **Play mode profiled**: 1,090 renderers, 566,272 triangles, 354 fps |
+| `ac34f53` | **the profiler was discarding its own history**, which is why it missed the spikes |
+| `ea085c5` | **the stutter is the heatmap** - 192.95 ms a rebuild, several times a second |
+| `b0830b8` | `tools/split_doc.py`; the two session-opening docs cut from 3,311 lines to 833 |
+
+### Phase I verified numbers - do not re-derive
+
+**Selection and the gate**
+- `urgency_exponent` across five gate values 0.45 / 0.55 / 0.60 / 0.65 / 0.70:
+  **t = -0.44 / -1.02 / -2.01 / -7.13 / -14.55**. Margin above the seek gate: **0.167 / 0.089 /
+  0.064 / 0.041 / 0.006**. Each 0.05 of gate multiplies drift by ~2.7x. **The default sits on the
+  steepest part.**
+- **Of the two gate literals, 0.80 binds and 0.70 is dead** - lowering only `CanReproduce` changes
+  nothing, found by a wiring bug that produced byte-identical output.
+- Death mix at cap 100: **age 96.9%, health 2.9%, starvation 8, dehydration 7 of 5,619.** Mean energy
+  **0.8058** against a 0.80 seek gate - a homeostat, not an equilibrium.
+
+**Temperature**
+- Saturation: tolerance is `2 + 8*gene` against a field bounded at 8, so **gene 0.75 covers the
+  world**. Measured plateau **0.7790 at 40 seeds**, 0.7475 with the join off.
+- Terrain temperature: endpoint sd across worlds **0.0744 -> 0.1454**, variance ratio 3.8 on 39/39 df.
+  Selection **halves** (+0.2879 to +0.1251 at moderate); `lifespan_tendency` **overtakes it**.
+- Across three resource levels the thermal endpoint is **0.767 / 0.763 / 0.783** - the destination is
+  a property of the field, not the ecology.
+
+**The cap and the brake**
+- Same ecology, 2.0x regeneration: **23 of 24 surviving at cap 250, 3 of 20 at cap 500.** Starvation
+  **0.1% of deaths at cap 100, 35-64% at cap 500.**
+- Graded fertility at cap 500: survival **3 of 20 -> 19 of 20**, starvation **-> exactly 0.0%**,
+  population 75-110 with sd 50-75. At cap 100: **63.1 with sd 33.6** against 98.2 pinned.
+- **Brake strength does not transfer.** Plant ecology at cap 250: no brake 11/60 extinct and 7 frozen;
+  **strength 1.0 gives 5/40 extinct, 0 frozen, population 70.9**; strength 3.0 gives 21/60 and
+  population 10.0.
+
+**Play mode, measured for the first time**
+- Planet view: **1,090 renderers, 566,272 triangles, median 2.83 ms (354 fps), 597 draw calls.**
+  **The terrain optimisation queue is unnecessary.**
+- Heatmap stutter: **192.95 ms per rebuild, 1,534 ms in a five-second window**, worst frame
+  **1,476.83 ms**. After amortising: worst call **7.49 ms**, worst frame **11.95 ms**, **0 frames
+  over 33 ms**.
+- **The recorded "908 renderers" and "232k triangles" were never measurements** - both came from
+  walking the quadtree, and they never reconciled. Superseded.
+
+### Phase I rejected hypotheses - do not re-run these
+
+1. **The terrain join explains temperature tolerance.** Refuted by the call path before any run:
+   thermoregulation reads `TemperatureField`, the join builds `EnvironmentField`. Both arms would
+   have been the same experiment.
+2. **`ComputeNeedGain` saturation removes `UrgencyExponent`'s trade-off, so unsaturate it.**
+   **Backwards.** The term is `min(1, patch / shortfall)`; removing the clamp makes food *more*
+   attractive to a full creature. The clamp is correct and `urgency` is itself the
+   diminishing-returns term.
+3. **The health ratchet explains the thermal selection.** Contributes 19% (t 26.03 -> 23.89), does not
+   explain.
+4. **Scarcity causes boom-and-collapse.** Cannot: `Scaled` moves amount, capacity and regeneration
+   together, so the dynamics are scale-invariant by construction. 0.40x to 1.00x all collapse
+   identically.
+5. **A private benefit rescues `MetabolicPace`.** Necessary, nowhere near sufficient - healing pays
+   only while injured and mean health is 0.9939. **The costs are continuous and no available benefit
+   is.**
+6. **The gate effect is a cliff.** It is a smooth accelerating curve; the level the gate was expected
+   to cross **moves with the gate**.
+7. **"Five traits stop being selected" at a slack gate.** Two points made a slope out of noise; five
+   points deleted it.
+8. **The 197 ms frame was a one-off.** It was not - the profiler was overwriting its own history.
+   **The user's direct report was right and the instrument was wrong.**
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 

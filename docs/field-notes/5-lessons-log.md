@@ -532,3 +532,41 @@ exactly when someone reintroduces per-pair allocation, which is the thing worth 
 it. Trait order feeds `FromTraits`, inheritance and analysis; two hand-maintained copies of that
 order is a silent-corruption bug waiting to happen. If a trait is added, there is one place to
 change.
+
+- **A profiler that overwrites its own output cannot see an intermittent problem (2026-08-24).** The
+  first performance writer called `File.WriteAllText`, so only the last five-second window survived.
+  The user reported a lag spike every second or two; the file showed a worst frame of 19 ms and it was
+  written up as a one-off. **The user was right and the instrument was wrong.** It appends now. The
+  failure is worth remembering in general: **an intermittent fault is the only kind worth profiling
+  for, and discarding history makes it exactly the kind you cannot see.**
+- **Percentiles cannot show a rare spike, by arithmetic.** At 60 fps a stutter every two seconds is
+  under 1% of frames, so it hides *below* the 99th percentile while being the most obvious thing on
+  screen. **Count frames over a threshold as well.** p99 said 8.10 ms in a window whose worst frame
+  was 1,476.83 ms.
+- **A diagnostic overlay must not be driven by simulated time.** The heatmap accumulator advanced
+  inside the step loop by `FixedDeltaTime`, so at speed 8 it rebuilt eight times as often - and each
+  rebuild was 192.95 ms. **The refresh rate of a debug view has no business scaling with the speed
+  multiplier.**
+- **Amortise a periodic rebuild before optimising it.** 16,384 samples in one frame is a freeze; the
+  same work at four rows a frame is 1.5 ms and invisible. **No algorithm changed** - worst call
+  192.95 ms to 7.49 ms, worst frame 1,476.83 ms to 11.95 ms. Capture the bounds once per pass so a
+  moving camera cannot tear the image mid-pass.
+- **Check the view is showing the subject before believing the number.** The first Play-mode reading
+  had 49 renderers because the instruction was to press `Y` and the chunked planet is behind `O`. It
+  was nearly written up as "the planet is cheap" with the planet off screen.
+- **Figures derived from reading code are not measurements and should be labelled.** "908 renderers"
+  and "232k triangles" both came from walking the quadtree, never reconciled with each other, and were
+  wrong: measured, 1,090 and 566,272. **The fact that two recorded numbers disagreed was the clue.**
+- **When a user contradicts your measurement, they are the ground truth.** They are looking at the
+  thing. Three separate instrument faults were found by taking "it lags every second or two"
+  seriously after a file said otherwise.
+- **Split long documents with a script, never by hand.** `AGENT_FIELD_NOTES.md` and
+  `SESSION_HANDOFF.md` reached 1,752 and 1,559 lines - read at the start of every session.
+  Summarising them by hand would have meant reading them by hand, which is the cost being removed.
+  `tools/split_doc.py` lifts sections whole on their headings: **nothing summarised, nothing
+  rewritten, so a split cannot change what a document says.** Give the index each section's line count
+  and first real line so it says what is in a file rather than only naming it.
+- **Backticks in a shell string are executed.** A `python -c` one-liner containing markdown backticks
+  had its content eaten by bash and silently corrupted the docstring of the very tool being written.
+  **Put multi-line edit scripts in a file.** Three times this session `git status` or a direct
+  re-read caught something that would otherwise have shipped broken.
