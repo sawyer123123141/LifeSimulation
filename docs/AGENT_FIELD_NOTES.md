@@ -1734,3 +1734,19 @@ change.
   because staging was done by explicit path every time - which is the rule that prevents accidents,
   and also the rule that hid this one. **Read the full status, including the files you did not
   stage.**
+- **Make the program report on itself rather than asking a human to read a GUI (2026-08-24).** The
+  first attempt at profiling asked the user to open Unity's Profiler and relay three figures. They
+  reasonably asked why it could not just be a text file. It could: `Logs/performance.txt`, written
+  every five seconds, took one small class and produced an artefact that can be diffed, committed and
+  re-checked. **A measurement that lives only in somebody's eyes is not a measurement.**
+- **Instrument the suspect instead of accusing it.** A 197 ms worst frame looked like a recurring
+  stutter and the heatmap - 16,384 terrain samples every two seconds - looked obviously guilty. Timed,
+  it reports **0.00 ms**, and the second reading's worst frame is 19 ms: the spike was first-entry
+  cost. **Percentiles say a hitch happened; only named sections say what did it.**
+- **Check the view is showing the thing being measured.** The first reading had 49 renderers because
+  the instruction was to press `Y`, and the chunked planet is behind `O`. It was nearly written up as
+  "the planet is cheap" with the planet off screen. **Confirm the subject is on screen before
+  believing the number.**
+- **Numbers derived from reading code are not measurements, and should be labelled.** "908 chunks
+  means 908 renderers" and "232k triangles" both came from walking the quadtree. Measured: 1,090 and
+  566,272. The two recorded figures never reconciled with each other, which was the clue.

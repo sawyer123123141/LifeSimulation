@@ -880,10 +880,21 @@ each 0.05 multiplies the drift by roughly 2.7x. **The default gate sits on the s
   **A two-point comparison manufactured a five-trait claim that five points deleted.** Banner added to
   the earlier doc.
 
-**2. Profile Play mode.** The terrain brief review (`docs/terrain-brief-review-2026-08-24.md`) is
-right that this is the biggest hole: **nothing in Play mode has ever been observed**, 908 chunks
-means 908 renderers, and no optimisation should be ranked until that number exists. **Needs a human**
-- I cannot run the editor.
+**2.** ~~Profile Play mode.~~ **DONE** - `p6-play-mode-profiled-2026-08-24.md`. The game writes
+`Logs/performance.txt` itself every five seconds; no Profiler window, and the reading is an artefact
+that can be diffed.
+- **1,090 renderers and 566,272 triangles at a median of 2.83 ms - 354 fps.** Faster than the arena
+  view at 49 renderers. **The terrain optimisation queue is unnecessary**: GPU displacement, CDLOD,
+  shared index buffers and the 53 MB of de-indexed vertex data are all real and none of them matter
+  at this scale. Only 597 draw calls for 1,090 renderers - Unity batches about half unaided.
+- **The 197 ms worst frame was first-entry cost, not a stutter.** Steady state worst is **19.08 ms**
+  over 1,664 frames. The heatmap - the prime suspect, 16,384 samples every two seconds - measures
+  **0.00 ms** and is cleared. It was instrumented rather than accused, which is what showed it.
+- **The 908-renderer / 232k-triangle figures were never measurements** and are superseded by the
+  numbers above. My own review flagged that they did not reconcile; neither was a capture.
+- **Still unknown:** one machine, one session, in the **editor**, with population at 9-17 against a
+  cap of 100. **Creature rendering at full population is untested** and creatures are one renderer
+  each.
 
 **3. Real models — a pack of 8 animated animals is available.** Sequencing decided and written into
 `docs/creature-appearance.md`: **profile with capsules first** (no baseline exists and there are 908

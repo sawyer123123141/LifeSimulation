@@ -3,6 +3,14 @@
 **2026-08-24.** Reviewing an external design brief on terrain storage and rendering. Verified by
 reading the code it describes, not by agreeing with it.
 
+> **MEASURED 2026-08-24, after this review was written** -
+> `p6-play-mode-profiled-2026-08-24.md`. **1,090 renderers and 566,272 triangles run at a median of
+> 2.83 ms, 354 fps.** The brief's own top item - profile first, terrain is probably not the
+> bottleneck - **was right**, and it is the only item in it that mattered. Everything else in this
+> review, including my own finding that vertex data is 6.7x duplicated and costs about 53 MB, is
+> real and **does not matter at this scale.** The 908 / 232k figures used below were derived from
+> reading the quadtree and are superseded by the measured ones.
+
 ## Verdict
 
 **One item is right and important. Most of the rest is written for a different program.**
