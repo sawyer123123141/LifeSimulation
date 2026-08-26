@@ -76,3 +76,21 @@ unattributed in the gate document, now attributed to breeding rate rather than t
   which is what would let the mortality route be confirmed rather than inferred from the refutation of
   the alternative. **`maneuverability` and `fear` also remain invisible** — no statistic exposes them,
   so two of the six combat genes cannot be tracked at all.
+
+## Appendix: the slope arms carry nothing (added 2026-08-26, no new runs)
+
+Every predation sweep in this thread doubled into **slope-on / slope-off** arms that were never read —
+only the drift table was. Re-read from the committed artefacts, across **eight cells and 168 paired
+columns**:
+
+- **3 columns reach |t| >= 2, against a chance expectation of 8.4.** Fewer than chance.
+- Largest: `diet_specialization` **+2.76**, `occupied_slope` **-2.39**, `attack` **-2.10**. Nothing
+  else clears 1.9.
+
+**The slope cost does not interact with combat**, so none of the predation results in this thread are
+contaminated by it, and the drift tables read as single-arm measurements are safe to read that way.
+
+**Worth noting on its own:** `occupied_slope` — the column the slope cost is *supposed* to move — is
+itself only at **-2.39**. The flag's own direct effect barely registers in this cell, which is
+consistent with the recorded slope-cost nulls rather than a new finding.
+
