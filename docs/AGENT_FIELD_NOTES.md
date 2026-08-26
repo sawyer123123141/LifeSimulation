@@ -1663,3 +1663,13 @@ change.
   a quantity that only decrements happened to gate a quantity that decides fitness. That distinction
   is the argument for which flags should eventually flip to default on, and it is worth recording per
   flag rather than rediscovering.
+- **A threshold's effect can be a margin rather than a switch (2026-08-24).** The mate-seeking gate
+  was predicted to bind or not bind, with a cliff where it crossed the population's natural energy
+  level. There is no such level: **raising the gate raises the population's energy**, because
+  creatures work harder to clear a higher bar. The margin above the gate ran 0.167 down to **0.006**
+  across five values and selection intensity tracked it, accelerating. **Before predicting a
+  threshold effect, ask whether the thing being crossed is itself free to move.**
+- **Five points beat one, and the shape was the finding.** One alternative gate value said "the gate
+  is the driver". Five said "and the default sits on the steepest part of the curve, where a small
+  change to the parameter is a large change to how hard the model selects" - which is the part that
+  matters for tuning and was invisible from a single comparison.

@@ -863,12 +863,17 @@ The four items that stood here - the dose-response replication, why temperature 
 `CreatureAppearance`, and rivers - are done or deliberately blocked. What that work opened is below,
 ordered by what is actually worth doing next.
 
-**1. The gate dose-response.** The largest finding of the session is that the mate-seeking gate is
-the dominant selective channel: at `--gate=0.45`, `urgency_exponent` goes from t = -14.55 to
-**t = -0.44** and four other traits go quiet with it
-(`p6-the-mating-gate-is-the-selection-2026-08-24.md`). **That is one alternative value, not a curve.**
-Run 0.55, 0.60 and 0.65 and see whether the collapse is graded or a cliff. Costs three commands, no
-new code - `--gate=` already exists. **This is the obvious next thing.**
+**1.** ~~The gate dose-response.~~ **DONE** - `p6-gate-dose-response-2026-08-24.md`. Five values,
+80 seeds each, 80/80 surviving at every one. **Predicted a cliff; it is a smooth accelerating curve.**
+|t| runs 0.44 / 1.02 / 2.01 / **7.13** / **14.55** across gates 0.45 / 0.55 / 0.60 / 0.65 / 0.70, and
+each 0.05 multiplies the drift by roughly 2.7x. **The default gate sits on the steepest part.**
+- **The mechanism is a margin, not a threshold.** The population always sits *slightly* above the seek
+  gate, and the gate decides how slightly: margin 0.167 / 0.089 / 0.064 / 0.041 / **0.006**. At the
+  default it lives six thousandths above the line that decides whether it can breed. **Raising the
+  gate raises the population's energy** - it is a feedback loop, which is why the cliff prediction
+  failed: the level I expected the gate to cross moves with the gate.
+- **Cheap extension, corpora already committed:** the other four traits that went quiet at 0.45 were
+  not read at the intermediate gates. That costs a grep, not a run.
 
 **2. Profile Play mode.** The terrain brief review (`docs/terrain-brief-review-2026-08-24.md`) is
 right that this is the biggest hole: **nothing in Play mode has ever been observed**, 908 chunks
