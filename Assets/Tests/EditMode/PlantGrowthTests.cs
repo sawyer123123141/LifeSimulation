@@ -639,7 +639,8 @@ namespace LifeSimulation.Tests.EditMode
                 world.Step(config.FixedDeltaTime);
             }
 
-            Assert.That(world.ComputeStateHash(), Is.EqualTo(13626802794646021369UL));
+            // Rederived 2026-08-26 with the predation founder fix; see CoreSimulationTests.
+            Assert.That(world.ComputeStateHash(), Is.EqualTo(14531405954382358740UL));
         }
     }
 }

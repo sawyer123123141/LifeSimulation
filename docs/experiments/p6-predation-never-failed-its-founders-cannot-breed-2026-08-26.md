@@ -1,5 +1,13 @@
 # The predator-prey scenario has never been tested — its founders are demographically non-viable
 
+> **PARTLY SUPERSEDED THE SAME DAY** — `p6-the-founder-fix-was-necessary-and-not-sufficient-2026-08-26.md`.
+> The defect below is real and the fix was approved and applied. **It did not restore reproduction:**
+> births per run stayed at **0.0** and survival at **0 / 30**, while the death mix moved hard (age 82%
+> to 32%, health 3.9% to **47%**). **The lifespan floor was a defect, not the cause.** The health
+> deaths trace to `temperatureTolerance` also being left at 0; setting it too (probed, reverted) fixes
+> the health deaths and still gives only **0.6 births per run against 492** for the herbivore profile.
+> The real shape is that this profile populates **one** trait family and zeroes five.
+
 **2026-08-26.** `tools/CreatureSweep --deaths 30 <cap> --predation [...]`, 12,000 ticks, seven cells.
 Console artefact: `p6-predation-founder-defect-2026-08-26.txt`.
 

@@ -18,7 +18,11 @@ namespace LifeSimulation.Tests.EditMode
         // Config.PlantCohortsEnabled.
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedPlantGrowthRateFixUnaffectedHash = 14531405954382358740UL;
 
         [Test]
         public void PlantGrowthRateFixDoesNotAffectNonPlantCohortScenarios()
@@ -83,7 +87,16 @@ namespace LifeSimulation.Tests.EditMode
             Assert.That(world.Creatures.GetGenomeAt(0).Attack, Is.Not.EqualTo(0f));
             Assert.That(world.Creatures.GetGenomeAt(0).MemoryCapacity, Is.EqualTo(0f));
             Assert.That(world.Creatures.GetGenomeAt(0).TemperatureTolerance, Is.EqualTo(0f));
-            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.EqualTo(0f));
+            // Fertility and lifespan are now SET by the profile, not left at the constructor's 0f.
+            // They were pinned at zero here because this test asserts the profile touches only its
+            // own trait family - which it still does, per the two assertions above. Zero fertility
+            // was a side effect of that isolation, never the intent: it gave every predator founder
+            // the 90s lifespan floor and the longest reproduction interval, and produced zero births
+            // across 90 runs. See p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md.
+            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).FertilityInvestment, Is.Not.EqualTo(0f));
+            Assert.That(world.Creatures.GetGenomeAt(0).LifespanTendency, Is.InRange(0f, 1f));
+            Assert.That(world.Creatures.GetGenomeAt(0).LifespanTendency, Is.Not.EqualTo(0f));
         }
 
         [Test]
@@ -855,7 +868,11 @@ namespace LifeSimulation.Tests.EditMode
         // is byte-identical to the legacy behavior when the flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedLegacyHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedLegacyHash = 14531405954382358740UL;
 
         [Test]
         public void PredationEconomicsDisabledProducesIdenticalHashToPreExistingLegacyBehavior()
@@ -1130,7 +1147,11 @@ namespace LifeSimulation.Tests.EditMode
         // flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedMultiThreatPerceptionDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void MultiThreatPerceptionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1178,7 +1199,11 @@ namespace LifeSimulation.Tests.EditMode
         // when the flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedRestBehaviorDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedRestBehaviorDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void RestBehaviorDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1439,7 +1464,11 @@ namespace LifeSimulation.Tests.EditMode
         // flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedJuvenileCapabilityDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedJuvenileCapabilityDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void JuvenileCapabilityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1464,7 +1493,11 @@ namespace LifeSimulation.Tests.EditMode
         // byte-identical to prior behavior when the flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedParentalFollowingDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedParentalFollowingDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void ParentalFollowingDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1548,7 +1581,11 @@ namespace LifeSimulation.Tests.EditMode
         // default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedKinRecognitionDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedKinRecognitionDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void KinRecognitionDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1614,7 +1651,11 @@ namespace LifeSimulation.Tests.EditMode
         // untouched, not that this task's new code was exercised (see Steps 1/8/14 for that).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedLearnedResourceQualityDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedLearnedResourceQualityDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void LearnedResourceQualityDisabledProducesIdenticalHashToPreExistingBehavior()
@@ -1640,7 +1681,11 @@ namespace LifeSimulation.Tests.EditMode
         // byte-identical to prior behavior when the flag is left at its default (false).
         // Rederived when Persistence became heritable (constructor default 0f -> 0.5f); this is
         // an intentional, recorded shift, not an unexplained edit.
-        private const ulong ExpectedMateSelectionDisabledHash = 13626802794646021369UL;
+        // Rederived 2026-08-26 when PredationFounderFactory began setting fertilityInvestment and
+        // lifespanTendency (both were falling through to the constructor default of 0f, which gave
+        // every predator founder the 90s lifespan floor and zero births). Intentional and recorded:
+        // docs/experiments/p6-predation-never-failed-its-founders-cannot-breed-2026-08-26.md
+        private const ulong ExpectedMateSelectionDisabledHash = 14531405954382358740UL;
 
         [Test]
         public void MateSelectionDisabledProducesIdenticalHashToPreExistingBehavior()
