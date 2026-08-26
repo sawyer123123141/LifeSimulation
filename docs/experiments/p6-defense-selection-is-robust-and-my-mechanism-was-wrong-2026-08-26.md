@@ -1,5 +1,12 @@
 # Defense selection survives every neighbouring cell, and the sterilisation mechanism I proposed is refuted
 
+> **FOLLOWED UP — `p6-the-combat-forces-are-too-small-2026-08-26.md`.** The mortality route concluded
+> below **by elimination** does not survive measurement either: predation kills **0.53 creatures per
+> run** against ~65 deaths per run from all causes, and total combat damage is **96.6 health per run**
+> across a population near 130. **Both proposed mechanisms are now in doubt and no third is offered.**
+> Also: the two previously-invisible combat genes are now measured - maneuverability **t +2.00**, fear
+> **+0.73** - so this result is about `defense` specifically, not the combat family.
+
 **2026-08-26.** `tools/CreatureSweep --focused 30 <cap> --regen=<r> --brake=1.5 --predation --gate=<g>`
 and `--deaths` in the same configurations, 12,000 ticks. Console artefact:
 `p6-predation-robustness-2026-08-26.txt`.

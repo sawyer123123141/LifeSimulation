@@ -672,6 +672,7 @@ namespace LifeSimulation.Simulation.Core
                 ref CreatureNeeds targetNeeds = ref Creatures.GetNeedsRefAt(index);
                 ref CombatState targetCombat = ref Creatures.GetCombatRefAt(index);
                 targetNeeds.Health -= damage;
+                _cumulativeCombatDamage += damage;
                 targetCombat.WoundSeverity += damage / defender.HealthCapacity;
                 if (targetNeeds.Health <= 0f) RequestDeath(Creatures.GetIdAt(index), DeathCause.Predation);
             }

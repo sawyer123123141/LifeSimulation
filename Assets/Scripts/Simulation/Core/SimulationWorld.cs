@@ -41,6 +41,9 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativeWaterConsumed;
         private float _cumulativeCarcassConsumed;
         private int _attackHitCount;
+
+        /// <summary>Health removed by combat, cumulative. Diagnostics only; never hashed.</summary>
+        private float _cumulativeCombatDamage;
         private int _predationDeathCount;
         private float _cumulativePlantGrowth;
         private float _cumulativePlantBiomassConsumed;

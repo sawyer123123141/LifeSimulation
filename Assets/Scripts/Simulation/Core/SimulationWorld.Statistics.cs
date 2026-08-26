@@ -70,6 +70,8 @@ namespace LifeSimulation.Simulation.Core
             float memoryRetentionTotal = 0f;
             float learningRateTotal = 0f;
             float explorationTotal = 0f;
+            float maneuverabilityTotal = 0f;
+            float fearTotal = 0f;
             float energyFractionTotal = 0f;
             float hydrationFractionTotal = 0f;
             int highestGeneration = 0;
@@ -100,6 +102,8 @@ namespace LifeSimulation.Simulation.Core
                 memoryRetentionTotal += genome.MemoryRetention;
                 learningRateTotal += genome.LearningRate;
                 explorationTotal += genome.Exploration;
+                maneuverabilityTotal += genome.Maneuverability;
+                fearTotal += genome.Fear;
                 energyFractionTotal += needs.Energy / phenotype.EnergyCapacity;
                 hydrationFractionTotal += needs.Hydration / phenotype.HydrationCapacity;
                 highestGeneration = Math.Max(highestGeneration, Creatures.GetLineageAt(index).Generation);
@@ -186,7 +190,10 @@ namespace LifeSimulation.Simulation.Core
                 Plants.Count == 0 ? 0f : plantDefenseTotal / Plants.Count,
                 _cumulativePlantBiomassLostToMortality,
                 _plantBiomassSeconds,
-                _plantPatchSeconds);
+                _plantPatchSeconds,
+                meanManeuverabilityGene: maneuverabilityTotal * reciprocalPopulation,
+                meanFearGene: fearTotal * reciprocalPopulation,
+                cumulativeCombatDamage: _cumulativeCombatDamage);
         }
     }
 }

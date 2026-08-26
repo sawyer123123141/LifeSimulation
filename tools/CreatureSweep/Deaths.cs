@@ -50,6 +50,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             var allTotals = new long[7];
             var allBirths = new List<double>();
             var allAttacks = new List<double>();
+            var allCombatDamage = new List<double>();
 
             for (int index = 0; index < seedCount; index++)
             {
@@ -70,6 +71,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 allTotals[(int)DeathCause.Predation] += statistics.PredationDeathCount;
                 allBirths.Add(statistics.BirthCount);
                 allAttacks.Add(statistics.AttackHitCount);
+                allCombatDamage.Add(statistics.CumulativeCombatDamage);
                 if (statistics.Population == 0)
                 {
                     extinct++;
@@ -102,6 +104,9 @@ namespace LifeSimulation.Tools.CreatureSweep
             // mix alone cannot distinguish from a population that lived and then collapsed.
             Console.WriteLine("  births per run          " + Mean(allBirths).ToString("0.0")
                 + "   attack hits per run " + Mean(allAttacks).ToString("0.0"));
+            // Health removed by combat, which is the quantity the mortality-versus-fertility question
+            // turns on and which nothing reported until 2026-08-26.
+            Console.WriteLine("  combat damage per run   " + Mean(allCombatDamage).ToString("0.0"));
 
             int counted = seedCount - extinct;
             long named = totals.Sum();

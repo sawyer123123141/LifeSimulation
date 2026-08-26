@@ -351,6 +351,9 @@ namespace LifeSimulation.Tools.CreatureSweep
             // pointed at it. `maneuverability` and `fear` are absent because `SimulationStatistics`
             // exposes no mean for them; four of the six is what the statistics allow.
             "attack", "defense", "aggression", "diet_specialization",
+            // maneuverability and fear became visible on 2026-08-26; before that no statistic
+            // exposed them and two of the six combat genes could not be measured by any instrument.
+            "maneuverability", "fear",
             // MUST stay last: the drift report takes GeneNames.Length - 1 as the control column.
             "neutral_marker",
         };
@@ -367,6 +370,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 statistics.MeanTravelSensitivityGene, statistics.MeanRiskAversionGene,
                 statistics.MeanAttackGene, statistics.MeanDefenseGene,
                 statistics.MeanAggressionGene, statistics.MeanDietSpecializationGene,
+                statistics.MeanManeuverabilityGene, statistics.MeanFearGene,
                 statistics.MeanNeutralMarkerGene,
             };
         }

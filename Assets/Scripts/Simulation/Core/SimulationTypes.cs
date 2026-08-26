@@ -120,7 +120,14 @@ namespace LifeSimulation.Simulation.Core
             float meanPlantDefenseGene = 0f,
             float cumulativePlantBiomassLostToMortality = 0f,
             float plantBiomassSeconds = 0f,
-            float plantPatchSeconds = 0f)
+            float plantPatchSeconds = 0f,
+            // Appended 2026-08-26, at the END and with defaults, deliberately: this constructor is
+            // positional and forty arguments long, and a genome factory that stopped part-way down
+            // exactly such a list is what sterilised every predator founder in the project. Adding
+            // in the middle would silently reassign every argument after the insertion point.
+            float meanManeuverabilityGene = 0f,
+            float meanFearGene = 0f,
+            float cumulativeCombatDamage = 0f)
         {
             Tick = tick;
             Population = population;
@@ -156,6 +163,9 @@ namespace LifeSimulation.Simulation.Core
             MeanAttackGene = meanAttackGene;
             MeanDefenseGene = meanDefenseGene;
             MeanAggressionGene = meanAggressionGene;
+            MeanManeuverabilityGene = meanManeuverabilityGene;
+            MeanFearGene = meanFearGene;
+            CumulativeCombatDamage = cumulativeCombatDamage;
             MeanDietSpecializationGene = meanDietSpecializationGene;
             ViableHunterCount = viableHunterCount;
             MeanMemoryCapacityGene = meanMemoryCapacityGene;
@@ -209,6 +219,22 @@ namespace LifeSimulation.Simulation.Core
         public int DehydrationDeathCount { get; }
         public int AgeDeathCount { get; }
         public int HealthDeathCount { get; }
+        /// <summary>
+        /// Mean of the two combat genes no statistic exposed until 2026-08-26. Their absence meant
+        /// `CreatureSweep` could track four of the six combat genes and no instrument could see the
+        /// other two at all.
+        /// </summary>
+        public float MeanManeuverabilityGene { get; }
+
+        public float MeanFearGene { get; }
+
+        /// <summary>
+        /// Total health removed by combat over the run. Predation is 1-2% of *deaths* in the
+        /// predator-prey cell while `defense` is under t = 11 selection, and the route was inferred
+        /// rather than measured - this is the quantity that was missing.
+        /// </summary>
+        public float CumulativeCombatDamage { get; }
+
         public float MeanAttackGene { get; }
         public float MeanDefenseGene { get; }
         public float MeanAggressionGene { get; }
