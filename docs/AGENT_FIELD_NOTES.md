@@ -1723,3 +1723,14 @@ change.
   an hour. The qualification came from doing the *next* thing - applying it to a second scenario -
   rather than from re-reading the first. **The fastest way to find the boundary of a result is to use
   it somewhere else.**
+- **A tool that writes to a fixed filename will overwrite the evidence eventually (2026-08-24).**
+  `tools/PlantSweep` hardcoded its output as `p4-terrain-local-band-2026-08-23.csv`, a **committed
+  480-row corpus**, so every run of it silently replaced a recorded experimental result. On this date
+  one did - 480 rows became 160 from a 40-seed tuning sweep - and it was caught only by reading
+  `git status` while writing a summary. **Encode the configuration in the output filename, and never
+  let a tool reproduce the name of a committed corpus.** A corpus is the evidence for a written
+  conclusion; rewriting one invalidates the conclusion without touching the document that states it.
+- **`git status` is part of finishing, not part of tidying.** The clobber survived several commits
+  because staging was done by explicit path every time - which is the rule that prevents accidents,
+  and also the rule that hid this one. **Read the full status, including the files you did not
+  stage.**

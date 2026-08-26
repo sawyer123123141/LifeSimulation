@@ -297,7 +297,19 @@ namespace LifeSimulation.Tools.PlantSweep
                 builder.AppendLine();
             }
 
-            string path = Path.Combine("docs", "experiments", "p4-terrain-local-band-2026-08-23.csv");
+            // The filename encodes the configuration, and deliberately never reproduces the name of a
+            // committed corpus.
+            //
+            // This used to be the hardcoded string "p4-terrain-local-band-2026-08-23.csv", so EVERY
+            // run of this tool overwrote a recorded 480-row experimental result with whatever had
+            // just been run - and on 2026-08-24 one did, replacing it with 160 rows from a 40-seed
+            // tuning sweep. It was caught by `git status` and restored. A corpus is the evidence for
+            // a written conclusion; a tool that silently rewrites one is a tool that can invalidate
+            // the record without anybody noticing.
+            string configuration = "cap" + _maximumPopulation
+                + (_gradedFertility ? "-brake" + _brakeStrength.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "")
+                + "-" + _seedCount + "seeds";
+            string path = Path.Combine("docs", "experiments", "p6-plant-" + configuration + "-2026-08-24.csv");
             File.WriteAllText(path, builder.ToString());
             Console.Error.WriteLine("wrote " + path);
         }
