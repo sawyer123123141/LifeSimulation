@@ -15,6 +15,7 @@ namespace LifeSimulation.Simulation.Biology
 
         private readonly float _needFraction;
         private readonly bool _gradedFertility;
+        private readonly float _gradedFertilityStrength;
 
         private readonly CreatureStore _creatures;
         private readonly bool _physiologyEnabled;
@@ -24,10 +25,11 @@ namespace LifeSimulation.Simulation.Biology
         private int[] _candidates;
         private bool[] _matched;
 
-        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false, float needFraction = SimulationConfig.DefaultReproductionNeedFraction, bool gradedFertility = false)
+        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false, float needFraction = SimulationConfig.DefaultReproductionNeedFraction, bool gradedFertility = false, float gradedFertilityStrength = SimulationConfig.DefaultGradedFertilityStrength)
         {
             _needFraction = needFraction;
             _gradedFertility = gradedFertility;
+            _gradedFertilityStrength = gradedFertilityStrength;
             _creatures = creatures ?? throw new ArgumentNullException(nameof(creatures));
             _physiologyEnabled = physiologyEnabled;
             _mateSelectionEnabled = mateSelectionEnabled;
@@ -296,7 +298,7 @@ namespace LifeSimulation.Simulation.Biology
                     needs.Hydration / Math.Max(0.01f, phenotype.HydrationCapacity)),
                 needs.Health / Math.Max(0.01f, phenotype.HealthCapacity));
 
-            return CooldownMultiplier(condition, _needFraction);
+            return CooldownMultiplier(condition, _needFraction, _gradedFertilityStrength);
         }
 
         /// <summary>
@@ -305,11 +307,11 @@ namespace LifeSimulation.Simulation.Biology
         /// <para>1 at full condition, <c>1 + GradedFertilityStrength</c> at the gate and below it.
         /// Linear between, measured against the gate rather than against zero.</para>
         /// </summary>
-        public static float CooldownMultiplier(float condition, float needFraction)
+        public static float CooldownMultiplier(float condition, float needFraction, float strength = SimulationConfig.DefaultGradedFertilityStrength)
         {
             float span = Math.Max(0.01f, 1f - needFraction);
             float headroom = Math.Max(0f, Math.Min(1f, (condition - needFraction) / span));
-            return 1f + (SimulationConfig.GradedFertilityStrength * (1f - headroom));
+            return 1f + (strength * (1f - headroom));
         }
 
         private void EnsureCapacity(int required)

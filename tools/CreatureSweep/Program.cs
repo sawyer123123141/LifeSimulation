@@ -109,6 +109,8 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// <summary>The density-dependent brake, as an arm.</summary>
         private static bool _gradedFertility;
 
+        private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
+
         /// <summary>Metabolic pace scaling healing - the first private benefit that gene has had.</summary>
         private static bool _metabolicHealing;
 
@@ -121,6 +123,12 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (argument == "--health-recovery") _healthRecovery = true;
                 if (argument == "--graded-fertility") _gradedFertility = true;
+                if (argument.StartsWith("--brake=")
+                    && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
+                {
+                    _gradedFertility = true;
+                    _brakeStrength = brake;
+                }
                 if (argument.StartsWith("--regen=")
                     && float.TryParse(argument.Substring("--regen=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float regen))
                 {
@@ -304,7 +312,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 reproductionNeedFraction: _reproductionNeedFraction,
                 healthRecoveryEnabled: _healthRecovery,
                 metabolicHealingEnabled: _metabolicHealing,
-                gradedFertilityEnabled: _gradedFertility);
+                gradedFertilityEnabled: _gradedFertility,
+                gradedFertilityStrength: _brakeStrength);
         }
 
         private static readonly string[] GeneNames =

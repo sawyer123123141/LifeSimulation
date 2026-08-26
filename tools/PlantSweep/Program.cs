@@ -35,6 +35,25 @@ namespace LifeSimulation.Tools.PlantSweep
         /// </summary>
         private const int MaximumPopulation = 48;
 
+        /// <summary>
+        /// The cap actually used, and whether the population is allowed to limit itself instead.
+        ///
+        /// <para><b>Why these exist.</b> Every plant result on record was measured with the herbivore
+        /// population <b>pinned</b> at the cap - 4,080 runs across eleven corpora
+        /// (<c>p4-cap-pinning-audit-2026-08-22.md</c>) - which is the scope qualification the whole
+        /// plant corpus carries. <c>gradedFertilityEnabled</c> makes the population settle below a cap
+        /// it can reach, with real variance
+        /// (<c>p6-graded-fertility-closes-the-cap-debt-2026-08-24.md</c>), so the qualification can
+        /// finally be tested rather than restated.</para>
+        ///
+        /// <para>Defaults reproduce the recorded condition exactly.</para>
+        /// </summary>
+        private static int _maximumPopulation = MaximumPopulation;
+
+        private static bool _gradedFertility;
+
+        private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
+
         private static int _seedCount = 120;
 
         private static void Main(string[] args)
@@ -43,6 +62,21 @@ namespace LifeSimulation.Tools.PlantSweep
             {
                 ReportFields();
                 return;
+            }
+
+            foreach (string argument in args)
+            {
+                if (argument == "--graded-fertility") _gradedFertility = true;
+                if (argument.StartsWith("--brake=")
+                    && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
+                {
+                    _gradedFertility = true;
+                    _brakeStrength = brake;
+                }
+                if (argument.StartsWith("--cap=") && int.TryParse(argument.Substring("--cap=".Length), out int cap))
+                {
+                    _maximumPopulation = cap;
+                }
             }
 
             if (args.Length > 0 && int.TryParse(args[0], out int seeds)) _seedCount = seeds;
@@ -120,7 +154,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 worldSeed,
                 Founders,
                 defaults.Schedule,
-                MaximumPopulation,
+                _maximumPopulation,
                 FounderProfile.PhysiologyVariation,
                 cognitionEnabled: true,
                 physiologyEnabled: true,
@@ -147,7 +181,9 @@ namespace LifeSimulation.Tools.PlantSweep
                 plantEstablishmentContestEnabled: contest,
                 plantInvaderEstablishmentContestEnabled: contest,
                 plantSeedProductionRateEnabled: true,
-                terrainDrivenEnvironmentEnabled: terrain);
+                terrainDrivenEnvironmentEnabled: terrain,
+                gradedFertilityEnabled: _gradedFertility,
+                gradedFertilityStrength: _brakeStrength);
         }
 
         /// <summary>

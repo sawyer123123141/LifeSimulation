@@ -1,0 +1,122 @@
+240 runs of 12000 ticks
+  20/240
+  40/240
+  60/240
+  80/240
+  100/240
+  120/240
+  140/240
+  160/240
+  180/240
+  200/240
+  220/240
+  240/240
+wrote docs\experiments\p4-terrain-local-band-2026-08-23.csv
+
+== contest-off / flat (60 seeds)
+   extinct 5/60   frozen 0/60   occupancy 0.944   population 42.3
+   Growth                  +0.0647  t   +7.12   50/60 up
+   SeedInvestment          +0.0679  t   +6.49   45/60 up
+   WaterEfficiency         +0.0464  t   +5.41   45/60 up
+   Nutrition               +0.0179  t   +1.81   42/60 up
+   Defense                 +0.0319  t   +3.89   40/60 up
+   Dispersal               +0.0795  t   +9.02   50/60 up
+   MoistureTolerance       -0.0397  t   -2.48   24/60 up
+   TemperatureTolerance    -0.0380  t   -2.71   19/60 up
+   NutrientUptake          -0.0525  t   -3.73   18/60 up
+   SeedlingResilience      -0.0253  t   -2.10   21/60 up
+   SeedProductionRate      -0.0173  t   -1.65   24/60 up
+
+== contest-off / terrain-driven (60 seeds)
+   extinct 5/60   frozen 0/60   occupancy 0.926   population 40.8
+   Growth                  +0.0647  t   +7.63   51/60 up
+   SeedInvestment          +0.0508  t   +5.67   47/60 up
+   WaterEfficiency         +0.0490  t   +6.26   47/60 up
+   Nutrition               +0.0194  t   +1.92   35/60 up
+   Defense                 +0.0225  t   +2.45   36/60 up
+   Dispersal               +0.0863  t   +8.81   54/60 up
+   MoistureTolerance       -0.0261  t   -1.54   30/60 up
+   TemperatureTolerance    -0.0463  t   -2.97   20/60 up
+   NutrientUptake          -0.0376  t   -2.65   24/60 up
+   SeedlingResilience      -0.0579  t   -5.34   15/60 up
+   SeedProductionRate      -0.0083  t   -0.89   27/60 up
+
+== contest-on / flat (60 seeds)
+   extinct 1/60   frozen 0/60   occupancy 0.935   population 43.5
+   Growth                  +0.0678  t   +6.59   45/60 up
+   SeedInvestment          +0.0620  t   +7.22   47/60 up
+   WaterEfficiency         +0.0597  t   +6.42   47/60 up
+   Nutrition               +0.0355  t   +3.80   43/60 up
+   Defense                 +0.0378  t   +3.36   41/60 up
+   Dispersal               +0.0892  t   +9.24   52/60 up
+   MoistureTolerance       -0.0653  t   -4.04   21/60 up
+   TemperatureTolerance    -0.0610  t   -4.25   21/60 up
+   NutrientUptake          -0.0596  t   -4.33   17/60 up
+   SeedlingResilience      -0.0139  t   -1.21   26/60 up
+   SeedProductionRate      -0.0213  t   -2.11   22/60 up
+
+== contest-on / terrain-driven (60 seeds)
+   extinct 6/60   frozen 0/60   occupancy 0.933   population 40.8
+   Growth                  +0.0677  t   +8.17   47/60 up
+   SeedInvestment          +0.0605  t   +6.47   49/60 up
+   WaterEfficiency         +0.0428  t   +4.09   42/60 up
+   Nutrition               +0.0294  t   +3.32   40/60 up
+   Defense                 +0.0364  t   +4.06   44/60 up
+   Dispersal               +0.1009  t  +11.72   56/60 up
+   MoistureTolerance       -0.0503  t   -2.56   25/60 up
+   TemperatureTolerance    -0.0414  t   -2.46   24/60 up
+   NutrientUptake          -0.0379  t   -2.41   20/60 up
+   SeedlingResilience      -0.0424  t   -4.08   15/60 up
+   SeedProductionRate      -0.0168  t   -1.85   23/60 up
+
+== establishment contest, paired on-off, flat
+   Growth                  +0.0030  t   +0.25   27/60 up
+   SeedInvestment          -0.0058  t   -0.44   26/60 up
+   WaterEfficiency         +0.0132  t   +1.11   33/60 up
+   Nutrition               +0.0175  t   +1.29   29/60 up
+   Defense                 +0.0059  t   +0.44   27/60 up
+   Dispersal               +0.0097  t   +0.80   31/60 up
+   MoistureTolerance       -0.0255  t   -1.14   24/60 up
+   TemperatureTolerance    -0.0230  t   -1.21   26/60 up
+   NutrientUptake          -0.0071  t   -0.39   27/60 up
+   SeedlingResilience      +0.0114  t   +0.66   34/60 up
+   SeedProductionRate      -0.0040  t   -0.33   28/60 up
+
+== establishment contest, paired on-off, terrain-driven
+   Growth                  +0.0031  t   +0.28   29/60 up
+   SeedInvestment          +0.0097  t   +0.82   30/60 up
+   WaterEfficiency         -0.0062  t   -0.53   29/60 up
+   Nutrition               +0.0100  t   +0.79   28/60 up
+   Defense                 +0.0139  t   +1.14   35/60 up
+   Dispersal               +0.0147  t   +1.21   32/60 up
+   MoistureTolerance       -0.0243  t   -0.98   25/60 up
+   TemperatureTolerance    +0.0049  t   +0.23   30/60 up
+   NutrientUptake          -0.0004  t   -0.02   28/60 up
+   SeedlingResilience      +0.0155  t   +1.02   30/60 up
+   SeedProductionRate      -0.0085  t   -0.67   26/60 up
+
+== the join, paired terrain minus flat, contest-off
+   Growth                  -0.0001  t  -+0.00   31/60 up
+   SeedInvestment          -0.0171  t   -1.40   27/60 up
+   WaterEfficiency         +0.0026  t   +0.24   32/60 up
+   Nutrition               +0.0015  t   +0.12   33/60 up
+   Defense                 -0.0094  t   -0.73   29/60 up
+   Dispersal               +0.0068  t   +0.54   34/60 up
+   MoistureTolerance       +0.0137  t   +0.60   31/60 up
+   TemperatureTolerance    -0.0083  t   -0.36   28/60 up
+   NutrientUptake          +0.0150  t   +0.77   30/60 up
+   SeedlingResilience      -0.0325  t   -2.21   26/60 up
+   SeedProductionRate      +0.0090  t   +0.77   34/60 up
+
+== the join, paired terrain minus flat, contest-on
+   Growth                 -+0.0000  t  -+0.00   34/60 up
+   SeedInvestment          -0.0016  t   -0.15   30/60 up
+   WaterEfficiency         -0.0169  t   -1.36   27/60 up
+   Nutrition               -0.0060  t   -0.48   30/60 up
+   Defense                 -0.0014  t   -0.10   30/60 up
+   Dispersal               +0.0117  t   +1.04   31/60 up
+   MoistureTolerance       +0.0150  t   +0.60   31/60 up
+   TemperatureTolerance    +0.0197  t   +0.89   29/60 up
+   NutrientUptake          +0.0217  t   +1.12   30/60 up
+   SeedlingResilience      -0.0285  t   -1.96   23/60 up
+   SeedProductionRate      +0.0045  t   +0.34   27/60 up

@@ -1709,3 +1709,17 @@ change.
   liveness check failed at 600 ticks because `AdultAgeSeconds` is 20 seconds - 1,200 ticks - so
   nothing had bred once, let alone twice. **Before calling a flag inert, check the run is longer than
   the slowest thing it touches.**
+- **Do not change two things in one arm (2026-08-24).** The first plant comparison moved the cap and
+  added the fertility brake together, and read as though the brake were harmless. A third arm - cap
+  raised, no brake - showed raising the cap alone *raises* the population and the brake is what
+  collapses it. **One arm, one change, every time**, and the temptation is strongest when both changes
+  feel like "the new configuration".
+- **A constant that works is not a constant that generalises.** Brake strength 3 turns boom-and-bust
+  into a carrying capacity in one scenario family and destroys the population in another, where 1 is
+  right. **A factor of three between the best and worst condition tested is the definition of a
+  tuning parameter**, and shipping it as a `const` would have exported one ecology's calibration to
+  every other.
+- **Publishing a result does not end the work on it.** The "at every cap tried" claim survived about
+  an hour. The qualification came from doing the *next* thing - applying it to a second scenario -
+  rather than from re-reading the first. **The fastest way to find the boundary of a result is to use
+  it somewhere else.**

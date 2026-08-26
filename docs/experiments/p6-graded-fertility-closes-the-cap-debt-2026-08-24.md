@@ -1,5 +1,12 @@
 # A graded fertility brake produces a carrying-capacity-limited habitat, at every cap tried
 
+> **QUALIFIED by `p6-graded-fertility-is-scenario-specific-2026-08-24.md`.** Everything below holds
+> for the resource-backed calibration scenario. **"At every cap tried" was one scenario family, and
+> the strength does not transfer.** In the plant-backed full ecosystem the same strength of 3 collapses
+> the population to about 10 with 21 of 60 worlds extinct; **strength 1 is the equivalent result
+> there**, with lower extinction than no brake at all. The mechanism generalises; the constant does
+> not, and it is now a configuration value rather than a `const`.
+
 **2026-08-24.** `tools/CreatureSweep --deaths <seeds> <cap> [--regen=X] [--graded-fertility]`,
 moderate layout, 12,000 ticks.
 

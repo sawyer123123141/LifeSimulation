@@ -161,7 +161,8 @@ namespace LifeSimulation.Simulation.Core
             float reproductionNeedFraction = DefaultReproductionNeedFraction,
             bool healthRecoveryEnabled = false,
             bool metabolicHealingEnabled = false,
-            bool gradedFertilityEnabled = false)
+            bool gradedFertilityEnabled = false,
+            float gradedFertilityStrength = DefaultGradedFertilityStrength)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -209,6 +210,7 @@ namespace LifeSimulation.Simulation.Core
             HealthRecoveryEnabled = healthRecoveryEnabled;
             MetabolicHealingEnabled = metabolicHealingEnabled;
             GradedFertilityEnabled = gradedFertilityEnabled;
+            GradedFertilityStrength = gradedFertilityStrength;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -465,8 +467,20 @@ namespace LifeSimulation.Simulation.Core
         /// </summary>
         public bool MetabolicHealingEnabled { get; }
 
-        /// <summary>How much longer a creature exactly at the gate waits, as a multiple of its cooldown.</summary>
-        public const float GradedFertilityStrength = 3f;
+        /// <summary>
+        /// How much longer a creature exactly at the gate waits, as a multiple of its cooldown.
+        ///
+        /// <para><b>3 was an untuned first guess and it does not suit every ecology.</b> In the
+        /// resource-backed calibration scenario it produces a carrying capacity; in the plant-backed
+        /// full ecosystem at the same strength the population collapses to about 10 with 21 to 24 of
+        /// 60 worlds extinct. See
+        /// <c>docs/experiments/p6-graded-fertility-is-scenario-specific-2026-08-24.md</c>. It is a
+        /// configuration value so the strength can be varied rather than argued about.</para>
+        /// </summary>
+        public const float DefaultGradedFertilityStrength = 3f;
+
+        /// <summary>The brake strength actually in force. See <see cref="DefaultGradedFertilityStrength"/>.</summary>
+        public float GradedFertilityStrength { get; }
 
         /// <summary>
         /// When set, the reproduction cooldown lengthens as a creature's condition falls toward the
@@ -529,7 +543,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 8;
+        public const int ConfigurationHashVersion = 9;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -601,6 +615,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, HealthRecoveryEnabled ? 1UL : 0UL);
             hash = Hash(hash, MetabolicHealingEnabled ? 1UL : 0UL);
             hash = Hash(hash, GradedFertilityEnabled ? 1UL : 0UL);
+            hash = HashFloat(hash, GradedFertilityStrength);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);

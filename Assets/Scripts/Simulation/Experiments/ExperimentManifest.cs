@@ -88,6 +88,7 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "HealthRecoveryEnabled", config.HealthRecoveryEnabled);
             Line(builder, "MetabolicHealingEnabled", config.MetabolicHealingEnabled);
             Line(builder, "GradedFertilityEnabled", config.GradedFertilityEnabled);
+            Line(builder, "GradedFertilityStrength", config.GradedFertilityStrength.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
             Line(builder, "ReproductionNeedFraction", config.ReproductionNeedFraction.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
             Line(builder, "SlopeMovementCostEnabled", config.SlopeMovementCostEnabled);
             Line(builder, "PlantEstablishmentContestEnabled", config.PlantEstablishmentContestEnabled);

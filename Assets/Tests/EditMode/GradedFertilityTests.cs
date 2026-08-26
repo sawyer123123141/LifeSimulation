@@ -62,7 +62,7 @@ namespace LifeSimulation.Tests.EditMode
         {
             Assert.That(
                 ReproductionSystem.CooldownMultiplier(Gate, Gate),
-                Is.EqualTo(1f + SimulationConfig.GradedFertilityStrength).Within(Tolerance));
+                Is.EqualTo(1f + SimulationConfig.DefaultGradedFertilityStrength).Within(Tolerance));
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace LifeSimulation.Tests.EditMode
             // creature that recovers.
             Assert.That(
                 ReproductionSystem.CooldownMultiplier(0f, Gate),
-                Is.EqualTo(1f + SimulationConfig.GradedFertilityStrength).Within(Tolerance));
+                Is.EqualTo(1f + SimulationConfig.DefaultGradedFertilityStrength).Within(Tolerance));
         }
 
         [Test]
@@ -98,7 +98,7 @@ namespace LifeSimulation.Tests.EditMode
 
             Assert.That(
                 ReproductionSystem.CooldownMultiplier(halfway, Gate),
-                Is.EqualTo(1f + (SimulationConfig.GradedFertilityStrength / 2f)).Within(Tolerance));
+                Is.EqualTo(1f + (SimulationConfig.DefaultGradedFertilityStrength / 2f)).Within(Tolerance));
         }
 
         [Test]

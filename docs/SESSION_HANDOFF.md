@@ -929,10 +929,25 @@ diagnosed rather than merely described** - `p6-the-cap-is-the-stabiliser-2026-08
 - **Default false and NOT on for `Y`.** It changes population dynamics at the root, which is a larger
   claim on a scenario than a slope cost or a temperature field. **Deliberate decision, not a
   playtest fold-in.**
-- **Consequence: the plant corpus's scope qualification now has a route out.** Every plant trait
-  result on record was measured with the herbivore population pinned. There is now a configuration in
-  which it is not - **re-running the plant corpus under `--graded-fertility` is the obvious large next
-  piece of work.**
+- **QUALIFIED - the strength does not transfer between ecologies.**
+  `p6-graded-fertility-is-scenario-specific-2026-08-24.md`. Strength 3 gives a carrying capacity in
+  the resource-backed calibration scenario and **collapses the plant-backed full ecosystem to
+  population 10 with 21 of 60 extinct.** **Strength 1.0 is the equivalent result there** - extinction
+  5 of 40 against 11 of 60 with **no** brake, zero frozen worlds against 7, population 70.9 under a
+  cap of 250. **A factor of three in strength separates the best and worst conditions tested**, which
+  is why `GradedFertilityStrength` is now a hashed configuration value rather than a `const`.
+- **Do not carry the default strength into a new scenario.** Choose one and measure it. That is the
+  finding.
+- **My own confound, recorded:** the first plant comparison changed cap *and* brake together and
+  looked like the brake was harmless. Separating them showed raising the cap alone *raises*
+  population (40.8 to 80.7) and the brake at 3 is what collapses it.
+- **Untested hypothesis for why they differ:** plants are patchy and variable, so condition likely
+  sits lower and more variably in the plant world, and the brake keys off exactly that. **Nothing
+  currently reports the distribution of the binding-need condition** - that is the measurement.
+- **Consequence: the plant corpus's scope qualification now has a working configuration to be
+  re-tested in** - cap 250 at brake 1.0, population unpinned and healthier than unbraked. The 60-seed
+  contest and join comparisons are null in both arms, **but those used the confounded arm and are not
+  a re-validation.** **Re-running the plant corpus at brake 1.0 is the large next piece of work.**
 - `--regen=X` and `--scale=X` exist on `CreatureSweep`, and `--deaths` now reports population
   **spread** (min/median/max/sd) - a carrying capacity makes a distribution, a cap makes a constant,
   and eleven committed corpora could not tell them apart.
