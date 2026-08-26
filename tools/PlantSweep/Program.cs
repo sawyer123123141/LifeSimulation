@@ -52,6 +52,14 @@ namespace LifeSimulation.Tools.PlantSweep
 
         private static bool _gradedFertility;
 
+        /// <summary>
+        /// The patch-quality channel, as an arm. On in every recorded run of this tool, which is the
+        /// point: turning it OFF is what tests whether foraging carries information about which patch
+        /// is better. <c>ComputeNeedGain</c> saturates at 1.0 for every active patch, so with this
+        /// off the grazers are indifferent to nutrition density by construction.
+        /// </summary>
+        private static bool _qualityPreference = true;
+
         private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
 
         private static int _seedCount = 120;
@@ -67,6 +75,7 @@ namespace LifeSimulation.Tools.PlantSweep
             foreach (string argument in args)
             {
                 if (argument == "--graded-fertility") _gradedFertility = true;
+                if (argument == "--quality=off") _qualityPreference = false;
                 if (argument.StartsWith("--brake=")
                     && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
                 {
@@ -173,7 +182,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 plantSiteCompetitionEnabled: true,
                 plantMortalityEnabled: true,
                 plantDefenseDeterrenceEnabled: true,
-                plantQualityPreferenceEnabled: true,
+                plantQualityPreferenceEnabled: _qualityPreference,
                 plantTemperatureAdaptationEnabled: true,
                 proceduralEnvironmentFieldsEnabled: true,
                 plantFertilityAdaptationEnabled: true,
@@ -307,6 +316,7 @@ namespace LifeSimulation.Tools.PlantSweep
             // a written conclusion; a tool that silently rewrites one is a tool that can invalidate
             // the record without anybody noticing.
             string configuration = "cap" + _maximumPopulation
+                + (_qualityPreference ? "" : "-qualityoff")
                 + (_gradedFertility ? "-brake" + _brakeStrength.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "")
                 + "-" + _seedCount + "seeds";
             // The date is the run's own date, not a literal: a hardcoded one silently reuses a

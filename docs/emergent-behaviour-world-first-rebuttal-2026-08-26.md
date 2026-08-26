@@ -48,13 +48,28 @@ measured selection on exactly those traits — from the 2026-08-26 re-run
 **The variation is there and the decision function discards it**, in one clamp, at
 `DecisionSystem.Scoring.cs:269`.
 
-And **the fix is already written**: `plantQualityPreferenceEnabled` weights a candidate patch by
-nutrition density, is threaded from `SimulationConfig` through both scorers, is hashed, and defaults
-**false**. The presenter turns it on; the sweeps do not.
+And **the channel is already written**: `plantQualityPreferenceEnabled` weights a candidate patch by
+nutrition density, is threaded from `SimulationConfig` through both scorers, and is hashed.
 
-So the doc's flagship evidence for an impoverished world is, read against the source, evidence of an
-impoverished **sensor** — and the remedy is a flag in an existing arm rather than predators that have
-never survived 3,000 ticks. **This is the inversion the whole argument turns on.**
+> **CORRECTED 2026-08-26, same day, my error.** This paragraph continued "and defaults **false**. The
+> presenter turns it on; the sweeps do not." **The default is false and the conclusion is wrong** —
+> that is the *constructor parameter* default. Both sweeps pass `true` explicitly
+> (`tools/PlantSweep/Program.cs:176`, `tools/CreatureSweep/Program.cs:300`). **I read a declaration
+> instead of the call sites, which is the error this section accuses the constraints doc of making.**
+>
+> **The section's conclusion survives, and is now measured rather than argued.** Because the channel
+> is on everywhere, the test is to turn it **off**:
+> `experiments/p6-patch-quality-is-not-a-free-parameter-2026-08-26.md`. Across 240 paired runs,
+> **population -31.9 (t -6.42)**, **occupancy +0.201 (t +10.69)**, **0 of 240 hashes matching**;
+> Defense drift **+2.39** with the channel on and Nutrition drift **-3.71**. **"Nothing to be smarter
+> about" is false where patch quality varies.** What is corrected is the claim that the recorded
+> corpora were run blind to quality — they were not.
+
+So the doc's flagship evidence for an impoverished world is, read against the source and then
+measured, a statement about **one term of the score** rather than about the information available to
+a forager. The channel that reads patch quality is on in every recorded run and decides a third of the
+population. **This is the inversion the whole argument turns on**, and it cost nothing to test —
+against predators that have never survived 3,000 ticks.
 
 ## 4. "One threshold carries the selection" is not evidence for ordering
 
@@ -97,9 +112,10 @@ ordering does not address.
 
 ## What to do instead of choosing an order
 
-1. **Flip `plantQualityPreferenceEnabled` in a sweep arm** and measure whether foraging stops being
-   uniform. One flag, existing harness, byte-identical off. If the doc's §1 is right, this changes
-   nothing measurable — which is a real test of it, not a concession to it.
+1. ~~**Flip `plantQualityPreferenceEnabled` in a sweep arm**~~ **DONE, 2026-08-26** — inverted, since
+   the channel was already on: `--quality=off` on `PlantSweep`. It changes a third of the population
+   and a fifth of plant occupancy, and every hash. §1's "no information to exploit" does not survive
+   it. Details and scope: `experiments/p6-patch-quality-is-not-a-free-parameter-2026-08-26.md`.
 2. **Re-measure the death mix at cap 250–500 with the brake at a scenario-appropriate strength.** If
    starvation returns without new mechanisms, "nothing kills a creature" was a cap artefact.
 3. **Then, and only then, price predation** — against the recorded failure of the last attempt, not

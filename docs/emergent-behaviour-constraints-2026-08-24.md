@@ -1,5 +1,39 @@
 # Before designing for emergent behaviour: what was measured on 2026-08-24 that bears on it
 
+> ## SECTION 1 CONTESTED AND PARTLY WITHDRAWN — 2026-08-26
+>
+> **The rival proposal in §1 — "enrich the world first" — was argued against as this document asked,
+> and three of its four supports do not hold.** Full argument:
+> `emergent-behaviour-world-first-rebuttal-2026-08-26.md`. Measurement:
+> `experiments/p6-patch-quality-is-not-a-free-parameter-2026-08-26.md`. **Nothing below is edited** —
+> the reasoning stays visible, because the way it failed is the reusable part.
+>
+> - **"Almost nothing kills a creature" is a cap-100 figure.** The same model starves **35–64%** of its
+>   deaths at cap 500 (`p6-the-cap-is-the-stabiliser-2026-08-24.md`). Both numbers were mine and I
+>   quoted the one that suited the argument. **A fact that inverts on one integer cannot carry a claim
+>   about world poverty.**
+> - **"The foraging decision carries no information to exploit" is measured false.** I found
+>   `ComputeNeedGain` saturating and did not check what else reads the same score.
+>   `plantQualityPreferenceEnabled` weights a patch by nutrition density, is hashed, and is passed
+>   **true** by both sweeps. Turned off across 240 paired runs it moves **population -31.9 (t -6.42)**
+>   and **plant occupancy +0.201 (t +10.69)**, with **0 of 240 hashes matching**. Defense drift rises
+>   with the channel on (**t +2.39**) and Nutrition drift falls (**t -3.71**) — a two-sided pressure
+>   that does not exist under uniform grazing.
+> - **"Enriching the world is the cheaper step" has a counterexample I did not know.**
+>   `p4-inert-flags-readjudicated-2026-08-19.md` records the predator-prey attempt extinct before
+>   3,000 ticks with zero births.
+> - **The ordering is an interaction asserted as a sequence.** Controller poor/rich x world poor/rich
+>   is a 2x2, and this project decides those with paired arms.
+>
+> **What survives:** §1's opening observation that predation is 0 and that the named target behaviours
+> have no gradient in the *measured scenario*; §2 (the place-memory contradiction), §3 (the ablation /
+> null-controller / cross-seed criteria) and §4 (the architectural constraints) are untouched.
+>
+> **One correction in the other direction**, for the rebuttal's §4: the margin above the mating gate is
+> not constant at 0.006. It runs **0.167 / 0.089 / 0.064 / 0.041 / 0.006** across the five gate values —
+> the population re-equilibrates relative to the gate, but the margin **shrinks**.
+
+
 **Written for whoever takes the "can evolution invent behaviours I did not program" question.**
 This is not a design. It is the set of facts from the 2026-08-24 session that a design would be wrong
 to ignore, plus one contradiction in the existing docs and one ready-made success criterion.
