@@ -40,6 +40,17 @@ namespace LifeSimulation.Tools.CreatureSweep
             var populations = new List<double>();
             int extinct = 0;
 
+            // Counted over EVERY run, extinct ones included, and reported separately below.
+            //
+            // The block above deliberately conditions on survivors, because a mean energy taken over
+            // a dead world is meaningless. But when a whole arm dies - which is what the predation
+            // profile does - conditioning on survivors reports zero deaths of zero causes over zero
+            // runs, and the instrument says nothing at all about a result it fully measured. That
+            // happened on 2026-08-26 and this exists because of it.
+            var allTotals = new long[7];
+            var allBirths = new List<double>();
+            var allAttacks = new List<double>();
+
             for (int index = 0; index < seedCount; index++)
             {
                 SimulationConfig config = configure(Program.FirstSeed + index);
@@ -52,6 +63,13 @@ namespace LifeSimulation.Tools.CreatureSweep
                 }
 
                 SimulationStatistics statistics = world.Statistics;
+                allTotals[(int)DeathCause.Starvation] += statistics.StarvationDeathCount;
+                allTotals[(int)DeathCause.Dehydration] += statistics.DehydrationDeathCount;
+                allTotals[(int)DeathCause.Age] += statistics.AgeDeathCount;
+                allTotals[(int)DeathCause.Health] += statistics.HealthDeathCount;
+                allTotals[(int)DeathCause.Predation] += statistics.PredationDeathCount;
+                allBirths.Add(statistics.BirthCount);
+                allAttacks.Add(statistics.AttackHitCount);
                 if (statistics.Population == 0)
                 {
                     extinct++;
@@ -69,6 +87,21 @@ namespace LifeSimulation.Tools.CreatureSweep
                 sterile.Add(sterileShare);
                 populations.Add(statistics.Population);
             }
+
+            long allNamed = allTotals.Sum();
+            Console.WriteLine();
+            Console.WriteLine("death causes over ALL " + seedCount + " runs, extinct included ("
+                + allNamed + " deaths attributed)");
+            Write("starvation", allTotals[(int)DeathCause.Starvation], allNamed);
+            Write("dehydration", allTotals[(int)DeathCause.Dehydration], allNamed);
+            Write("age", allTotals[(int)DeathCause.Age], allNamed);
+            Write("health", allTotals[(int)DeathCause.Health], allNamed);
+            Write("predation", allTotals[(int)DeathCause.Predation], allNamed);
+            // Births separate deaths that ended a working population from a founder cohort that never
+            // reproduced at all - the recorded predation failure mode is "zero births", which a death
+            // mix alone cannot distinguish from a population that lived and then collapsed.
+            Console.WriteLine("  births per run          " + Mean(allBirths).ToString("0.0")
+                + "   attack hits per run " + Mean(allAttacks).ToString("0.0"));
 
             int counted = seedCount - extinct;
             long named = totals.Sum();

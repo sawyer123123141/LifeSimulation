@@ -114,6 +114,18 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// <summary>Metabolic pace scaling healing - the first private benefit that gene has had.</summary>
         private static bool _metabolicHealing;
 
+        /// <summary>
+        /// The predator-prey founder profile, as an arm. `PredationVariation` seeds a mixed founder
+        /// population instead of `PhysiologyVariation`'s herbivores, which is the only way predation
+        /// gets an occasion to fire - the flags are wired and the scenario is what withholds threats.
+        ///
+        /// <para><b>It has failed here before.</b> `p4-inert-flags-readjudicated-2026-08-19.md`
+        /// records it extinct before 3,000 ticks with zero births on the plant calibration, so every
+        /// verdict taken there was measured on a corpse. This exists to retry it on a substrate that
+        /// is known not to be marginal.</para>
+        /// </summary>
+        private static bool _predation;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -147,6 +159,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                         "p6-defense-calibration-" + _scenarioName, scale);
                 }
                 if (argument == "--metabolic-healing") { _healthRecovery = true; _metabolicHealing = true; }
+                if (argument == "--predation") _predation = true;
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -279,7 +292,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 Founders,
                 defaults.Schedule,
                 _focused ? _focusedPopulationCap : MaximumPopulation,
-                FounderProfile.PhysiologyVariation,
+                _predation ? FounderProfile.PredationVariation : FounderProfile.PhysiologyVariation,
                 cognitionEnabled: true,
                 physiologyEnabled: true,
                 decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
@@ -627,6 +640,7 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             var suffix = new StringBuilder();
             suffix.Append("-").Append(_seedCount).Append("seeds");
+            if (_predation) suffix.Append("-predation");
             if (!_join) suffix.Append("-joinoff");
             if (_terrainTemperature) suffix.Append("-terraintemp");
             if (_metabolicIngestion) suffix.Append("-ingestion");
