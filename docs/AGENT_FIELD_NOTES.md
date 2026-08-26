@@ -1692,3 +1692,20 @@ change.
   and 4,080 runs have a population column with zero variance, and no summary statistic in them says
   so. **A carrying capacity produces a distribution; a cap produces a constant** - printing sd would
   have caught it years of runs earlier.
+- **A step function where a curve belongs produces boom and bust (2026-08-24).** Reproduction was
+  gated at 70% and 80% of three needs, so nothing told a population that resources were *tightening* -
+  only that they were gone. Replacing the step with a graded cooldown took starvation from 55-64% of
+  deaths to **exactly zero** and survival from 3 of 20 to 19 of 20. **When an ecology overshoots and
+  crashes, look for the threshold that should have been a slope.**
+- **Scale the cooldown, not the probability.** A graded breeding *chance* needs a random source inside
+  a deterministic tick, which would have cost a seeded stream and a hash change. Scaling how long a
+  creature waits gives the identical negative feedback with no randomness at all. **Check whether a
+  rate can carry what a probability was wanted for.**
+- **Measure headroom against the threshold that matters, not against zero.** A creature that cannot
+  breed below 0.70 is not "half fed" at 0.50 - it is simply out. Normalising `(condition - gate) /
+  (1 - gate)` puts the whole curve in the range where it can act; normalising against zero would leave
+  the brake fully applied nearly everywhere.
+- **A liveness test can only see a flag whose machinery has had time to run.** The graded-fertility
+  liveness check failed at 600 ticks because `AdultAgeSeconds` is 20 seconds - 1,200 ticks - so
+  nothing had bred once, let alone twice. **Before calling a flag inert, check the run is longer than
+  the slowest thing it touches.**

@@ -2,7 +2,7 @@
 
 **Head at handoff: `04ef603`** plus the commit carrying this handoff, pushed to `origin/main`. Working tree clean apart from the
 untracked Unity `.meta` files, `Assets/_Recovery/` and `ProjectSettings/PackageManagerSettings.asset`
-that are **never to be staged**. **594 headless tests green**, Unity compile clean.
+that are **never to be staged**. **603 headless tests green**, Unity compile clean.
 
 ### Phase H — camera, planet level of detail, and the first measured selection (2026-08-24)
 
@@ -911,12 +911,28 @@ diagnosed rather than merely described** - `p6-the-cap-is-the-stabiliser-2026-08
   survives **23 of 24 at cap 250 and 3 of 20 at cap 500**, same ecology. Starvation is **35-64% of
   deaths at cap 500 against 0.1% at cap 100**. **The cap is not bounding a self-regulating ecology;
   it is supplying the regulation.** The model has no density-dependent brake of its own.
-- **Candidate explanation, NOT established:** births are gated by step functions (70% / 80% of three
-  needs), so there is no "resources are tightening, breed less" signal - only "resources are gone,
-  nobody breeds and many starve". **A graded fertility response** is the standard shape that produces
-  equilibrium. **The test is to build one behind a flag** and see whether a population settles below a
-  cap it can reach. Two explanations tonight died at exactly this level of support, so treat it as a
-  lead.
+- **BUILT AND CONFIRMED - the debt is closed.** `p6-graded-fertility-closes-the-cap-debt-2026-08-24.md`.
+  `gradedFertilityEnabled` scales the reproduction **cooldown** by condition, measured on the binding
+  need and against the gate rather than zero: `1 + 3*(1 - headroom)`, so full condition is unslowed
+  and sitting on the gate waits 4x. **Deterministic** - a breeding probability would need an RNG in
+  the tick; the cooldown gives the same feedback with none.
+- **Survival 3 of 20 -> 19 of 20 at cap 500. Starvation 55-64% of deaths -> exactly 0.0%** - no
+  creature starved in any run. Population settles at **75-110 with sd 50-75 under a cap of 500**.
+  **That is a carrying capacity.**
+- **It needed no scenario redesign.** Standard layout, standard cap 100: population **63.1, sd 33.6**
+  against 98.2 pinned with no variance. The habitat could always limit itself; nothing told it to slow
+  down. `WithRegeneration` was needed to *diagnose* and is not needed to *fix*.
+- **The price, honestly:** 28 of 30 surviving against 30 of 30 at cap 100. A self-regulating
+  population sits lower and a lower population is nearer zero. Mean energy 0.8058 -> 0.7847.
+- **Not proof the step gate was the only cause** - adding a brake removes the collapse, which is
+  strong, but two mechanisms tonight looked sufficient and were partial.
+- **Default false and NOT on for `Y`.** It changes population dynamics at the root, which is a larger
+  claim on a scenario than a slope cost or a temperature field. **Deliberate decision, not a
+  playtest fold-in.**
+- **Consequence: the plant corpus's scope qualification now has a route out.** Every plant trait
+  result on record was measured with the herbivore population pinned. There is now a configuration in
+  which it is not - **re-running the plant corpus under `--graded-fertility` is the obvious large next
+  piece of work.**
 - `--regen=X` and `--scale=X` exist on `CreatureSweep`, and `--deaths` now reports population
   **spread** (min/median/max/sd) - a carrying capacity makes a distribution, a cap makes a constant,
   and eleven committed corpora could not tell them apart.
@@ -1109,7 +1125,7 @@ refuses without provenance; that is deliberate.
 ### The creature instruments (2026-08-24)
 
 ```powershell
-dotnet test tools/HeadlessTests            # 594 green
+dotnet test tools/HeadlessTests            # 603 green
 dotnet run --project tools/CreatureSweep -c Release -- --focused 80 100 --scenario=lean
 dotnet run --project tools/CreatureSweep -c Release -- --focused 120 100
 dotnet run --project tools/CreatureSweep -c Release -- --relief

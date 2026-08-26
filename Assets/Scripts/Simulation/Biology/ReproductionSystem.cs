@@ -14,6 +14,7 @@ namespace LifeSimulation.Simulation.Biology
         private const float MateDistance = 2f;
 
         private readonly float _needFraction;
+        private readonly bool _gradedFertility;
 
         private readonly CreatureStore _creatures;
         private readonly bool _physiologyEnabled;
@@ -23,9 +24,10 @@ namespace LifeSimulation.Simulation.Biology
         private int[] _candidates;
         private bool[] _matched;
 
-        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false, float needFraction = SimulationConfig.DefaultReproductionNeedFraction)
+        public ReproductionSystem(CreatureStore creatures, ArenaBounds arena, int initialCapacity, bool physiologyEnabled, bool mateSelectionEnabled = false, float needFraction = SimulationConfig.DefaultReproductionNeedFraction, bool gradedFertility = false)
         {
             _needFraction = needFraction;
+            _gradedFertility = gradedFertility;
             _creatures = creatures ?? throw new ArgumentNullException(nameof(creatures));
             _physiologyEnabled = physiologyEnabled;
             _mateSelectionEnabled = mateSelectionEnabled;
@@ -257,7 +259,57 @@ namespace LifeSimulation.Simulation.Biology
 
         private float CooldownFor(int index)
         {
-            return _physiologyEnabled ? _creatures.GetPhenotypeAt(index).ReproductionCooldownSeconds : LegacyReproductionCooldownSeconds;
+            float cooldown = _physiologyEnabled ? _creatures.GetPhenotypeAt(index).ReproductionCooldownSeconds : LegacyReproductionCooldownSeconds;
+            return _gradedFertility ? cooldown * CooldownMultiplierFor(index) : cooldown;
+        }
+
+        /// <summary>
+        /// The density-dependent brake the model does not otherwise have.
+        ///
+        /// <para><b>Why.</b> Births are gated by step functions - 70% and 80% of three needs - so
+        /// there is no signal that resources are <i>tightening</i>, only that they are gone. The
+        /// population breeds at full rate right up to the point the forage is stripped, and then
+        /// starves together. Measured: the same ecology survives 23 of 24 runs at a cap of 250 and
+        /// 3 of 20 at a cap of 500, starvation going from 0.1% of deaths to 64%. <b>The cap was
+        /// supplying the regulation.</b> See
+        /// <c>docs/experiments/p6-the-cap-is-the-stabiliser-2026-08-24.md</c>.
+        /// </para>
+        ///
+        /// <para><b>Deterministic on purpose.</b> The obvious graded gate is a breeding
+        /// <i>probability</i>, which needs a random source in the tick. Scaling the cooldown by
+        /// condition is the same negative feedback with no randomness at all: a creature in poor
+        /// condition waits longer, so the birth rate falls smoothly as condition falls toward the
+        /// gate rather than switching off when it crosses.</para>
+        ///
+        /// <para>Headroom is measured on the <b>binding</b> need, and against the gate rather than
+        /// against zero - a creature is not "half fed", it is some fraction of the way from the
+        /// threshold that lets it breed at all to full.</para>
+        /// </summary>
+        private float CooldownMultiplierFor(int index)
+        {
+            CreatureNeeds needs = _creatures.GetNeedsAt(index);
+            Phenotype phenotype = _creatures.GetPhenotypeAt(index);
+
+            float condition = Math.Min(
+                Math.Min(
+                    needs.Energy / Math.Max(0.01f, phenotype.EnergyCapacity),
+                    needs.Hydration / Math.Max(0.01f, phenotype.HydrationCapacity)),
+                needs.Health / Math.Max(0.01f, phenotype.HealthCapacity));
+
+            return CooldownMultiplier(condition, _needFraction);
+        }
+
+        /// <summary>
+        /// The brake curve itself, separated from the store lookups so it can be tested directly.
+        ///
+        /// <para>1 at full condition, <c>1 + GradedFertilityStrength</c> at the gate and below it.
+        /// Linear between, measured against the gate rather than against zero.</para>
+        /// </summary>
+        public static float CooldownMultiplier(float condition, float needFraction)
+        {
+            float span = Math.Max(0.01f, 1f - needFraction);
+            float headroom = Math.Max(0f, Math.Min(1f, (condition - needFraction) / span));
+            return 1f + (SimulationConfig.GradedFertilityStrength * (1f - headroom));
         }
 
         private void EnsureCapacity(int required)

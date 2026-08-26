@@ -160,7 +160,8 @@ namespace LifeSimulation.Simulation.Core
             bool metabolicIngestionEnabled = false,
             float reproductionNeedFraction = DefaultReproductionNeedFraction,
             bool healthRecoveryEnabled = false,
-            bool metabolicHealingEnabled = false)
+            bool metabolicHealingEnabled = false,
+            bool gradedFertilityEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -207,6 +208,7 @@ namespace LifeSimulation.Simulation.Core
             ReproductionNeedFraction = reproductionNeedFraction;
             HealthRecoveryEnabled = healthRecoveryEnabled;
             MetabolicHealingEnabled = metabolicHealingEnabled;
+            GradedFertilityEnabled = gradedFertilityEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -463,6 +465,24 @@ namespace LifeSimulation.Simulation.Core
         /// </summary>
         public bool MetabolicHealingEnabled { get; }
 
+        /// <summary>How much longer a creature exactly at the gate waits, as a multiple of its cooldown.</summary>
+        public const float GradedFertilityStrength = 3f;
+
+        /// <summary>
+        /// When set, the reproduction cooldown lengthens as a creature's condition falls toward the
+        /// gate, instead of breeding staying at full rate until the gate is failed outright.
+        ///
+        /// <para><b>The missing density-dependent brake.</b> With step-function gates the population
+        /// breeds at full rate until the forage is stripped and then starves together, which is why
+        /// the same ecology survives 23 of 24 runs at a cap of 250 and 3 of 20 at a cap of 500. The
+        /// cap was supplying the regulation rather than bounding it. See
+        /// <c>docs/experiments/p6-the-cap-is-the-stabiliser-2026-08-24.md</c>.</para>
+        ///
+        /// <para><b>Deterministic.</b> A breeding probability would need a random source in the tick;
+        /// scaling the cooldown gives the same feedback with none.</para>
+        /// </summary>
+        public bool GradedFertilityEnabled { get; }
+
         /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
@@ -509,7 +529,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 7;
+        public const int ConfigurationHashVersion = 8;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -580,6 +600,7 @@ namespace LifeSimulation.Simulation.Core
             hash = HashFloat(hash, ReproductionNeedFraction);
             hash = Hash(hash, HealthRecoveryEnabled ? 1UL : 0UL);
             hash = Hash(hash, MetabolicHealingEnabled ? 1UL : 0UL);
+            hash = Hash(hash, GradedFertilityEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
