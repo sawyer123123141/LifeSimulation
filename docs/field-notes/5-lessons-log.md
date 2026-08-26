@@ -570,3 +570,20 @@ change.
   had its content eaten by bash and silently corrupted the docstring of the very tool being written.
   **Put multi-line edit scripts in a file.** Three times this session `git status` or a direct
   re-read caught something that would otherwise have shipped broken.
+- **A one-way state variable that gates reproduction is a silent selection filter.** Health only ever
+  decreases unless `healthRecoveryEnabled` is on, and it is one of three conditions on the
+  mate-seeking gate, so injured creatures are permanently sterile and drift is measured on the
+  survivors of that filter. It cost 39% of one signal and manufactured a `body_size` finding that
+  vanished with the flag on. **Standing rule from 2026-08-26: run both health arms rather than
+  choosing one** — that answers the question instead of caveating it, and avoids a re-baseline.
+- **Run the third point before writing up the second.** A two-point comparison gave
+  `fertility_investment` 3.44 to 9.48 and a clean story about mortality pressure. The brake sweep at
+  fixed cap and regeneration gave 4.69 / 9.48 / 4.83 against starvation shares of 33.6% / 16.2% /
+  0.0% - non-monotone and uncorrelated with the thing it supposedly measured. **This is the same
+  failure the five-trait claim was**, caught one step earlier because the dose-response was run first.
+- **A cap hides every mechanism that would otherwise have to regulate the population.** The mating
+  gate looked like a pure selection knob across five values at cap 100, all 80 of 80 surviving. In an
+  ecology-limited cell the same values survive 4 / 11 / 24 / 38 of 40: **the gate is also the density
+  brake.** Second time this shape has appeared - see the cap-is-the-stabiliser finding. **Ask what the
+  cap is doing for you before concluding a mechanism is harmless.**
+

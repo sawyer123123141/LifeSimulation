@@ -454,6 +454,21 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 4. Decisions that must NOT be reopened
 
+### Added 2026-08-26
+
+- **Selection work in the pressured cell runs BOTH health arms — flag on and flag off — every time.**
+  Decided by the user on 2026-08-26 after the alternatives were laid out. `healthRecoveryEnabled`
+  stays **off by default and is not being flipped**: no re-baseline is taken, and every recorded
+  number stays comparable. **The reason both arms are run:** health has no regeneration path with the
+  flag off (five subtractions in `NeedsSystem`, one addition behind the flag at
+  `SimulationWorld.Ticking.cs:160`), and health is one of the three mate-seeking gate conditions, so a
+  damaged creature is **permanently sterile**. At brake 1.5 / regen 2.0 / cap 500 that is **20.9% of
+  the living**, which makes every drift figure conditional on a breeding subpopulation health already
+  selected. Measured cost of not doing this: `fertility_investment` reads **9.48 with the ratchet and
+  5.77 without** (-39%), and `body_size` crosses |t| = 2 **only** with it — it would have been
+  reported as a finding. Evidence: `p6-the-gate-is-a-survival-mechanism-2026-08-26.md`.
+  **One extra run per experiment. Do not drop the second arm to save it.**
+
 ### Added 2026-08-24
 
 - **Rivers stay reverted.** Blocked behind a persistent grid; the postmortem is in
