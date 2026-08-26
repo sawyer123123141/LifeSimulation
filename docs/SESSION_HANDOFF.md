@@ -587,7 +587,21 @@ it are now qualified by banners on the documents they cite.
 
 **Standing decision (section 4):** selection work in the pressured cell runs **both health arms**.
 
+8. **Both instrument gaps closed, and the result got worse rather than better** —
+   `p6-the-combat-forces-are-too-small-2026-08-26.md`. `maneuverability`, `fear` and
+   `CumulativeCombatDamage` are now in `SimulationStatistics` (appended at the end of the positional
+   constructor, behaviour-inert, 611 green). The two newly visible genes are **not** strongly selected
+   (t +2.00 and +0.73), so **the predation result is about `defense` alone.** And the measured combat
+   forces are small - **0.53 predation deaths per run** against ~65 deaths from all causes, **96.6
+   health of combat damage per run** across a population near 130. **Both mechanisms I proposed are
+   withdrawn and no third is offered: defense selection is robust and unexplained.**
+
 **What is worth doing next**
+
+- **THE open question: why is `defense` selected at all?** Neither fertility (1.8% sterile) nor
+  mortality (0.53 deaths per run) is visibly large enough. **The next measurement is the defense value
+  of the creatures that die** - one number, no instrument reports it, and it separates
+  "concentrated on the low-defense tail" from every other explanation.
 
 - **The whole predation result lives at gate 0.45, cap 500, regen 2.0 — one cell.** Robustness across
   gate, cap and regeneration is the first thing to check before anything is built on it.
