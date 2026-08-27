@@ -553,6 +553,41 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-26, last — the controller comparison redone cleanly, read this first
+
+**Corrects this morning's controller document.** `p6-the-clean-controller-comparison-2026-08-26.md`.
+A banner is on `p6-the-controller-comparison-2026-08-26.md`; nothing there was deleted.
+
+1. **The mate gate is replaceable by a scenario parameter, and bettered by it.**
+   `gradedFertilityEnabled` is already a density brake and the arm that died 50 of 60 this morning
+   **already had it, at strength 1.5** - the wrong number, not a missing mechanism. Intent with
+   **proximity pairing and no mate gate** at **brake 4.0 is 0 of 60 extinct, population 238, energy
+   0.657**, against the mate gate's 3 of 60, population 299, energy 0.583.
+2. **So the comparison this morning called impossible is possible.** Matched pairing, matched brake,
+   only the controller differing. **At every matched brake the rich controller carries five to
+   fifteen times the population at comparable per-creature energy** - at brake 4.0, **238 against 24**
+   with energy 0.657 against 0.671, and 0 of 60 extinct against 4 of 60.
+3. **"On survival it is a tie" is WITHDRAWN.** That tie compared each controller on a different
+   pairing rule at a brake tuned for neither. **"Its advantage is a brake" survives but is reframed:
+   the brake is a precondition for the controller paying, not what it was buying.** Best-against-best
+   is intent 238 to legacy 144 - 1.65x - because legacy's own optimum sits at a much weaker brake.
+4. **First direct evidence on "enrich the world before enriching the brain", and it cuts both ways.**
+   The one thing the rich brain was demonstrably buying was purchasable from the world, better and
+   cheaper - so building brain-for-a-brake would have been wrong. But **given** that brake the rich
+   brain is worth an order of magnitude of carrying capacity, which no world parameter tested
+   supplies. **Enriching the brain without the world was actively harmful; the world alone leaves 10x
+   on the table.**
+5. **A guess made and withdrawn inside the same session:** from brake 3.0 and 6.0 alone I proposed
+   the gate reached a middle no brake could. Filling in 4.0, 4.5 and 5.0 deleted it.
+6. **Deliberately not claimed: drift at matched brake.** Populations of 238 and 24 do not produce
+   comparable selection tables, and this session already established that small populations select
+   weakly. **Brake 4.0 is a number for this cell only** - graded-fertility strength is known to be
+   scenario-specific.
+
+**Next:** the emergent-behaviour design question (item 6 below) now has evidence to be argued from
+rather than around. Targeting-versus-success-rate on low-defense prey was assessed and **deliberately
+skipped as having nothing downstream**.
+
 ### 2026-08-26, latest — the predation cell is robust, read this first
 
 **Closed: the robustness check the previous block called the first thing to do.**

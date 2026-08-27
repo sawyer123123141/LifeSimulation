@@ -1,5 +1,17 @@
 # The controller comparison - richer decision machinery, in a world that now has pressure
 
+> **PARTLY SUPERSEDED THE SAME DAY** by
+> `p6-the-clean-controller-comparison-2026-08-26.md`. The claim below that the two controllers
+> **cannot** be given identical machinery is true of the *pairing rule* and **false as a limit on the
+> comparison**: raising `gradedFertilityStrength` from 1.5 to 4.0 makes proximity pairing work for
+> the intent controller (0 of 60 extinct), so both controllers can be run on identical machinery
+> after all. **The "on survival it is a tie" conclusion in Cell 1 is withdrawn** - it compared each
+> controller on a different pairing rule at a brake tuned for neither. Matched, intent wins 0 of 60
+> against 4 of 60 and carries **ten times the population**. The "its advantage is a brake" finding
+> survives, reframed: the brake is a *precondition* for the controller paying, not the thing it was
+> buying. Everything else here - the zero-births-by-construction mechanism, cell 2, the
+> `urgency_exponent` result, the combat-gene floor trap - stands.
+
 2026-08-26. `CreatureSweep`, 30 relief-selected seeds x two slope arms = 60 runs per cell per arm,
 plus `--deaths` at 30 contiguous seeds (slope-off only) for composition. **Every arm below was run
 with `healthRecoveryEnabled` off and on**, per the standing decision in section 4 of the handoff.
