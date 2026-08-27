@@ -585,9 +585,26 @@ population as an upper bound — sound for that decision, but it is a bound, not
    columns run together (`-0.2729-18.4080`) and splitting on whitespace reads the *next* column as t.
    It produced a "+87.68" that was really -18.41. Parse that table with a number regex.
 
-**Next, in order:** what sets the size of `defense` selection (four axes measured, no predictor);
-targeting versus success-rate on low-defense prey; then the mate-gate separability question the
-controller comparison opened.
+**Followed up the same day, in the same document.**
+
+8. **What sets the size of `defense` selection is now a measured negative, not an open gap.** The
+   **selection differential is near-constant** - the predated carry `defense` 0.18-0.34 and the
+   living 0.61-0.73 in all eighteen cells, a differential of 0.335 to 0.512 against a t range of
+   2.5 to 11, rho **+0.08 / +0.33**. **Predation kills the same kind of creature everywhere**, so the
+   variation is not variation in how selectively it kills. That retires the obvious explanation.
+9. **Population and turnover are withdrawn as arm-conditional.** Rho of population against t is
+   **+0.83 with health recovery on and +0.30 with it off**; births give +0.80 and +0.15. An
+   inverted-U in the health-off arm does not exist in the health-on arm. **One arm alone would have
+   produced a confident finding and the second deleted it.** Only "populations under about a hundred
+   select weakly" replicates.
+10. **Correction to item 3, made the same day.** The cap hash-equality holds on the *relief-selected*
+    seed set the sweep uses. On the contiguous seed set `--deaths` uses, cap 1000 reaches population
+    **505** against cap 500's **500**, so at least one run there is clipped. "The ceiling is never
+    touched" was true of the sweep's seeds, not of every seed. **The conclusion is unaffected** - cap
+    250 binds hard and changes nothing - but "never" was too strong and is qualified in the document.
+
+**Next, in order:** targeting versus success-rate on low-defense prey; then the mate-gate
+separability question the controller comparison opened.
 
 ### 2026-08-26, later — the controller comparison, read this first
 

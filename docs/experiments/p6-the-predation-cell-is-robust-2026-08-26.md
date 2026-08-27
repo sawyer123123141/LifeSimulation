@@ -41,8 +41,15 @@ available for free and without redesign.
 ## The cap does not regulate this cell, and that is provable rather than inferred
 
 **Cap 500 and cap 1000 produce byte-identical simulation hashes on all 60 runs.** Maximum population
-reached at either is 486. The ceiling is never touched, so raising it is a no-op - not "a small
-effect", a *no* effect, demonstrated by hash equality rather than by a p-value.
+reached at either is 486. On this seed set the ceiling is never touched, so raising it is a no-op -
+not "a small effect", a *no* effect, demonstrated by hash equality rather than by a p-value.
+
+> **Qualified the same day, by the follow-up below.** That hash equality holds on the *relief-selected*
+> seed set the sweep uses. On the contiguous seed set `--deaths` uses, cap 1000 reaches a maximum
+> population of **505** against cap 500's **500** - so at least one run there *is* clipped by the 500
+> ceiling, and "the ceiling is never touched" is true of the sweep's seeds and not of every seed.
+> The conclusion is unaffected: cap 250 binds hard and changes nothing, so the cap is still not what
+> regulates this cell. The overstatement was in "never", not in the finding.
 
 Cap 250 does bind (a run pins at exactly 250) and **still changes nothing**: 10 of 60 extinct, same
 as the baseline, and `defense` at t +10.56 against +10.97.
@@ -124,13 +131,54 @@ energy value is identical**; only `code_revision` changed. Together with the two
 replications recorded in `p6-the-controller-comparison-2026-08-26.md`, four committed predation
 corpora have now reproduced exactly across three commits.
 
+## Follow-up: what sets the size of `defense` selection - a measured negative
+
+The open question above was pursued the same day. `--deaths` reports the mean `defense` of the
+predated against the living, so the **selection differential** can be read per cell; births per run
+give **turnover**. Nine cells, both health arms.
+
+| cell | population off / on | differential off / on | `defense` t off / on |
+|---|---|---|---|
+| brake 3.0 | 25 / 22 | 0.399 / 0.448 | +2.48 / +3.55 |
+| gate 0.55 | 59 / 79 | 0.472 / 0.367 | +4.97 / +4.09 |
+| gate 0.40 | 106 / 136 | 0.358 / 0.409 | +7.68 / +9.27 |
+| cap 250 | 112 / 108 | 0.471 / 0.369 | +10.56 / +7.73 |
+| gate 0.45 | 129 / 126 | 0.471 / 0.369 | +10.97 / +7.68 |
+| cap 1000 | 130 / 127 | 0.471 / 0.369 | +10.97 / +7.68 |
+| brake 1.0 | 130 / 145 | 0.441 / 0.437 | +9.35 / +8.28 |
+| regen 1.5 | 154 / 160 | 0.335 / 0.416 | +7.47 / +9.48 |
+| regen 3.0 | 170 / 174 | 0.501 / 0.512 | +5.86 / +7.85 |
+
+**The selection differential is near-constant and explains nothing.** Across all eighteen cells the
+predated carry `defense` 0.18-0.34 and the living 0.61-0.73, a differential of **0.335 to 0.512** -
+against a `defense` t that ranges 2.5 to 11. Spearman rho of differential against t is **+0.08 with
+health off and +0.33 with it on**. **Predation kills the same kind of creature in every cell**; the
+variation in measured selection is not variation in how selectively it kills. That retires the
+obvious explanation.
+
+**Population and turnover are an arm-conditional result and are therefore withdrawn.** Rho of
+population against t is **+0.83 with health recovery on and +0.30 with it off**; births per run give
+**+0.80 and +0.15**. An inverted-U in the health-off arm, peaking near population 130, does not
+appear in the health-on arm at all. **One arm would have produced a confident finding here and the
+second arm deletes it** - which is the entire reason the standing decision requires both.
+
+**The one statement that replicates:** the two smallest populations - 22-25 and 59-79 - give the two
+lowest `defense` t values in both arms. Below roughly a hundred creatures the response is weak.
+Above that, across a range of 108 to 174, nothing measured here orders it.
+
+**So: no predictor, and now that is a measured negative rather than an unexamined gap.** Differential
+is ruled out. Population and turnover are ruled out as *replicated* predictors. A third mechanism is
+not offered.
+
 ## What this settles and what it opens
 
 - **Settled: the predator-prey result travels.** Survivability, and `defense` and `attack` selection,
   hold across every one-step move from the baseline in four parameters and both health arms. Work can
   be built on this cell.
 - **Settled: the cap is inert here**, by hash equality, and the brake plus predation are what regulate.
-- **Open: what sets the size of `defense` selection.** Four axes measured, no predictor.
+- **Closed as a negative: what sets the size of `defense` selection.** The selection differential is
+  near-constant and rules itself out; population and turnover predict it in one health arm and not
+  the other, so they are withdrawn. Only "small populations select weakly" replicates.
 - **Open, unchanged:** whether attackers *target* low-defense creatures or merely *succeed* against
   them more often.
 - **Available for free:** gate 0.40 or regen 3.0 give 6 and 2 extinctions of 60 against the
