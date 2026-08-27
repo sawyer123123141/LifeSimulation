@@ -553,6 +553,58 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-26, later — the controller comparison, read this first
+
+**One commit on top of `9631800`.** Nothing below was deleted. One bullet in the previous block's
+"what is worth doing next" is struck through; everything else there stands.
+
+**Closed: the controller comparison.** `p6-the-controller-comparison-2026-08-26.md`. Both cells, both
+health arms, 60 runs per arm per cell.
+
+1. **The comparison cannot be made single-variable, and this is a property of the code, not of the
+   experiment design.** `mateSelectionEnabled` reproduces through `FindSeekMateTarget`, which
+   requires the decision to *be* `CreatureAction.SeekMate`; `DecideFromLearnedOutcomes` emits only
+   `SeekFood`, `SeekWater` and `Wander`. **A Legacy world with mate selection on has zero births by
+   construction.** The first arm run was 8 of 8 extinct in 1.5 seconds and measured nothing but that.
+   `--mate-selection=off` was added to give both controllers a pairing rule they can reach.
+2. **Herbivore cell (cap 500, regen 2.0, brake 1.5, gate 0.70): on survival it is a tie** - intent
+   3 of 60 extinct against Legacy 5, and 1 against 1 with health recovery on. Intent carries **twice
+   the population** (299 against 144) and loses **nobody** to thirst against Legacy's 2.4%.
+3. **The rich controller's advantage there is a brake, not foraging skill.** Give it Legacy's
+   proximity pairing and it **starves itself out in 50 of 60 runs** - 623 births per run, 69%
+   starvation, mean energy 0.03. `SeekMate` is what limits its birth rate.
+4. **Predator-prey cell (`--predation --gate=0.45`): the ordering inverts.** Legacy is worst at
+   **38 of 60 extinct** against intent's 10, and the configuration that was catastrophic in cell 1 is
+   **the best here, 2 of 60**. Predation supplies the mortality that starvation had to supply before.
+5. **Legacy dies of its own predation** - 230 attacks per run, 33% of deaths, against 1.0% for
+   intent. `PredationSystem.Decide` overrides the Legacy decision; intent scores hunting against
+   every other intent.
+6. **`urgency_exponent` selection exists only under one controller.** t = **-11.53 / -10.11** under
+   intent, **-1.34 / +1.23** under Legacy - the neutral control's own range. Predicted from the
+   source before the table was read: the gene's only behavioural readers are two lines in
+   `DecisionSystem.Scoring.cs`, the intent path. **Under Legacy nothing reads it.**
+7. **A trap in the drift table, recorded:** all six combat genes drift +0.040 to +0.048 at t = 13 to
+   27 **in both controllers**. Founders are exactly `0.0000` under `PhysiologyVariation` - that is
+   mutation off a floor, not selection. Combat questions need the `--predation` founder profile.
+8. **Replication, unplanned:** the committed
+   `...30seeds-predation-brake1.5-gate0.45-2026-08-26.csv` reproduced **byte-for-byte** at `9631800`
+   against the copy written at `a065905`. Its `-healthrecovery` companion was rewritten from
+   `d99b854`: every shared column and every hash identical, plus the `maneuverability` and `fear`
+   columns that did not exist then.
+
+**Tooling added:** `--policy=legacy|intent` and `--mate-selection=off` on `CreatureSweep`, both
+suffixed into the corpus filename. No simulation code was touched; 611 green.
+
+**What is worth doing next, after this**
+
+- **Is the mate gate separable from the controller?** Proximity pairing plus an explicit birth-rate
+  brake would test whether intent's cell-1 advantage survives without `SeekMate`. Nothing offers that
+  today.
+- **Attack rate is monotone in mean energy across all six predation arms**, and `hunt` is multiplied
+  by hunger against a hard `>= 0.10` floor in both controllers. Direction is code-grounded; the 40x
+  magnitude is not. A resource-level sweep with the controller fixed would measure it.
+- **Everything below still stands**, minus the struck bullet.
+
 ### 2026-08-26 — read this first; the list below it is the previous session's
 
 **Thirteen commits, `fd6eca8` to `0914369`.** Nothing below this block was deleted; several entries in
@@ -605,8 +657,8 @@ it are now qualified by banners on the documents they cite.
 
 **What is worth doing next**
 
-- **The controller comparison has still never been run** - does richer decision machinery pay in a
-  world that now has pressure? Paired arms, existing harness, the cell exists.
+- ~~The controller comparison has still never been run~~ **RUN, 2026-08-26 (later session)** - see
+  the block at the top of this section and `p6-the-controller-comparison-2026-08-26.md`.
 - **Nine plant corpora are still measured pinned.** Only contest and join were re-validated.
 - ~~The slope arms in every predation run were never examined~~ **CHECKED, null** - 168 paired columns
   across eight cells, **3 at |t| >= 2 against a chance expectation of 8.4**. The slope cost does not

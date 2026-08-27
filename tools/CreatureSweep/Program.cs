@@ -135,6 +135,28 @@ namespace LifeSimulation.Tools.CreatureSweep
 
         private static bool _kinRecognition = true;
 
+        /// <summary>
+        /// The decision controller, as an arm. `IntentUtilityV1` is what every P4 scenario and both
+        /// playtest hotkeys use; `Legacy` with cognition on is `DecideFromLearnedOutcomes`, a far
+        /// thinner controller. **This is not "the same world with a poorer brain"** - the two
+        /// policies gate different mechanisms in both directions (see the run notes), so a
+        /// difference between the arms is attributable to the controller as a whole and to no single
+        /// mechanism inside it.
+        /// </summary>
+        private static DecisionPolicyVersion _policy = DecisionPolicyVersion.IntentUtilityV1;
+
+        /// <summary>
+        /// Mate pairing, as an arm - and the reason the controller comparison needs one.
+        /// `mateSelectionEnabled` routes reproduction through `FindSeekMateTarget`, which requires
+        /// the creature's decision to BE `CreatureAction.SeekMate`. `DecideFromLearnedOutcomes` -
+        /// the Legacy+cognition controller - emits only `SeekFood`, `SeekWater` and `Wander`, so a
+        /// Legacy world with mate selection on has **zero births by construction** and goes extinct
+        /// on old age regardless of how good or bad its foraging is. Turning it off falls back to
+        /// `FindNearestReadyMate`, proximity pairing, which both controllers can reach.
+        /// **Both arms of a controller comparison must set this the same way.**
+        /// </summary>
+        private static bool _mateSelection = true;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -171,6 +193,9 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--predation") _predation = true;
                 if (argument == "--multithreat=off") _multiThreat = false;
                 if (argument == "--kin=off") _kinRecognition = false;
+                if (argument == "--mate-selection=off") _mateSelection = false;
+                if (argument == "--policy=legacy") _policy = DecisionPolicyVersion.Legacy;
+                if (argument == "--policy=intent") _policy = DecisionPolicyVersion.IntentUtilityV1;
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -306,7 +331,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _predation ? FounderProfile.PredationVariation : FounderProfile.PhysiologyVariation,
                 cognitionEnabled: true,
                 physiologyEnabled: true,
-                decisionPolicyVersion: DecisionPolicyVersion.IntentUtilityV1,
+                decisionPolicyVersion: _policy,
                 plantCohortsEnabled: true,
                 foragingEconomicsEnabled: true,
                 predationEconomicsEnabled: true,
@@ -317,7 +342,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 parentalFollowingEnabled: true,
                 kinRecognitionEnabled: _kinRecognition,
                 learnedResourceQualityEnabled: true,
-                mateSelectionEnabled: true,
+                mateSelectionEnabled: _mateSelection,
                 plantSiteCompetitionEnabled: true,
                 plantMortalityEnabled: true,
                 plantDefenseDeterrenceEnabled: true,
@@ -665,6 +690,8 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             var suffix = new StringBuilder();
             suffix.Append("-").Append(_seedCount).Append("seeds");
+            if (_policy == DecisionPolicyVersion.Legacy) suffix.Append("-legacy");
+            if (!_mateSelection) suffix.Append("-mateseloff");
             if (_predation) suffix.Append("-predation");
             if (!_multiThreat) suffix.Append("-multithreatoff");
             if (!_kinRecognition) suffix.Append("-kinoff");
