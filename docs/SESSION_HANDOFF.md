@@ -553,6 +553,42 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-26, latest — the predation cell is robust, read this first
+
+**Closed: the robustness check the previous block called the first thing to do.**
+`p6-the-predation-cell-is-robust-2026-08-26.md`. Four axes, one step either side of the baseline,
+60 runs per cell, both health arms — twenty cells.
+
+1. **The whole predator-prey result travels.** `defense` drift is **positive in all twenty cells**,
+   +2.48 to +10.97, across cap 250-1000, regen 1.5-3.0, brake 1.0-3.0 and gate 0.40-0.55.
+   `attack` is negative in nineteen of twenty. **It is not an artefact of the cell it was found in;
+   work can be built on this cell.**
+2. **The cell is a plateau.** Nothing one step from the baseline collapses it. Only the gate can, and
+   smoothly — 6 / 10 / 24 / 52 extinct of 60 across gate 0.40 / 0.45 / 0.55 / 0.65. Same accelerating
+   curve the no-predation dose-response found, not a cliff.
+3. **The cap is inert, proven by hash equality.** Cap 500 and cap 1000 give **byte-identical hashes
+   on all 60 runs**; the population tops out at 486 and never touches either ceiling. Cap 250 does
+   bind and still changes nothing (10 of 60 either way). **The brake and predation regulate this
+   cell; the cap does not.** `p6-the-cap-is-the-stabiliser-2026-08-24.md` no longer describes this
+   substrate — closing the carrying-capacity debt is what removed it.
+4. **Gate 0.65 is excluded from every claim** — 5 and 6 surviving runs of 30. Its `defense` +1.2 is
+   not evidence selection stops and its `attack` -25 is not evidence it intensifies. Recorded so
+   nobody re-derives it and believes it.
+5. **The baseline is not the best point.** Gate 0.40 gives 6 of 60 extinct and regen 3.0 gives 2,
+   against the baseline's 10. Free statistical power for a future experiment, but both change the
+   ecology and must be stated rather than silently adopted.
+6. **Unexplained, and no mechanism offered:** `defense` t varies 2.5 to 11 and tracks neither the
+   surviving-run count nor predation exposure (non-monotone: 6.7 attacks per run gives +10.97, 18.9
+   gives +7.68, 3.1 gives +2.48). The two lowest values are the two smallest populations. That is
+   all that can be said.
+7. **A trap in the sweep's own output, recorded:** when t <= -10 with a negative mean, the mean and t
+   columns run together (`-0.2729-18.4080`) and splitting on whitespace reads the *next* column as t.
+   It produced a "+87.68" that was really -18.41. Parse that table with a number regex.
+
+**Next, in order:** what sets the size of `defense` selection (four axes measured, no predictor);
+targeting versus success-rate on low-defense prey; then the mate-gate separability question the
+controller comparison opened.
+
 ### 2026-08-26, later — the controller comparison, read this first
 
 **One commit on top of `9631800`.** Nothing below was deleted. One bullet in the previous block's
