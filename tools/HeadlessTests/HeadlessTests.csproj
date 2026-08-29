@@ -31,6 +31,8 @@
     <Compile Include="../../Assets/Scripts/Presentation/FrameTimeLog.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/PerformanceSections.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/CreatureAppearanceRules.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/CreatureModelRules.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/CreatureModelCatalog.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />
   </ItemGroup>
