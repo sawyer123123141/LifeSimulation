@@ -134,11 +134,11 @@ namespace LifeSimulation.Tests.EditMode
         public void UrgentActionsGallopAndCalmOnesDoNot()
         {
             CreatureModelDefinition deer = CreatureModelCatalog.Select(CreatureModelRole.SmallHerbivore, 0);
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Flee, deer), Is.EqualTo(CreatureModelCatalog.GallopClip));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.SeekPrey, deer), Is.EqualTo(CreatureModelCatalog.GallopClip));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.SeekFood, deer), Is.EqualTo(CreatureModelCatalog.WalkClip));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Rest, deer), Is.EqualTo(CreatureModelCatalog.IdleClip));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Eat, deer), Is.EqualTo(CreatureModelCatalog.EatingClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Flee, deer), Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.GallopClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.SeekPrey, deer), Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.GallopClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.SeekFood, deer), Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.WalkClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Rest, deer), Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.IdleClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Eat, deer), Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.EatingClip));
         }
 
         [Test]
@@ -156,7 +156,8 @@ namespace LifeSimulation.Tests.EditMode
                 walkClip: "Amble",
                 gallopClip: "Run",
                 eatingClip: "Chomp",
-                deathClip: "Expire");
+                deathClip: "Expire",
+                clipPrefix: "");
 
             Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, exotic), Is.EqualTo("Amble"));
             Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Flee, exotic), Is.EqualTo("Run"));
@@ -170,8 +171,31 @@ namespace LifeSimulation.Tests.EditMode
         public void AnUnspecifiedClipFallsBackToTheCurrentPacksName()
         {
             var sparse = new CreatureModelDefinition("Minimal");
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, sparse), Is.EqualTo(CreatureModelCatalog.WalkClip));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, sparse), Is.EqualTo(CreatureModelCatalog.DefaultAttackClip));
+            Assert.That(
+                CreatureModelCatalog.ClipFor(CreatureAction.Wander, sparse),
+                Is.EqualTo(CreatureModelCatalog.DefaultClipPrefix + CreatureModelCatalog.WalkClip));
+        }
+
+        [Test]
+        public void ClipNamesCarryTheArmaturePrefixTheImporterActuallyProduces()
+        {
+            // Verified against the real import, not assumed: Unity names a clip from an FBX take
+            // after the armature that owns it, so these arrive as "AnimalArmature|Walk". Asking for
+            // "Walk" fails silently - the state does not exist and nothing plays - which is exactly
+            // the class of bug that only shows up as "the animals don't move".
+            CreatureModelDefinition wolf = CreatureModelCatalog.Select(CreatureModelRole.Predator, 0);
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, wolf), Is.EqualTo("AnimalArmature|Walk"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Flee, wolf), Is.EqualTo("AnimalArmature|Gallop"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, wolf), Is.EqualTo("AnimalArmature|Attack"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Eat, wolf), Is.EqualTo("AnimalArmature|Eating"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Rest, wolf), Is.EqualTo("AnimalArmature|Idle"));
+        }
+
+        [Test]
+        public void AnOverrideThatIsAlreadyQualifiedIsNotPrefixedTwice()
+        {
+            var mixed = new CreatureModelDefinition("Odd", walkClip: "OtherArmature|Stroll");
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, mixed), Is.EqualTo("OtherArmature|Stroll"));
         }
 
         [Test]
@@ -179,8 +203,8 @@ namespace LifeSimulation.Tests.EditMode
         {
             CreatureModelDefinition deer = CreatureModelCatalog.Select(CreatureModelRole.SmallHerbivore, 0);
             CreatureModelDefinition wolf = CreatureModelCatalog.Select(CreatureModelRole.Predator, 0);
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, deer), Is.EqualTo("Attack_Headbutt"));
-            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, wolf), Is.EqualTo("Attack"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, deer), Is.EqualTo("AnimalArmature|Attack_Headbutt"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, wolf), Is.EqualTo("AnimalArmature|Attack"));
         }
     }
 }

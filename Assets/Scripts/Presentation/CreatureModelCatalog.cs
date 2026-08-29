@@ -23,15 +23,40 @@ namespace LifeSimulation.Presentation
             string walkClip = null,
             string gallopClip = null,
             string eatingClip = null,
-            string deathClip = null)
+            string deathClip = null,
+            string clipPrefix = null)
         {
             ModelName = modelName;
-            AttackClip = string.IsNullOrEmpty(attackClip) ? CreatureModelCatalog.DefaultAttackClip : attackClip;
-            IdleClip = string.IsNullOrEmpty(idleClip) ? CreatureModelCatalog.IdleClip : idleClip;
-            WalkClip = string.IsNullOrEmpty(walkClip) ? CreatureModelCatalog.WalkClip : walkClip;
-            GallopClip = string.IsNullOrEmpty(gallopClip) ? CreatureModelCatalog.GallopClip : gallopClip;
-            EatingClip = string.IsNullOrEmpty(eatingClip) ? CreatureModelCatalog.EatingClip : eatingClip;
-            DeathClip = string.IsNullOrEmpty(deathClip) ? CreatureModelCatalog.DeathClip : deathClip;
+            string prefix = clipPrefix ?? CreatureModelCatalog.DefaultClipPrefix;
+            AttackClip = Qualify(prefix, attackClip, CreatureModelCatalog.DefaultAttackClip);
+            IdleClip = Qualify(prefix, idleClip, CreatureModelCatalog.IdleClip);
+            WalkClip = Qualify(prefix, walkClip, CreatureModelCatalog.WalkClip);
+            GallopClip = Qualify(prefix, gallopClip, CreatureModelCatalog.GallopClip);
+            EatingClip = Qualify(prefix, eatingClip, CreatureModelCatalog.EatingClip);
+            DeathClip = Qualify(prefix, deathClip, CreatureModelCatalog.DeathClip);
+        }
+
+        /// <summary>
+        /// Builds the name the animator will actually be asked for.
+        ///
+        /// <para>Unity names a clip imported from an FBX take after the armature that owns it -
+        /// these import as <c>AnimalArmature|Walk</c>, not <c>Walk</c>. Asking for the short name
+        /// fails silently: the state does not exist and nothing plays. The prefix is carried as
+        /// data rather than baked in, because a pack with a differently-named armature, or none,
+        /// must remain a table edit.</para>
+        ///
+        /// <para>An override that already contains the separator is taken as a complete name, so a
+        /// pack that needs per-clip armatures can still spell them out in full.</para>
+        /// </summary>
+        private static string Qualify(string prefix, string clip, string fallback)
+        {
+            string name = string.IsNullOrEmpty(clip) ? fallback : clip;
+            if (string.IsNullOrEmpty(prefix) || name.Contains(CreatureModelCatalog.ClipSeparator))
+            {
+                return name;
+            }
+
+            return prefix + name;
         }
 
         /// <summary>File name without extension, resolved under <see cref="CreatureModelCatalog.ResourcePath"/>.</summary>
@@ -83,6 +108,15 @@ namespace LifeSimulation.Presentation
         public const string EatingClip = "Eating";
         public const string DeathClip = "Death";
         public const string DefaultAttackClip = "Attack";
+
+        /// <summary>The separator Unity puts between armature and take name.</summary>
+        public const string ClipSeparator = "|";
+
+        /// <summary>
+        /// Armature name the current pack's clips import under. Verified against the actual import
+        /// rather than assumed - every one of the twelve models rigs to <c>AnimalArmature</c>.
+        /// </summary>
+        public const string DefaultClipPrefix = "AnimalArmature" + ClipSeparator;
 
         private const string CarnivoreAttack = DefaultAttackClip;
         private const string HoofedAttack = "Attack_Headbutt";
