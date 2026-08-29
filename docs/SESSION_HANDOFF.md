@@ -553,6 +553,28 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-29, final — gene vision built, and a measured limit on it
+
+**`CreatureAppearance` step 3 is done.** `U` toggles gene vision: off shows the animals, on
+replaces them with capsules coloured by temperature tolerance and sized by body size. A toggle, not
+a blend, per the reasoning already on `CreatureAppearance` - two pictures of the same population
+answer two different questions, and the models cannot be tinted anyway with four to eight materials
+each. **`docs/creature-appearance.md` step 3 can be marked done; steps 2 and 4 remain.**
+
+**The finding, and it is a limit rather than a success.** Rendered rather than assumed. The late
+picture is nearly uniform cream - which is exactly what `CreatureAppearanceRules` predicts, since
+thermal tolerance saturates and the mean plateaus by about tick 8,000, so **the spread is the signal
+and not the mean**. But the early-versus-late pair that would show that spread collapsing **cannot
+be produced in this cell**: population is **15 at tick 2,500 and 10 at tick 6,000, against 126 at
+tick 12,000**. The diverse phase has almost nobody in it, and the crowd only exists once selection
+has finished. **Showing directional selection visually needs a scenario whose population is large
+early**, which the pressured cell is not. The early-capture method is kept with that measurement
+written on it, so nobody spends another hour finding it.
+
+**Capture menu now:** `CaptureArena` (the animals), `CaptureArenaGenes` (late gene vision),
+`CaptureArenaGenesEarly` (parameterised tick count). All need a real graphics device - run WITHOUT
+`-nographics`.
+
 ### 2026-08-29, latest — the models are in and the arena has been SEEN, read this first
 
 **The visible half moved further in one session than in the whole project to date**, because a way
