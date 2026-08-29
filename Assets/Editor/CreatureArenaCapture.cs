@@ -173,7 +173,16 @@ namespace LifeSimulation.EditorTools
             float bodyScale = Mathf.Lerp(0.7f, 1.35f, world.Creatures.GetGenomeAt(index).BodySize);
 
             view.position = new Vector3(movement.Position.X, 0f, movement.Position.Y);
-            view.rotation = Quaternion.Euler(0f, definition.YawOffsetDegrees + ((id.Value * 37) % 360), 0f);
+
+            // Facing comes from the step the creature just took, exactly as the presenter does it.
+            // The capture used an arbitrary per-id yaw before, which made a herd read as statues
+            // pointing in random directions and hid whether facing was working at all.
+            float deltaX = movement.Position.X - movement.PreviousPosition.X;
+            float deltaY = movement.Position.Y - movement.PreviousPosition.Y;
+            float yaw = (deltaX * deltaX) + (deltaY * deltaY) > 1e-8f
+                ? Mathf.Atan2(deltaX, deltaY) * Mathf.Rad2Deg
+                : 0f;
+            view.rotation = Quaternion.Euler(0f, definition.YawOffsetDegrees + yaw, 0f);
             view.localScale = Vector3.one * (bodyScale * definition.ModelScale);
 
             // Animated, not posed. An unsampled skinned mesh costs almost nothing to draw, so a

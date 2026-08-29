@@ -62,6 +62,16 @@ namespace LifeSimulation.Presentation
 
         /// <summary>Model definition chosen for each creature, fixed at birth because the genome is.</summary>
         private readonly Dictionary<CreatureId, CreatureModelDefinition> _creatureModels = new Dictionary<CreatureId, CreatureModelDefinition>();
+
+        /// <summary>
+        /// Last heading each creature actually had, in degrees.
+        ///
+        /// <para>Kept because a creature that is standing still has no heading to compute - the
+        /// step between its previous and current position is zero - and a model that snaps back to
+        /// facing north every time it pauses to eat looks broken. Holding the last real heading
+        /// means it keeps facing the way it was going.</para>
+        /// </summary>
+        private readonly Dictionary<CreatureId, float> _creatureHeadings = new Dictionary<CreatureId, float>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private readonly List<Transform> _resourceViews = new List<Transform>();
 
@@ -428,6 +438,7 @@ namespace LifeSimulation.Presentation
             _creatureAnimations.Clear();
             _creatureActions.Clear();
             _creatureModels.Clear();
+            _creatureHeadings.Clear();
             for (int index = 0; index < _resourceViews.Count; index++)
             {
                 Destroy(_resourceViews[index].gameObject);

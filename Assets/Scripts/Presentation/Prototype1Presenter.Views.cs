@@ -96,7 +96,8 @@ namespace LifeSimulation.Presentation
                 float groundHeight = GroundHeightAt(movement.Position.X, movement.Position.Y);
                 view.position = ArenaProjection.ToWorld(
                     movement.Position.X, movement.Position.Y, groundHeight + 0.55f);
-                view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y);
+                view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y)
+                    * Quaternion.Euler(0f, HeadingYaw(id, movement), 0f);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
                 bool hasModel = _creatureModels.TryGetValue(id, out CreatureModelDefinition model);
@@ -204,6 +205,37 @@ namespace LifeSimulation.Presentation
             animation.CrossFade(clip, 0.15f);
         }
 
+        /// <summary>
+        /// Which way a creature is facing, from the step it just took.
+        ///
+        /// <para>The simulation stores no heading - it does not need one, since movement is a
+        /// position update - so it is recovered from the difference between the previous and
+        /// current position. Creatures used to face a fixed direction regardless of where they were
+        /// going, which is why a herd crossing the map read as a set of statues sliding sideways.</para>
+        ///
+        /// <para>A stationary creature keeps its last heading rather than snapping to zero: the
+        /// step is exactly zero whenever it is eating, drinking or resting, and a model that spins
+        /// to face north every time it stops to graze looks broken in a way the numbers never
+        /// showed.</para>
+        /// </summary>
+        private float HeadingYaw(CreatureId id, in MovementState movement)
+        {
+            float deltaX = movement.Position.X - movement.PreviousPosition.X;
+            float deltaY = movement.Position.Y - movement.PreviousPosition.Y;
+
+            // Squared, to avoid a square root on every creature every frame. The threshold is well
+            // below a single frame's travel for the slowest creature.
+            if ((deltaX * deltaX) + (deltaY * deltaY) > 1e-8f)
+            {
+                // Arena Y is world Z; Unity yaw is measured from +Z toward +X.
+                float yaw = Mathf.Atan2(deltaX, deltaY) * Mathf.Rad2Deg;
+                _creatureHeadings[id] = yaw;
+                return yaw;
+            }
+
+            return _creatureHeadings.TryGetValue(id, out float previous) ? previous : 0f;
+        }
+
         private void RemoveStaleCreatureViews()
         {
             _staleCreatureIds.Clear();
@@ -222,6 +254,7 @@ namespace LifeSimulation.Presentation
                     _creatureAnimations.Remove(pair.Key);
                     _creatureActions.Remove(pair.Key);
                     _creatureModels.Remove(pair.Key);
+                    _creatureHeadings.Remove(pair.Key);
                 }
             }
 
