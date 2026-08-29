@@ -75,7 +75,11 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
             GUI.Label(new Rect(24f, 698f, 1240f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · H overlay");
-            GUI.Label(new Rect(24f, 764f, 1240f, 22f), "Scenarios: E starter habitat · 5/6/7/9 watch · R home range · V shifting patches · M mating demo · Y terrain playtest · N every flag on");
+            GUI.Label(new Rect(24f, 786f, 1240f, 22f),
+                _geneVision
+                    ? "GENE VISION on (U): colour is temperature tolerance, cold blue to hot red; size is body size. Press U to go back to the animals."
+                    : "GENE VISION off (U): showing the animals, coloured by species and animated by what they are doing.");
+            GUI.Label(new Rect(24f, 764f, 1240f, 22f), "U gene vision · Scenarios: E starter habitat · 5/6/7/9 watch · R home range · V shifting patches · M mating demo · Y terrain playtest · N every flag on");
             GUI.Label(new Rect(24f, 720f, 1240f, 22f), "O planet view (pauses, hides UI) · K flat terrain views · J tuning panel · Camera: hold right mouse to fly · WASD move · Q/E down/up · shift boost · alt slow · wheel speed · arrows move anytime · Home frames the arena");
             GUI.Label(new Rect(24f, 742f, 1240f, 22f), "Models carry their own colours and animate what they are doing. Capsule fallback colours: green wander · gold food · blue water · purple mate · cyan flee · red hunt · brown carcass · grey rest · orange warmth");
         }

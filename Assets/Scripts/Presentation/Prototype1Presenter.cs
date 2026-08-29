@@ -72,6 +72,23 @@ namespace LifeSimulation.Presentation
         /// means it keeps facing the way it was going.</para>
         /// </summary>
         private readonly Dictionary<CreatureId, float> _creatureHeadings = new Dictionary<CreatureId, float>();
+
+        /// <summary>
+        /// Gene vision, on the unbound <c>U</c> key. Off shows the animals; on replaces them with
+        /// capsules coloured by <see cref="CreatureAppearanceRules"/>.
+        ///
+        /// <para><b>A toggle rather than a blend, for the reason recorded on
+        /// <see cref="CreatureAppearance"/>:</b> two pictures of the same population answer two
+        /// different questions. The models say which animal this is and what it is doing; gene
+        /// vision says what the population has become. Painting genes onto the models would destroy
+        /// the first to half-answer the second - and would not work anyway, since these meshes carry
+        /// four to eight materials each.</para>
+        ///
+        /// <para>Selection has been measurably running this whole time and none of it has ever been
+        /// visible: a run where the population shifts a quarter of the thermal range looks identical
+        /// to one where nothing happens.</para>
+        /// </summary>
+        private bool _geneVision;
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private readonly List<Transform> _resourceViews = new List<Transform>();
 
@@ -309,6 +326,15 @@ namespace LifeSimulation.Presentation
             // camera reads the same button, so the two agree on when flight is happening.
             if (Input.GetMouseButton(1)) return;
 
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                _geneVision = !_geneVision;
+
+                // Every creature view has to be rebuilt: the two modes are different objects, a
+                // model against a capsule, not the same object wearing a different colour.
+                ClearCreatureViews();
+            }
+
             if (Input.GetKeyDown(KeyCode.Alpha1)) _speedMultiplier = 1f;
             if (Input.GetKeyDown(KeyCode.Alpha2)) _speedMultiplier = 2f;
             if (Input.GetKeyDown(KeyCode.Alpha4)) _speedMultiplier = 4f;
@@ -426,11 +452,12 @@ namespace LifeSimulation.Presentation
 
         }
 
-        private void ResetSimulation(SimulationScenario scenario, SimulationConfig config = null)
+        /// <summary>Destroys every creature view and empties the caches that index them together.</summary>
+        private void ClearCreatureViews()
         {
             foreach (KeyValuePair<CreatureId, Transform> creatureView in _creatureViews)
             {
-                Destroy(creatureView.Value.gameObject);
+                if (creatureView.Value != null) Destroy(creatureView.Value.gameObject);
             }
 
             _creatureViews.Clear();
@@ -439,6 +466,11 @@ namespace LifeSimulation.Presentation
             _creatureActions.Clear();
             _creatureModels.Clear();
             _creatureHeadings.Clear();
+        }
+
+        private void ResetSimulation(SimulationScenario scenario, SimulationConfig config = null)
+        {
+            ClearCreatureViews();
             for (int index = 0; index < _resourceViews.Count; index++)
             {
                 Destroy(_resourceViews[index].gameObject);

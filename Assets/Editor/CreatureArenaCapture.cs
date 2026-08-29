@@ -34,8 +34,53 @@ namespace LifeSimulation.EditorTools
         private const int Ticks = 12000;
         private const int TimedFrames = 40;
 
+        private static bool _geneVision;
+
         [MenuItem("LifeSimulation/Capture the arena")]
         public static void CaptureArena()
+        {
+            _geneVision = false;
+            Capture("arena", Ticks);
+        }
+
+        /// <summary>
+        /// The same population in gene vision, so the two pictures can be compared directly. That
+        /// comparison is the whole argument for the toggle: one picture says which animal and what
+        /// it is doing, the other says what the population has become.
+        /// </summary>
+        [MenuItem("LifeSimulation/Capture the arena in gene vision")]
+        public static void CaptureArenaGenes()
+        {
+            _geneVision = true;
+            Capture("genes-late", Ticks);
+        }
+
+        /// <summary>
+        /// Gene vision early, before selection has finished with the thermal ramp.
+        ///
+        /// <para>This is the pair that makes selection visible at all.
+        /// <c>CreatureAppearanceRules</c> records why a single late picture cannot:
+        /// temperature tolerance <b>saturates</b> - the field deviates by at most eight degrees, so
+        /// a gene of 0.75 already covers the world and the mean plateaus by about tick 8,000. Every
+        /// population ends roughly the same colour, which is exactly what the late capture shows.
+        /// <b>The spread is the signal, not the mean:</b> founders scatter across the ramp, then
+        /// selection kills the cold tail and a mottled crowd turns uniform.</para>
+        ///
+        /// <para><b>MEASURED, AND THIS CELL CANNOT SHOW THAT CONTRAST.</b> Population is <b>10 at
+        /// tick 6,000 and 15 at tick 2,500</b>, against <b>126 at tick 12,000</b> - so the whole
+        /// period when the genes are still diverse has almost nobody in it, and by the time there is
+        /// a crowd to look at, selection has already finished. The mottled-to-uniform picture needs
+        /// a scenario whose population is large early, which this one is not. Kept because the
+        /// method is right and the finding is worth not rediscovering.</para>
+        /// </summary>
+        [MenuItem("LifeSimulation/Capture the arena in gene vision, early")]
+        public static void CaptureArenaGenesEarly()
+        {
+            _geneVision = true;
+            Capture("genes-early", 6000);
+        }
+
+        private static void Capture(string prefix, int ticks)
         {
             Directory.CreateDirectory(OutputFolder);
 
@@ -50,7 +95,7 @@ namespace LifeSimulation.EditorTools
                 .ApplyTo(world);
 
             var simulationClock = Stopwatch.StartNew();
-            for (int tick = 0; tick < Ticks; tick++)
+            for (int tick = 0; tick < ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
             }
@@ -58,7 +103,7 @@ namespace LifeSimulation.EditorTools
             simulationClock.Stop();
             SimulationStatistics statistics = world.CaptureStatistics();
             Debug.Log(
-                $"ARENA population={world.CreatureCount} ticks={Ticks}"
+                $"ARENA population={world.CreatureCount} ticks={ticks}"
                 + $" simSeconds={simulationClock.Elapsed.TotalSeconds:0.0}"
                 + $" energy={statistics.MeanEnergyFraction:0.000}"
                 + $" fleeing={statistics.FleeingFraction:P1}");
@@ -90,9 +135,9 @@ namespace LifeSimulation.EditorTools
                 Debug.Log($"ARENA views models={models} capsules={capsules}");
 
                 Camera camera = BuildCamera(root);
-                double wide = Render(camera, new Vector3(0f, 34f, -46f), Quaternion.Euler(32f, 0f, 0f), "arena-wide.png");
-                double close = Render(camera, new Vector3(-6f, 4f, -20f), Quaternion.Euler(6f, 12f, 0f), "arena-close.png");
-                double top = Render(camera, new Vector3(0f, 62f, 0f), Quaternion.Euler(90f, 0f, 0f), "arena-top.png");
+                double wide = Render(camera, new Vector3(0f, 34f, -46f), Quaternion.Euler(32f, 0f, 0f), $"{prefix}-wide.png");
+                double close = Render(camera, new Vector3(-6f, 4f, -20f), Quaternion.Euler(6f, 12f, 0f), $"{prefix}-close.png");
+                double top = Render(camera, new Vector3(0f, 62f, 0f), Quaternion.Euler(90f, 0f, 0f), $"{prefix}-top.png");
 
                 Debug.Log(
                     $"ARENA render ms/frame wide={wide:0.00} close={close:0.00} top={top:0.00}"
@@ -154,7 +199,9 @@ namespace LifeSimulation.EditorTools
             var id = world.GetCreatureIdAt(index);
             CreatureModelRole role = CreatureModelRules.SelectRole(world.Creatures.GetGenomeAt(index));
             CreatureModelDefinition definition = CreatureModelCatalog.Select(role, id.Value);
-            var prefab = Resources.Load<GameObject>($"{CreatureModelCatalog.ResourcePath}/{definition.ModelName}");
+            var prefab = _geneVision
+                ? null
+                : Resources.Load<GameObject>($"{CreatureModelCatalog.ResourcePath}/{definition.ModelName}");
 
             Transform view;
             bool isModel = prefab != null;
@@ -184,6 +231,14 @@ namespace LifeSimulation.EditorTools
                 : 0f;
             view.rotation = Quaternion.Euler(0f, definition.YawOffsetDegrees + yaw, 0f);
             view.localScale = Vector3.one * (bodyScale * definition.ModelScale);
+
+            if (_geneVision)
+            {
+                CreatureAppearance appearance = CreatureAppearanceRules.FromGenome(world.Creatures.GetGenomeAt(index));
+                view.GetComponent<Renderer>().material.color =
+                    new Color(appearance.Red, appearance.Green, appearance.Blue);
+                view.localScale = Vector3.one * appearance.ScaleMultiplier;
+            }
 
             // Animated, not posed. An unsampled skinned mesh costs almost nothing to draw, so a
             // timing taken on still models would flatter the real cost badly.

@@ -114,7 +114,22 @@ namespace LifeSimulation.Presentation
                 // populations this ecology reaches is exactly the batching cost worth avoiding.
                 if (!hasModel)
                 {
-                    _creatureRenderers[id].material.color = GetActionColor(action);
+                    if (_geneVision)
+                    {
+                        // Genes, not behaviour. Scale is multiplied on top of the body-size scale
+                        // the view already applies rather than replacing it, which is why
+                        // CreatureAppearanceRules reproduces the existing 0.7-1.35 ramp exactly -
+                        // adopting it cannot silently resize anything.
+                        CreatureAppearance appearance =
+                            CreatureAppearanceRules.FromGenome(_world.Creatures.GetGenomeAt(index));
+                        _creatureRenderers[id].material.color =
+                            new Color(appearance.Red, appearance.Green, appearance.Blue);
+                        view.localScale = Vector3.one * (ageScale * appearance.ScaleMultiplier);
+                    }
+                    else
+                    {
+                        _creatureRenderers[id].material.color = GetActionColor(action);
+                    }
                 }
 
                 PlayActionAnimation(id, action, model);
@@ -138,7 +153,9 @@ namespace LifeSimulation.Presentation
             CreatureModelRole role = CreatureModelRules.SelectRole(genome);
             CreatureModelDefinition model = CreatureModelCatalog.Select(role, id.Value);
 
-            var prefab = Resources.Load<GameObject>($"{CreatureModelCatalog.ResourcePath}/{model.ModelName}");
+            var prefab = _geneVision
+                ? null
+                : Resources.Load<GameObject>($"{CreatureModelCatalog.ResourcePath}/{model.ModelName}");
             Transform view;
             if (prefab == null)
             {
