@@ -76,7 +76,7 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
             GUI.Label(new Rect(24f, 698f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · V shifting patches · H overlay");
             GUI.Label(new Rect(24f, 720f, 440f, 22f), "O planet view (pauses, hides UI) · K flat terrain views · J tuning panel · Camera: hold right mouse to fly · WASD move · Q/E down/up · shift boost · alt slow · wheel speed · arrows move anytime · Home frames the arena");
-            GUI.Label(new Rect(24f, 742f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt");
+            GUI.Label(new Rect(24f, 742f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt · brown carcass · grey rest · orange warmth");
         }
 
         private void DrawPopulationCondition(SimulationStatistics stats)

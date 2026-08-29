@@ -149,6 +149,16 @@ namespace LifeSimulation.Presentation
                     return new Color(0.2f, 0.95f, 0.95f);
                 case CreatureAction.SeekThermalComfort:
                     return new Color(1f, 0.45f, 0.08f);
+
+                // Scavenging and resting used to fall through to the wander colour, so a creature
+                // crossing the map to a carcass and one milling about looked identical. Both are
+                // actions IntentUtilityV1 actually emits - CreatureIntent.SeekCarcass and .Rest -
+                // so this was three behaviours sharing one colour.
+                case CreatureAction.SeekCarcass:
+                case CreatureAction.FeedCarcass:
+                    return new Color(0.55f, 0.35f, 0.22f);
+                case CreatureAction.Rest:
+                    return new Color(0.55f, 0.6f, 0.55f);
                 default:
                     return new Color(0.35f, 0.92f, 0.45f);
             }
