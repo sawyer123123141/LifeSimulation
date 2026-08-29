@@ -21,6 +21,17 @@ namespace LifeSimulation.Presentation
         /// <summary>Samples per side of a flat patch. One value, shared.</summary>
         public const int PatchResolution = 193;
 
+        /// <summary>
+        /// Half the arena width, in simulation units. One value, shared.
+        ///
+        /// <para>The simulation's own bounds are hardcoded to (-25, 25), and three places have to
+        /// agree with them: the mesh the arena is drawn from, <c>EnvironmentField</c>'s sampling
+        /// window, and the height read that stands a creature on the ground. They previously agreed
+        /// by comment - each carried its own 25 with a note naming the others - which is the same
+        /// arrangement that let the capture and the runtime drift apart.</para>
+        /// </summary>
+        public const float ArenaHalfWidth = 25f;
+
         /// <summary>Icosphere subdivisions for the planet. One value, shared.</summary>
         public const int PlanetSubdivisions = 5;
 
@@ -48,6 +59,37 @@ namespace LifeSimulation.Presentation
         public static float PatchHeightScale(float halfWidth)
         {
             return ElevationToWorldUnits;
+        }
+
+        /// <summary>
+        /// Ground height at an arena position, bilinear over the heights cached from a patch mesh.
+        ///
+        /// <para>Shared so that everything standing something on the ground - the live presenter,
+        /// and the offline capture - reads the <b>drawn</b> surface the same way. Resampling the
+        /// generator instead would put creatures on a second, separately computed ground that agrees
+        /// with the mesh only until one of the two changes.</para>
+        ///
+        /// <para><b>Cosmetic.</b> Nothing under <c>Assets/Scripts/Simulation</c> calls this. The
+        /// simulation is a flat plane, creatures are drawn on the relief but do not walk up it, and
+        /// a hill costs them nothing.</para>
+        /// </summary>
+        public static float SampleCachedHeight(float[] heights, float halfWidth, float x, float z)
+        {
+            int side = PatchResolution;
+            if (heights == null || heights.Length != side * side) return 0f;
+
+            float u = Mathf.Clamp01((x + halfWidth) / (2f * halfWidth)) * (side - 1);
+            float v = Mathf.Clamp01((z + halfWidth) / (2f * halfWidth)) * (side - 1);
+            int column = Mathf.Clamp((int)u, 0, side - 2);
+            int row = Mathf.Clamp((int)v, 0, side - 2);
+            float fx = u - column;
+            float fz = v - row;
+
+            float bottomLeft = heights[(row * side) + column];
+            float bottomRight = heights[(row * side) + column + 1];
+            float topLeft = heights[((row + 1) * side) + column];
+            float topRight = heights[((row + 1) * side) + column + 1];
+            return Mathf.Lerp(Mathf.Lerp(bottomLeft, bottomRight, fx), Mathf.Lerp(topLeft, topRight, fx), fz);
         }
 
         /// <summary>

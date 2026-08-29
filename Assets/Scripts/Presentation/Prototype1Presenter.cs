@@ -549,7 +549,7 @@ namespace LifeSimulation.Presentation
         private const int TerrainResolution = 129;
 
         /// <summary>Half the arena width, matching the simulation's hardcoded (-25, 25) bounds.</summary>
-        private const float TerrainHalfWidth = 25f;
+        private const float TerrainHalfWidth = TerrainMeshBuilder.ArenaHalfWidth;
 
         /// <summary>
         /// World units of relief between sea level and the highest ground. <b>Tunable at runtime</b>
@@ -622,6 +622,15 @@ namespace LifeSimulation.Presentation
         /// simulation state feeding the lapse rate: smoothing it there would change ecology and every
         /// elevation-on hash, while smoothing the mesh changes only what is drawn.</para>
         /// </summary>
+        /// <remarks>
+        /// <b>Currently unused</b> - the arena ground has been built from the terrain patch since
+        /// <c>BuildTerrainMesh</c>, and <c>CacheArenaHeights</c> fills <c>_terrainHeights</c> from
+        /// that mesh instead. Note before calling it again: it sizes the array to
+        /// <c>TerrainResolution</c> squared and fills it with the old overlay height formula, while
+        /// <c>GroundHeightAt</c> reads it as <c>TerrainMeshBuilder.PatchResolution</c> squared of
+        /// mesh height. Wiring this back up without reconciling the two would put every creature at
+        /// the wrong height, or none.
+        /// </remarks>
         private void RebuildTerrainHeights()
         {
             int side = TerrainResolution;

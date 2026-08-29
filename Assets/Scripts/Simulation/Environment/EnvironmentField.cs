@@ -64,7 +64,11 @@ namespace LifeSimulation.Simulation.Environment
         /// <summary>Samples per side of the arena mesh - matches <c>TerrainMeshBuilder.PatchResolution</c>.</summary>
         private const int TerrainSampleResolution = 193;
 
-        /// <summary>Half-width of the arena window - matches <c>Prototype1Presenter.TerrainHalfWidth</c>.</summary>
+        /// <summary>
+        /// Half-width of the arena window - matches <c>TerrainMeshBuilder.ArenaHalfWidth</c>, which
+        /// Presentation shares between the drawn mesh and the height read. Repeated as a literal
+        /// here because Simulation does not reference Presentation, and must not.
+        /// </summary>
         private const double TerrainWindowHalfWidth = 25d;
 
         /// <summary>

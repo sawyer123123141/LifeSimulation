@@ -626,8 +626,14 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
    *honest* — the simulation has no collision — so separating them in the view alone would
    misrepresent the world. Decide deliberately which of the two you are fixing.
 2. **Play mode has still never been run.** Everything visual so far is offline capture. Needs a display.
-3. **Terrain is absent from the arena capture** — it renders on a flat plane. Capturing real terrain
-   would make the picture the actual game view.
+3. **Terrain in the arena capture: built, NOT YET SEEN.** The capture now builds the arena ground
+   through `TerrainMeshBuilder` from the same seed, plates, window and settings `EnvironmentField`
+   generates from, adds the sea, moves creatures onto the surface, and uses the shared two-light
+   rig. **No PNG has been rendered from it** — it was written in an environment with no Unity and
+   no .NET, so it is unverified by the project's own standard. First job: run
+   `CreatureArenaCapture.CaptureArena` (WITHOUT `-nographics`) and read the three PNGs. Expect
+   creatures standing in the sea — the simulation has no land constraint — which is honest, not a
+   rendering bug.
 4. **Showing selection visually needs a different scenario.** Measured: the pressured cell holds only
    10-15 creatures while genes are still diverse, and 126 only after selection has converged, so the
    mottled-to-uniform picture cannot be made there.
