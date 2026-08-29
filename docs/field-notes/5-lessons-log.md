@@ -587,3 +587,70 @@ change.
   brake.** Second time this shape has appeared - see the cap-is-the-stabiliser finding. **Ask what the
   cap is doing for you before concluding a mechanism is harmless.**
 
+
+**2026-08-29 — Compiling and passing the suite does not mean it works. Render it.** Four bugs
+shipped a clean compile and 639 green tests and were caught only by rendering a PNG and looking at
+it: model materials suppressed on import, which draws **nothing** with no error and no warning;
+action-tinting meshes that carry four to eight materials, where `renderer.material` recolours only
+the first; a HUD drawing four pairs of labels on top of each other in every configuration; and an
+arena capture of the **wrong world** that looked entirely plausible. The test suite cannot see the
+screen. **If a change is visual, produce an image and read it before claiming anything about it.**
+
+**2026-08-29 — Build the way to look before doing the work that needs looking at.** The single
+highest-value thing this session produced was not a feature, it was
+`CreatureModelCapture` / `CreatureArenaCapture`: batch-mode scene, render to PNG, and an agent can
+read the PNG. Every visual claim before it was hedged with "not verified visually"; after it, four
+real bugs fell out in one afternoon. The project had built this before for terrain and **lost it** -
+21 PNGs sit in `Logs/terrain` with nothing in the repository that produces them, because `Logs/` is
+gitignored and the tool was never committed. **Commit the tool, not the output.**
+
+**2026-08-29 — `-nographics` cannot render.** The capture harness must run in batch mode *without*
+that flag. With it, everything succeeds, exits zero, and produces nothing. A whole class of "the
+tool is broken" conclusions live in that one flag.
+
+**2026-08-29 — Read what the importer produced, not what the source file contains.** The FBX
+binaries contain animation stacks called `Walk` and `Attack`. Unity imports them as
+`AnimalArmature|Walk`, and the hoofed models have no clip called `Attack` at all - theirs is
+`Attack_Headbutt`. Every clip name in the first version of the catalog would have missed, on all
+twelve models, and **the failure mode is silent**: the animator is asked for a state that does not
+exist and the creature simply stands still. Inspect the imported asset, then pin what you found with
+a validator that fails loudly. `CreatureModelImportReport.Validate` exists for exactly this.
+
+**2026-08-29 — A capture of the wrong world is worse than no capture.** The first arena render used
+the base scenario instead of `WithRegeneration(2.0)` and settled at **15 creatures against the 126**
+that cell actually holds. The picture looked fine and the frame timing would have been quoted as the
+answer to the performance question. **Match the harness parameters exactly** - founders, ticks,
+scenario, flags - or the picture is of a different world than the numbers describe.
+
+**2026-08-29 — Bounds are not a measurement.** `SkinnedMeshRenderer.bounds` reported the creature
+models as 300 to 900 units tall, which would have prompted a "fix" scaling them by 1/500. The render
+showed them correctly sized; the bounds were the unsampled bind pose. **When a number and a picture
+disagree about geometry, the picture wins.**
+
+**2026-08-29 — Hardcoded layout coordinates plus conditional lines equals overlapping text.** The
+HUD drew `Predation` and the colour legend both at y=216 in every configuration, and three more
+pairs collided whenever the elevation field was on, which is every ecosystem config. Nobody noticed
+because nobody had looked. A running cursor, or distinct constants, or a test - but not sixteen
+hand-written y values with `if` blocks between them.
+
+**2026-08-29 — Name the gene the live code path actually reads.** A finding was published claiming
+`fear` was the flee knob and was unselected, therefore behaviour had no gradient. `FearResponse` is
+read only by `PredationSystem.Decide`, which is **Legacy-only**, and by the place-memory penalty,
+which is inert. Under `IntentUtilityV1` - the path every cell ran - the flee knob is
+`risk_aversion`, and it is under **strong negative** selection. The conclusion inverted. **Grep every
+reader of a gene and check which path it is on before drawing a conclusion from its drift.**
+
+**2026-08-29 — An intervention can work perfectly and change nothing.** `evasiveFleeingEnabled` cut
+predation deaths by 73%, from 8.4% to 2.3%, and left selection against the flee knob *stronger* than
+before. Fleeing is 38% of all decisions, so its cost is foraging **time**, which no amount of making
+flight safer reduces - and safer flight lowers the ceiling on the benefit. **Before building a fix,
+measure what the cost of the behaviour actually is, not what it looks like it should be.**
+
+**2026-08-29 — Two pictures beat one blended picture.** Gene colour was almost painted onto the
+models. It would have destroyed the species reading, half-answered the adaptation question, and not
+worked anyway with four to eight materials per mesh. A toggle answers both questions properly.
+Recorded on `CreatureAppearance` before the models existed, and it was right.
+
+**2026-08-29 — Five blocks each headed "read this first" is not a handoff.** One session appended
+five, each accurate when written. A fresh session had no way to tell which was current. **One
+current-state block, everything else dated and demoted.**
