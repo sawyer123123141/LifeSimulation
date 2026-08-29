@@ -3,24 +3,51 @@ using LifeSimulation.Simulation.Behavior;
 
 namespace LifeSimulation.Presentation
 {
-    /// <summary>One model file and the clip names that differ for it.</summary>
+    /// <summary>
+    /// One model file and the clip names it uses.
+    ///
+    /// <para><b>Every clip is overridable, not just the attack one.</b> The current pack happens to
+    /// share <c>Idle</c>, <c>Walk</c>, <c>Gallop</c>, <c>Death</c> and <c>Eating</c> across all
+    /// twelve models, so today's table only has to name the attack clip. **That shared set is a
+    /// property of this pack and not an assumption this type makes** - a different pack may call
+    /// them <c>Run</c>, <c>Idle_A</c> or <c>Chomp</c>, and the failure mode of guessing wrong is
+    /// silent: the animator is asked for a state that does not exist and nothing plays. Any clip
+    /// left unspecified falls back to the current pack's name.</para>
+    /// </summary>
     public readonly struct CreatureModelDefinition
     {
-        public CreatureModelDefinition(string modelName, string attackClip)
+        public CreatureModelDefinition(
+            string modelName,
+            string attackClip = null,
+            string idleClip = null,
+            string walkClip = null,
+            string gallopClip = null,
+            string eatingClip = null,
+            string deathClip = null)
         {
             ModelName = modelName;
-            AttackClip = attackClip;
+            AttackClip = string.IsNullOrEmpty(attackClip) ? CreatureModelCatalog.DefaultAttackClip : attackClip;
+            IdleClip = string.IsNullOrEmpty(idleClip) ? CreatureModelCatalog.IdleClip : idleClip;
+            WalkClip = string.IsNullOrEmpty(walkClip) ? CreatureModelCatalog.WalkClip : walkClip;
+            GallopClip = string.IsNullOrEmpty(gallopClip) ? CreatureModelCatalog.GallopClip : gallopClip;
+            EatingClip = string.IsNullOrEmpty(eatingClip) ? CreatureModelCatalog.EatingClip : eatingClip;
+            DeathClip = string.IsNullOrEmpty(deathClip) ? CreatureModelCatalog.DeathClip : deathClip;
         }
 
         /// <summary>File name without extension, resolved under <see cref="CreatureModelCatalog.ResourcePath"/>.</summary>
         public string ModelName { get; }
 
-        /// <summary>
-        /// The only clip name that varies across the pack. Carnivores ship <c>Attack</c>; the
-        /// hoofed models ship <c>Attack_Headbutt</c> instead and have no clip called <c>Attack</c>,
-        /// so a single hardcoded name would silently play nothing on eight of the twelve.
-        /// </summary>
         public string AttackClip { get; }
+
+        public string IdleClip { get; }
+
+        public string WalkClip { get; }
+
+        public string GallopClip { get; }
+
+        public string EatingClip { get; }
+
+        public string DeathClip { get; }
 
         public bool IsValid => !string.IsNullOrEmpty(ModelName);
     }
@@ -35,8 +62,10 @@ namespace LifeSimulation.Presentation
     /// cluster id and re-keying this table; the call site does not move either way.</para>
     ///
     /// <para><b>Currently the CC0 Quaternius Ultimate Animated Animals pack</b> - twelve models, all
-    /// of which share <c>Idle</c>, <c>Walk</c>, <c>Gallop</c>, <c>Death</c> and <c>Eating</c>. That
-    /// shared five is what makes one action-to-clip table possible; the attack clip is per model.</para>
+    /// of which happen to share <c>Idle</c>, <c>Walk</c>, <c>Gallop</c>, <c>Death</c> and
+    /// <c>Eating</c>, so only the attack clip has to be named per model here. **Do not read that as
+    /// a rule.** A future pack need share no clip name with this one; every clip is overridable per
+    /// model precisely so that swapping packs stays a table edit.</para>
     ///
     /// <para>No <c>UnityEngine</c> types here on purpose, so the whole mapping is unit-tested
     /// headlessly. Loading the actual prefab is the view layer's job.</para>
@@ -46,13 +75,16 @@ namespace LifeSimulation.Presentation
         /// <summary>Folder under <c>Assets/Resources</c>, in the form <c>Resources.Load</c> wants.</summary>
         public const string ResourcePath = "CreatureModels";
 
+        // The current pack's names. These are DEFAULTS a model may override, not a contract every
+        // pack must satisfy - see CreatureModelDefinition.
         public const string IdleClip = "Idle";
         public const string WalkClip = "Walk";
         public const string GallopClip = "Gallop";
         public const string EatingClip = "Eating";
         public const string DeathClip = "Death";
+        public const string DefaultAttackClip = "Attack";
 
-        private const string CarnivoreAttack = "Attack";
+        private const string CarnivoreAttack = DefaultAttackClip;
         private const string HoofedAttack = "Attack_Headbutt";
 
         private static readonly CreatureModelDefinition[] Predators =
@@ -110,24 +142,22 @@ namespace LifeSimulation.Presentation
             {
                 case CreatureAction.Flee:
                 case CreatureAction.SeekPrey:
-                    return GallopClip;
+                    return model.GallopClip;
 
                 case CreatureAction.Attack:
-                    return model.IsValid && !string.IsNullOrEmpty(model.AttackClip)
-                        ? model.AttackClip
-                        : CarnivoreAttack;
+                    return model.AttackClip;
 
                 case CreatureAction.Eat:
                 case CreatureAction.Drink:
                 case CreatureAction.FeedCarcass:
-                    return EatingClip;
+                    return model.EatingClip;
 
                 case CreatureAction.Rest:
                 case CreatureAction.Reproduce:
-                    return IdleClip;
+                    return model.IdleClip;
 
                 default:
-                    return WalkClip;
+                    return model.WalkClip;
             }
         }
     }

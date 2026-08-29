@@ -142,6 +142,39 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void AModelFromADifferentPackCanRenameEveryClip()
+        {
+            // The current pack shares five clip names across all twelve models, so today's table
+            // only names the attack one. That is a property of this pack, not a contract: a
+            // replacement pack may share no name at all, and the failure mode of guessing is silent
+            // - the animator is asked for a state that does not exist and nothing plays. Swapping
+            // packs has to stay a table edit.
+            var exotic = new CreatureModelDefinition(
+                "SomeOtherPackCritter",
+                attackClip: "Bite",
+                idleClip: "Idle_A",
+                walkClip: "Amble",
+                gallopClip: "Run",
+                eatingClip: "Chomp",
+                deathClip: "Expire");
+
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, exotic), Is.EqualTo("Amble"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Flee, exotic), Is.EqualTo("Run"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, exotic), Is.EqualTo("Bite"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Eat, exotic), Is.EqualTo("Chomp"));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Rest, exotic), Is.EqualTo("Idle_A"));
+            Assert.That(exotic.DeathClip, Is.EqualTo("Expire"));
+        }
+
+        [Test]
+        public void AnUnspecifiedClipFallsBackToTheCurrentPacksName()
+        {
+            var sparse = new CreatureModelDefinition("Minimal");
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Wander, sparse), Is.EqualTo(CreatureModelCatalog.WalkClip));
+            Assert.That(CreatureModelCatalog.ClipFor(CreatureAction.Attack, sparse), Is.EqualTo(CreatureModelCatalog.DefaultAttackClip));
+        }
+
+        [Test]
         public void AHoofedModelUsesItsOwnAttackClipRatherThanTheCarnivoreOne()
         {
             CreatureModelDefinition deer = CreatureModelCatalog.Select(CreatureModelRole.SmallHerbivore, 0);
