@@ -553,7 +553,84 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-### 2026-08-29, final — gene vision built, and a measured limit on it
+### START HERE — state of play at 2026-08-29, `75a6d9f`
+
+**Read this block, then section 4 (decisions not to reopen), then section 8 (working-tree rules).
+The dated blocks below are the detail behind this summary, newest first. You do not need them all.**
+
+**Repo:** `C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim` — NOT the shell's default cwd.
+**Branch `main`, in sync with origin. 24 commits this session, `9631800` to `75a6d9f`.**
+**639 tests green:** `dotnet test tools/HeadlessTests`.
+
+#### The user's standing direction, which changed what this session did
+
+**"I don't want to do invisible research."** Said explicitly, after a long measurement run.
+Measurement that never reaches the screen is to be avoided, or flagged as such *before* starting.
+The session pivoted to the visible layer on that instruction and stayed there. **Honour it: if a
+task is measurement-only, say so and offer the visible alternative.** The user also prefers a
+recommendation over a menu, and dislikes being asked questions they cannot easily answer.
+
+#### Two tools that did not exist this morning and now unblock everything
+
+1. **Unity batch compile**, ~90s, verifies any Presentation or Editor code. `HeadlessTests` cannot
+   compile Unity code, so before this, Unity-side edits were unverifiable.
+   `"/c/Program Files/Unity/Hub/Editor/6000.2.14f1/Editor/Unity.exe" -batchmode -quit -nographics -projectPath "<repo>" -logFile <log>`
+   then `grep -c "error CS" <log>`. It touches no tracked file.
+2. **The capture harness — the important one.** It renders the world to PNG, which an agent can then
+   *look at* with the Read tool. **It must run WITHOUT `-nographics`**; that flag cannot render.
+   `-executeMethod LifeSimulation.EditorTools.CreatureArenaCapture.CaptureArena`
+   Also `CaptureArenaGenes`, `CaptureArenaGenesEarly`, `CreatureModelCapture.CaptureAll`,
+   `CreatureModelImportReport.Report` and `.Validate`.
+   Output goes to `Logs/creature-models`. **`Logs/` is gitignored** — the tools are committed as
+   source, the PNGs are not. The project lost its previous terrain capture tool exactly this way.
+
+**Four bugs were caught by looking that compiled clean and passed all 639 tests:** materials
+suppressed on import (draws nothing, no error, no warning), action-tinting meshes that carry 4-8
+materials, an arena capture of the *wrong world* that looked entirely plausible, and a HUD drawing
+labels on top of itself. **Compiling and passing tests does not mean it works. Render it.**
+
+#### What exists now that did not this morning
+
+- **Twelve CC0 Quaternius animated animals, committed** — `Assets/Resources/CreatureModels`, 38.67 MB.
+- **A full genome → role → model → animation-clip pipeline.** `CreatureModelRules` (pure, tested)
+  picks Predator / LargeHerbivore / SmallHerbivore from genes. `CreatureModelCatalog` (pure, tested)
+  is **the single swap point** — every clip name, the armature prefix, scale and yaw are per-model
+  data. `CreatureModelImportReport.Validate` proves the table matches the real assets and currently
+  reports **CATALOG VALID**. Run it after any pack change: a wrong clip name fails **silently**.
+- **Creatures render as animals, animate by action, and face where they walk.**
+- **Gene vision on `U`** — capsules coloured by temperature tolerance, sized by body size.
+- **PERFORMANCE ANSWERED: ~1.3 ms/frame for 126 animated creatures**, whole scene near 4 ms with
+  terrain. Skinned meshes are not a problem at this density, and the terrain optimisation queue
+  stays unnecessary.
+
+#### Where to pick up — all visible-side
+
+1. **Creatures interpenetrate** inside clusters, so dense knots read as a pile. Note this is
+   *honest* — the simulation has no collision — so separating them in the view alone would
+   misrepresent the world. Decide deliberately which of the two you are fixing.
+2. **Play mode has still never been run.** Everything visual so far is offline capture. Needs a display.
+3. **Terrain is absent from the arena capture** — it renders on a flat plane. Capturing real terrain
+   would make the picture the actual game view.
+4. **Showing selection visually needs a different scenario.** Measured: the pressured cell holds only
+   10-15 creatures while genes are still diverse, and 126 only after selection has converged, so the
+   mottled-to-uniform picture cannot be made there.
+
+**Blocked by a standing decision — do not fold in silently:** the playtest scenarios (`Y`, `N`) still
+predate the ecology work, and `gradedFertilityEnabled` is off for `Y` by the user's explicit choice.
+
+#### Claims withdrawn this session — do not re-assert them
+
+- **"The two controllers cannot be given identical machinery"** — false. Raising the brake to 4.0
+  makes proximity pairing work, and matched, the rich controller carries **ten times the population**.
+- **"On survival the controllers tie"** — an artefact of comparing each on a different pairing rule.
+- **"`fear` is the flee knob"** — wrong gene. Under `IntentUtilityV1` it is **`risk_aversion`**, and
+  it is strongly **negatively** selected. `fear` is unread on that path.
+- **"Splitting `RiskAversion` is the interesting route"** — insufficient alone; the mortality mix is
+  the necessary change.
+- **The cap "is never touched"** — true only of the sweep's relief-selected seed set.
+
+
+### 2026-08-29 (6) — gene vision built, and a measured limit on it
 
 **`CreatureAppearance` step 3 is done.** `U` toggles gene vision: off shows the animals, on
 replaces them with capsules coloured by temperature tolerance and sized by body size. A toggle, not
@@ -575,7 +652,7 @@ written on it, so nobody spends another hour finding it.
 `CaptureArenaGenesEarly` (parameterised tick count). All need a real graphics device - run WITHOUT
 `-nographics`.
 
-### 2026-08-29, latest — the models are in and the arena has been SEEN, read this first
+### 2026-08-29 (5) — the models are in and the arena has been SEEN
 
 **The visible half moved further in one session than in the whole project to date**, because a way
 to look at it was built. Nine commits.
@@ -624,7 +701,7 @@ under negative selection in this cell. The visuals agree with the drift tables.
 - **Play mode itself has still never been run by an agent** - everything above is offline capture.
 - **The playtest scenarios still predate the ecology work** (standing decision, user's call).
 
-### 2026-08-29, later — the visible layer, read this first
+### 2026-08-29 (4) — the visible layer: HUD, colours, hotkeys, renderer caching
 
 **User direction, recorded:** *do not spend sessions on invisible research.* Measurement that does
 not reach the screen is to be avoided or flagged. Four commits on the presentation layer, every one
@@ -665,7 +742,7 @@ change** - `HeadlessTests` cannot compile Unity code.
   a **standing decision** (section 4). The world on screen is not the self-regulating one the sweeps
   measure. **That is a design decision for the user, not a fold-in.**
 
-### 2026-08-29 — fleeing is selected AGAINST, and a correction, read this first
+### 2026-08-29 (3) — fleeing is selected AGAINST, and a gene correction
 
 `emergent-behaviour-fleeing-is-selected-against-2026-08-29.md`. **First simulation-code change in
 this run of sessions.** 619 tests green (8 new); flag default false, flag-off byte-identical.
@@ -712,7 +789,7 @@ this run of sessions.** 619 tests green (8 new); flag default false, flag-off by
 **Next:** raise predation's share of mortality in the predation cell and re-measure `risk_aversion` -
 that is the one prediction on the table, and the instruments to test it now all exist.
 
-### 2026-08-26, final — the emergent-behaviour gradient, read this first
+### 2026-08-26 (3) — the emergent-behaviour gradient
 
 `emergent-behaviour-the-gradient-is-on-armour-2026-08-26.md`. Banner added to the constraints
 document; nothing edited out of it.
@@ -746,7 +823,7 @@ document; nothing edited out of it.
 **Next:** this is now a design conversation, not a measurement. The evidence to argue from is in
 place and the obvious first question is whether the combat success formula is the thing to change.
 
-### 2026-08-26, last — the controller comparison redone cleanly, read this first
+### 2026-08-26 (2) — the controller comparison redone cleanly
 
 **Corrects this morning's controller document.** `p6-the-clean-controller-comparison-2026-08-26.md`.
 A banner is on `p6-the-controller-comparison-2026-08-26.md`; nothing there was deleted.
@@ -781,7 +858,7 @@ A banner is on `p6-the-controller-comparison-2026-08-26.md`; nothing there was d
 rather than around. Targeting-versus-success-rate on low-defense prey was assessed and **deliberately
 skipped as having nothing downstream**.
 
-### 2026-08-26, latest — the predation cell is robust, read this first
+### 2026-08-26 (1) — the predation cell is robust
 
 **Closed: the robustness check the previous block called the first thing to do.**
 `p6-the-predation-cell-is-robust-2026-08-26.md`. Four axes, one step either side of the baseline,
@@ -834,7 +911,7 @@ skipped as having nothing downstream**.
 **Next, in order:** targeting versus success-rate on low-defense prey; then the mate-gate
 separability question the controller comparison opened.
 
-### 2026-08-26, later — the controller comparison, read this first
+### 2026-08-26 (0) — the controller comparison, first pass (partly superseded)
 
 **One commit on top of `9631800`.** Nothing below was deleted. One bullet in the previous block's
 "what is worth doing next" is struck through; everything else there stands.
@@ -886,7 +963,7 @@ suffixed into the corpus filename. No simulation code was touched; 611 green.
   magnitude is not. A resource-level sweep with the controller fixed would measure it.
 - **Everything below still stands**, minus the struck bullet.
 
-### 2026-08-26 — read this first; the list below it is the previous session's
+### 2026-08-26 (base) — the session before this one
 
 **Thirteen commits, `fd6eca8` to `0914369`.** Nothing below this block was deleted; several entries in
 it are now qualified by banners on the documents they cite.
