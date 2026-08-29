@@ -74,6 +74,23 @@ namespace LifeSimulation.Presentation
         private readonly Dictionary<CreatureId, float> _creatureHeadings = new Dictionary<CreatureId, float>();
 
         /// <summary>
+        /// The yaw actually drawn, distinct from <see cref="_creatureHeadings"/>'s target. The
+        /// target updates once per simulation tick and jumps whenever a decision changes heading -
+        /// turning a herd instantly on every tick reads as robotic, not alive. This is turned toward
+        /// the target at <see cref="TurnDegreesPerSecond"/> every render frame instead, so a turn
+        /// plays out over a fraction of a second rather than snapping.
+        /// </summary>
+        private readonly Dictionary<CreatureId, float> _creatureRenderedYaw = new Dictionary<CreatureId, float>();
+
+        /// <summary>
+        /// How fast a creature's drawn heading catches up to its target, in degrees per real second
+        /// at speed 1x - scaled by <c>_speedMultiplier</c> so turning keeps pace when the simulation
+        /// is fast-forwarded. Picked by eye, not derived: this is a "look at it" constant like
+        /// <c>_terrainHeightScale</c>, not a measured one.
+        /// </summary>
+        private const float TurnDegreesPerSecond = 540f;
+
+        /// <summary>
         /// Gene vision, on the unbound <c>U</c> key. Off shows the animals; on replaces them with
         /// capsules coloured by <see cref="CreatureAppearanceRules"/>.
         ///
