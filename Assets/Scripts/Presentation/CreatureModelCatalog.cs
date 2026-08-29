@@ -24,9 +24,13 @@ namespace LifeSimulation.Presentation
             string gallopClip = null,
             string eatingClip = null,
             string deathClip = null,
-            string clipPrefix = null)
+            string clipPrefix = null,
+            float modelScale = 1f,
+            float yawOffsetDegrees = 0f)
         {
             ModelName = modelName;
+            ModelScale = modelScale;
+            YawOffsetDegrees = yawOffsetDegrees;
             string prefix = clipPrefix ?? CreatureModelCatalog.DefaultClipPrefix;
             AttackClip = Qualify(prefix, attackClip, CreatureModelCatalog.DefaultAttackClip);
             IdleClip = Qualify(prefix, idleClip, CreatureModelCatalog.IdleClip);
@@ -73,6 +77,21 @@ namespace LifeSimulation.Presentation
         public string EatingClip { get; }
 
         public string DeathClip { get; }
+
+        /// <summary>
+        /// Multiplier on the view's computed scale. Packs are authored at wildly different sizes -
+        /// a model that arrives a hundred times too large is the single most common import
+        /// surprise - and the correct value can only be judged by eye against a creature in the
+        /// arena. It lives here so that judgement is recorded as data per model rather than as a
+        /// magic number in the view.
+        /// </summary>
+        public float ModelScale { get; }
+
+        /// <summary>
+        /// Yaw correction in degrees, for packs whose models do not face +Z. Same reasoning as
+        /// <see cref="ModelScale"/>: not knowable from the file, only from looking.
+        /// </summary>
+        public float YawOffsetDegrees { get; }
 
         public bool IsValid => !string.IsNullOrEmpty(ModelName);
     }

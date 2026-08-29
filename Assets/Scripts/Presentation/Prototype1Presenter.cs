@@ -45,6 +45,23 @@ namespace LifeSimulation.Presentation
         /// lookups a frame for a value that is already known at creation time.
         /// </summary>
         private readonly Dictionary<CreatureId, Renderer> _creatureRenderers = new Dictionary<CreatureId, Renderer>();
+
+        /// <summary>
+        /// The legacy <c>Animation</c> component on each creature's model, when it has one. Absent
+        /// for the capsule fallback, which is the whole reason it is a separate dictionary rather
+        /// than a field on a view struct - a world with no model pack still has to run.
+        /// </summary>
+        private readonly Dictionary<CreatureId, Animation> _creatureAnimations = new Dictionary<CreatureId, Animation>();
+
+        /// <summary>
+        /// What each creature was last seen doing, so a clip is only crossfaded when the action
+        /// actually changes. Playing every frame would restart the animation every frame and hold
+        /// every creature on the first pose of its clip.
+        /// </summary>
+        private readonly Dictionary<CreatureId, CreatureAction> _creatureActions = new Dictionary<CreatureId, CreatureAction>();
+
+        /// <summary>Model definition chosen for each creature, fixed at birth because the genome is.</summary>
+        private readonly Dictionary<CreatureId, CreatureModelDefinition> _creatureModels = new Dictionary<CreatureId, CreatureModelDefinition>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private readonly List<Transform> _resourceViews = new List<Transform>();
 
@@ -408,6 +425,9 @@ namespace LifeSimulation.Presentation
 
             _creatureViews.Clear();
             _creatureRenderers.Clear();
+            _creatureAnimations.Clear();
+            _creatureActions.Clear();
+            _creatureModels.Clear();
             for (int index = 0; index < _resourceViews.Count; index++)
             {
                 Destroy(_resourceViews[index].gameObject);

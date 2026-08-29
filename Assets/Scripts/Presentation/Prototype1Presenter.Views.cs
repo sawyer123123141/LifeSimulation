@@ -78,13 +78,7 @@ namespace LifeSimulation.Presentation
                 CreatureId id = _world.GetCreatureIdAt(index);
                 if (!_creatureViews.TryGetValue(id, out Transform view))
                 {
-                    view = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
-                    view.name = $"Creature {id.Value}";
-                    _creatureViews.Add(id, view);
-
-                    // The per-id hue that used to be set here was dead: the action colour below
-                    // overwrites it on this same pass, before the frame is ever drawn.
-                    _creatureRenderers.Add(id, view.GetComponent<Renderer>());
+                    view = CreateCreatureView(id, _world.Creatures.GetGenomeAt(index));
                     // Born while a preview or the planet view is up: stay hidden until the arena
                     // comes back. The planet view pauses the world, so this is only reachable if
                     // something spawns a creature while paused - but a view that appears in the
@@ -105,9 +99,95 @@ namespace LifeSimulation.Presentation
                 view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
-                view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale);
+                float modelScale = _creatureModels.TryGetValue(id, out CreatureModelDefinition model) ? model.ModelScale : 1f;
+                view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale * modelScale);
                 _creatureRenderers[id].material.color = GetActionColor(action);
+                PlayActionAnimation(id, action, model);
             }
+        }
+
+        /// <summary>
+        /// Builds the view for one creature: its model if the pack is present, a capsule if not.
+        ///
+        /// <para><b>This is the only place that knows a mesh exists.</b> Which model a creature
+        /// gets is decided by <see cref="CreatureModelRules"/> from its genome and looked up in
+        /// <see cref="CreatureModelCatalog"/>, so replacing the art is a table edit and never
+        /// reaches this method.</para>
+        ///
+        /// <para><b>The capsule path is not dead code.</b> A clone with no model pack, or a pack
+        /// whose files are named differently, must still produce a running world rather than a
+        /// scene full of nulls - so a failed load falls back rather than throwing.</para>
+        /// </summary>
+        private Transform CreateCreatureView(CreatureId id, Genome genome)
+        {
+            CreatureModelRole role = CreatureModelRules.SelectRole(genome);
+            CreatureModelDefinition model = CreatureModelCatalog.Select(role, id.Value);
+
+            var prefab = Resources.Load<GameObject>($"{CreatureModelCatalog.ResourcePath}/{model.ModelName}");
+            Transform view;
+            if (prefab == null)
+            {
+                view = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
+                model = default;
+            }
+            else
+            {
+                view = Instantiate(prefab).transform;
+                _creatureModels.Add(id, model);
+
+                Animation animation = view.GetComponentInChildren<Animation>();
+                if (animation != null)
+                {
+                    animation.playAutomatically = false;
+                    _creatureAnimations.Add(id, animation);
+                }
+            }
+
+            view.name = $"Creature {id.Value}";
+            _creatureViews.Add(id, view);
+
+            Renderer renderer = view.GetComponentInChildren<Renderer>();
+            _creatureRenderers.Add(id, renderer);
+            return view;
+        }
+
+        /// <summary>
+        /// Crossfades to the clip for what the creature is doing, and only when that changes.
+        ///
+        /// <para>Calling play every frame would restart the clip every frame and freeze every
+        /// creature on its first pose - the animation equivalent of the per-frame
+        /// <c>GetComponent</c> this file used to do.</para>
+        ///
+        /// <para>Playback is deliberately confined to this one method. It is the only code that
+        /// knows the pack is driven through the legacy <c>Animation</c> component rather than an
+        /// <c>AnimatorController</c>, so moving to Mecanim later is a change here and nowhere
+        /// else.</para>
+        /// </summary>
+        private void PlayActionAnimation(CreatureId id, CreatureAction action, in CreatureModelDefinition model)
+        {
+            if (!_creatureAnimations.TryGetValue(id, out Animation animation) || animation == null)
+            {
+                return;
+            }
+
+            if (_creatureActions.TryGetValue(id, out CreatureAction previous) && previous == action)
+            {
+                return;
+            }
+
+            _creatureActions[id] = action;
+            string clip = CreatureModelCatalog.ClipFor(action, model);
+
+            // A missing clip is the silent failure this whole pipeline is built to avoid, so it is
+            // checked rather than assumed - CrossFade on an absent state logs nothing and does
+            // nothing. CreatureModelImportReport.Validate proves the table matches the assets; this
+            // keeps a mismatched pack from being invisible at runtime too.
+            if (animation.GetClip(clip) == null)
+            {
+                return;
+            }
+
+            animation.CrossFade(clip, 0.15f);
         }
 
         private void RemoveStaleCreatureViews()
@@ -125,6 +205,9 @@ namespace LifeSimulation.Presentation
                     Destroy(pair.Value.gameObject);
                     _staleCreatureIds.Add(pair.Key);
                     _creatureRenderers.Remove(pair.Key);
+                    _creatureAnimations.Remove(pair.Key);
+                    _creatureActions.Remove(pair.Key);
+                    _creatureModels.Remove(pair.Key);
                 }
             }
 

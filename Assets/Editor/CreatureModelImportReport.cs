@@ -50,6 +50,8 @@ namespace LifeSimulation.EditorTools
                     + $" | rig={(importer == null ? "?" : importer.animationType.ToString())}"
                     + $" | clips={clips.Length}"
                     + $" | animator={(root != null && root.GetComponentInChildren<Animator>() != null)}"
+                    + $" | animation={(root != null && root.GetComponentInChildren<Animation>() != null)}"
+                    + $" | legacyClips={clips.Count(c => c.legacy)}"
                     + $" | skinned={(root == null ? 0 : root.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length)}");
                 builder.AppendLine("      " + string.Join(", ", clips.Select(c => c.name)));
             }
