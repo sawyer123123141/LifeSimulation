@@ -37,6 +37,11 @@ namespace LifeSimulation.Tools.CreatureSweep
             var hydration = new List<double>();
             var health = new List<double>();
             var sterile = new List<double>();
+
+            // How often creatures actually flee. The claim that risk_aversion is selected out
+            // through its foraging-caution role rather than its flee role was inferred from gene
+            // drift and the death mix; this is the direct reading.
+            var fleeing = new List<double>();
             var populations = new List<double>();
             int extinct = 0;
 
@@ -93,6 +98,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 hydration.Add(statistics.MeanHydrationFraction);
                 health.Add(HealthFraction(world, gate + SimulationConfig.MateSeekingNeedMargin, out double sterileShare));
                 sterile.Add(sterileShare);
+                fleeing.Add(world.CaptureStatistics().FleeingFraction);
                 populations.Add(statistics.Population);
             }
 
@@ -142,6 +148,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             // A creature that loses a fifth of its health is permanently unable to seek a mate.
             Console.WriteLine("  mean health fraction    " + Mean(health).ToString("0.0000"));
             Console.WriteLine("  below the health gate   " + (100d * Mean(sterile)).ToString("0.0") + "%  <- cannot seek a mate, ever");
+            Console.WriteLine("  decisions that were flee " + (100d * Mean(fleeing)).ToString("0.000") + "%");
             // Population SPREAD is what separates a habitat from a ceiling. A carrying capacity
             // produces a distribution; a cap produces a constant. Eleven committed corpora and 4,080
             // runs have a population column with zero variance, which is why this is printed.

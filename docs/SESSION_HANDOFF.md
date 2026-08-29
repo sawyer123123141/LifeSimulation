@@ -585,8 +585,20 @@ this run of sessions.** 619 tests green (8 new); flag default false, flag-off by
 8. **Not instrumented: flee frequency.** Everything in 4-5 is inferred from gene drift and the death
    mix. **That instrument is the obvious next build** and would test the five-to-one story directly.
 
-**Next:** either build the flee-frequency statistic, or split `RiskAversion` into two genes. Item 6
-is the one that bears on the end goal.
+9. **The flee-frequency instrument is BUILT, and it corrects item 6.** `FleeDecisionCount`,
+   `DecisionCount`, `FleeingFraction` - counting only, **not hashed**, 623 green with four new
+   including a herbivore negative control that must read exactly zero.
+   **Fleeing is 38.2% of every decision taken.** Evasion at 4.0 cuts predation deaths **8.4% to
+   2.3%** and starvation rises **44.8% to 48.9%**; population moves only 234 to 259 and
+   `risk_aversion` selection gets *stronger* (-3.44 to -6.44).
+10. **So the cost of caution is foraging TIME, and its benefit is capped by the predation share.**
+    Making flight safer does nothing about time - and it lowers the ceiling on the benefit.
+    **Route 1 (splitting the gene) is insufficient on its own**, contrary to item 6: the flee half
+    carries the 38% time cost by itself. **Route 2, the mortality mix, is the necessary one.**
+    Evolved defensive behaviour cannot pay while its cost is meals and predation is 8% of death.
+
+**Next:** raise predation's share of mortality in the predation cell and re-measure `risk_aversion` -
+that is the one prediction on the table, and the instruments to test it now all exist.
 
 ### 2026-08-26, final — the emergent-behaviour gradient, read this first
 

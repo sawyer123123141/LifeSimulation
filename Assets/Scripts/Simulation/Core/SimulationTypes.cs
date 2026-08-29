@@ -129,7 +129,9 @@ namespace LifeSimulation.Simulation.Core
             float meanFearGene = 0f,
             float cumulativeCombatDamage = 0f,
             float meanDefenseAtDeath = 0f,
-            float meanDefenseAtPredationDeath = 0f)
+            float meanDefenseAtPredationDeath = 0f,
+            int fleeDecisionCount = 0,
+            int decisionCount = 0)
         {
             Tick = tick;
             Population = population;
@@ -170,6 +172,8 @@ namespace LifeSimulation.Simulation.Core
             CumulativeCombatDamage = cumulativeCombatDamage;
             MeanDefenseAtDeath = meanDefenseAtDeath;
             MeanDefenseAtPredationDeath = meanDefenseAtPredationDeath;
+            FleeDecisionCount = fleeDecisionCount;
+            DecisionCount = decisionCount;
             MeanDietSpecializationGene = meanDietSpecializationGene;
             ViableHunterCount = viableHunterCount;
             MeanMemoryCapacityGene = meanMemoryCapacityGene;
@@ -249,6 +253,17 @@ namespace LifeSimulation.Simulation.Core
         public float MeanDefenseAtDeath { get; }
 
         public float MeanDefenseAtPredationDeath { get; }
+
+        /// <summary>Cumulative count of decisions that came out as <c>Flee</c>.</summary>
+        public int FleeDecisionCount { get; }
+
+        /// <summary>Cumulative count of all decisions taken, the denominator for <see cref="FleeingFraction"/>.</summary>
+        public int DecisionCount { get; }
+
+        /// <summary>
+        /// The share of all decisions that were <c>Flee</c>. Zero when nothing has decided yet.
+        /// </summary>
+        public float FleeingFraction => DecisionCount > 0 ? (float)FleeDecisionCount / DecisionCount : 0f;
 
         public float MeanAttackGene { get; }
         public float MeanDefenseGene { get; }

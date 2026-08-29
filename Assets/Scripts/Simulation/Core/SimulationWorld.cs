@@ -42,6 +42,18 @@ namespace LifeSimulation.Simulation.Core
         private float _cumulativeCarcassConsumed;
         private int _attackHitCount;
 
+        /// <summary>
+        /// How often creatures actually choose to flee, and how many decisions were taken in total.
+        /// Counting only - never hashed, never read by any system - because the claim it exists to
+        /// test was inferred rather than measured: `risk_aversion` is selected against at t = -3 to
+        /// -6 and the proposed reason is that its foraging-caution role outweighs its flee role, but
+        /// nothing reported how often fleeing even happened. See
+        /// <c>docs/emergent-behaviour-fleeing-is-selected-against-2026-08-29.md</c>.
+        /// </summary>
+        private int _fleeDecisionCount;
+
+        private int _decisionCount;
+
         /// <summary>Health removed by combat, cumulative. Diagnostics only; never hashed.</summary>
         private float _cumulativeCombatDamage;
 

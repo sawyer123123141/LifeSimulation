@@ -195,7 +195,9 @@ namespace LifeSimulation.Simulation.Core
                 meanFearGene: fearTotal * reciprocalPopulation,
                 cumulativeCombatDamage: _cumulativeCombatDamage,
                 meanDefenseAtDeath: _defenseAtDeathCount == 0 ? 0f : _defenseAtDeathTotal / _defenseAtDeathCount,
-                meanDefenseAtPredationDeath: _defenseAtPredationDeathCount == 0 ? 0f : _defenseAtPredationDeathTotal / _defenseAtPredationDeathCount);
+                meanDefenseAtPredationDeath: _defenseAtPredationDeathCount == 0 ? 0f : _defenseAtPredationDeathTotal / _defenseAtPredationDeathCount,
+                fleeDecisionCount: _fleeDecisionCount,
+                decisionCount: _decisionCount);
         }
     }
 }

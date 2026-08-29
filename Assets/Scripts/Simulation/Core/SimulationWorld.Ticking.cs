@@ -574,6 +574,10 @@ namespace LifeSimulation.Simulation.Core
                     decision.Score,
                     tick,
                     decision.TargetCreatureId));
+
+                // Instrumentation only. Deliberately not hashed - see the field comments.
+                _decisionCount++;
+                if (decision.Action == CreatureAction.Flee) _fleeDecisionCount++;
                 if (Config.ForagingEconomicsEnabled && previousDecision.Action != decision.Action)
                 {
                     Creatures.GetForagingRefAt(index).SecondsInCurrentAction = 0f;

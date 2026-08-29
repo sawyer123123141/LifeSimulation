@@ -118,6 +118,48 @@ be insufficient, and it is now measured as such rather than assumed either way. 
 addressing `RiskAversion`'s double duty buys nothing - that is the finding, and it is written on the
 flag itself in `SimulationConfig`.
 
+## The instrument, built the same day - and it upgrades the story from inferred to measured
+
+`FleeDecisionCount`, `DecisionCount` and `FleeingFraction` on `SimulationStatistics`. Counting only,
+**deliberately not hashed**, so every number recorded before they existed stays comparable. 623 tests
+green with four new, including a negative control: herbivore founders, where nothing is ever a
+threat, must report **exactly zero** flee decisions.
+
+Same cell, both arms folded in:
+
+| arm | flee share of all decisions | predation deaths | starvation deaths | population | `risk_aversion` t |
+|---|---|---|---|---|---|
+| no evasion | **38.2%** | 8.4% | 44.8% | 234 | -3.44 |
+| evasion 0.5 | **37.0%** | 6.0% | 45.2% | 245 | -5.64 |
+| evasion 4.0 | **39.3%** | **2.3%** | 48.9% | 259 | -6.44 |
+
+**Fleeing is not rare - it is 38% of every decision taken.** That is the cost, and it is enormous:
+roughly two decisions in five are spent running instead of eating.
+
+**The flag works exactly as designed and it does not help.** Evasion cuts predation deaths by 73%,
+from 8.4% to 2.3%. Starvation rises to take up the slack, 44.8% to 48.9%. Population improves only
+234 to 259, and selection against `risk_aversion` gets *stronger*, not weaker.
+
+**The five-to-one account is confirmed and sharpened.** The cost of caution is **foraging time**, and
+making flight safer does nothing about time. The benefit of caution is **bounded by how much
+predation there is** - and with evasion on, that ceiling drops to 2.3% of deaths, which makes the
+trade worse rather than better. **A safer flight is a cheaper flight only if flight costs lives; here
+it costs meals.**
+
+### This corrects the recommendation above
+
+The section above calls splitting `RiskAversion` "the interesting one" of the two routes. **The
+instrument says route 1 alone is insufficient.** Splitting flee propensity from foraging caution
+would let the caution half evolve down while the flee half stays - but the flee half carries its own
+time cost, at 38% of decisions, and its benefit is still capped by the predation share. Selection
+would push both halves down for the same reason.
+
+**Route 2 - the mortality mix - is the necessary one.** Defensive behaviour cannot pay in a
+starvation-limited world, because its cost is measured in meals and its benefit is capped by a
+predation rate that is currently 8% and falling. **Evolved fleeing requires predation to be a much
+larger share of death than it is**, and that is a scenario-calibration question the predation cell is
+already characterised for.
+
 ## Not claimed
 
 - Flee *frequency* is still not instrumented. Everything above is inferred from gene drift and the
