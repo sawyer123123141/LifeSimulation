@@ -35,18 +35,21 @@ namespace LifeSimulation.Presentation
                 return;
             }
 
-            GUI.Box(new Rect(12f, 12f, 440f, 276f), "LifeSimulation — Prototype 1");
+            GUI.Box(new Rect(12f, 12f, 440f, 284f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             GUI.Label(new Rect(300f, 40f, 300f, 22f),
                 $"O: {(_sphericalArena ? "on the planet" : "flat patch")}");
             if (_world != null && _world.Config.ElevationFieldEnabled)
             {
-                GUI.Label(new Rect(24f, 84f, 430f, 22f),
+                // Below the Creature Inspector. These used to sit at 84/106/128, drawn on top of
+                // the Generation, Food and Mean-genes lines - three pairs of labels over each other
+                // in every configuration with the elevation field on, which is all of them.
+                GUI.Label(new Rect(24f, 632f, 430f, 22f),
                     $"Height {_terrainHeightScale:0.0}  ([ lower, ] raise or PgDn/PgUp)");
-                GUI.Label(new Rect(24f, 106f, 430f, 22f),
+                GUI.Label(new Rect(24f, 654f, 430f, 22f),
                     $"Smoothing {_terrainSmoothingRadius:0.0}  (, less, . more or -/=)");
-                GUI.Label(new Rect(24f, 128f, 430f, 22f),
+                GUI.Label(new Rect(24f, 676f, 430f, 22f),
                     $"K view: {(_terrainPreview == null ? "off" : _terrainPreview.Describe())}   |   J tuning panel");
 
             }
@@ -58,19 +61,22 @@ namespace LifeSimulation.Presentation
             GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
             GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats.AvailableFood:0.0}    Water: {stats.AvailableWater:0.0}");
             GUI.Label(new Rect(24f, 216f, 400f, 22f), $"Predation: {stats.AttackHitCount} hits  {stats.PredationDeathCount} kills  {stats.CumulativeCarcassConsumed:0.0} meat");
+            GUI.Label(new Rect(24f, 238f, 420f, 22f),
+                $"Died of: age {stats.AgeDeathCount} · hunger {stats.StarvationDeathCount} · thirst {stats.DehydrationDeathCount} · wounds {stats.HealthDeathCount} · hunted {stats.PredationDeathCount}");
+            GUI.Label(new Rect(24f, 260f, 420f, 22f), $"Running away: {stats.FleeingFraction:P1} of all decisions");
             if (_world.Config.CognitionEnabled)
             {
-                GUI.Label(new Rect(24f, 260f, 420f, 22f), $"Mean P2 genes: memory {stats.MeanMemoryCapacityGene:0.00} | retention {stats.MeanMemoryRetentionGene:0.00} | learning {stats.MeanLearningRateGene:0.00}");
+                GUI.Label(new Rect(24f, 194f, 420f, 22f), $"Mean P2 genes: memory {stats.MeanMemoryCapacityGene:0.00} | retention {stats.MeanMemoryRetentionGene:0.00} | learning {stats.MeanLearningRateGene:0.00}");
             }
             if (_world.Config.PhysiologyEnabled)
             {
-                GUI.Label(new Rect(24f, 238f, 420f, 22f), $"Mean P3 genes: temperature {stats.MeanTemperatureToleranceGene:0.00} | fertility {stats.MeanFertilityInvestmentGene:0.00} | lifespan {stats.MeanLifespanTendencyGene:0.00}");
+                GUI.Label(new Rect(24f, 172f, 420f, 22f), $"Mean P3 genes: temperature {stats.MeanTemperatureToleranceGene:0.00} | fertility {stats.MeanFertilityInvestmentGene:0.00} | lifespan {stats.MeanLifespanTendencyGene:0.00}");
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 172f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · V shifting patches · H overlay");
-            GUI.Label(new Rect(24f, 194f, 440f, 22f), "O planet view (pauses, hides UI) · K flat terrain views · J tuning panel · Camera: hold right mouse to fly · WASD move · Q/E down/up · shift boost · alt slow · wheel speed · arrows move anytime · Home frames the arena");
-            GUI.Label(new Rect(24f, 216f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt");
+            GUI.Label(new Rect(24f, 698f, 420f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · E starter habitat · 5/6/7/9 watch scenarios · R home range · V shifting patches · H overlay");
+            GUI.Label(new Rect(24f, 720f, 440f, 22f), "O planet view (pauses, hides UI) · K flat terrain views · J tuning panel · Camera: hold right mouse to fly · WASD move · Q/E down/up · shift boost · alt slow · wheel speed · arrows move anytime · Home frames the arena");
+            GUI.Label(new Rect(24f, 742f, 440f, 22f), "Colors: green wander · gold food · blue water · purple mate · cyan flee · red hunt");
         }
 
         private void DrawPopulationCondition(SimulationStatistics stats)
