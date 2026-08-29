@@ -626,14 +626,17 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
    *honest* — the simulation has no collision — so separating them in the view alone would
    misrepresent the world. Decide deliberately which of the two you are fixing.
 2. **Play mode has still never been run.** Everything visual so far is offline capture. Needs a display.
-3. **Terrain in the arena capture: built, NOT YET SEEN.** The capture now builds the arena ground
-   through `TerrainMeshBuilder` from the same seed, plates, window and settings `EnvironmentField`
-   generates from, adds the sea, moves creatures onto the surface, and uses the shared two-light
-   rig. **No PNG has been rendered from it** — it was written in an environment with no Unity and
-   no .NET, so it is unverified by the project's own standard. First job: run
-   `CreatureArenaCapture.CaptureArena` (WITHOUT `-nographics`) and read the three PNGs. Expect
-   creatures standing in the sea — the simulation has no land constraint — which is honest, not a
-   rendering bug.
+3. **Terrain in the arena capture: built AND VERIFIED, 2026-08-29 late.** Rendered on the user's
+   machine, compile clean (0 `error CS`), capture ran with no exceptions.
+   `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6% terrainDriven=True`,
+   `ARENA views models=126 capsules=0`. Real relief and a coastline are visible in all three PNGs,
+   `arena-wide`/`arena-close`/`arena-top` agree on where the herd is, `capsules=0` means every
+   creature resolved to a real model, and a visibly smaller juvenile sits next to full adults in the
+   wide shot - the `ageScale` fix is doing something. Some creatures stand in shallow water, exactly
+   the honest behaviour predicted. **The close shot's sawtooth ridge line is NOT a regression** -
+   confirmed by re-running the pre-existing, untouched `TerrainRenderEntry.Render` on the same seed:
+   the identical jagged band appears in `Logs/terrain/arena-50.png`, at what reads as a slope-band
+   transition (see decision 12, §4). It was there before this session touched anything.
 4. **Showing selection visually needs a different scenario.** Measured: the pressured cell holds only
    10-15 creatures while genes are still diverse, and 126 only after selection has converged, so the
    mottled-to-uniform picture cannot be made there.
