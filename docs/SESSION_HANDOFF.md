@@ -553,6 +553,55 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-29, latest — the models are in and the arena has been SEEN, read this first
+
+**The visible half moved further in one session than in the whole project to date**, because a way
+to look at it was built. Nine commits.
+
+**The capture harness is the important part.** `CreatureModelCapture` and `CreatureArenaCapture`
+build a scene in batch mode, light it, render to PNG and time the frame. **They need a real
+graphics device - run WITHOUT `-nographics`:**
+`Unity.exe -batchmode -quit -projectPath . -executeMethod
+LifeSimulation.EditorTools.CreatureArenaCapture.CaptureArena`
+The project had done this for terrain before and **lost the tool** - the 21 PNGs under
+`Logs/terrain` have nothing in the repository that produces them, and `Logs/` is gitignored. These
+are committed as source so that cannot happen again.
+
+1. **The CC0 Quaternius pack is in**, twelve animals, 38.67 MB, committed. Licence verified verbatim.
+   `.meta` files deliberately not staged, per the standing rule; nothing resolves by GUID.
+2. **The pipeline is genome to role to model to clip**, all pure and headlessly tested, with the
+   catalog as the single swap point. **Every clip name is overridable per model, and so is the
+   armature prefix** - the current pack shares five clip names, which is a property of this pack and
+   not a contract.
+3. **`CreatureModelImportReport.Validate` proves the table matches the assets.** Currently CATALOG
+   VALID across all twelve. **Run it after any pack change** - a wrong clip name fails silently.
+4. **PERFORMANCE ANSWERED: 1.27 ms/frame at 126 animated creatures**, 1600x900. Terrain is 2.83 ms
+   for 1,090 chunk renderers, so the whole scene lands near 4 ms. **Skinned meshes at the density
+   this ecology reaches are not a problem** and the terrain optimisation queue stays unnecessary.
+   This had never been measured; the only Play-mode profile was 9-17 creatures at cap 100.
+5. **Three bugs the capture caught that compiled clean and passed 639 tests.** Materials suppressed
+   on import, which draws *nothing* with no error. Action-tinting a mesh with four to eight
+   materials, which `renderer.material` only partly recolours. And a first arena capture that used
+   the base scenario instead of `WithRegeneration(2.0)` and settled at **15 creatures instead of
+   126** - a plausible-looking picture of the wrong world.
+6. **Models are not tinted.** They carry their own colours and **action is carried by the animation**,
+   which `creature-appearance.md` predicted would be the biggest legibility win. Capsules still tint.
+7. **Creatures face their movement direction**, recovered in the view from
+   `MovementState.PreviousPosition`. No simulation change. Stationary creatures hold their last
+   heading, or they spin to face north every time they stop to graze.
+
+**Seen in the pictures, worth knowing:** the population clusters tightly on resource sites and reads
+as an ecosystem; and it is **almost entirely herbivores**, because `attack` and `aggression` are
+under negative selection in this cell. The visuals agree with the drift tables.
+
+**Still open on the visible side**
+
+- **Creatures interpenetrate** inside clusters - no separation, so dense knots read as a pile.
+- **`CreatureAppearance` step 3 is still unbuilt** and its blocking reason is now weaker: models are
+  in, so gene-driven colour would have to apply on top of a textured mesh rather than instead of it.
+- **Play mode itself has still never been run by an agent** - everything above is offline capture.
+- **The playtest scenarios still predate the ecology work** (standing decision, user's call).
+
 ### 2026-08-29, later — the visible layer, read this first
 
 **User direction, recorded:** *do not spend sessions on invisible research.* Measurement that does
