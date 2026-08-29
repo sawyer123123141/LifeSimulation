@@ -229,6 +229,16 @@ namespace LifeSimulation.EditorTools
             CreatureAction action = world.GetCreatureDecisionAt(index).Action;
             float bodyScale = Mathf.Lerp(0.7f, 1.35f, world.Creatures.GetGenomeAt(index).BodySize);
 
+            // Juveniles are smaller, exactly as the presenter draws them. Without this the capture
+            // rendered every creature at adult size, which overstates what the population looks
+            // like: this cell is pinned to the mating gate, so a real share of it is young.
+            //
+            // The presenter's other scale term, GetActionScale, is deliberately NOT reproduced. It
+            // is a pulse driven by Time.unscaledTime - a live animation cue that means nothing in a
+            // still, and that would make two captures of the same world differ by whenever the
+            // editor happened to be up to.
+            float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(world.GetCreatureNeedsAt(index).Age / 4f));
+
             // On the ground, not at y=0. The +0.55 is the presenter's own offset, which lifts a
             // creature's origin to its feet.
             view.position = new Vector3(
@@ -245,14 +255,14 @@ namespace LifeSimulation.EditorTools
                 ? Mathf.Atan2(deltaX, deltaY) * Mathf.Rad2Deg
                 : 0f;
             view.rotation = Quaternion.Euler(0f, definition.YawOffsetDegrees + yaw, 0f);
-            view.localScale = Vector3.one * (bodyScale * definition.ModelScale);
+            view.localScale = Vector3.one * (ageScale * bodyScale * definition.ModelScale);
 
             if (_geneVision)
             {
                 CreatureAppearance appearance = CreatureAppearanceRules.FromGenome(world.Creatures.GetGenomeAt(index));
                 view.GetComponent<Renderer>().material.color =
                     new Color(appearance.Red, appearance.Green, appearance.Blue);
-                view.localScale = Vector3.one * appearance.ScaleMultiplier;
+                view.localScale = Vector3.one * (ageScale * appearance.ScaleMultiplier);
             }
 
             // Animated, not posed. An unsampled skinned mesh costs almost nothing to draw, so a
