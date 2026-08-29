@@ -173,3 +173,147 @@ recompute or overwrite a recorded V1 value.
 refuses without provenance; that is deliberate.
 
 ---
+
+---
+
+## Moved out of SESSION_HANDOFF section 5 on 2026-08-29
+
+The 2026-08-24 next-task list, verbatim. It was still sitting at the bottom of section 5 and had
+grown to 134 lines of material that is either closed or superseded, which every new session was
+paying to read past. **Nothing here was deleted and several entries are still live** - notably
+item 6, the emergent-behaviour question, whose current state is the 2026-08-26 and 2026-08-29
+blocks in section 5 and the `emergent-behaviour-*` documents.
+
+### Everything in the previous list is closed (2026-08-24, late)
+
+The four items that stood here - the dose-response replication, why temperature tolerance,
+`CreatureAppearance`, and rivers - are done or deliberately blocked. What that work opened is below,
+ordered by what is actually worth doing next.
+
+**1.** ~~The gate dose-response.~~ **DONE** - `p6-gate-dose-response-2026-08-24.md`. Five values,
+80 seeds each, 80/80 surviving at every one. **Predicted a cliff; it is a smooth accelerating curve.**
+|t| runs 0.44 / 1.02 / 2.01 / **7.13** / **14.55** across gates 0.45 / 0.55 / 0.60 / 0.65 / 0.70, and
+each 0.05 multiplies the drift by roughly 2.7x. **The default gate sits on the steepest part.**
+- **The mechanism is a margin, not a threshold.** The population always sits *slightly* above the seek
+  gate, and the gate decides how slightly: margin 0.167 / 0.089 / 0.064 / 0.041 / **0.006**. At the
+  default it lives six thousandths above the line that decides whether it can breed. **Raising the
+  gate raises the population's energy** - it is a feedback loop, which is why the cliff prediction
+  failed: the level I expected the gate to cross moves with the gate.
+- **DONE, and it caught an overclaim.** "Five traits stop being selected" was true at 0.45 and false
+  across the curve. Only `urgency_exponent` has a clean graded response (-0.44 to -14.55);
+  `travel_sensitivity` supports it but **never passes |t| = 2.2**; `movement_speed` is back to
+  **t = 3.16 at a gate of 0.55** so it is not a gate response at all; `body_size` and `metabolic_pace`
+  are noise across the curve and their default-gate values (-2.01, +0.86) were marginal anyway.
+  **A two-point comparison manufactured a five-trait claim that five points deleted.** Banner added to
+  the earlier doc.
+
+**2.** ~~Profile Play mode.~~ **DONE** - `p6-play-mode-profiled-2026-08-24.md`. The game writes
+`Logs/performance.txt` itself every five seconds; no Profiler window, and the reading is an artefact
+that can be diffed.
+- **1,090 renderers and 566,272 triangles at a median of 2.83 ms - 354 fps.** Faster than the arena
+  view at 49 renderers. **The terrain optimisation queue is unnecessary**: GPU displacement, CDLOD,
+  shared index buffers and the 53 MB of de-indexed vertex data are all real and none of them matter
+  at this scale. Only 597 draw calls for 1,090 renderers - Unity batches about half unaided.
+- **The 197 ms worst frame was first-entry cost, not a stutter.** Steady state worst is **19.08 ms**
+  over 1,664 frames. The heatmap - the prime suspect, 16,384 samples every two seconds - measures
+  **0.00 ms** and is cleared. It was instrumented rather than accused, which is what showed it.
+- **The 908-renderer / 232k-triangle figures were never measurements** and are superseded by the
+  numbers above. My own review flagged that they did not reconcile; neither was a capture.
+- **Still unknown:** one machine, one session, in the **editor**, with population at 9-17 against a
+  cap of 100. **Creature rendering at full population is untested** and creatures are one renderer
+  each.
+
+**3. Real models — a pack of 8 animated animals is available.** Sequencing decided and written into
+`docs/creature-appearance.md`: **profile with capsules first** (no baseline exists and there are 908
+chunk renderers already), then **swap ONE model** to prove the pipeline, then map the rest to an axis
+that is real *today* - predator/herbivore via `Aggression`/`Attack`/`DietSpecialization`, or body-size
+class - and only assign **model per species cluster** once P5 clustering is trusted. **Do not assign
+eight models arbitrarily**: it teaches a viewer that model means decoration, which has to be un-taught
+when it should mean species. Animations map to `CreatureAction` for free, which is the biggest
+legibility win available.
+
+**3b. `CreatureAppearance` step 3.** Apply the mapping at the one call site in
+`Prototype1Presenter.Views.cs`, behind the unbound `U` key, per creature and never by population
+mean. **Waits for real models** - that half is what a model swap would redo. The pure half is built
+and tested.
+
+**4. A carrying-capacity-limited habitat** - section 9's item C5, the oldest debt here. **Now
+diagnosed rather than merely described** - `p6-the-cap-is-the-stabiliser-2026-08-24.md`.
+- **Scarcity is not the cause and cannot be.** `Scaled` multiplies amount, capacity and regeneration
+  together, so the dynamics are **scale-invariant by construction**; measured, 0.40x to 1.00x all
+  collapse at cap 250 (21-23 of 24 extinct) and the level makes no difference.
+- **`WithRegeneration(id, factor)` is new** and moves the ratio `Scaled` cannot. Faster regrowth
+  converts collapse into survival at cap 250 (3 -> 23 of 24 at 2.0x), **then pins at the new cap**
+  (sd 0.65 at 3.0x - the same zero-variance ceiling, moved up).
+- **The finding: raise the ceiling out of the way and it collapses again.** 2.0x regeneration
+  survives **23 of 24 at cap 250 and 3 of 20 at cap 500**, same ecology. Starvation is **35-64% of
+  deaths at cap 500 against 0.1% at cap 100**. **The cap is not bounding a self-regulating ecology;
+  it is supplying the regulation.** The model has no density-dependent brake of its own.
+- **BUILT AND CONFIRMED - the debt is closed.** `p6-graded-fertility-closes-the-cap-debt-2026-08-24.md`.
+  `gradedFertilityEnabled` scales the reproduction **cooldown** by condition, measured on the binding
+  need and against the gate rather than zero: `1 + 3*(1 - headroom)`, so full condition is unslowed
+  and sitting on the gate waits 4x. **Deterministic** - a breeding probability would need an RNG in
+  the tick; the cooldown gives the same feedback with none.
+- **Survival 3 of 20 -> 19 of 20 at cap 500. Starvation 55-64% of deaths -> exactly 0.0%** - no
+  creature starved in any run. Population settles at **75-110 with sd 50-75 under a cap of 500**.
+  **That is a carrying capacity.**
+- **It needed no scenario redesign.** Standard layout, standard cap 100: population **63.1, sd 33.6**
+  against 98.2 pinned with no variance. The habitat could always limit itself; nothing told it to slow
+  down. `WithRegeneration` was needed to *diagnose* and is not needed to *fix*.
+- **The price, honestly:** 28 of 30 surviving against 30 of 30 at cap 100. A self-regulating
+  population sits lower and a lower population is nearer zero. Mean energy 0.8058 -> 0.7847.
+- **Not proof the step gate was the only cause** - adding a brake removes the collapse, which is
+  strong, but two mechanisms tonight looked sufficient and were partial.
+- **Default false and NOT on for `Y`.** It changes population dynamics at the root, which is a larger
+  claim on a scenario than a slope cost or a temperature field. **Deliberate decision, not a
+  playtest fold-in.**
+- **QUALIFIED - the strength does not transfer between ecologies.**
+  `p6-graded-fertility-is-scenario-specific-2026-08-24.md`. Strength 3 gives a carrying capacity in
+  the resource-backed calibration scenario and **collapses the plant-backed full ecosystem to
+  population 10 with 21 of 60 extinct.** **Strength 1.0 is the equivalent result there** - extinction
+  5 of 40 against 11 of 60 with **no** brake, zero frozen worlds against 7, population 70.9 under a
+  cap of 250. **A factor of three in strength separates the best and worst conditions tested**, which
+  is why `GradedFertilityStrength` is now a hashed configuration value rather than a `const`.
+- **Do not carry the default strength into a new scenario.** Choose one and measure it. That is the
+  finding.
+- **My own confound, recorded:** the first plant comparison changed cap *and* brake together and
+  looked like the brake was harmless. Separating them showed raising the cap alone *raises*
+  population (40.8 to 80.7) and the brake at 3 is what collapses it.
+- **Untested hypothesis for why they differ:** plants are patchy and variable, so condition likely
+  sits lower and more variably in the plant world, and the brake keys off exactly that. **Nothing
+  currently reports the distribution of the binding-need condition** - that is the measurement.
+- **Consequence: the plant corpus's scope qualification now has a working configuration to be
+  re-tested in** - cap 250 at brake 1.0, population unpinned and healthier than unbraked. The 60-seed
+  contest and join comparisons are null in both arms, **but those used the confounded arm and are not
+  a re-validation.** ~~**Re-running the plant corpus at brake 1.0 is the large next piece of work.**~~ **DONE
+  (2026-08-26)** - `p6-plant-corpus-revalidated-unpinned-2026-08-26.md`. 60 seeds, four cells, cap 250
+  at brake 1.0: population **63-67** under a cap of 250, **0 / 60 frozen in every cell**, extinction
+  10-15%. **The contest null and the join null both hold unpinned** - every |t| <= 1.64 on the contest
+  and <= 1.99 on the join, across 44 columns - while drift from founders in the same runs reads
+  **+8 to +11** on Dispersal, so the instrument is demonstrably not blind. **The qualification is
+  lifted for these two comparisons only**; the nine other corpora were measured pinned and are not
+  re-run. **One thing to test rather than claim:** `MoistureTolerance` is the only trait the join
+  moves (+0.045 / +0.048, t +1.87 / +1.99, and selection against it is -3.6/-3.9 flat versus
+  -0.64/-1.42 under terrain). **The two arms share seeds, so that is one observation, not two** -
+  it needs a fresh seed block, not a re-reading.
+- `--regen=X` and `--scale=X` exist on `CreatureSweep`, and `--deaths` now reports population
+  **spread** (min/median/max/sd) - a carrying capacity makes a distribution, a cap makes a constant,
+  and eleven committed corpora could not tell them apart.
+
+**5. Health recovery as a default.** Flagged in `p6-health-recovery-2026-08-24.md`: it *removes an
+artefact* rather than adding realism, which makes it different in kind from the slope cost and the
+terrain temperature. It is the first flag to flip whenever a re-baseline is taken deliberately.
+**Do not flip it casually** - it re-baselines everything.
+
+**6. Emergent behaviour - can evolution invent behaviours nobody programmed?** Asked 2026-08-24.
+**Read `docs/emergent-behaviour-constraints-2026-08-24.md` before designing anything**, because three
+measurements from that session bear on the answer and were not available when the question was framed:
+**96.9% of deaths are old age with predation at zero and 15 starvations in 5,619**; **one threshold
+carries nearly all selection** (the 0.80 mating gate, t = -14.55 to -0.44 across five values); and
+**`ComputeNeedGain` saturates**, so the foraging decision carries no information a richer controller
+could exploit. The rival proposal a design must beat is **enrich the world before enriching the
+brain** - stated there as a hypothesis to argue against, not a conclusion. That doc also records a
+**contradiction**: place memory is on the do-not-touch list, and caching, territory and shelter all
+require it.
+
+**Do not restart rivers.** Still blocked behind a persistent grid.
