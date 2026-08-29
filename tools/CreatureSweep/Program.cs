@@ -157,6 +157,17 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private static bool _mateSelection = true;
 
+        /// <summary>
+        /// The defender's decision reaching combat, as an arm. Off by default; every recorded
+        /// predation number predates it. See
+        /// <c>docs/emergent-behaviour-the-gradient-is-on-armour-2026-08-26.md</c> for why it exists:
+        /// `defense` crossed |t| = 2 in 18 of 18 powered cells while `fear` crossed in 1 against the
+        /// control's 2, because combat read the defender's stats and never its choice.
+        /// </summary>
+        private static bool _evasiveFleeing;
+
+        private static float _evasionStrength = SimulationConfig.DefaultEvasiveFleeingStrength;
+
         private static void Main(string[] args)
         {
             foreach (string argument in args)
@@ -194,6 +205,13 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--multithreat=off") _multiThreat = false;
                 if (argument == "--kin=off") _kinRecognition = false;
                 if (argument == "--mate-selection=off") _mateSelection = false;
+                if (argument == "--evasive-fleeing") _evasiveFleeing = true;
+                if (argument.StartsWith("--evasion=")
+                    && float.TryParse(argument.Substring("--evasion=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float evasion))
+                {
+                    _evasiveFleeing = true;
+                    _evasionStrength = evasion;
+                }
                 if (argument == "--policy=legacy") _policy = DecisionPolicyVersion.Legacy;
                 if (argument == "--policy=intent") _policy = DecisionPolicyVersion.IntentUtilityV1;
                 if (argument.StartsWith("--gate=")
@@ -362,7 +380,9 @@ namespace LifeSimulation.Tools.CreatureSweep
                 healthRecoveryEnabled: _healthRecovery,
                 metabolicHealingEnabled: _metabolicHealing,
                 gradedFertilityEnabled: _gradedFertility,
-                gradedFertilityStrength: _brakeStrength);
+                gradedFertilityStrength: _brakeStrength,
+                evasiveFleeingEnabled: _evasiveFleeing,
+                evasiveFleeingStrength: _evasionStrength);
         }
 
         private static readonly string[] GeneNames =
@@ -692,6 +712,10 @@ namespace LifeSimulation.Tools.CreatureSweep
             suffix.Append("-").Append(_seedCount).Append("seeds");
             if (_policy == DecisionPolicyVersion.Legacy) suffix.Append("-legacy");
             if (!_mateSelection) suffix.Append("-mateseloff");
+            if (_evasiveFleeing)
+            {
+                suffix.Append("-evasion").Append(_evasionStrength.ToString("0.0", CultureInfo.InvariantCulture));
+            }
             if (_predation) suffix.Append("-predation");
             if (!_multiThreat) suffix.Append("-multithreatoff");
             if (!_kinRecognition) suffix.Append("-kinoff");

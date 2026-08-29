@@ -553,6 +553,41 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-29 — fleeing is selected AGAINST, and a correction, read this first
+
+`emergent-behaviour-fleeing-is-selected-against-2026-08-29.md`. **First simulation-code change in
+this run of sessions.** 619 tests green (8 new); flag default false, flag-off byte-identical.
+
+1. **CORRECTION: the block below names the wrong gene.** It calls `FearResponse` the Flee knob. Under
+   `IntentUtilityV1` - which every cell ran - the flee score is `threatIntensity *
+   genome.RiskAversion` (`Scoring.cs:96`). `FearResponse` is read only by `PredationSystem.Decide`
+   (**Legacy-only**) and the place-memory penalty (**inert**). `fear`'s 1-of-18 meant *nothing reads
+   it*, not *fleeing is unselected*.
+2. **The conclusion inverts, and is sharper.** `risk_aversion` crosses |t| = 2 in **20 of 22** cells,
+   **negative, -5.92 to +0.16**. **The gradient on defensive behaviour is strong and points the wrong
+   way** - caution bred out at t = -3 to -6 while armour is bred in at +11.
+3. **Built `evasiveFleeingEnabled`** - the one place a defender's *decision* reaches combat. Applied
+   at resolution, deliberately **not** inside `PredationSystem.Threat`, which also feeds the decision
+   path and would make a fleeing creature perceive less threat and stop fleeing.
+4. **It works and it does not achieve its purpose.** At strength 0.5 and again at **4.0 - where
+   fleeing cuts hit chance to about 12% - `risk_aversion` is still -6.44 / -5.09**, no better than
+   the -3.44 baseline. **Not a tuning problem.**
+5. **Why: one gene, two jobs, opposite signs.** `RiskAversion` scales the flee score (`:96`) **and**
+   penalises food near threats (`:287`). The cell loses **44.8% of deaths to starvation against 8.4%
+   to predation**, so the foraging cost outruns the combat benefit about five to one and the gene is
+   selected out through *caution* however good *fleeing* gets.
+6. **The actionable route is a representation change, not tuning.** Splitting flee propensity from
+   foraging caution would let "flees when attacked, still forages boldly" exist - **today there is no
+   value of `risk_aversion` that expresses it**, so evolution cannot find it however long it runs.
+   That is a concrete instance of the whole emergent-behaviour question.
+7. **A calibration bug the unit test caught:** `Phenotype.Maneuverability` is `1 + 2 * gene`, range
+   **1.0 to 3.0**, not 0 to 1. The first formula assumed 0-1 and over-rewarded evasion by ~20 points.
+8. **Not instrumented: flee frequency.** Everything in 4-5 is inferred from gene drift and the death
+   mix. **That instrument is the obvious next build** and would test the five-to-one story directly.
+
+**Next:** either build the flee-frequency statistic, or split `RiskAversion` into two genes. Item 6
+is the one that bears on the end goal.
+
 ### 2026-08-26, final — the emergent-behaviour gradient, read this first
 
 `emergent-behaviour-the-gradient-is-on-armour-2026-08-26.md`. Banner added to the constraints

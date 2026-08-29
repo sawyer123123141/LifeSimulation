@@ -642,6 +642,15 @@ namespace LifeSimulation.Simulation.Core
                 Phenotype attacker = GetEffectivePhenotype(index);
                 Phenotype defender = GetEffectivePhenotype(targetIndex);
                 float hitChance = 0.20f + (0.70f * PredationSystem.Threat(attacker, defender, engagementDistance, Config.PredationEconomicsEnabled));
+                if (Config.EvasiveFleeingEnabled
+                    && Creatures.GetDecisionAt(targetIndex).Action == CreatureAction.Flee)
+                {
+                    // The one place the defender's DECISION reaches combat. Everything else here
+                    // reads its stats. Applied after Threat rather than inside it on purpose - see
+                    // SimulationConfig.EvasiveFleeingEnabled.
+                    hitChance *= PredationSystem.FleeEvasionMultiplier(defender, Config.EvasiveFleeingStrength);
+                }
+
                 float roll = DeterministicRandom.Float01(
                     Config.WorldSeed,
                     RandomDomain.AttackResolution,

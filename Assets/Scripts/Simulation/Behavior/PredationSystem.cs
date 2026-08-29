@@ -136,6 +136,31 @@ namespace LifeSimulation.Simulation.Behavior
             return Clamp01(netEnergyValue / NormalizingEnergyScale) * attacker.Aggression;
         }
 
+        /// <summary>
+        /// How much a defender's hit chance is reduced by actually fleeing, as a multiplier on the
+        /// attacker's chance to land the blow. Returns 1 when <paramref name="strength"/> is 0, so
+        /// the flag-off path is exactly the old arithmetic.
+        ///
+        /// <para>Scaled by the defender's <c>Maneuverability</c> so that agility only pays if it is
+        /// <i>used</i>: the same gene already sits passively in the resistance denominator, and this
+        /// is the term that requires a decision behind it.</para>
+        ///
+        /// <para><b>Note the scale.</b> <c>Phenotype.Maneuverability</c> is <c>1 + 2 * gene</c>, so
+        /// it runs <b>1.0 to 3.0</b>, not 0 to 1. No floor term is needed for a creature with no
+        /// agility to still gain from running - the phenotype minimum is already 1. The first draft
+        /// of this method added a <c>0.5f</c> offset on the assumption of a 0-1 gene and cut hit
+        /// chance by about 70% instead of the intended 50%; the unit test caught it.</para>
+        /// </summary>
+        public static float FleeEvasionMultiplier(Phenotype defender, float strength)
+        {
+            if (strength <= 0f)
+            {
+                return 1f;
+            }
+
+            return 1f / (1f + (strength * defender.Maneuverability));
+        }
+
         public static bool HasViableHuntingStrategy(Phenotype phenotype)
         {
             float diet = Clamp01((phenotype.MeatYieldMultiplier - 0.5f) / 1f);

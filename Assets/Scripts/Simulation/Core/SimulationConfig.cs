@@ -162,7 +162,9 @@ namespace LifeSimulation.Simulation.Core
             bool healthRecoveryEnabled = false,
             bool metabolicHealingEnabled = false,
             bool gradedFertilityEnabled = false,
-            float gradedFertilityStrength = DefaultGradedFertilityStrength)
+            float gradedFertilityStrength = DefaultGradedFertilityStrength,
+            bool evasiveFleeingEnabled = false,
+            float evasiveFleeingStrength = DefaultEvasiveFleeingStrength)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -211,6 +213,8 @@ namespace LifeSimulation.Simulation.Core
             MetabolicHealingEnabled = metabolicHealingEnabled;
             GradedFertilityEnabled = gradedFertilityEnabled;
             GradedFertilityStrength = gradedFertilityStrength;
+            EvasiveFleeingEnabled = evasiveFleeingEnabled;
+            EvasiveFleeingStrength = evasiveFleeingStrength;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -498,6 +502,51 @@ namespace LifeSimulation.Simulation.Core
         public bool GradedFertilityEnabled { get; }
 
         /// <summary>
+        /// Default evasion strength. <c>Phenotype.Maneuverability</c> is <c>1 + 2 * gene</c> and so
+        /// runs 1.0 to 3.0; at a strength of 0.5 a fleeing defender of founder-average agility has
+        /// its attacker's hit chance multiplied by about 0.51 - fleeing roughly halves the chance of
+        /// being hit, and a maximally agile one reaches 0.40. Hashed and sweepable rather than a <c>const</c>,
+        /// for the reason recorded on <see cref="DefaultGradedFertilityStrength"/>: a strength that
+        /// cannot be varied gets argued about instead of measured.
+        /// </summary>
+        public const float DefaultEvasiveFleeingStrength = 0.5f;
+
+        /// <summary>The evasion strength actually in force. See <see cref="DefaultEvasiveFleeingStrength"/>.</summary>
+        public float EvasiveFleeingStrength { get; }
+
+        /// <summary>
+        /// When set, a defender that is actually <see cref="CreatureAction.Flee"/>ing is harder to
+        /// hit, by a factor scaling with its own <c>Maneuverability</c>.
+        ///
+        /// <para><b>Why this exists.</b> Combat resolution consulted the defender's <i>stats</i> and
+        /// never its <i>decision</i>: a creature grazing obliviously was hit exactly as often as one
+        /// running for its life. The passive <c>Defense</c> gene crosses |t| = 2 in <b>22 of 22</b>
+        /// powered predation cells.</para>
+        ///
+        /// <para><b>This does not program fleeing.</b> Nothing here decides <i>when</i> to flee -
+        /// that stays with the evolved flee scoring. It gives the choice a consequence, which is
+        /// what a selection gradient is.</para>
+        ///
+        /// <para><b>MEASURED AND IT DOES NOT ACHIEVE ITS GOAL. Default false, and the reason is not
+        /// tuning.</b> At strength 0.5 and again at 4.0 - where fleeing cuts the attacker's hit
+        /// chance to about 12% - the flee knob's selection is unchanged and still strongly negative
+        /// (<c>risk_aversion</c> t = -6.44 and -5.09 against a baseline of -3.44). <c>RiskAversion</c>
+        /// does <i>two</i> jobs with opposite fitness signs: it scales the flee score
+        /// (<c>DecisionSystem.Scoring.cs:96</c>) and it penalises food near a threat
+        /// (<c>:287</c>). In a cell losing 44.8% of deaths to starvation and 8.4% to predation, the
+        /// foraging cost outweighs the combat benefit roughly five to one, so the gene is selected
+        /// out through caution no matter how good fleeing becomes. Making fleeing effective is
+        /// necessary and not sufficient. See
+        /// <c>docs/emergent-behaviour-fleeing-is-selected-against-2026-08-29.md</c>.</para>
+        ///
+        /// <para><b>Resolution only, deliberately.</b> The evasion term is applied in
+        /// <c>TickCombat</c> and NOT inside <c>PredationSystem.Threat</c>, which also feeds the
+        /// decision path - folding it in there would make a fleeing creature perceive less threat and
+        /// stop fleeing, a feedback loop rather than a gradient.</para>
+        /// </summary>
+        public bool EvasiveFleeingEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -619,6 +668,8 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
+            hash = Hash(hash, EvasiveFleeingEnabled ? 1UL : 0UL);
+            hash = HashFloat(hash, EvasiveFleeingStrength);
 
             return hash;
         }

@@ -280,6 +280,7 @@ namespace LifeSimulation.Tests.EditMode
         /// </summary>
         private static readonly string[] KnownInertFlags =
         {
+            "evasiveFleeingEnabled",
             "foragingEconomicsEnabled",
             "kinRecognitionEnabled",
             "learnedResourceQualityEnabled",
@@ -293,6 +294,15 @@ namespace LifeSimulation.Tests.EditMode
             // it diverged at tick 40 and this test failed - which was the designed signal - so it was
             // removed. The four that remain are inert because their readers sit on the Legacy path,
             // which no configuration reaches; those will not resolve themselves.
+            //
+            // evasiveFleeingEnabled is inert here for the SAME benign reason as metabolicHealingEnabled
+            // below, one step further out: it only fires when a defender that is actively fleeing is
+            // struck, and this configuration seeds PhysiologyVariation herbivores, so no creature
+            // ever attacks another and combat resolution is never reached at all. The harness reports
+            // it "never" reached, not "reached and made no difference". It becomes live the moment
+            // the founders hunt, which EvasiveFleeingTests pins from both directions on
+            // PredationVariation - byte-identical off, divergent on. If it ever reports live *here*,
+            // herbivores have started attacking each other.
             //
             // metabolicHealingEnabled is inert here for a THIRD reason, and a benign one: it scales
             // health recovery by metabolic pace, and this configuration has healthRecoveryEnabled

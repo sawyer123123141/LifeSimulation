@@ -1,5 +1,25 @@
 # The gradient is on armour, not on behaviour - and the world/brain ordering is a crossover
 
+> **THE GENE IN SECTION 1 IS WRONG - CORRECTED 2026-08-29** by
+> `emergent-behaviour-fleeing-is-selected-against-2026-08-29.md`. This document names `FearResponse`
+> as "the Flee decision" knob. **It is not, on the path every cell here ran.** Under
+> `IntentUtilityV1` the flee score is `threatIntensity * genome.RiskAversion`
+> (`DecisionSystem.Scoring.cs:96`); `FearResponse` is read only by `PredationSystem.Decide`, which is
+> **`Legacy`-only**, and by the place-memory penalty, which is **inert by standing decision**. So
+> `fear`'s 1-of-18 was not evidence about fleeing - it was evidence that nothing reads it, the same
+> situation as `urgency_exponent` under `Legacy`.
+>
+> **The conclusion inverts.** The real flee knob, `risk_aversion`, crosses |t| = 2 in **20 of 22**
+> cells and is **negative, -5.92 to +0.16**. It is not that behaviour has no gradient; **the gradient
+> on defensive behaviour is strong and points the wrong way.** Caution is bred out at t = -3 to -6
+> while armour is bred in at t = +11, because `RiskAversion` also governs avoiding food near threats
+> and this cell loses 44.8% of deaths to starvation against 8.4% to predation.
+>
+> **What survives unchanged:** the `defense`-is-passive observation (22 of 22, and `Defense` still
+> enters no decision), the hunt knobs being selected against, and **all of section 2** - the
+> world/brain crossover 2x2 and its cap-pinning caveat are untouched.
+
+
 2026-08-26, latest. Two results bearing directly on "can evolution invent behaviours nobody
 programmed". Both were produced while trying to *falsify* the last surviving claim of
 `emergent-behaviour-constraints-2026-08-24.md` §1. **One of them sharpened it instead.**
