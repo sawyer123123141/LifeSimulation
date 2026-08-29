@@ -99,9 +99,23 @@ namespace LifeSimulation.Presentation
                 view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y);
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
-                float modelScale = _creatureModels.TryGetValue(id, out CreatureModelDefinition model) ? model.ModelScale : 1f;
+                bool hasModel = _creatureModels.TryGetValue(id, out CreatureModelDefinition model);
+                float modelScale = hasModel ? model.ModelScale : 1f;
                 view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale * modelScale);
-                _creatureRenderers[id].material.color = GetActionColor(action);
+
+                // Only the capsule fallback is tinted. A model carries its own colours - the pack's
+                // wolf is grey, its fox orange, its cow brown - and those already say "which animal
+                // is this" better than a flat action colour would, while ACTION is now carried by
+                // the animation instead. Repainting them would also be wrong twice over: these
+                // meshes have four to eight materials each and `renderer.material` touches only the
+                // first, so a tinted wolf would come out partly grey and partly gold; and touching
+                // `.material` per creature instantiates a material per creature, which at the
+                // populations this ecology reaches is exactly the batching cost worth avoiding.
+                if (!hasModel)
+                {
+                    _creatureRenderers[id].material.color = GetActionColor(action);
+                }
+
                 PlayActionAnimation(id, action, model);
             }
         }

@@ -40,10 +40,11 @@ namespace LifeSimulation.EditorTools
             // transform on its own.
             importer.importConstraints = false;
 
-            // Nothing in this project lights these models yet and the pack ships no textures, so
-            // materials would import as unused assets that still have to be resolved on every
-            // import. Colour comes from the view layer's per-creature tint.
-            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            // Materials are left at the importer default ON PURPOSE. Suppressing them leaves the
+            // SkinnedMeshRenderer with no material at all, which does not throw and does not warn -
+            // the creature simply does not draw. The view layer tints through renderer.material, so
+            // there has to be one to tint.
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
         }
     }
 }
