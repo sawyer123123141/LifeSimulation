@@ -553,6 +553,47 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-29, later — the visible layer, read this first
+
+**User direction, recorded:** *do not spend sessions on invisible research.* Measurement that does
+not reach the screen is to be avoided or flagged. Four commits on the presentation layer, every one
+verified by a **Unity 6000.2.14f1 batch compile** (`-batchmode -quit -nographics`, ~90s, zero errors,
+and it touches no tracked file). **That loop now exists and should be used for any Presentation
+change** - `HeadlessTests` cannot compile Unity code.
+
+1. **The HUD was drawing four pairs of labels on top of each other.** `Predation` and the colour
+   legend both sat at y=216 in **every** configuration; with the elevation field on - which is every
+   ecosystem config - the three terrain lines overlapped Generation, Food and Mean-genes as well.
+   Cause: hardcoded y-coordinates with conditional lines between them. Left-column y values are now
+   distinct throughout, and the world box stops above the Creature Inspector at y=300.
+2. **Three behaviours were rendering as "wandering".** `SeekCarcass`, `FeedCarcass` and `Rest` fell
+   through to the default green, so a creature crossing the map to a carcass looked like one milling
+   about. All three are actions `IntentUtilityV1` actually emits. Scavenging is brown now, resting
+   grey, and the legend gained the orange `SeekThermalComfort` entry the renderer has always drawn.
+3. **`M`, `N` and `Y` were undiscoverable.** `Y` and `N` are the two main playtest entry points and
+   appeared in no on-screen text. The control legend was also over 200 characters inside a 420px
+   label - clipped, not read. Those lines sit below every panel now and use the full width.
+4. **`GetComponent<Renderer>()` ran every frame for every creature and every resource.** Fine at the
+   9-17 creatures the only Play-mode profile saw; several hundred redundant lookups a frame at the
+   200-500 the ecology now reaches. Renderers are cached beside the view transforms, additively, so
+   no existing call site changed type. A dead per-id hue line went with it.
+5. **The HUD now shows the death mix and the share of decisions spent running away** - the two most
+   informative numbers about what kind of world is on screen, neither of which it had ever displayed.
+
+**Blocked, and why - do not "fix" these silently**
+
+- **The eight-animal model pack is NOT in the project.** No `.fbx`/`.glb` anywhere under `Assets/`.
+  Steps 2-4 of `docs/creature-appearance.md` cannot start.
+- **`CreatureAppearance` step 3 is still deliberately unbuilt.** `U` is confirmed unbound. The
+  recorded reason is that a model swap would redo it. **That reasoning assumed models were imminent
+  and they are not** - worth putting to the user as a real choice, since applying it to capsules
+  would make adaptation visible now at the cost of being redone later. **Not decided unilaterally.**
+- **Creature rendering at full population is still unmeasured.** Requires Play mode with a display;
+  `-nographics` cannot render and no visual verification is possible from this environment.
+- **Playtest scenarios still predate the ecology work** - `gradedFertilityEnabled` is off for `Y` by
+  a **standing decision** (section 4). The world on screen is not the self-regulating one the sweeps
+  measure. **That is a design decision for the user, not a fold-in.**
+
 ### 2026-08-29 — fleeing is selected AGAINST, and a correction, read this first
 
 `emergent-behaviour-fleeing-is-selected-against-2026-08-29.md`. **First simulation-code change in
