@@ -553,6 +553,40 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
+### 2026-08-26, final — the emergent-behaviour gradient, read this first
+
+`emergent-behaviour-the-gradient-is-on-armour-2026-08-26.md`. Banner added to the constraints
+document; nothing edited out of it.
+
+1. **The world now selects hard and entirely on armour.** Eighteen powered predation cells:
+   `defense` crosses |t| = 2 in **18 of 18** (+2.5 to +11.0) - and `Defense` is read **only** inside
+   the attack success formula, changing **no decision at all**. `fear`, the gene that scales the Flee
+   decision, crosses in **1 of 18. The `neutral_marker` control crosses in 2.** By this project's own
+   standard the flee knob is indistinguishable from a gene nothing reads.
+2. **The hunt knobs are selected against**, not merely absent - `attack` negative in 15 of 18,
+   `aggression` in 4 of 18. **Evolved hunting cannot appear in this cell.**
+3. **So: five named behaviours, zero positive gradients.** §1's last surviving support was attacked
+   and **confirmed by a different route**. It is no longer "nothing kills you" - things kill you now.
+   It is that **the cheapest answer to being killed is armour, and armour is free of behaviour.**
+   **The binding constraint is the combat model's shape** - resistance is a scalar in a denominator,
+   so nothing a creature *does* can compete with having more of it. That is where a design must bite,
+   not the decision system.
+4. **World-versus-brain is a crossover, now measured** - the matched 2x2 the rebuttal demanded, brake
+   1.5, proximity pairing, gate 0.45, both health arms. Poor world/poor brain **0 / 0** extinct of 60;
+   **brain alone 59 / 57**; **world alone 38 / 37**; **both 2 / 2**. **Enriching either side alone is
+   worse than enriching neither.** Neither "world first" nor "brain first" - the question was
+   malformed.
+5. **Caveat that nearly cost me the reading:** the 0-of-60 corner is **not** a healthy world. It
+   survives by pinning against the cap - **70.4% starvation, population 403, median 468 under a cap of
+   500**, the exact pathology the carrying-capacity work removed. The rich/rich corner holds 234 at
+   44.8% with the cap never binding. **A 2x2 read on extinctions alone would call the poorest world
+   the best.**
+6. **Untouched:** §2 (place memory blocks cache/territory/shelter), §3 (ablation, null controller,
+   cross-seed) and §4 (determinism, flag-gating) of the constraints document all stand.
+
+**Next:** this is now a design conversation, not a measurement. The evidence to argue from is in
+place and the obvious first question is whether the combat success formula is the thing to change.
+
 ### 2026-08-26, last — the controller comparison redone cleanly, read this first
 
 **Corrects this morning's controller document.** `p6-the-clean-controller-comparison-2026-08-26.md`.

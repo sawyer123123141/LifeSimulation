@@ -1,5 +1,23 @@
 # Before designing for emergent behaviour: what was measured on 2026-08-24 that bears on it
 
+> ## SECTION 1'S LAST SURVIVING SUPPORT: CONFIRMED BY A DIFFERENT ROUTE — 2026-08-26 (later)
+>
+> `emergent-behaviour-the-gradient-is-on-armour-2026-08-26.md`. The banner below leaves §1's opening
+> observation standing - *predation is 0 and the named behaviours have no gradient in the measured
+> scenario*. **Predation is no longer 0** (1% to 33% of deaths), so that support was expected to fall.
+> **It did not. It sharpened.** Across eighteen powered predation cells, `defense` - which is read
+> **only** in the attack success formula and changes no decision - crosses |t| = 2 in **18 of 18**,
+> while `fear`, the actual Flee knob, crosses in **1 of 18 against the control's 2**, and the hunt
+> knobs `attack` and `aggression` are selected **negatively**. **The world now selects hard, and
+> entirely on armour.** Five named behaviours, zero positive gradients. The binding constraint is the
+> combat model's shape, not the controller.
+>
+> **And the ordering question is settled as a crossover**, matched 2x2, both health arms: poor
+> world/poor brain **0 of 60** extinct, brain alone **59**, world alone **38**, both **2**. Enriching
+> either side alone is worse than enriching neither. **Neither "world first" nor "brain first".** But
+> read the caveat: the 0-of-60 corner survives by pinning against the cap at 70.4% starvation, so
+> extinction counts alone would call the poorest world the best.
+
 > ## SECTION 1 CONTESTED AND PARTLY WITHDRAWN — 2026-08-26
 >
 > **The rival proposal in §1 — "enrich the world first" — was argued against as this document asked,
