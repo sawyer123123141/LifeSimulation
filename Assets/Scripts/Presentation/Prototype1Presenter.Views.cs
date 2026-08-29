@@ -33,8 +33,10 @@ namespace LifeSimulation.Presentation
             view.name = resource.Kind.ToString();
             view.transform.position = new Vector3(resource.Position.X, GroundHeightAt(resource.Position.X, resource.Position.Y) + 0.25f, resource.Position.Y);
             view.transform.localScale = new Vector3(2f, 0.5f, 2f);
-            view.GetComponent<Renderer>().material.color = GetResourceColor(resource.Kind);
+            var renderer = view.GetComponent<Renderer>();
+            renderer.material.color = GetResourceColor(resource.Kind);
             _resourceViews.Add(view.transform);
+            _resourceRenderers.Add(renderer);
         }
 
         private void SynchronizeResourceViews()
@@ -56,7 +58,7 @@ namespace LifeSimulation.Presentation
                 view.rotation = ArenaProjection.Upright(resource.Position.X, resource.Position.Y);
                 view.localScale = new Vector3(2f, height, 2f);
                 Color baseColor = GetResourceColor(resource.Kind);
-                view.GetComponent<Renderer>().material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
+                _resourceRenderers[index].material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
             }
         }
 
@@ -78,9 +80,11 @@ namespace LifeSimulation.Presentation
                 {
                     view = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
                     view.name = $"Creature {id.Value}";
-                    float hue = (id.Value * 0.61803398875f) % 1f;
-                    view.GetComponent<Renderer>().material.color = Color.HSVToRGB(hue, 0.55f, 0.95f);
                     _creatureViews.Add(id, view);
+
+                    // The per-id hue that used to be set here was dead: the action colour below
+                    // overwrites it on this same pass, before the frame is ever drawn.
+                    _creatureRenderers.Add(id, view.GetComponent<Renderer>());
                     // Born while a preview or the planet view is up: stay hidden until the arena
                     // comes back. The planet view pauses the world, so this is only reachable if
                     // something spawns a creature while paused - but a view that appears in the
@@ -102,7 +106,7 @@ namespace LifeSimulation.Presentation
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
                 view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale);
-                view.GetComponent<Renderer>().material.color = GetActionColor(action);
+                _creatureRenderers[id].material.color = GetActionColor(action);
             }
         }
 
@@ -120,6 +124,7 @@ namespace LifeSimulation.Presentation
 
                     Destroy(pair.Value.gameObject);
                     _staleCreatureIds.Add(pair.Key);
+                    _creatureRenderers.Remove(pair.Key);
                 }
             }
 

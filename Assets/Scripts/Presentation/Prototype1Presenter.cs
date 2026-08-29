@@ -36,8 +36,20 @@ namespace LifeSimulation.Presentation
         };
 
         private readonly Dictionary<CreatureId, Transform> _creatureViews = new Dictionary<CreatureId, Transform>();
+
+        /// <summary>
+        /// Renderers cached alongside the view transforms. `SynchronizePresentation` set the colour
+        /// through `GetComponent&lt;Renderer&gt;()` on every creature and every resource EVERY frame -
+        /// a component lookup per object per frame, which at the populations the ecology now reaches
+        /// (200-500, against the 9-17 the only Play-mode profile ever saw) is several hundred
+        /// lookups a frame for a value that is already known at creation time.
+        /// </summary>
+        private readonly Dictionary<CreatureId, Renderer> _creatureRenderers = new Dictionary<CreatureId, Renderer>();
         private readonly List<CreatureId> _staleCreatureIds = new List<CreatureId>();
         private readonly List<Transform> _resourceViews = new List<Transform>();
+
+        /// <summary>Resource renderers, cached for the same reason as <see cref="_creatureRenderers"/>.</summary>
+        private readonly List<Renderer> _resourceRenderers = new List<Renderer>();
         private SimulationWorld _world;
         private Camera _simulationCamera;
         private Renderer _terrainRenderer;
@@ -395,12 +407,14 @@ namespace LifeSimulation.Presentation
             }
 
             _creatureViews.Clear();
+            _creatureRenderers.Clear();
             for (int index = 0; index < _resourceViews.Count; index++)
             {
                 Destroy(_resourceViews[index].gameObject);
             }
 
             _resourceViews.Clear();
+            _resourceRenderers.Clear();
             _world = new SimulationWorld(config ?? CreatePlayableConfig(SimulationConfig.CreatePrototype1Defaults(worldSeed: 42, initialPopulation: 4)));
             scenario.ApplyTo(_world);
             _rawElevationValid = false;
