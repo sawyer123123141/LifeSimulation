@@ -483,6 +483,7 @@ namespace LifeSimulation.Presentation
             _creatureActions.Clear();
             _creatureModels.Clear();
             _creatureHeadings.Clear();
+            _creatureRenderedYaw.Clear();
         }
 
         private void ResetSimulation(SimulationScenario scenario, SimulationConfig config = null)
