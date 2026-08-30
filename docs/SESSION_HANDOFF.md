@@ -576,8 +576,29 @@ population as an upper bound — sound for that decision, but it is a bound, not
 The dated blocks below are the detail behind this summary, newest first. You do not need them all.**
 
 **Repo:** `C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim` — NOT the shell's default cwd.
-**Branch `main`, in sync with origin. 24 commits this session, `9631800` to `75a6d9f`.**
-**639 tests green:** `dotnet test tools/HeadlessTests`.
+**Branch `claude/session-handoff-docs-ytjvrc`, pushed, 6 commits ahead of `main`, `8e1a543` to
+`5e26bdf`.** Not yet merged to `main`.
+**639 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
+machine, so the suite runs locally. Unity 6000.2.14f1 at
+`C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe`.
+
+#### ONE OPEN DECISION, needs the user — the `.meta` files are not actually gitignored
+
+`git status` shows ~66 untracked `.meta` files and this file has long called them "intentionally
+untracked." **`.gitignore` does not exclude them** — only `*.pidb.meta`, `*.pdb.meta` and similar.
+They are untracked because nobody staged them, and that drift got written down as policy.
+
+Why it matters: a `.meta` file carries its asset's **GUID**, and every Unity reference — scene to
+script, prefab to material — is stored as a GUID, not a path. On a fresh clone Unity regenerates
+them, so those references resolve to nothing. This is the most likely reason **no `.unity` scene is
+committed anywhere in the repo** (`m_Scenes: []`, zero tracked scene files) and a plausible origin
+for `Assets/_Recovery/` holding three salvaged scenes. Right now the entire visual layer exists only
+in one machine's local Unity state.
+
+**Not acted on.** Section 8 says never to stage them, and an agent must not overturn a standing rule
+on its own reading. The rule looks inverted for a Unity repo, but there may be a reason (OneDrive
+sync conflicts are the usual one). **Ask the user; do not stage `.meta` files without an explicit
+instruction.**
 
 #### The user's standing direction, which changed what this session did
 
