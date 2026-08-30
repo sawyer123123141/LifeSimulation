@@ -94,6 +94,127 @@ namespace LifeSimulation.Tests.EditMode
         }
 
         [Test]
+        public void TheWaterFilterKeepsOnlySitesWithinReachOfWater()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f), new SimVector2(10f, 12f) };
+            List<GeneratedPlantSite> sites = PlantSiteGenerator.Generate(
+                42,
+                EnvironmentField.CreateProcedural(42, elevationEnabled: true),
+                arenaHalfWidth: 25f,
+                spacing: 4f,
+                jitterFraction: .35f,
+                fertilityThreshold: .45f,
+                capacityBudget: 432f,
+                fixedCapacity: 0f,
+                waterPositions: water,
+                maximumWaterDistance: 8f);
+
+            Assert.That(sites.Count, Is.GreaterThan(0));
+            foreach (GeneratedPlantSite site in sites)
+            {
+                float nearest = water.Min(position => SimVector2.Distance(site.Position, position));
+                Assert.That(nearest, Is.LessThanOrEqualTo(8f));
+            }
+        }
+
+        [Test]
+        public void TheWaterFilterIsInertAtDistanceZeroAndWithNoWater()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f) };
+            List<GeneratedPlantSite> unfiltered = Generate(42, .45f);
+            List<GeneratedPlantSite> zeroDistance = PlantSiteGenerator.Generate(
+                42, EnvironmentField.CreateProcedural(42, elevationEnabled: true),
+                25f, 5f, .35f, .45f, 432f, 0f, water, 0f);
+            List<GeneratedPlantSite> noWater = PlantSiteGenerator.Generate(
+                42, EnvironmentField.CreateProcedural(42, elevationEnabled: true),
+                25f, 5f, .35f, .45f, 432f, 0f, new List<SimVector2>(), 8f);
+
+            Assert.That(zeroDistance.Count, Is.EqualTo(unfiltered.Count));
+            Assert.That(noWater.Count, Is.EqualTo(unfiltered.Count));
+        }
+
+        [Test]
+        public void TheWaterFilterRemovesSitesWithoutChangingTheBudget()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f), new SimVector2(10f, 12f) };
+            List<GeneratedPlantSite> unfiltered = Generate(42, .45f, spacing: 4f);
+            List<GeneratedPlantSite> filtered = PlantSiteGenerator.Generate(
+                42, EnvironmentField.CreateProcedural(42, elevationEnabled: true),
+                25f, 4f, .35f, .45f, 432f, 0f, water, 8f);
+
+            Assert.That(filtered.Count, Is.LessThan(unfiltered.Count));
+            Assert.That(filtered.Sum(site => site.Capacity), Is.EqualTo(432f).Within(.5f));
+        }
+
+        /// <summary>
+        /// Y co-locates every water site with an active food site, so a tight water limit must still
+        /// leave sites to disperse into - a filter that empties the registry would stop plant
+        /// reproduction dead and would do it silently.
+        /// </summary>
+        [Test]
+        public void TheWaterFilterLeavesSitesInTheRegistryAtYsLayout()
+        {
+            var world = new SimulationWorld(CreateConfig(generatedSites: true, maximumWaterDistance: 6f));
+            Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ApplyTo(world);
+
+            Assert.That(world.PlantSites.Count, Is.GreaterThan(6));
+        }
+
+        [Test]
+        public void AnchoredModePlacesEverySiteOnTheRingAroundAWaterSite()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f), new SimVector2(10f, 12f) };
+            List<GeneratedPlantSite> sites = Anchored(water, ringRadius: 6f, perWater: 4);
+
+            Assert.That(sites.Count, Is.GreaterThan(0));
+            Assert.That(sites.Count, Is.LessThanOrEqualTo(water.Count * 4), "a slot may be abandoned but never doubled");
+            foreach (GeneratedPlantSite site in sites)
+            {
+                float nearest = water.Min(position => SimVector2.Distance(site.Position, position));
+
+                // The ring radius times the jitter bound, and no lattice site would satisfy this.
+                Assert.That(nearest, Is.LessThanOrEqualTo(6f * 1.35f + .001f));
+            }
+        }
+
+        [Test]
+        public void AnchoredModeConservesTheBudgetAndFavoursFertileGround()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f), new SimVector2(10f, 12f) };
+            List<GeneratedPlantSite> sites = Anchored(water, ringRadius: 6f, perWater: 6);
+
+            Assert.That(sites.Sum(site => site.Capacity), Is.EqualTo(432f).Within(.5f));
+            Assert.That(sites.All(site => site.Fertility >= .45f));
+        }
+
+        [Test]
+        public void AnchoredModeIsOffAtRingRadiusZero()
+        {
+            var water = new List<SimVector2> { new SimVector2(-12f, -8f) };
+            List<GeneratedPlantSite> lattice = Generate(42, .45f);
+            List<GeneratedPlantSite> ringZero = Anchored(water, ringRadius: 0f, perWater: 4);
+
+            Assert.That(ringZero.Count, Is.EqualTo(lattice.Count));
+        }
+
+        private static List<GeneratedPlantSite> Anchored(List<SimVector2> water, float ringRadius, int perWater)
+        {
+            return PlantSiteGenerator.Generate(
+                42,
+                EnvironmentField.CreateProcedural(42, elevationEnabled: true),
+                arenaHalfWidth: 25f,
+                spacing: 5f,
+                jitterFraction: .35f,
+                fertilityThreshold: .45f,
+                capacityBudget: 432f,
+                fixedCapacity: 0f,
+                waterPositions: water,
+                maximumWaterDistance: 0f,
+                anchorRingRadius: ringRadius,
+                anchorSitesPerWater: perWater);
+        }
+
+        [Test]
         public void SplitSitesAtOnePartIsTheSameLayout()
         {
             SimulationScenario source = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
@@ -205,7 +326,7 @@ namespace LifeSimulation.Tests.EditMode
             return TotalFoodCapacity(world);
         }
 
-        private static SimulationConfig CreateConfig(bool generatedSites)
+        private static SimulationConfig CreateConfig(bool generatedSites, float maximumWaterDistance = 0f)
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
             return new SimulationConfig(
@@ -222,7 +343,8 @@ namespace LifeSimulation.Tests.EditMode
                 plantMortalityEnabled: true,
                 proceduralEnvironmentFieldsEnabled: true,
                 elevationFieldEnabled: true,
-                generatedPlantSitesEnabled: generatedSites);
+                generatedPlantSitesEnabled: generatedSites,
+                generatedPlantSiteMaximumWaterDistance: maximumWaterDistance);
         }
     }
 }

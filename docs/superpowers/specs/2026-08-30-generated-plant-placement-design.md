@@ -1,11 +1,17 @@
 # Generated plant placement — design
 
 **Date:** 2026-08-30
-**Status:** BUILT AND MEASURED — see `docs/experiments/p6-generated-plant-placement-2026-08-30.md`
-for the results, which are what to read. **Two things in this document were refuted by its own
-pilot** and are marked below: the "six locations" premise in section 1, and the assumption in section
-5 step 2 that water splitting would be the *remedy* if water bound the herd. The mechanism exists
-behind `generatedPlantSitesEnabled`, default false, and is **not switched on for `Y`**.
+**Status:** BUILT, MEASURED, AND NOT ADOPTED — see
+`docs/experiments/p6-generated-plant-placement-2026-08-30.md`, which is what to read. Three
+variants were built behind `generatedPlantSitesEnabled` — a fertility lattice, the lattice filtered
+by distance to water, and sites on a ring anchored to each water point — and **all three land at or
+near the control on dispersion while costing population.** The recommendation is a scenario change
+instead: `SplitSites(parts: 4, spread: 6)` on `Y`.
+
+**Three things in this document were refuted by its own pilot**, marked below: the "six locations"
+premise in section 1; the assumption in section 5 step 2 that water splitting would be the *remedy*
+if water bound the herd; and the choice of mean nearest-neighbour as the metric in section 5, which
+scales with population and rewarded arms for killing creatures.
 **Owning spec:** `docs/superpowers/specs/2026-08-14-system-integration-design.md`, whose
 `ResourceState` table is the work.
 
@@ -97,6 +103,12 @@ clumping on its own. **The pilot tests this rather than assuming either way.**
 Every arm runs `Y`'s exact configuration (cap 96, 4 founders, terrain join, slope cost, terrain
 temperature, health recovery, wander hysteresis, feed-in-place), 12,000 ticks, seeds 42-47.
 
+> **THE METRIC BELOW IS THE WRONG ONE.** Mean nearest-neighbour is a function of density, and the
+> generated arms finish with fewer creatures, so they scored better for being worse. Everything is
+> now reported as a **clumping index** — observed over the Poisson expectation `0.5*sqrt(area/n)` for
+> the same count. Control **0.324**, 1.0 is random dispersion. The raw distance is still reported
+> beside it, and is only comparable between arms at equal population.
+
 **Control arm in every run.** Factor 1 / split 1 must be **layout-fingerprint-identical** to `Y`
 and must reproduce the recorded numbers — population ~96, mean nearest-neighbour **0.824**, mean
 energy **0.806**. A harness that misses those has found a bug, not an ecology result. Two harness
@@ -128,10 +140,15 @@ Arms: `n` = 1 (control), 2, 4, 8. Reported per arm: survivors, mean nearest-neig
 ### Step 2 — does water bind the herd?
 
 > **MEASURED, AND THE ANSWER INVERTS THE EXPECTATION BELOW.** Splitting water as well made clumping
-> **worse** — 0.768 against the control's 0.824 — because each cluster becomes self-sufficient and
-> the herd settles into tight local groups. Water does tether, and the tether is *load-bearing for
-> spacing*: the arms that spread food into rings **around the existing water points** performed best.
-> Do not propose splitting or generating water as the fix.
+> **worse** — clumping index 0.301 against the control's 0.323 at identical population — because each
+> cluster becomes self-sufficient and the herd settles into tight local groups. Water does tether,
+> and the tether is *load-bearing for spacing*: the commute is part of what produces the spacing
+> there is. Do not propose splitting or generating water as the fix.
+>
+> **A later arm closed the follow-up too.** Generating sites on a ring around each water point — the
+> winning geometry as a rule rather than typed coordinates — scored **0.310, the control**. The
+> split's effect is not its geometry alone: it also divides the six rich ACTIVE patches, which
+> generated placement does not govern.
 
 The same transform applied to Water as well as Food, at the best `n` from step 1. If splitting food
 alone moves spacing as much as splitting both, water does not bind and plant-only generation is
