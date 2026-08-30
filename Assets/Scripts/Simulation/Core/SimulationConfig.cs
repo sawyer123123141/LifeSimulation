@@ -165,7 +165,8 @@ namespace LifeSimulation.Simulation.Core
             float gradedFertilityStrength = DefaultGradedFertilityStrength,
             bool evasiveFleeingEnabled = false,
             float evasiveFleeingStrength = DefaultEvasiveFleeingStrength,
-            bool wanderHomeHysteresisEnabled = false)
+            bool wanderHomeHysteresisEnabled = false,
+            bool feedInPlaceEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -217,6 +218,7 @@ namespace LifeSimulation.Simulation.Core
             EvasiveFleeingEnabled = evasiveFleeingEnabled;
             EvasiveFleeingStrength = evasiveFleeingStrength;
             WanderHomeHysteresisEnabled = wanderHomeHysteresisEnabled;
+            FeedInPlaceEnabled = feedInPlaceEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -574,6 +576,21 @@ namespace LifeSimulation.Simulation.Core
         public bool WanderHomeHysteresisEnabled { get; }
 
         /// <summary>
+        /// Whether a creature that has started eating or drinking stands where it is instead of
+        /// continuing toward the resource's centre point.
+        ///
+        /// <para><b>The defect this addresses.</b> A creature switches to <c>Eat</c> as soon as it is
+        /// within <c>InteractionRadius</c> of a resource, but <c>GetMovementTarget</c> keeps returning
+        /// <c>resource.Position</c> for <c>Eat</c> and <c>Drink</c> - so it walks to the exact centre
+        /// while feeding. Every creature at a patch is given the identical destination, and they
+        /// converge on a single point they never needed to reach. On screen that is a pile.</para>
+        ///
+        /// <para>Standing still to feed is also the honest behaviour: an animal that has reached food
+        /// eats it rather than continuing to walk into its neighbours.</para>
+        /// </summary>
+        public bool FeedInPlaceEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -698,6 +715,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, EvasiveFleeingEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, EvasiveFleeingStrength);
             hash = Hash(hash, WanderHomeHysteresisEnabled ? 1UL : 0UL);
+            hash = Hash(hash, FeedInPlaceEnabled ? 1UL : 0UL);
 
             return hash;
         }

@@ -379,6 +379,20 @@ namespace LifeSimulation.Simulation.Core
         private SimVector2 GetMovementTarget(int creatureIndex, CreatureId creatureId, long tick, SimVector2 position)
         {
             CreatureDecision decision = Creatures.GetDecisionAt(creatureIndex);
+
+            // A creature that is already feeding stays put. Without this it keeps walking toward the
+            // resource's centre while it eats, and since every creature at that patch is handed the
+            // same centre they converge on one point - which is what a pile of animals on screen is.
+            // It only ever reached Eat by being inside InteractionRadius, so standing still keeps it
+            // in range; nothing about consumption depends on closing the remaining distance.
+            if (Config.FeedInPlaceEnabled
+                && (decision.Action == CreatureAction.Eat
+                    || decision.Action == CreatureAction.Drink
+                    || decision.Action == CreatureAction.FeedCarcass))
+            {
+                return position;
+            }
+
             if ((decision.Action == CreatureAction.SeekFood
                     || decision.Action == CreatureAction.SeekWater
                     || decision.Action == CreatureAction.Eat
