@@ -758,3 +758,12 @@ on file: Phase I found **the cap is the stabiliser, not the ceiling**, with surv
 depending on `gradedFertilityEnabled` - which is off for `Y` by the user's explicit choice. Raising the
 cap removed a stabiliser the scenario had no replacement for. **A result that looks novel is often a
 recorded one meeting a scenario that was configured to lack its remedy.**
+
+**2026-08-29 — "Nothing is committed" is not the same as "nothing exists".** No `.unity` scene is
+tracked in this repo and `EditorBuildSettings` had `m_Scenes: []`, from which the conclusion was drawn
+that the entire visual layer lived only in one machine's Unity state - stated four times across a
+session and written into the handoff as the project's biggest long-term risk. **It was wrong.**
+`Prototype1Presenter` carries `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`, creates itself when
+absent, and builds camera, lights, terrain, water and creature views in code. There was never anything
+in a scene file to lose. **Two greps established the absence; a third would have found the bootstrap.**
+Before escalating an absence into a risk, look for the thing that makes the absence normal.
