@@ -902,7 +902,22 @@ namespace LifeSimulation.Presentation
                 // 94 of 240 to 82, better at moderate and lean and identical at scarce, never worse.
                 // See docs/experiments/p6-health-recovery-2026-08-24.md. Configuration default stays
                 // false; every recorded result predates it.
-                healthRecoveryEnabled: true);
+                healthRecoveryEnabled: true,
+                // And a wandering creature stops bouncing off its own home boundary. The wander
+                // target is a point ON a ring of radius 3 while the creature is inside that radius
+                // and the home centre once it is outside, so arriving at the ring is what flips the
+                // target: it turns 180 degrees, walks back in, flips again, and repeats. Measured
+                // here at 13-17% of wander heading updates reversing by more than 150 degrees in a
+                // single tick, which the presenter draws at 2,160 deg/s and a human watching Play
+                // mode reported as creatures spinning on the spot.
+                //
+                // On for this scenario because it is survival-neutral where removing the ring is
+                // not: across 8 seeds, ring and hysteresis both end 7 of 8 alive at 95-96 with mean
+                // energy unchanged, while deleting the ring entirely leaves 1 of 8 alive. Reversals
+                // fall from about 15% to about 1.6%. See
+                // docs/superpowers/specs/2026-08-29-wander-home-range-design.md. Configuration
+                // default stays false; every recorded result predates it.
+                wanderHomeHysteresisEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";

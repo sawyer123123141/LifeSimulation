@@ -1,7 +1,9 @@
 # Wander home range — remove the ring, keep the memory
 
 **Date:** 2026-08-29
-**Status:** design, not approved, nothing implemented
+**Status:** **REFUTED BY MEASUREMENT.** The design below - remove the ring - was measured and kills
+the world. Kept in full because the reasoning that produced it is worth not repeating, and because
+what it got wrong is the useful part. The shipped fix is hysteresis, recorded at the end.
 **Supersedes in intent:** the uncommitted `WanderHomeHysteresisEnabled` work in the tree
 
 ## The problem, as observed
@@ -76,7 +78,54 @@ creature's own recent position, making distance-to-centre nearly collinear with 
 which `ResourceUtility` already charged as travel cost. **A wander drift toward the best-remembered
 place would be the same redundancy.** Do not build it.
 
-## Design
+## REFUTED: what the measurement said
+
+Three arms on the `Y` configuration, 8 seeds, 12,000 ticks, matched on seed:
+
+| arm | survived | end population | wander reversals >150 deg |
+|---|---|---|---|
+| ring (today) | 7 of 8 | 95-96 | **~15%** |
+| hysteresis | 7 of 8 | 95-96 | **~1.6%** |
+| **no ring** | **1 of 8** | 51 | 0.5% |
+
+**Seven of eight worlds went extinct with the ring removed.** Seed 48 dies in all three arms, so that
+one extinction is pre-existing and not caused by any of this.
+
+**The ring is load-bearing.** It is an accidental tether, and the tether is what keeps a creature
+close enough to remembered resources to survive. The claim below - that
+`DecisionSystem.ScoreRememberedResource` already provides homing and the movement rule is redundant -
+**is false**. Homing on need is not the same as staying in range: a creature that wanders freely
+between needs disperses far enough that the need, when it arrives, cannot be met in time.
+
+**The lesson.** "This mechanism is redundant with one that already exists" was reasoned from the call
+paths and was wrong. The measurement took eight minutes. It should have come before the spec, not
+after it - the risk section below named this exact failure and the spec was still written as a
+recommendation rather than a hypothesis.
+
+## The shipped fix: hysteresis
+
+Recall to the centre only past 4/3 of the ring radius, so reaching the ring is an arrival rather than
+a trigger. Applied to the memory-home branch and to the parental-following branch, which has the
+identical defect at `followRadius = 2`.
+
+Measured survival-neutral against today (7 of 8 in both arms, same seeds, population 95-96, mean
+energy 0.79-0.82 in both) while cutting wander reversals about ninefold. Behind
+`WanderHomeHysteresisEnabled`, default false so every recorded result stays reproducible, and **on for
+the `Y` playtest**, which is the scenario the spinning was reported in.
+
+## What is still wrong, and is not fixed
+
+The user's design objection stands and is not answered by this fix: a home that is a geometric fence
+is not how an animal uses ground. Hysteresis widens the fence from 3 to 4; it does not remove it.
+
+**But the fence cannot simply be deleted** - that is what the measurement above proves. Any future
+home model has to *replace the tether's ecological function*, not just remove the tether. That means a
+mechanism that keeps creatures within reach of remembered resources between needs, arrived at
+honestly: a rest or den behaviour they choose, a foraging range that emerges from the decision system
+rather than from geometry, or a needs model that makes drifting out of range costly before it is
+fatal. Each of those is a measured experiment, not a refactor.
+
+## REFUTED DESIGN, kept for the record
 
 **Take the home branch out of the default path in `GetMovementTarget`.** A wandering creature falls
 through to the existing exploration fallback: hold a heading for five seconds, then pick a new one.

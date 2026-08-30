@@ -363,6 +363,19 @@ namespace LifeSimulation.Simulation.Core
             return tick % interval == 0;
         }
 
+        /// <summary>
+        /// How far past its ring a creature may drift before it is sent back to the centre, as a
+        /// multiple of the ring radius. Only consulted when <see cref="SimulationConfig.WanderHomeHysteresisEnabled"/>
+        /// is on.
+        ///
+        /// <para>Any value above 1 removes the limit cycle, because the defect is that the recall
+        /// test and the ring sit at the <b>same</b> distance. 4/3 was chosen so the home radius of 3
+        /// recalls at 4: wide enough that a creature which reaches its ring point and then picks the
+        /// next one on the far side does not trip the test on the way, and narrow enough that "near
+        /// home" still means near home.</para>
+        /// </summary>
+        private const float WanderHomeRecallFactor = 4f / 3f;
+
         private SimVector2 GetMovementTarget(int creatureIndex, CreatureId creatureId, long tick, SimVector2 position)
         {
             CreatureDecision decision = Creatures.GetDecisionAt(creatureIndex);
@@ -431,7 +444,16 @@ namespace LifeSimulation.Simulation.Core
                 if (parentPosition.HasValue)
                 {
                     const float followRadius = 2f;
-                    if (SimVector2.Distance(position, parentPosition.Value) > followRadius)
+
+                    // The recall distance is deliberately larger than the ring the juvenile is sent
+                    // to. Testing against followRadius itself put the trigger at exactly the distance
+                    // the ring point sits at, so arriving became a reversal and the juvenile chattered
+                    // across its own boundary. See WanderHomeHysteresisEnabled.
+                    float followRecallRadius = Config.WanderHomeHysteresisEnabled
+                        ? followRadius * WanderHomeRecallFactor
+                        : followRadius;
+
+                    if (SimVector2.Distance(position, parentPosition.Value) > followRecallRadius)
                     {
                         return parentPosition.Value;
                     }
@@ -459,7 +481,16 @@ namespace LifeSimulation.Simulation.Core
                 {
                     SimVector2 home = useFoodHome ? memory.FoodPosition : memory.WaterPosition;
                     const float homeRadius = 3f;
-                    if (SimVector2.Distance(position, home) > homeRadius)
+
+                    // Hysteresis: the creature is sent to a point ON this ring while it is inside,
+                    // so testing against the ring's own radius makes arrival flip the target to the
+                    // centre and start a limit cycle. Recall from a band beyond it instead, and
+                    // reaching the ring is an arrival rather than a trigger.
+                    float homeRecallRadius = Config.WanderHomeHysteresisEnabled
+                        ? homeRadius * WanderHomeRecallFactor
+                        : homeRadius;
+
+                    if (SimVector2.Distance(position, home) > homeRecallRadius)
                     {
                         return home;
                     }
