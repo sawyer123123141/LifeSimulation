@@ -191,6 +191,46 @@ namespace LifeSimulation.Simulation.Experiments
         /// placement is offset into the tile nearest the origin, so founders start on the site they
         /// were always meant to start on.</para>
         /// </summary>
+        /// <summary>
+        /// Scales every site's <c>InteractionRadius</c>, leaving position, stock, capacity,
+        /// regeneration, nutrition and plant genome alone.
+        ///
+        /// <para><b>What this is for.</b> The radius is the disc a creature can feed from, and with
+        /// <see cref="SimulationConfig.FeedInPlaceEnabled"/> on it is also where a creature stops:
+        /// it switches to <c>Eat</c> on entering the radius and then stands still. So the radius,
+        /// not the movement rule, is what sets how far apart feeding animals end up. `Y` puts
+        /// sixteen creatures on a disc three units across, and a creature is about one unit wide.</para>
+        ///
+        /// <para><b>This is not free.</b> A wider disc also means a creature starts eating from
+        /// further away, which shortens travel and makes food cheaper to reach. Measure survival and
+        /// energy alongside spacing, not spacing alone.</para>
+        /// </summary>
+        public SimulationScenario WithFeedingRadius(string id, float factor)
+        {
+            if (factor <= 0f || float.IsNaN(factor) || float.IsInfinity(factor))
+            {
+                throw new ArgumentOutOfRangeException(nameof(factor));
+            }
+
+            var widened = new ResourceDefinition[_resources.Length];
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition source = _resources[index];
+                widened[index] = new ResourceDefinition(
+                    source.Kind,
+                    source.Position,
+                    source.InteractionRadius * factor,
+                    source.InitialAmount,
+                    source.Capacity,
+                    source.RegenerationPerSecond,
+                    source.IsActive,
+                    source.NutritionMultiplier,
+                    source.PlantGenome);
+            }
+
+            return new SimulationScenario(id, widened, _founderPlacement);
+        }
+
         public SimulationScenario Tiled(string id, int tiles, float spacing)
         {
             if (tiles <= 0)

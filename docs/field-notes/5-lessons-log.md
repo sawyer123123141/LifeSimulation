@@ -767,3 +767,17 @@ session and written into the handoff as the project's biggest long-term risk. **
 absent, and builds camera, lights, terrain, water and creature views in code. There was never anything
 in a scene file to lose. **Two greps established the absence; a third would have found the bootstrap.**
 Before escalating an absence into a risk, look for the thing that makes the absence normal.
+
+**2026-08-29 — Check what your metric is actually a snapshot of.** Widening the feeding radius was
+predicted to widen spacing, because with feed-in-place a creature stops where it enters the disc, so
+the standing area grows with the square of the radius. Quadrupling the radius changed nothing: 0.824
+against 0.875 mean nearest-neighbour, per-seed ranges fully overlapping. **The metric was a snapshot
+of the whole population, and most creatures are not feeding at any instant.** The prediction was about
+feeding animals and the measurement was about all of them. A model can be right about the mechanism it
+describes and still not describe the number you are reading.
+
+**2026-08-29 — Three failed levers with one thing in common name the real variable.** Clumping
+survived a movement change (0.705 to 0.824), a four-times-larger world (0.945 at best, and it cost
+establishment), and a four-times-wider feeding disc (no effect). **All three held the number of food
+locations at six.** When several independent interventions all fail, look for what they did not vary -
+that is usually the cause, and it is cheaper to find that way than by another intervention.
