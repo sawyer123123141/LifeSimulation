@@ -172,7 +172,10 @@ namespace LifeSimulation.Simulation.Core
             float generatedPlantSiteSpacing = DefaultGeneratedPlantSiteSpacing,
             float generatedPlantSiteJitterFraction = DefaultGeneratedPlantSiteJitterFraction,
             float generatedPlantSiteFertilityThreshold = DefaultGeneratedPlantSiteFertilityThreshold,
-            float generatedPlantSiteFixedCapacity = 0f)
+            float generatedPlantSiteFixedCapacity = 0f,
+            float generatedPlantSiteMaximumWaterDistance = 0f,
+            float generatedPlantSiteAnchorRingRadius = 0f,
+            int generatedPlantSiteAnchorCount = DefaultGeneratedPlantSiteAnchorCount)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -246,6 +249,9 @@ namespace LifeSimulation.Simulation.Core
             GeneratedPlantSiteJitterFraction = generatedPlantSiteJitterFraction;
             GeneratedPlantSiteFertilityThreshold = generatedPlantSiteFertilityThreshold;
             GeneratedPlantSiteFixedCapacity = generatedPlantSiteFixedCapacity;
+            GeneratedPlantSiteMaximumWaterDistance = generatedPlantSiteMaximumWaterDistance;
+            GeneratedPlantSiteAnchorRingRadius = generatedPlantSiteAnchorRingRadius;
+            GeneratedPlantSiteAnchorCount = generatedPlantSiteAnchorCount;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -695,6 +701,40 @@ namespace LifeSimulation.Simulation.Core
         public float GeneratedPlantSiteFixedCapacity { get; }
 
         /// <summary>
+        /// How far a generated site may sit from the nearest water, or zero for no limit.
+        ///
+        /// <para>Fertility alone decides where the ground is good and says nothing about where
+        /// anything drinks. Measured at 20 seeds, unrestricted generated placement cost mean energy
+        /// (0.800 to 0.762) and three worlds in twenty, while a hand split that put food in rings of
+        /// radius 6 around the existing water points beat it on both. This is the general form of
+        /// that arm.</para>
+        ///
+        /// <para>Zero is the default and reproduces every result recorded before 2026-08-30.</para>
+        /// </summary>
+        public float GeneratedPlantSiteMaximumWaterDistance { get; }
+
+        /// <summary>
+        /// Radius of the ring of candidate sites drawn around each water site, or zero to place
+        /// sites on a lattice over the whole arena instead.
+        ///
+        /// <para>Positive turns on anchored placement, which is the geometry that measured best: a
+        /// hand split putting four sites on a radius-6 ring around each water point held population
+        /// 96 in 18 of 20 worlds while cutting the clumping index from 0.324 to 0.501, where the
+        /// lattice left worlds alive but wrecked.</para>
+        /// </summary>
+        public float GeneratedPlantSiteAnchorRingRadius { get; }
+
+        /// <summary>
+        /// Candidate sites per water site in anchored mode. Four is the count the winning hand split
+        /// used. Lives here rather than in <c>PlantSiteGenerator</c> because Simulation.Core must not
+        /// reference Simulation.Environment, and the generator reads it from here.
+        /// </summary>
+        public const int DefaultGeneratedPlantSiteAnchorCount = 4;
+
+        /// <summary>Candidate sites per water site in anchored mode. Fertility still decides which of them become sites.</summary>
+        public int GeneratedPlantSiteAnchorCount { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -826,6 +866,9 @@ namespace LifeSimulation.Simulation.Core
             hash = HashFloat(hash, GeneratedPlantSiteJitterFraction);
             hash = HashFloat(hash, GeneratedPlantSiteFertilityThreshold);
             hash = HashFloat(hash, GeneratedPlantSiteFixedCapacity);
+            hash = HashFloat(hash, GeneratedPlantSiteMaximumWaterDistance);
+            hash = HashFloat(hash, GeneratedPlantSiteAnchorRingRadius);
+            hash = Hash(hash, unchecked((ulong)GeneratedPlantSiteAnchorCount));
 
             return hash;
         }

@@ -782,6 +782,16 @@ establishment), and a four-times-wider feeding disc (no effect). **All three hel
 locations at six.** When several independent interventions all fail, look for what they did not vary -
 that is usually the cause, and it is cheaper to find that way than by another intervention.
 
+**2026-08-30 — A spacing metric that ignores population rewards an arm for killing animals.** Mean
+nearest-neighbour was the number three sessions used to judge clumping. It is a function of density:
+seventy animals in a fixed arena are further apart than ninety for no behavioural reason at all. The
+generated-placement arms finish with fewer creatures, so they scored better for being worse - one
+read **2.513 against the control's 0.824** and was mostly a population of 77. Dividing by the Poisson
+expectation for the same count, 0.5*sqrt(area/n), makes the arms comparable, and it inverted two
+readings: the capacity-split arm went from "0.951, a real gain" to **0.331 against 0.323, nothing**.
+**Before comparing a spatial statistic across arms, check whether it moves when only the population
+does.**
+
 **2026-08-30 — Count the thing the diagnosis names before building on it.** Three failed levers were
 summarised as "all three held the number of food locations at six", and the next piece of work was
 scoped from that sentence. The first arm of the pilot counted it: `Y` ends with **23.2 of 24 food
@@ -794,24 +804,38 @@ is still a number nobody measured.**
 **2026-08-30 — Split the manipulation into the part that moves geometry and the part that does
 not.** Splitting each food site into four is two changes at once: four places instead of one, and a
 quarter of the capacity each. An arm at **spread 0** - four coincident sites at the original
-coordinate - does the capacity half alone, and it moved spacing to 0.951 with a per-seed range fully
-overlapping the control while dropping population from 95.8 to 84.3. The spatial half is where the
-effect lives. **Any transform that changes two things has a degenerate parameter value that changes
-only one, and it is usually free to run.**
+coordinate - does the capacity half alone, and once the metric was density-normalised it scored
+0.331 against the control's 0.323: nothing. The spatial half is where the effect lives. **Any
+transform that changes two things has a degenerate parameter value that changes only one, and it is
+usually free to run.**
+
+**2026-08-30 — "Alive" is not a state; read the per-seed populations.** Generated placement reported
+16 of 20 worlds surviving against the control's 19, which reads as a modest cost. The per-seed
+populations were **1, 8, 28, 40 and 41** in five of those survivors, against a cap of 96 that the
+control holds in eighteen of nineteen. The feature does not only kill worlds, it leaves others
+wrecked, and the survival column cannot see it. **A binary outcome column hides the difference
+between a healthy world and a dying one.**
+
+**2026-08-30 — Copying the geometry of a winning arm is not copying the win.** A hand split that put
+four sites on a radius-6 ring around each water point cut the clumping index from 0.324 to 0.501 at
+full population. Generating sites on exactly that ring, from the fertility field, scored **0.310 -
+the control**. The split also **divides the six rich active patches** from capacity 24 into four of
+6; the generator only governs the dormant sites, so it left the rich patches standing and the herd
+kept standing on them. **When reproducing a result with a general mechanism, list everything the
+specific version changed - the geometry was the visible half and the capacity was the load-bearing
+one.**
 
 **2026-08-30 — A general mechanism can lose to the crude version of itself, and that is a result.**
 Generated placement is the project's own keystone design and it works: sites follow fertility,
-capacity follows fertility, plants colonise them. Measured at 20 seeds it gives spacing 1.173 at 16
-of 20 worlds surviving - against a hand split of the same scenario at 1.280 and 18 of 20. The reason
-is a tether the feature does not control: **water is at six hand-typed coordinates**, and food
-scattered onto fertile ground regardless of where water is buys distance at the price of travel,
-dropping mean energy 0.800 to 0.762 and killing worlds late. **Shipping it switched on because the
-design is right would have been a regression with a good argument attached.**
+capacity follows fertility, plants colonise them. Measured against the hand split it is worse on
+population, worse on energy, worse on survival, and no better on dispersion once the metric stops
+rewarding dead worlds. **Shipping it switched on because the design is right would have been a
+regression with a good argument attached.**
 
 **2026-08-30 — When you name a confound in the spec, put an arm on it, because it may not have the
-sign you assumed.** The spec said water might tether the herd and that splitting water too would
-show whether plant-only placement could be sufficient. It ran, and the answer inverted the premise:
-splitting water as well made clumping **worse** than the control (0.768 against 0.824), because a
+sign you assumed.** The spec said water might tether the herd and that splitting water too would show
+whether plant-only placement could be sufficient. It ran, and the answer inverted the premise:
+splitting water as well made clumping **worse** than the control (0.301 against 0.323), because a
 self-sufficient cluster is a reason to stay put. The commute between food and water is not an
-obstacle to spacing - it is what produces the spacing there is.
+obstacle to spacing - it is part of what produces the spacing there is.
 

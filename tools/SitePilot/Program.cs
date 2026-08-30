@@ -30,6 +30,9 @@ namespace LifeSimulation.Tools.SitePilot
         private const int Ticks = 12000;
         private const int FirstSeed = 42;
 
+        /// <summary>Matches SimulationConfig.DefaultArenaHalfWidth; the clumping index needs the area.</summary>
+        private const double ArenaHalfWidth = 25d;
+
         private static int _seedCount = 6;
 
         /// <summary>Arm indices to run, so a survival question can be asked at many seeds without paying for every arm. Index 0, the control, is always kept.</summary>
@@ -37,7 +40,7 @@ namespace LifeSimulation.Tools.SitePilot
 
         private readonly struct Arm
         {
-            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f)
+            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f, float generatedWaterDistance = 0f, float anchorRadius = 0f, int anchorCount = 4)
             {
                 Name = name;
                 Parts = parts;
@@ -46,6 +49,9 @@ namespace LifeSimulation.Tools.SitePilot
                 GeneratedSpacing = generatedSpacing;
                 GeneratedThreshold = generatedThreshold;
                 GeneratedFixedCapacity = generatedFixedCapacity;
+                GeneratedWaterDistance = generatedWaterDistance;
+                AnchorRadius = anchorRadius;
+                AnchorCount = anchorCount;
             }
 
             public string Name { get; }
@@ -59,6 +65,13 @@ namespace LifeSimulation.Tools.SitePilot
             public float GeneratedThreshold { get; }
 
             public float GeneratedFixedCapacity { get; }
+
+            /// <summary>Zero leaves generated sites unfiltered by distance to water, which is how the first pilot ran.</summary>
+            public float GeneratedWaterDistance { get; }
+
+            public float AnchorRadius { get; }
+
+            public int AnchorCount { get; }
         }
 
         private sealed class RunResult
@@ -76,6 +89,7 @@ namespace LifeSimulation.Tools.SitePilot
             public int FoodSiteCount;
             public long ExtinctionTick = -1;
             public double MeanSiteSpacing;
+            public double ClumpIndex;
             public ulong LayoutFingerprint;
         }
 
@@ -111,6 +125,16 @@ namespace LifeSimulation.Tools.SitePilot
                 new Arm("generated, spacing 5, fertility .60", 1, 0f, false, 5f, .60f),
                 new Arm("generated, spacing 5, capacity 24 each", 1, 0f, false, 5f, .45f, 24f),
                 new Arm("generated, spacing 6, capacity 24 each", 1, 0f, false, 6f, .45f, 24f),
+                new Arm("generated, spacing 4, water <= 6", 1, 0f, false, 4f, .45f, 0f, 6f),
+                new Arm("generated, spacing 4, water <= 8", 1, 0f, false, 4f, .45f, 0f, 8f),
+                new Arm("generated, spacing 5, water <= 8", 1, 0f, false, 5f, .45f, 0f, 8f),
+                new Arm("generated, spacing 4, water <= 10", 1, 0f, false, 4f, .45f, 0f, 10f),
+                new Arm("generated, spacing 3, water <= 6", 1, 0f, false, 3f, .45f, 0f, 6f),
+                new Arm("anchored, ring 6, 4 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 6f, 4),
+                new Arm("anchored, ring 6, 6 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 6f, 6),
+                new Arm("anchored, ring 8, 4 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 8f, 4),
+                new Arm("anchored, ring 6, 8 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 6f, 8),
+                new Arm("anchored, ring 4, 4 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 4f, 4),
             };
 
             if (_armFilter != null)
@@ -138,7 +162,7 @@ namespace LifeSimulation.Tools.SitePilot
                 results[index] = Execute(specs[index].Arm, specs[index].Seed);
             });
 
-            Console.WriteLine("| arm | sites | alive | population | mean nearest | <0.5 | <1.0 | energy | active food | site spacing |");
+            Console.WriteLine("| arm | sites | alive | population | clump index | mean nearest | <0.5 | energy | active food | site spacing |");
             Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|");
             foreach (Arm arm in arms)
             {
@@ -152,21 +176,21 @@ namespace LifeSimulation.Tools.SitePilot
                     armResults[0].FoodSiteCount.ToString(CultureInfo.InvariantCulture),
                     $"{survivors.Length} of {armResults.Length}",
                     cell(result => result.Population),
+                    cell(result => result.ClumpIndex),
                     cell(result => result.MeanNearest),
                     cell(result => result.ShareUnderHalf),
-                    cell(result => result.ShareUnderOne),
                     cell(result => result.MeanEnergy),
                     cell(result => result.ActiveFoodSites),
                     cell(result => result.MeanSiteSpacing) + " |"));
             }
 
             Console.WriteLine();
-            Console.WriteLine("per-seed mean nearest-neighbour");
+            Console.WriteLine("per-seed clumping index (1.0 = randomly dispersed, lower = clumped), population in brackets");
             foreach (Arm arm in arms)
             {
                 RunResult[] armResults = results.Where(result => result.Arm == arm.Name).OrderBy(result => result.Seed).ToArray();
                 Console.WriteLine($"  {arm.Name}: " + string.Join(", ", armResults.Select(result =>
-                    result.Extinct ? $"{result.Seed}:extinct@{result.ExtinctionTick}" : $"{result.Seed}:{result.MeanNearest.ToString("0.000", CultureInfo.InvariantCulture)}")));
+                    result.Extinct ? $"{result.Seed}:extinct@{result.ExtinctionTick}" : $"{result.Seed}:{result.ClumpIndex.ToString("0.000", CultureInfo.InvariantCulture)}({result.Population})")));
             }
 
             RunResult controlSample = results.First(result => result.Arm == arms[0].Name);
@@ -220,7 +244,10 @@ namespace LifeSimulation.Tools.SitePilot
                 generatedPlantSitesEnabled: arm.GeneratedSpacing > 0f,
                 generatedPlantSiteSpacing: arm.GeneratedSpacing > 0f ? arm.GeneratedSpacing : SimulationConfig.DefaultGeneratedPlantSiteSpacing,
                 generatedPlantSiteFertilityThreshold: arm.GeneratedThreshold,
-                generatedPlantSiteFixedCapacity: arm.GeneratedFixedCapacity);
+                generatedPlantSiteFixedCapacity: arm.GeneratedFixedCapacity,
+                generatedPlantSiteMaximumWaterDistance: arm.GeneratedWaterDistance,
+                generatedPlantSiteAnchorRingRadius: arm.AnchorRadius,
+                generatedPlantSiteAnchorCount: arm.AnchorCount);
         }
 
         private static RunResult Execute(Arm arm, int seed)
@@ -320,13 +347,27 @@ namespace LifeSimulation.Tools.SitePilot
                 if (world.Plants.GetAt(index).Biomass > 0f) livePlants++;
             }
 
+            // Mean nearest-neighbour DEPENDS ON POPULATION - ninety animals in a fixed arena are
+            // closer together than seventy for no behavioural reason at all - and the generated arms
+            // finish with fewer creatures than the control. Comparing the raw distance between them
+            // credits an arm for killing animals.
+            //
+            // The index divides by what the same number of animals would give if they were scattered
+            // at random: the expected nearest-neighbour distance of a Poisson process at intensity
+            // N/A is 0.5*sqrt(A/N). So 1.0 reads as randomly dispersed, below 1.0 as clumped, and the
+            // number is comparable across arms with different populations.
+            double area = 4d * ArenaHalfWidth * ArenaHalfWidth;
+            double expectedNearest = count < 2 ? 0d : .5d * Math.Sqrt(area / count);
+            double meanNearest = count < 2 ? 0d : nearestSum / count;
+
             return new RunResult
             {
                 Arm = arm.Name,
                 Seed = seed,
                 Population = count,
                 Extinct = count == 0,
-                MeanNearest = count < 2 ? 0d : nearestSum / count,
+                MeanNearest = meanNearest,
+                ClumpIndex = expectedNearest <= 0d ? 0d : meanNearest / expectedNearest,
                 ShareUnderHalf = count < 2 ? 0d : underHalf / (double)count,
                 ShareUnderOne = count < 2 ? 0d : underOne / (double)count,
                 MeanEnergy = count == 0 ? 0d : energySum / count,

@@ -539,6 +539,20 @@ namespace LifeSimulation.Simulation.Experiments
 
             if (!generateSites) return;
 
+            // Every ACTIVE water site in the layout, read off the definitions rather than out of the
+            // store, so this cannot pick up a food resource whose kind changed underneath it. Sites
+            // are filtered against these when a maximum water distance is configured: food that is
+            // nowhere near water is food nothing can afford to walk to.
+            var waterPositions = new List<SimVector2>();
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition definition = _resources[index];
+                if (definition.Kind == ResourceKind.Water && definition.IsActive)
+                {
+                    waterPositions.Add(definition.Position);
+                }
+            }
+
             foreach (GeneratedPlantSite site in PlantSiteGenerator.Generate(
                 world.Config.WorldSeed,
                 world.Environment,
@@ -547,7 +561,11 @@ namespace LifeSimulation.Simulation.Experiments
                 world.Config.GeneratedPlantSiteJitterFraction,
                 world.Config.GeneratedPlantSiteFertilityThreshold,
                 generatedCapacityBudget,
-                world.Config.GeneratedPlantSiteFixedCapacity))
+                world.Config.GeneratedPlantSiteFixedCapacity,
+                waterPositions,
+                world.Config.GeneratedPlantSiteMaximumWaterDistance,
+                world.Config.GeneratedPlantSiteAnchorRingRadius,
+                world.Config.GeneratedPlantSiteAnchorCount))
             {
                 ResourceId generatedId = world.Resources.Add(
                     ResourceKind.Food,

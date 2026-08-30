@@ -686,33 +686,44 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
   terrain. Skinned meshes are not a problem at this density, and the terrain optimisation queue
   stays unnecessary.
 
-#### DONE 2026-08-30 — generated plant placement is built, measured, and left switched OFF
+#### DONE 2026-08-30 — generated plant placement is built and measured; it LOSES, and the fix is a scenario change
 
-**Read `docs/experiments/p6-generated-plant-placement-2026-08-30.md`.** The spec is
-`docs/superpowers/specs/2026-08-30-generated-plant-placement-design.md`, with two REFUTED banners
-inside it. The harness is `tools/SitePilot`, committed, and its first arm is fingerprint-identical to
-`Y` and reproduced 0.824 / 95.833 / 0.806 exactly.
+**Read `docs/experiments/p6-generated-plant-placement-2026-08-30.md`.** Spec:
+`docs/superpowers/specs/2026-08-30-generated-plant-placement-design.md`, carrying two REFUTED
+banners. Harness: `tools/SitePilot`, committed, control arm fingerprint-identical to `Y`, reproduced
+0.824 / 95.833 / 0.806 exactly.
 
-**The premise below was wrong.** `Y` at tick 12,000 has **23.2 of 24 food sites active**, not six -
-plants colonise nearly every dormant coordinate. Six is the tick-0 count. Everything under "Where to
-pick up" is kept as written because it is what the session was handed, not because it is true.
+**Three things the task was scoped on turned out to be wrong, and each was caught by a measurement:**
 
-**What is on `main`:** `PlantSiteGenerator` (pure, 12 tests), `SimulationScenario.SplitSites`,
-`SimulationConfig.GeneratedPlantSitesEnabled` and three parameters, and
-`CreatureArenaCapture.CaptureSitePilot`. **672 tests green. The flag is default false and `Y` is
-unchanged**, so every recorded number still stands.
+1. **`Y` does not have six food locations.** At tick 12,000 it has **23.2 of 24 active** — dispersal
+   colonises nearly every dormant coordinate. Six is the tick-0 count.
+2. **Mean nearest-neighbour is not a usable metric across arms.** It scales with population, so arms
+   that killed creatures scored better. Everything is now reported as a **clumping index** —
+   observed over the Poisson expectation for the same count. Control **0.324**; 1.0 is random
+   dispersion. Two earlier readings inverted under it.
+3. **Splitting water as well makes clumping worse** (0.301 against 0.323). The commute between food
+   and water is part of what produces the spacing there is.
 
-**The recommendation, and it is a decision the user has not taken yet.** Do NOT switch generated
-placement on for `Y`: at 20 seeds it gives spacing 1.173 at 16 of 20 surviving, while simply
-splitting `Y`'s six food sites into rings of four at radius 6 gives **1.280 at 18 of 20**, against a
-control of 0.903 at 19 of 20. The visible pile improves in both, confirmed by render. The cheap,
-survival-neutral fix for what is on screen is the **site split**, and taking it means editing `Y`'s
-authored layout.
+**THE RECOMMENDATION, AND IT NEEDS THE USER'S DECISION.** Apply
+`SplitSites(parts: 4, spread: 6)` to `Y`'s layout: clumping index **0.324 → 0.501**, population
+**92.2 → 95.7**, survival 19 of 20 → 18 of 20, energy 0.800 → 0.792, at 20 seeds. It is the only
+change measured that improves the picture without degrading worlds, and it **edits a playtest
+scenario**, which is why it was not done.
 
-**The blocker generated placement runs into, measured:** water sits at six hand-typed coordinates and
-a plant feature cannot move it. Splitting water too makes clumping **worse** (0.768). The arms that
-won put food in rings **around the existing water**. If generated placement is to pay off, the water
-map is the next thing to look at - and it is not a plant question.
+**Generated placement stays OFF.** Three variants were built and measured — a fertility lattice, the
+lattice filtered by distance to water, and sites generated on a ring around each water point. All
+three land at or near the control on dispersion and cost population: the lattice arm leaves five of
+its sixteen "survivors" at populations of 1, 8, 28, 40 and 41 against a cap of 96.
+
+**Why it loses, which is the useful part:** generated placement governs only the **dormant** sites.
+The split also divides **the six rich active patches** from capacity 24 into four of 6. Creatures
+stand on rich patches; adding thin sites elsewhere does not move them. **If this is picked up again,
+the feature has to govern which sites are ACTIVE and how much each holds** — and then decide what the
+founder placement stands on, which is what killed the tiled-habitat probe.
+
+**On `main`:** `PlantSiteGenerator` (pure, three modes, 19 tests), `SimulationScenario.SplitSites`,
+six default-inert `SimulationConfig` parameters, `CreatureArenaCapture.CaptureSitePilot`.
+**676 tests green, every flag off, `Y` unchanged**, so every recorded number still stands.
 
 #### The task as it was handed over on 2026-08-29 — kept for context
 

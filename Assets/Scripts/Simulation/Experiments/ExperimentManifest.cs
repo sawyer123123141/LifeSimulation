@@ -97,6 +97,9 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "GeneratedPlantSiteJitterFraction", config.GeneratedPlantSiteJitterFraction.ToString("0.###", CultureInfo.InvariantCulture));
             Line(builder, "GeneratedPlantSiteFertilityThreshold", config.GeneratedPlantSiteFertilityThreshold.ToString("0.###", CultureInfo.InvariantCulture));
             Line(builder, "GeneratedPlantSiteFixedCapacity", config.GeneratedPlantSiteFixedCapacity.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteMaximumWaterDistance", config.GeneratedPlantSiteMaximumWaterDistance.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteAnchorRingRadius", config.GeneratedPlantSiteAnchorRingRadius.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteAnchorCount", config.GeneratedPlantSiteAnchorCount.ToString(CultureInfo.InvariantCulture));
             Line(builder, "ArenaHalfWidth", config.ArenaHalfWidth.ToString("R", CultureInfo.InvariantCulture));
             Line(builder, "EvasiveFleeingStrength", config.EvasiveFleeingStrength.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
             Line(builder, "ReproductionNeedFraction", config.ReproductionNeedFraction.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
