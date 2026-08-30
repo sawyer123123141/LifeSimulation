@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Does the P5 history panel have anything to say?
+
+    P5's exit gate asks that species clusters "provide useful separation with visible uncertainty".
+    The machinery is all built - ancestry, genetic distance, clustering, split/merge relations,
+    sensitivity, nine test files - and every one of those tests feeds it synthetic input. Nothing had
+    ever asked what it produces in the world the user actually watches, which is the difference
+    between a system that works and a panel that says something.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
+  </ItemGroup>
+
+</Project>
