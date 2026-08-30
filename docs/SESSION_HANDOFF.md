@@ -710,6 +710,10 @@ six food patches is four of a quarter the capacity, one on the original coordina
 radius-6 ring. At 20 seeds: clumping index **0.324 → 0.501**, population **92.2 → 95.7**, survival 19
 of 20 → 18 of 20, energy 0.800 → 0.792. Unity compile clean, re-rendered and looked at.
 
+**CONFIRMED IN PLAY MODE BY THE USER, 2026-08-30: "i think the piling looks better".** That closes
+clumping. It was never a numbers question — it is how the game looks, and the person who complained
+about it has now looked at it on a fresh compile. **Do not re-open it to chase a better index.**
+
 **What the picture shows, so nobody re-opens this expecting more:** the herd is looser, not gone.
 Animals are individually readable and spread over a wider band instead of interpenetrating, and they
 are still one group. 0.501 is half the dispersion of a random scatter. **Four parts and radius 6 are
@@ -730,6 +734,47 @@ founder placement stands on, which is what killed the tiled-habitat probe.
 **On `main`:** `PlantSiteGenerator` (pure, three modes, 19 tests), `SimulationScenario.SplitSites`,
 six default-inert `SimulationConfig` parameters, `CreatureArenaCapture.CaptureSitePilot`.
 **676 tests green, every flag off, `Y` unchanged**, so every recorded number still stands.
+
+#### PARKED 2026-08-30 — creatures stand on the sea, and it does not matter yet
+
+**Measured, so it is not re-diagnosed.** The user asked why creatures "drift into the water". **They
+do not drift.** At 6 seeds on the shipped layout, the share of creatures at or below the waterline is
+**0.542 against an arena that is 0.553 sea** — if anything a shade above the baseline, with mean
+creature elevation 0.184 against the arena's 0.175. Turning slope cost off and terrain temperature
+off moves neither number. There is no pull toward low ground.
+
+**The cause is placement, not behaviour.** `EnvironmentField` aims the arena window with
+`_plates.GetCoastalCentre(...)`, so the world is deliberately centred on a coastline and **55% of it
+is below sea level**. The resource coordinates were typed by hand with no reference to terrain, so
+**55.5% of active food sites and 52.8% of water sites are in the sea**. The simulation has no
+waterline at all — sea level lives only in Presentation — so to a creature it is ordinary ground.
+
+**Parked by the user: "ok lets do i later".** Three routes exist; the recommended one is a **land
+constraint on movement**, which is a physical fact rather than a behavioural nudge, and which needs no
+new `SeaLevel` constant because `EnvironmentField.Elevation == 0` already marks the waterline
+(decision 8 stays intact). **Do it as part of the water work, not before:** rivers and lakes need a
+real waterline and a persistent grid anyway, so building one now means building it twice. It also
+removes half the arena, which is the same shape as the bigger-world experiment that failed on
+establishment — a measurement, not a tweak, for a purely visual gain.
+
+**Rivers are still planned.** Section 4 says "Rivers stay reverted" and
+`docs/terrain-caves-and-rivers.md` says "not started, deliberately" — both are true and neither means
+cancelled. The user confirmed on 2026-08-30 that rivers are coming. They are the first world-derived
+water, which is the missing half of generated plant placement: food can follow fertility, but while
+water is six typed coordinates the herd stays tethered to them.
+
+#### STILL OPEN AND STILL PAUSED — the in-place twitching
+
+The user watched `Y` on 2026-08-30, on a fresh compile after the split shipped, and reports
+**"theres still twitching which is unnatural obviously but its prob fine for now"**. So:
+
+- **The observation is clean this time.** The 2026-08-29 note warns that Play-mode reports can
+  describe whatever Unity last compiled; this one was made after a batch compile and a fresh editor
+  start, so the twitching is present in current code and is not a stale-build artefact.
+- **It is still the user's pause, not a closed decision.** Do not reopen it without being asked.
+- The measured candidates from 2026-08-29 stand unchanged and are listed in the block below:
+  `SeekMate` at 6.7% of heading updates and `SeekThermalComfort` at 5.8%, and the sub-millimetre
+  displacement that `HeadingYaw` turns into facing.
 
 #### The task as it was handed over on 2026-08-29 — kept for context
 

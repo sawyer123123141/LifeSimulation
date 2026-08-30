@@ -839,3 +839,21 @@ splitting water as well made clumping **worse** than the control (0.301 against 
 self-sufficient cluster is a reason to stay put. The commute between food and water is not an
 obstacle to spacing - it is part of what produces the spacing there is.
 
+**2026-08-30 — "They drift into X" needs the base rate of X before it is a behaviour.** The user
+watched Play mode and asked why creatures always drift into the water. Two mechanisms were available
+to blame immediately - terrain-driven temperature pulling them to the warm low ground, and slope cost
+making height expensive - and both were wrong. Measured: creatures sit at **0.542 at or below the
+waterline against an arena that is 0.553 sea**, with mean creature elevation slightly ABOVE the
+arena's. Turning either flag off moved nothing. There is no drift; the arena is centred on a
+coastline by construction, so half the world is ocean and a herd spread evenly across it looks like a
+herd walking into the sea. **A share only means something next to the share of the world it is a
+share of**, and that baseline cost one grid sample to compute.
+
+**2026-08-30 — The renderer can invent a problem the simulation does not have.** Nothing in
+Simulation knows where the waterline is - elevation is signed displacement and sea level lives only
+in Presentation - so to a creature the sea is ordinary ground. The hand-typed resource coordinates
+then put **55.5% of active food sites and 52.8% of water sites underwater**, and animals walk to them
+because there is nothing there to walk into. The bug is real and it is entirely in the mismatch
+between what is drawn and what is modelled. **Before treating something on screen as a behaviour, ask
+whether the simulation can even represent the thing it appears to be reacting to.**
+
