@@ -2,7 +2,7 @@
 
 > ## DO NOT READ THIS FILE WHOLE
 >
-> It is ~1,065 lines, about **20,000 tokens**. Reading it end to end spends most of a fresh
+> It is ~1,330 lines, about **25,000 tokens**. Reading it end to end spends most of a fresh
 > context before any work starts, and most of it is history you will never need.
 >
 > **Read exactly this, ~250 lines and about 5,000 tokens:**
@@ -11,14 +11,15 @@
 >    session cannot reconstruct from the code, and it says where to pick up.
 > 2. **Section 4** — decisions that must not be reopened (99 lines).
 > 3. **Section 8** — working-tree rules (8 lines).
-> 4. **`docs/field-notes/5-lessons-log.md`, the 2026-08-29 entries only** (`tail -70`). That file
->    is ~12,000 tokens whole; the recent entries are the mistakes the last session actually made.
+> 4. **`docs/field-notes/5-lessons-log.md`, the 2026-08-29 entries only** (`tail -195`). That file
+>    is ~15,000 tokens whole; the recent entries are the mistakes the last session actually made,
+>    and 2026-08-29 was a long day — sixteen of them.
 >
 > Everything else — sections 3 and the dated blocks under section 5 — is **reference, read on
 > demand**. Open one when `START HERE` points you at it, not before.
 > `docs/AGENT_FIELD_NOTES.md` is an index: grep it, do not read it.
 
-**Head: `0893fa2`**, plus the commit carrying this handoff, pushed to `origin/main`. Branch `main`.
+**Head: `4275913`**, plus the commit carrying this handoff, pushed to `origin/main`. Branch `main`.
 Working tree clean apart from `ProjectSettings/PackageManagerSettings.asset` and the OneDrive
 conflict duplicate `Assets/_Recovery/0 (2).unity`. **The `.meta` files are now tracked** — see
 section 8, whose former "never stage them" rule was wrong.
@@ -571,15 +572,14 @@ population as an upper bound — sound for that decision, but it is a bound, not
 
 ## 5. Next task
 
-### START HERE — state of play at 2026-08-29, `75a6d9f`
+### START HERE — state of play at 2026-08-29, `4275913`
 
 **Read this block, then section 4 (decisions not to reopen), then section 8 (working-tree rules).
 The dated blocks below are the detail behind this summary, newest first. You do not need them all.**
 
 **Repo:** `C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim` — NOT the shell's default cwd.
-**Branch `main` at `d8b5f89`, pushed. Everything below is merged** — the
-`claude/session-handoff-docs-ytjvrc` branch this block used to name is merged and deleted.
-**655 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
+**Branch `main` at `4275913`, pushed. Everything below is merged.**
+**660 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
 machine, so the suite runs locally. Unity 6000.2.14f1 at
 `C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe`.
 
@@ -686,38 +686,69 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
   terrain. Skinned meshes are not a problem at this density, and the terrain optimisation queue
   stays unnecessary.
 
-#### Where to pick up — all visible-side
+#### Where to pick up — GENERATED PLANT PLACEMENT is the next piece of work
 
-1. **Creatures clump, and it is NOT a movement bug — it is arithmetic.** `Y` has six food sites of
-   `InteractionRadius` **1.5** for **96** creatures, so sixteen animals share a disc three units
-   across while a creature model is about one unit wide. They overlap by construction and the
-   measured spacing is near the geometric best case. **Two things were tried and neither is the
-   answer**: feeding in place (shipped, survival-neutral, spacing 0.705 to 0.824, does not stop the
-   pile) and a four-times-larger world (piloted, spacing only 0.726 to 0.945, see
-   `docs/experiments/p6-bigger-world-pilot-2026-08-29.md`). **The remaining levers are feeding-site
-   geometry and the population cap.** Physics collision is the wrong tool and was rejected: the
-   simulation has no collision, so separating them in the view alone would misrepresent the world.
-2. **In-place twitching, OPEN and PAUSED by the user.** The full spinning is fixed; a creature still
-   "moves weird in one spot". Leads are in the paused block above. Do not reopen unasked.
-3. **A bigger world is viable but conditional.** Founders must scale with the area (16 rather than 4
-   at four times the area) or establishment fails - 2 of 4 worlds extinct. The population cap must
-   **not** scale: at 384 it collapses, which is Phase I's recorded "the cap is the stabiliser, not
-   the ceiling" meeting a scenario whose `gradedFertilityEnabled` is off by the user's explicit
-   choice. `SimulationConfig.ArenaHalfWidth` and `SimulationScenario.Tiled` exist for this now.
-3. **Terrain in the arena capture: built AND VERIFIED, 2026-08-29 late.** Rendered on the user's
-   machine, compile clean (0 `error CS`), capture ran with no exceptions.
-   `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6% terrainDriven=True`,
-   `ARENA views models=126 capsules=0`. Real relief and a coastline are visible in all three PNGs,
-   `arena-wide`/`arena-close`/`arena-top` agree on where the herd is, `capsules=0` means every
-   creature resolved to a real model, and a visibly smaller juvenile sits next to full adults in the
-   wide shot - the `ageScale` fix is doing something. Some creatures stand in shallow water, exactly
-   the honest behaviour predicted. **The close shot's sawtooth ridge line is NOT a regression** -
-   confirmed by re-running the pre-existing, untouched `TerrainRenderEntry.Render` on the same seed:
-   the identical jagged band appears in `Logs/terrain/arena-50.png`, at what reads as a slope-band
-   transition (see decision 12, §4). It was there before this session touched anything.
-4. **Showing selection visually needs a different scenario.** Measured: the pressured cell holds only
-   10-15 creatures while genes are still diverse, and 126 only after selection has converged, so the
-   mottled-to-uniform picture cannot be made there.
+**The short version.** Creatures clump into a pile. It is not a movement bug, not a shortage of space,
+and not feeding-disc geometry — all three were measured and all three failed. What they held constant
+is that food exists at **six locations**. That is the variable, and fixing it is the same change the
+project already calls its keystone.
+
+| lever tried | spacing (mean nearest-neighbour) | verdict |
+|---|---|---|
+| movement: creatures stop walking into the patch centre | 0.705 to 0.824 | shipped, real but small |
+| world size: four times the area, four times the sites | 0.945 at best | costs establishment; see `p6-bigger-world-pilot-2026-08-29.md` |
+| feeding radius: up to four times the disc | **no effect at all** | rejected; see `p6-feeding-radius-2026-08-29.md` |
+
+**What is already true, so it is not rebuilt.** Plants are real: `PlantPatchState` carries biomass,
+capacity, growth rate, nutrition, defence, a heritable `PlantGenome`, a lineage and an age. There is
+growth modulated by local moisture and temperature, mortality, seed production, a dispersal range, an
+establishment probability falling off with distance, and a competition contest. **Each plant owns the
+`Food` resource creatures eat** (`PlantPatchState.foodResourceId`) — food sites *are* plants. Meat
+already works too: heritable `DietSpecialization`, predation gated on diet >= 0.58 and aggression,
+carcasses, `SeekCarcass`/`FeedCarcass`, and `CreatureModelRules` picks predator models from the same
+gene.
+
+**What is missing is only where plants may exist.** `PlantSiteRegistry` is — in the Phase 1 plan's own
+words — "a fixed, pre-built list of eligible target slots", and those slots come from the scenario as
+hand-typed coordinates. `Y` has **6 active and 20 dormant** sites, all literals. When a plant
+reproduces, `PlantReproductionSystem.FindSite` picks from that list. Plants therefore cannot colonise
+fertile ground, even though `EnvironmentField` computes fertility, moisture and temperature everywhere.
+
+**The design already exists.** `docs/superpowers/specs/2026-08-14-system-integration-design.md` is the
+spec, and its table is the work:
+
+| `ResourceState` field | Today | With plants |
+|---|---|---|
+| `Position` | authored by scenario | **where a plant established** |
+| `Capacity` | authored constant | **set by local fertility** |
+| `RegenerationPerSecond` | authored constant | **set by local fertility and moisture** |
+| `NutritionMultiplier` | authored constant | plant genome — **already done** |
+
+That doc names the seam directly: *"terrain produces fertility values nobody reads and creatures eat
+point resources nobody generates"*, calls plants *"the keystone, and the least specified piece in the
+project"*, and says P4 plants landing makes the two halves one system. Plant Phase 1 deferred the
+other half explicitly — *"real soil moisture is Phase 2, alongside terrain"* — and **terrain landed
+this week**, so the precondition it was waiting on now exists.
+
+**Read before starting:** that integration design, `docs/superpowers/plans/2026-08-15-plant-system-phase-1.md`
+for what Phase 1 deliberately left out, and the two experiment docs above for the negatives.
+
+**Do not start by coding it.** This moves where every creature spends its time, so every recorded
+ecology result is measured against a different world — the same class of change as the wander ring,
+which was specified from call-path reasoning and then killed **7 of 8 worlds**. Spec it, pilot it with
+a **control arm** on a few seeds, then decide.
+
+**Two traps this project has already sprung, both cheap to avoid:**
+- **A scenario is not its visible resources.** A hand-built copy of the `Y` habitat omitted the 20
+  dormant sites and the founder placement and killed every world including the control. Derive
+  scenarios with a transform (`Tiled`, `Scaled`, `WithRegeneration`, `WithFeedingRadius`) that copies
+  every definition.
+- **Put a control arm in every probe and believe it over the result.** Twice this session a broken
+  harness produced numbers that read exactly like ecology findings.
+
+**Not the next work, and why:** the twitching is OPEN and PAUSED by the user; the bigger world is
+viable with founders scaled but must not have its cap scaled; the decorative "scatter placement" of
+rocks and vegetation in the world-generation design is a **rendering** concern and is not this.
 
 **Blocked by a standing decision — do not fold in silently:** the playtest scenarios (`Y`, `N`) still
 predate the ecology work, and `gradedFertilityEnabled` is off for `Y` by the user's explicit choice.
