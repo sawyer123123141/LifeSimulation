@@ -53,7 +53,47 @@ Sign is also non-monotone across the resource axis — +0.59, -0.21, +0.52 — w
 like. **Scarcer plants did not make meat-eating pay.** That is the required experiment's own
 comparison, and it returns nothing.
 
-## Why, from the code and the death mix rather than from a story
+## The instrument gap was closed, and it corrects the section below
+
+The drift table reports a **mean**, and a population half at 0.2 and half at 0.8 has a mean of 0.5
+and no drift — the gate's own success condition would have been reported as nothing happening. So
+`tools/CreatureSweep --diet` was added to print the distribution before any mechanism was changed on
+the strength of the negative. Cap 500, proximity pairing, predation, gate 0.45:
+
+| | brake 1.5 (16.2% starvation) | brake 1.0 (33.6% starvation) |
+|---|---|---|
+| creatures | 5,359 over 23 runs | 4,761 over 22 runs |
+| mean / sd | 0.522 / **0.274** | 0.511 / **0.303** |
+| middle two bins | 26.3% | **18.9%** |
+| outer four bins | 33.1% | **42.4%** |
+| hunt-capable (>= 0.58) | 41.5% | 39.9% |
+| **per-run hunter share** | mean 45.3%, **min 0%, max 100%** | mean 57.2%, **min 1.5%, max 100%** |
+
+**This is drift to fixation, not two strategies.** A uniform distribution on 0..1 has sd 0.289; the
+observed 0.274 and 0.303 straddle it, and the U-shape — thin middle, mass piled at both clamped
+boundaries — is what a neutral trait does under a random walk with clamping. The decisive number is
+the **per-run** range: individual worlds finish anywhere from 0% to 100% hunt-capable. Worlds are
+drifting to their own value independently, not maintaining two strategies within themselves.
+
+**And the hunt-capable are not a phenotype.** Against everyone else they differ by attack +0.016,
+aggression +0.003, movement speed -0.014, body size -0.006, vision +0.010. Only defense differs
+appreciably (+0.088), and defense is under strong selection in these cells regardless. A carnivore
+that is no faster, no more aggressive and no better armed than a grazer is a number, not a strategy.
+
+**Even at 33.6% starvation nothing changes.** `p6-starvation-is-a-dial-2026-08-26.md` records
+starvation running 49.6% to 0.0% of deaths on the brake alone; the brake-1.0 cell above is a
+genuinely food-limited world, and diet is as neutral there as anywhere.
+
+### Correction to this document
+
+An earlier version of the section below said diet is **"pure cost"** below the hunting threshold,
+reasoning from the linear yield curves in `GenomePhenotype`. **The distribution refutes that.** If a
+30% plant-yield penalty were a realised cost, mass would pile at diet 0; instead 12.7% and 16.6% of
+creatures sit in the top bin at 0.9-1.0 and the population is spread across the whole range. The
+trade-off exists in the source and **does not reach fitness**. The claim was derived from code and
+contradicted by measurement, which is the error this project keeps paying for.
+
+## Why the trade-off does not reach fitness, from the death mix rather than from a story
 
 - `PredationSystem.MinimumHuntingDiet = 0.58f`. **Below 0.58 a creature cannot hunt at all.**
 - `GenomePhenotype`: `PlantFoodYieldMultiplier = 1 - 0.3 * diet` and
@@ -78,16 +118,23 @@ two ends.
 ## What this establishes and what it does not
 
 **Establishes:** the P3 exit gate is not met, and the required digestion experiment now has a
-recorded negative result instead of a gap. Two strategies cannot persist while one of them has
-almost nothing to eat.
+recorded negative result instead of a gap. `diet_specialization` is **effectively neutral in every
+configuration measured** — four cells by drift t-statistic, two cells by full distribution, including
+a world where a third of all deaths are starvation. It drifts to fixation independently in each
+world.
 
 **Does not establish:** that raising the meat payoff would produce two strategies. That is a
 hypothesis and it needs its own arm. Nothing here measures a world where predation is a material
 energy flow, because no such configuration exists yet — 8.4% of deaths is the ceiling on record.
 
-**Also unmeasured:** the *distribution* of the diet gene. `SimulationStatistics` exposes a mean, and
-a mean cannot show two modes. If a later run does produce two strategies, the current instrument
-would report their average and show nothing. That gap should be closed before, not after.
+**Closed:** the distribution gap. `tools/CreatureSweep --diet <seeds> <cap>` prints the histogram,
+the share above the hunting threshold, the per-run range, and whether the hunt-capable differ in any
+other trait. Any future attempt at this gate should be judged on that output, not on a mean.
+
+**Still unmeasured:** *why* a 30% plant-yield penalty does not reach fitness. Candidates exist — the
+penalty is on yield per unit eaten while patches sit at capacity, so a creature may simply eat more —
+but nothing here measures realised energy intake against the diet gene, and that is the next thing to
+instrument if this gate is picked up again.
 
 ## What not to do next
 

@@ -60,7 +60,7 @@ Predator/prey roles should emerge from biology rather than hardcoded labels such
 strategies persist because they exploit different conditions"*, and the required digestion experiment
 now has a recorded negative: `diet_specialization` drift is t +0.59 / -0.21 / +0.52 across the
 resource axis and **t +1.56 against a control of +1.62** in the highest-combat cell, while `defense`
-in the same runs reaches t +12.71. Diet is pure cost below `MinimumHuntingDiet = 0.58`, both yield
+in the same runs reaches t +12.71. Measured by full distribution as well as by drift: diet is **effectively neutral**, drifting to fixation independently in each world (per-run hunt-capable share spans 0% to 100%), even where a third of deaths are starvation. Both yield
 curves are linear so the plan's **"generalist cost" was never built**, and meat is 1.1-8.4% of deaths
 - too little for a carnivore strategy to pay. `experiments/p3-digestion-strategies-2026-08-30.md`.
 

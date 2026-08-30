@@ -253,6 +253,17 @@ namespace LifeSimulation.Tools.CreatureSweep
                 return;
             }
 
+            if (args.Length > 0 && args[0] == "--diet")
+            {
+                // The distribution, not the mean. A mean cannot show two modes, and two modes is
+                // exactly what P3's exit gate asks for.
+                _focused = true;
+                int dietSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDiet) ? parsedDiet : 24;
+                if (args.Length > 2 && int.TryParse(args[2], out int dietCap)) _focusedPopulationCap = dietCap;
+                Diet.Report(dietSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                return;
+            }
+
             if (args.Length > 0 && args[0] == "--relief")
             {
                 ReportRelief();
