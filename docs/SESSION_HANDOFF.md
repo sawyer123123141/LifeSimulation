@@ -608,6 +608,32 @@ against the clone — see the dated block below.
 and `EditorBuildSettings` has `m_Scenes: []`. Tracking GUIDs does not fix that. Raised with the user
 and left for a separate decision.
 
+#### OPEN, PAUSED BY THE USER 2026-08-29 - creatures still move oddly in place
+
+The wander home-boundary bug is fixed and on for `Y` (`d38f5e4`), and the user confirms the full
+spinning is reduced - but reports a donkey **"still starts spinning in circles or just moving weird
+in one spot."** They chose to pause it here, not to close it. **Do not reopen without being asked.**
+
+What is already measured, so it does not need re-deriving:
+
+- **The two remaining reversal sources** are `SeekMate` at **6.7%** of heading updates and
+  `SeekThermalComfort` at **5.8%**, both essentially untouched by the wander fix.
+- **The "in one spot" shape has a candidate.** `SeekMate`, `Eat` and `Drink` all have a **median
+  per-tick step of 0.000** and are held below the presenter's 1e-4 threshold 86%, 61% and 78% of the
+  time. The remaining frames move by sub-millimetre amounts, and `HeadingYaw` computes facing from
+  that displacement - so a stationary creature's facing comes from numerical noise. This was the
+  *first* hypothesis for the spinning and was refuted as the dominant cause; it was never tested as a
+  cause of **in-place twitching**, which is a different symptom.
+- **The user's own guess** is a cognition problem - action flip-flopping tick to tick. Untested.
+  `SeekMate` targets another creature's live position every tick, so two creatures in contact chase
+  each other's jitter; that is a plausible mechanism and is not the same as the wander defect.
+- **The presenter amplifies all of it** at `540 x _speedMultiplier` = 2,160 deg/s at the default 4x.
+  Deliberately not changed: slowing it would draw a real reversal as a graceful turn and hide a
+  simulation defect behind the renderer.
+
+The probe that produced these numbers was deleted per the working-tree rule; its method is recorded
+in `docs/superpowers/specs/2026-08-29-wander-home-range-design.md` and it is cheap to rebuild.
+
 #### The user's standing direction, which changed what this session did
 
 **"I don't want to do invisible research."** Said explicitly, after a long measurement run.
