@@ -164,7 +164,8 @@ namespace LifeSimulation.Simulation.Core
             bool gradedFertilityEnabled = false,
             float gradedFertilityStrength = DefaultGradedFertilityStrength,
             bool evasiveFleeingEnabled = false,
-            float evasiveFleeingStrength = DefaultEvasiveFleeingStrength)
+            float evasiveFleeingStrength = DefaultEvasiveFleeingStrength,
+            bool wanderHomeHysteresisEnabled = false)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -215,6 +216,7 @@ namespace LifeSimulation.Simulation.Core
             GradedFertilityStrength = gradedFertilityStrength;
             EvasiveFleeingEnabled = evasiveFleeingEnabled;
             EvasiveFleeingStrength = evasiveFleeingStrength;
+            WanderHomeHysteresisEnabled = wanderHomeHysteresisEnabled;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -547,6 +549,31 @@ namespace LifeSimulation.Simulation.Core
         public bool EvasiveFleeingEnabled { get; }
 
         /// <summary>
+        /// Stops a creature wandering near a learned home from chattering across its own home radius.
+        ///
+        /// <para><b>The defect this closes.</b> The wander branch of <c>GetMovementTarget</c> aims at
+        /// a point <b>on</b> a ring of radius <c>WanderHomeRadius</c> while the creature is inside
+        /// that radius, and at the home centre once it is outside. The ring point sits at exactly the
+        /// distance that flips the test, so the creature walks out to the ring, crosses it, is sent
+        /// back to the centre, crosses inward, is sent back to the ring, and repeats. Each flip is a
+        /// full reversal, and the presenter turns the drawn model through it at 540 deg/s scaled by
+        /// the speed multiplier - 2,160 deg/s at the default 4x, six revolutions a second - so it
+        /// reads on screen as an animal spinning on the spot.</para>
+        ///
+        /// <para><b>Measured on the `Y` playtest, 12,000 ticks.</b> With the flag off, 13.1% of wander
+        /// heading updates reverse by more than 150 degrees in one tick; 28,752 of the 28,753
+        /// reversals belong to creatures holding a memory home, and 85.6% of them occur within 0.25
+        /// of the 3.0 radius, against 12.1% of the non-reversing samples. The distance-at-reversal
+        /// distribution tops out at exactly 3.000 at the 90th percentile. It is the boundary, not the
+        /// terrain and not the food layout.</para>
+        ///
+        /// <para><b>Off by default.</b> This changes where creatures are, so it changes every recorded
+        /// number, and every result on file predates it. It is a scenario choice like
+        /// <c>SlopeMovementCostEnabled</c>, not a new default.</para>
+        /// </summary>
+        public bool WanderHomeHysteresisEnabled { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -670,6 +697,7 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
             hash = Hash(hash, EvasiveFleeingEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, EvasiveFleeingStrength);
+            hash = Hash(hash, WanderHomeHysteresisEnabled ? 1UL : 0UL);
 
             return hash;
         }

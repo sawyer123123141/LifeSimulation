@@ -74,6 +74,23 @@ namespace LifeSimulation.Presentation
         private readonly Dictionary<CreatureId, float> _creatureHeadings = new Dictionary<CreatureId, float>();
 
         /// <summary>
+        /// The yaw actually drawn, distinct from <see cref="_creatureHeadings"/>'s target. The
+        /// target updates once per simulation tick and jumps whenever a decision changes heading -
+        /// turning a herd instantly on every tick reads as robotic, not alive. This is turned toward
+        /// the target at <see cref="TurnDegreesPerSecond"/> every render frame instead, so a turn
+        /// plays out over a fraction of a second rather than snapping.
+        /// </summary>
+        private readonly Dictionary<CreatureId, float> _creatureRenderedYaw = new Dictionary<CreatureId, float>();
+
+        /// <summary>
+        /// How fast a creature's drawn heading catches up to its target, in degrees per real second
+        /// at speed 1x - scaled by <c>_speedMultiplier</c> so turning keeps pace when the simulation
+        /// is fast-forwarded. Picked by eye, not derived: this is a "look at it" constant like
+        /// <c>_terrainHeightScale</c>, not a measured one.
+        /// </summary>
+        private const float TurnDegreesPerSecond = 540f;
+
+        /// <summary>
         /// Gene vision, on the unbound <c>U</c> key. Off shows the animals; on replaces them with
         /// capsules coloured by <see cref="CreatureAppearanceRules"/>.
         ///
@@ -466,6 +483,7 @@ namespace LifeSimulation.Presentation
             _creatureActions.Clear();
             _creatureModels.Clear();
             _creatureHeadings.Clear();
+            _creatureRenderedYaw.Clear();
         }
 
         private void ResetSimulation(SimulationScenario scenario, SimulationConfig config = null)
@@ -549,7 +567,7 @@ namespace LifeSimulation.Presentation
         private const int TerrainResolution = 129;
 
         /// <summary>Half the arena width, matching the simulation's hardcoded (-25, 25) bounds.</summary>
-        private const float TerrainHalfWidth = 25f;
+        private const float TerrainHalfWidth = TerrainMeshBuilder.ArenaHalfWidth;
 
         /// <summary>
         /// World units of relief between sea level and the highest ground. <b>Tunable at runtime</b>
@@ -622,6 +640,15 @@ namespace LifeSimulation.Presentation
         /// simulation state feeding the lapse rate: smoothing it there would change ecology and every
         /// elevation-on hash, while smoothing the mesh changes only what is drawn.</para>
         /// </summary>
+        /// <remarks>
+        /// <b>Currently unused</b> - the arena ground has been built from the terrain patch since
+        /// <c>BuildTerrainMesh</c>, and <c>CacheArenaHeights</c> fills <c>_terrainHeights</c> from
+        /// that mesh instead. Note before calling it again: it sizes the array to
+        /// <c>TerrainResolution</c> squared and fills it with the old overlay height formula, while
+        /// <c>GroundHeightAt</c> reads it as <c>TerrainMeshBuilder.PatchResolution</c> squared of
+        /// mesh height. Wiring this back up without reconciling the two would put every creature at
+        /// the wrong height, or none.
+        /// </remarks>
         private void RebuildTerrainHeights()
         {
             int side = TerrainResolution;
@@ -875,7 +902,22 @@ namespace LifeSimulation.Presentation
                 // 94 of 240 to 82, better at moderate and lean and identical at scarce, never worse.
                 // See docs/experiments/p6-health-recovery-2026-08-24.md. Configuration default stays
                 // false; every recorded result predates it.
-                healthRecoveryEnabled: true);
+                healthRecoveryEnabled: true,
+                // And a wandering creature stops bouncing off its own home boundary. The wander
+                // target is a point ON a ring of radius 3 while the creature is inside that radius
+                // and the home centre once it is outside, so arriving at the ring is what flips the
+                // target: it turns 180 degrees, walks back in, flips again, and repeats. Measured
+                // here at 13-17% of wander heading updates reversing by more than 150 degrees in a
+                // single tick, which the presenter draws at 2,160 deg/s and a human watching Play
+                // mode reported as creatures spinning on the spot.
+                //
+                // On for this scenario because it is survival-neutral where removing the ring is
+                // not: across 8 seeds, ring and hysteresis both end 7 of 8 alive at 95-96 with mean
+                // energy unchanged, while deleting the ring entirely leaves 1 of 8 alive. Reversals
+                // fall from about 15% to about 1.6%. See
+                // docs/superpowers/specs/2026-08-29-wander-home-range-design.md. Configuration
+                // default stays false; every recorded result predates it.
+                wanderHomeHysteresisEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";

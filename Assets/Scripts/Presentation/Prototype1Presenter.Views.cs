@@ -93,16 +93,43 @@ namespace LifeSimulation.Presentation
 
                 var movement = _world.GetCreatureMovementAt(index);
                 CreatureAction action = _world.GetCreatureDecisionAt(index).Action;
-                float groundHeight = GroundHeightAt(movement.Position.X, movement.Position.Y);
-                view.position = ArenaProjection.ToWorld(
-                    movement.Position.X, movement.Position.Y, groundHeight + 0.55f);
-                view.rotation = ArenaProjection.Upright(movement.Position.X, movement.Position.Y)
-                    * Quaternion.Euler(0f, HeadingYaw(id, movement), 0f);
+
+                // Interpolated between the last two ticks, not snapped to the current one. Ticks
+                // land far less often than frames render - 20/sec at speed 1x, faster under the
+                // multiplier but still nowhere near a display's refresh rate - so drawing raw tick
+                // positions held every creature still for several frames, then jumped it. Alpha is
+                // how far real time has moved past the last completed tick, toward the one not yet
+                // simulated; the standard fixed-timestep render blend is previous-to-current at that
+                // fraction, which lags the true state by under one tick and looks continuous instead.
+                float renderAlpha = Mathf.Clamp01(_accumulator / _world.Config.FixedDeltaTime);
+                float renderX = Mathf.Lerp(movement.PreviousPosition.X, movement.Position.X, renderAlpha);
+                float renderY = Mathf.Lerp(movement.PreviousPosition.Y, movement.Position.Y, renderAlpha);
+
+                float groundHeight = GroundHeightAt(renderX, renderY);
+                view.position = ArenaProjection.ToWorld(renderX, renderY, groundHeight + 0.55f);
+
+                // The target heading still updates once per tick and can jump - HeadingYaw is
+                // unchanged - but what gets drawn turns toward it at a capped rate instead of
+                // snapping straight there.
+                float targetYaw = HeadingYaw(id, movement);
+                float previousYaw = _creatureRenderedYaw.TryGetValue(id, out float storedYaw) ? storedYaw : targetYaw;
+                float renderedYaw = Mathf.MoveTowardsAngle(
+                    previousYaw, targetYaw, TurnDegreesPerSecond * Time.unscaledDeltaTime * _speedMultiplier);
+                _creatureRenderedYaw[id] = renderedYaw;
+                view.rotation = ArenaProjection.Upright(renderX, renderY) * Quaternion.Euler(0f, renderedYaw, 0f);
+
                 float ageScale = Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(_world.GetCreatureNeedsAt(index).Age / 4f));
                 float bodyScale = Mathf.Lerp(0.7f, 1.35f, _world.Creatures.GetGenomeAt(index).BodySize);
                 bool hasModel = _creatureModels.TryGetValue(id, out CreatureModelDefinition model);
                 float modelScale = hasModel ? model.ModelScale : 1f;
-                view.localScale = Vector3.one * (GetActionScale(action) * ageScale * bodyScale * modelScale);
+
+                // The eat/attack/drink/reproduce pulse is a capsule-era cue: with no animation, a
+                // scale wobble was the only way to show an action was happening. A model plays the
+                // real clip for it now, exactly the reasoning already applied to colour below - so
+                // on a model the pulse is a second, cruder signal fighting the first, and reads as
+                // the animal inflating rather than eating.
+                float actionScale = hasModel ? 1f : GetActionScale(action);
+                view.localScale = Vector3.one * (actionScale * ageScale * bodyScale * modelScale);
 
                 // Only the capsule fallback is tinted. A model carries its own colours - the pack's
                 // wolf is grey, its fox orange, its cow brown - and those already say "which animal
@@ -272,6 +299,7 @@ namespace LifeSimulation.Presentation
                     _creatureActions.Remove(pair.Key);
                     _creatureModels.Remove(pair.Key);
                     _creatureHeadings.Remove(pair.Key);
+                    _creatureRenderedYaw.Remove(pair.Key);
                 }
             }
 

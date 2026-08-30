@@ -19,8 +19,9 @@
 > `docs/AGENT_FIELD_NOTES.md` is an index: grep it, do not read it.
 
 **Head: `0893fa2`**, plus the commit carrying this handoff, pushed to `origin/main`. Branch `main`.
-Working tree clean apart from the untracked Unity `.meta` files, `Assets/_Recovery/` and
-`ProjectSettings/PackageManagerSettings.asset` that are **never to be staged**.
+Working tree clean apart from `ProjectSettings/PackageManagerSettings.asset` and the OneDrive
+conflict duplicate `Assets/_Recovery/0 (2).unity`. **The `.meta` files are now tracked** — see
+section 8, whose former "never stage them" rule was wrong.
 **639 headless tests green** (`dotnet test tools/HeadlessTests`), Unity compile clean.
 
 > Archival sections live in `docs/handoff/`, lifted whole by `tools/split_doc.py`: **nothing was
@@ -576,8 +577,62 @@ population as an upper bound — sound for that decision, but it is a bound, not
 The dated blocks below are the detail behind this summary, newest first. You do not need them all.**
 
 **Repo:** `C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim` — NOT the shell's default cwd.
-**Branch `main`, in sync with origin. 24 commits this session, `9631800` to `75a6d9f`.**
-**639 tests green:** `dotnet test tools/HeadlessTests`.
+**Branch `claude/session-handoff-docs-ytjvrc`, pushed, 6 commits ahead of `main`, `8e1a543` to
+`5e26bdf`.** Not yet merged to `main`.
+**639 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
+machine, so the suite runs locally. Unity 6000.2.14f1 at
+`C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe`.
+
+#### RESOLVED 2026-08-29 — the `.meta` files are now tracked
+
+This block previously carried an open decision: ~66 `.meta` files were untracked, `.gitignore` did
+not exclude them, and section 8 called them "intentionally untracked."
+
+**Investigated and closed by user instruction.** The rule was drift written down as policy. Evidence
+that overturned it: **138 `.meta` files were already tracked**, and commit `0a02eb1` is titled
+`chore: add missing .meta files for scripts/tests added this session` — the project had deliberately
+committed them before. **65 of the 66** untracked ones paired with an asset that was already tracked,
+which is the worst of the three possible states: the asset ships, its GUID does not. For the twelve
+FBX models the `.meta` also carries 125 lines of `ModelImporter` settings, including the
+`materialImportMode` that this session's "materials suppressed on import" bug lived in.
+
+The OneDrive-conflict theory does not survive: OneDrive produces `file (2).ext` duplicates — one is
+sitting in `Assets/_Recovery/` right now — and untracking a file does not protect it from that.
+
+**Done:** the 65 paired `.meta` staged and committed by name, section 8 rewritten. The 66th,
+`Assets/Models.meta`, described an empty folder; folder and `.meta` both deleted. Verified by
+cloning the repo to a temp directory and running the Unity batch compile and the arena capture
+against the clone — see the dated block below.
+
+**Still open, deliberately not folded in:** no `.unity` scene is committed outside `Assets/_Recovery/`
+and `EditorBuildSettings` has `m_Scenes: []`. Tracking GUIDs does not fix that. Raised with the user
+and left for a separate decision.
+
+#### OPEN, PAUSED BY THE USER 2026-08-29 - creatures still move oddly in place
+
+The wander home-boundary bug is fixed and on for `Y` (`d38f5e4`), and the user confirms the full
+spinning is reduced - but reports a donkey **"still starts spinning in circles or just moving weird
+in one spot."** They chose to pause it here, not to close it. **Do not reopen without being asked.**
+
+What is already measured, so it does not need re-deriving:
+
+- **The two remaining reversal sources** are `SeekMate` at **6.7%** of heading updates and
+  `SeekThermalComfort` at **5.8%**, both essentially untouched by the wander fix.
+- **The "in one spot" shape has a candidate.** `SeekMate`, `Eat` and `Drink` all have a **median
+  per-tick step of 0.000** and are held below the presenter's 1e-4 threshold 86%, 61% and 78% of the
+  time. The remaining frames move by sub-millimetre amounts, and `HeadingYaw` computes facing from
+  that displacement - so a stationary creature's facing comes from numerical noise. This was the
+  *first* hypothesis for the spinning and was refuted as the dominant cause; it was never tested as a
+  cause of **in-place twitching**, which is a different symptom.
+- **The user's own guess** is a cognition problem - action flip-flopping tick to tick. Untested.
+  `SeekMate` targets another creature's live position every tick, so two creatures in contact chase
+  each other's jitter; that is a plausible mechanism and is not the same as the wander defect.
+- **The presenter amplifies all of it** at `540 x _speedMultiplier` = 2,160 deg/s at the default 4x.
+  Deliberately not changed: slowing it would draw a real reversal as a graceful turn and hide a
+  simulation defect behind the renderer.
+
+The probe that produced these numbers was deleted per the working-tree rule; its method is recorded
+in `docs/superpowers/specs/2026-08-29-wander-home-range-design.md` and it is cheap to rebuild.
 
 #### The user's standing direction, which changed what this session did
 
@@ -625,15 +680,105 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
 1. **Creatures interpenetrate** inside clusters, so dense knots read as a pile. Note this is
    *honest* — the simulation has no collision — so separating them in the view alone would
    misrepresent the world. Decide deliberately which of the two you are fixing.
-2. **Play mode has still never been run.** Everything visual so far is offline capture. Needs a display.
-3. **Terrain is absent from the arena capture** — it renders on a flat plane. Capturing real terrain
-   would make the picture the actual game view.
+2. **Play mode: watched by a human for the first time, 2026-08-29 late.** Two real bugs fell out in
+   the first minute, both fixed and pushed (`28963c3`) - see the dated entry below for the full
+   diagnosis. **Not yet re-watched after the fix** - the user confirmed "looking better" mid-session
+   then had to step away. Re-open Play mode, press `Y`, and confirm the herd turns and moves
+   smoothly before treating this as closed.
+3. **Terrain in the arena capture: built AND VERIFIED, 2026-08-29 late.** Rendered on the user's
+   machine, compile clean (0 `error CS`), capture ran with no exceptions.
+   `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6% terrainDriven=True`,
+   `ARENA views models=126 capsules=0`. Real relief and a coastline are visible in all three PNGs,
+   `arena-wide`/`arena-close`/`arena-top` agree on where the herd is, `capsules=0` means every
+   creature resolved to a real model, and a visibly smaller juvenile sits next to full adults in the
+   wide shot - the `ageScale` fix is doing something. Some creatures stand in shallow water, exactly
+   the honest behaviour predicted. **The close shot's sawtooth ridge line is NOT a regression** -
+   confirmed by re-running the pre-existing, untouched `TerrainRenderEntry.Render` on the same seed:
+   the identical jagged band appears in `Logs/terrain/arena-50.png`, at what reads as a slope-band
+   transition (see decision 12, §4). It was there before this session touched anything.
 4. **Showing selection visually needs a different scenario.** Measured: the pressured cell holds only
    10-15 creatures while genes are still diverse, and 126 only after selection has converged, so the
    mottled-to-uniform picture cannot be made there.
 
 **Blocked by a standing decision — do not fold in silently:** the playtest scenarios (`Y`, `N`) still
 predate the ecology work, and `gradedFertilityEnabled` is off for `Y` by the user's explicit choice.
+
+### 2026-08-29 (8) — the `.meta` rule was wrong; verified against a fresh clone
+
+**The standing rule in section 8 said never to stage `.meta` files. It was drift written down as
+policy, and it is now reversed.** 65 `.meta` paired with already-tracked assets were committed by
+name in `7e7a7d9`; `Assets/Models.meta` described an empty folder and both were deleted. The
+evidence and reasoning are in the resolved block in section 5.
+
+**Verified on a fresh clone, not on the working copy** — the working copy has a warm `Library/` and
+would have proved nothing about first import.
+
+- `dotnet test tools/HeadlessTests`: **639 passed, 0 failed, 0 skipped**, 1 m 6 s.
+- Unity batch compile against the clone: **0 `error CS`**, `Exiting batchmode successfully`.
+- `CreatureArenaCapture.CaptureArena` against the clone: `ARENA views models=126 capsules=0`,
+  `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6 % terrainDriven=True` —
+  **identical to the recorded numbers**, so this is the same world, not a plausible-looking
+  different one.
+- The three PNGs were **read, not just produced**. Models render with their correct distinct
+  materials — brown deer, black bull, white horse, tan alpaca. That is the point of the exercise:
+  `materialImportMode` lives in the `.meta`, and a clone without it re-imports with defaults, which
+  is the "draws nothing, no error, no warning" failure this session already hit once.
+- `CreatureModelImportReport.Validate` on the clone: **CATALOG VALID**.
+
+**One claim in the original diagnosis was overstated and is corrected here.** The `.meta` gap was
+described as breaking "every Unity reference." The four `.asmdef` files use **name** references,
+not `GUID:` references, so assembly wiring was never at risk. The real exposure was narrower: FBX
+`ModelImporter` settings, and any scene or prefab committed from here on.
+
+**Still open, deliberately not folded in:** no `.unity` scene is committed outside
+`Assets/_Recovery/`, and `EditorBuildSettings` has `m_Scenes: []`. Tracking GUIDs does not fix that.
+
+### 2026-08-29 (7) — Play mode watched for the first time: two bugs, both fixed
+
+**Every prior visual claim this session came from offline capture.** This is the first time a human
+looked at the running game. Compiling and passing 639 tests said nothing about this - the lesson
+this whole session has been relearning. Steps: reopen in Unity, Play, press `Y`.
+
+**Bug 1 - jerky movement, no smooth turning.** Root cause found by reading, not guessing:
+`SynchronizePresentation` assigned `view.position` and `view.rotation` straight from the current
+simulation tick, every render frame, with no interpolation. Ticks land at 20/sec at speed 1x (up to
+80/sec at the default 4x); the display renders in the hundreds (see `Logs/performance.txt`, median
+226-252 fps this session). Between ticks nothing moved, then it snapped - textbook fixed-timestep
+aliasing, invisible in every offline capture because those render one frame per world, not a
+sequence.
+
+**Fix, in `Prototype1Presenter.cs` / `.Views.cs` (`28963c3`), using data the sim already exposed:**
+- Position: `Lerp(movement.PreviousPosition, movement.Position, alpha)`, `alpha =
+  _accumulator / FixedDeltaTime` - the standard fixed-timestep render blend. Lags the true state by
+  under one tick; no new simulation state needed.
+- Rotation: the once-per-tick target heading (`HeadingYaw`, unchanged) is now approached at a capped
+  turn rate (`_creatureRenderedYaw`, `TurnDegreesPerSecond = 540`, **picked by eye, not measured** -
+  a "look at it" constant like `_terrainHeightScale`, likely needs tuning) instead of snapped to,
+  scaled by `_speedMultiplier` so turning keeps pace when fast-forwarded.
+
+**Bug 2 - creatures visibly inflate when eating/attacking.** `GetActionScale` was a capsule-era cue -
+a 12%, 8Hz scale pulse invented when there was no animation to show what a creature was doing. Real
+models play the actual clip now; the exact "action is carried by the animation instead" argument
+already justified NOT tinting models by action colour a few lines below, just never got extended to
+scale. **Fixed: excluded for anything with a model, kept for the capsule fallback**, which still has
+nothing else to carry the signal.
+
+**Also found while investigating: no scene file is committed anywhere in this repo** (`m_Scenes: []`
+in `EditorBuildSettings.asset`, zero tracked `.unity` files outside the untracked
+`Assets/_Recovery/`). Whatever scene wires up `Prototype1Presenter` only exists in whoever's local
+Unity state last opened it. Not fixed this session - flagging so the next person does not spend time
+confused when Play mode opens to an empty Hierarchy on a fresh checkout.
+
+**Not closed.** The user watched the fix mid-session and said "looking better," but had to leave
+before confirming the smoothed build at length. `TurnDegreesPerSecond` in particular is a guess.
+Re-test before calling this done.
+
+**Verified, not just claimed:** 639/639 headless tests still pass (Simulation package untouched -
+this was a Presentation-only change). The arena capture was re-run on the same seed after the edit
+and reproduced byte-for-byte: `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42
+water=47.6% terrainDriven=True`, `population=126 models=126 capsules=0`, matching the prior run
+exactly - the interpolation and scale changes touch only `Prototype1Presenter`, which the offline
+capture tool does not use.
 
 #### Claims withdrawn this session — do not re-assert them
 
@@ -1074,9 +1219,21 @@ verbatim. Status, so you do not have to open it to find out:
 
 ## 8. Working-tree rules
 
-Intentionally untracked: Unity `.meta` files, `Assets/_Recovery/`, and
-`ProjectSettings/PackageManagerSettings.asset`. **Never stage or delete them. Never `git add -A`** —
-add named files only. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before committing; none exist at
-handoff.
+**`.meta` files ARE tracked, and must be committed alongside the asset they describe.** The
+former rule here said never to stage them. That rule was wrong — it recorded drift, not policy.
+138 `.meta` files were already tracked when it was written, and commit `0a02eb1` is titled
+`chore: add missing .meta files for scripts/tests added this session`. 65 paired `.meta` were
+committed on 2026-08-29 to close the gap. A `.meta` carries its asset's **GUID**, and for an FBX it
+also carries the `ModelImporter` settings — `materialImportMode`, rig, animation — so an asset
+committed without its `.meta` re-imports on a clone with a fresh GUID and default settings. Every
+reference to it resolves to nothing. **Add the asset and its `.meta` in the same commit.**
+
+Genuinely untracked, leave alone: `ProjectSettings/PackageManagerSettings.asset`, and the OneDrive
+conflict duplicates `Assets/_Recovery/0 (2).unity` and its `.meta`. Note `Assets/_Recovery/` itself
+is **tracked** — `0.unity` and `0 (1).unity` are both in the index; the old rule was wrong about
+that too.
+
+**Never `git add -A`** — add named files only. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before
+committing; none exist at handoff.
 
 ---

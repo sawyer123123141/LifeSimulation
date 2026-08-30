@@ -55,19 +55,7 @@ namespace LifeSimulation.Presentation
         {
             if (_terrainHeights == null || _world == null || !_world.Config.ElevationFieldEnabled) return 0f;
 
-            int side = TerrainMeshBuilder.PatchResolution;
-            float u = Mathf.Clamp01((x + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
-            float v = Mathf.Clamp01((z + TerrainHalfWidth) / (2f * TerrainHalfWidth)) * (side - 1);
-            int column = Mathf.Clamp((int)u, 0, side - 2);
-            int row = Mathf.Clamp((int)v, 0, side - 2);
-            float fx = u - column;
-            float fz = v - row;
-
-            float bottomLeft = _terrainHeights[row * side + column];
-            float bottomRight = _terrainHeights[row * side + column + 1];
-            float topLeft = _terrainHeights[(row + 1) * side + column];
-            float topRight = _terrainHeights[(row + 1) * side + column + 1];
-            return Mathf.Lerp(Mathf.Lerp(bottomLeft, bottomRight, fx), Mathf.Lerp(topLeft, topRight, fx), fz);
+            return TerrainMeshBuilder.SampleCachedHeight(_terrainHeights, TerrainHalfWidth, x, z);
         }
 
         /// <summary>Sample the field once per grid cell. Only ever redone when the world changes.</summary>
