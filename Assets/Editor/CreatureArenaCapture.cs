@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -43,6 +44,12 @@ namespace LifeSimulation.EditorTools
         private const int TimedFrames = 40;
 
         private static bool _geneVision;
+
+        /// <summary>
+        /// The spawned views by creature, kept so <see cref="CheckSelection"/> can ask whether
+        /// clicking a creature actually picks that creature. Cleared at the start of every capture.
+        /// </summary>
+        private static readonly Dictionary<CreatureId, Transform> _spawnedViews = new Dictionary<CreatureId, Transform>();
 
         /// <summary>
         /// Ground heights cached from the drawn mesh, exactly as the presenter caches them, so a
@@ -98,6 +105,7 @@ namespace LifeSimulation.EditorTools
         {
             Directory.CreateDirectory(OutputFolder);
 
+            _spawnedViews.Clear();
             SimulationConfig config = BuildPressuredCellConfig();
             var world = new SimulationWorld(config);
 
@@ -145,6 +153,7 @@ namespace LifeSimulation.EditorTools
                 Debug.Log($"ARENA views models={models} capsules={capsules}");
 
                 Camera camera = BuildCamera(root);
+                CheckSelection(camera);
                 double wide = Render(camera, GroundRelative(0f, 34f, -46f), Quaternion.Euler(32f, 0f, 0f), $"{prefix}-wide.png");
                 double close = Render(camera, GroundRelative(-6f, 4f, -20f), Quaternion.Euler(6f, 12f, 0f), $"{prefix}-close.png");
                 double top = Render(camera, GroundRelative(0f, 62f, 0f), Quaternion.Euler(90f, 0f, 0f), $"{prefix}-top.png");
@@ -256,6 +265,7 @@ namespace LifeSimulation.EditorTools
                 : 0f;
             view.rotation = Quaternion.Euler(0f, definition.YawOffsetDegrees + yaw, 0f);
             view.localScale = Vector3.one * (ageScale * bodyScale * definition.ModelScale);
+            _spawnedViews[id] = view;
 
             if (_geneVision)
             {
@@ -429,6 +439,57 @@ namespace LifeSimulation.EditorTools
             fill.shadows = LightShadows.None;
 
             TerrainMeshBuilder.ConfigureLighting(keyObject.transform, fillObject.transform);
+        }
+
+        /// <summary>
+        /// Proves a click on a creature selects that creature, which is the one thing about selection
+        /// a PNG cannot show and a headless test cannot reach.
+        ///
+        /// <para>Selection broke silently when creatures became models: it raycast against colliders,
+        /// and an instantiated FBX has none. The replacement projects each creature and takes the
+        /// nearest on screen. This walks every creature, projects it through a real camera in a real
+        /// scene, clicks its own screen position, and reports how many resolve back to themselves.
+        /// A wrong aim point or a bad projection shows up here as misses.</para>
+        /// </summary>
+        private static void CheckSelection(Camera camera)
+        {
+            camera.transform.SetPositionAndRotation(GroundRelative(0f, 34f, -46f), Quaternion.Euler(32f, 0f, 0f));
+
+            var candidates = new List<CreaturePickCandidate>();
+            foreach (KeyValuePair<CreatureId, Transform> pair in _spawnedViews)
+            {
+                Vector3 aimPoint = pair.Value.position + (Vector3.up * (0.5f * pair.Value.localScale.y));
+                Vector3 screenPoint = camera.WorldToScreenPoint(aimPoint);
+                candidates.Add(new CreaturePickCandidate(pair.Key, screenPoint.x, screenPoint.y, screenPoint.z));
+            }
+
+            float radius = Mathf.Max(24f, Height * 0.035f);
+            int onScreen = 0;
+            int resolved = 0;
+            int toItself = 0;
+
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                CreaturePickCandidate candidate = candidates[index];
+                bool visible = candidate.Depth > 0f
+                    && candidate.ScreenX >= 0f && candidate.ScreenX < Width
+                    && candidate.ScreenY >= 0f && candidate.ScreenY < Height;
+                if (!visible) continue;
+
+                onScreen++;
+                if (!CreaturePicking.TrySelectClosest(
+                    candidate.ScreenX, candidate.ScreenY, candidates, radius, out CreatureId picked))
+                {
+                    continue;
+                }
+
+                resolved++;
+                if (picked.Equals(candidate.Id)) toItself++;
+            }
+
+            Debug.Log(
+                $"ARENA selection onScreen={onScreen} resolved={resolved} toItself={toItself}"
+                + $" clumpedOntoNeighbour={resolved - toItself} radiusPx={radius:0}");
         }
 
         private static Camera BuildCamera(GameObject root)

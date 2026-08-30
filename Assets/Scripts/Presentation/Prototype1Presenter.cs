@@ -150,6 +150,11 @@ namespace LifeSimulation.Presentation
         private bool _isDraggingResource;
         private string _scenarioId;
         private string _scenarioHint;
+        /// <summary>
+        /// Reused by <see cref="TrySelectCreature"/> so a click does not allocate a list per press.
+        /// </summary>
+        private readonly List<CreaturePickCandidate> _pickCandidates = new List<CreaturePickCandidate>();
+
         private CreatureId _selectedCreature;
         private bool _hasSelectedCreature;
 
@@ -1012,22 +1017,41 @@ namespace LifeSimulation.Presentation
             }
         }
 
+        /// <summary>
+        /// Selects the creature nearest the cursor on screen.
+        ///
+        /// <para>This used <c>Physics.Raycast</c> against <c>view == hit.transform</c>, which worked
+        /// only while creatures were <c>CreatePrimitive</c> capsules carrying a collider on that exact
+        /// transform. Instantiated models have no collider - nothing in the project adds one - so the
+        /// ray hit nothing and clicking a creature silently did nothing. Terrain has no collider
+        /// either, so there was never any occlusion for the raycast to respect.</para>
+        ///
+        /// <para>The choice itself lives in <see cref="CreaturePicking"/>, which is pure and tested;
+        /// what stays here is the projection, which needs the camera.</para>
+        /// </summary>
         private void TrySelectCreature()
         {
-            Ray ray = _simulationCamera.ScreenPointToRay(Input.mousePosition);
-            if (!Physics.Raycast(ray, out RaycastHit hit))
-            {
-                return;
-            }
+            _pickCandidates.Clear();
+            Vector3 mouse = Input.mousePosition;
 
             foreach (KeyValuePair<CreatureId, Transform> pair in _creatureViews)
             {
-                if (pair.Value == hit.transform)
-                {
-                    _selectedCreature = pair.Key;
-                    _hasSelectedCreature = true;
-                    return;
-                }
+                if (pair.Value == null) continue;
+
+                // The body, not the origin at the feet: the origin projects to the ground under the
+                // animal, which is not where anyone points when they click it.
+                Vector3 aimPoint = pair.Value.position + (Vector3.up * (0.5f * pair.Value.localScale.y));
+                Vector3 screenPoint = _simulationCamera.WorldToScreenPoint(aimPoint);
+                _pickCandidates.Add(new CreaturePickCandidate(pair.Key, screenPoint.x, screenPoint.y, screenPoint.z));
+            }
+
+            // Proportional to the window rather than a fixed pixel count, so the click target is the
+            // same size to the eye whatever the resolution.
+            float radius = Mathf.Max(24f, Screen.height * 0.035f);
+            if (CreaturePicking.TrySelectClosest(mouse.x, mouse.y, _pickCandidates, radius, out CreatureId picked))
+            {
+                _selectedCreature = picked;
+                _hasSelectedCreature = true;
             }
         }
 
