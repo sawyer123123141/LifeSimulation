@@ -654,3 +654,26 @@ Recorded on `CreatureAppearance` before the models existed, and it was right.
 **2026-08-29 — Five blocks each headed "read this first" is not a handoff.** One session appended
 five, each accurate when written. A fresh session had no way to tell which was current. **One
 current-state block, everything else dated and demoted.**
+
+**2026-08-29 — A rule in the handoff is not evidence. Check it against the repository.** Section 8
+said Unity `.meta` files were "intentionally untracked" and must never be staged. Two commands
+refuted it: `git ls-files '*.meta' | wc -l` returned **138 already tracked**, and
+`git log --oneline -- '*.meta'` surfaced `0a02eb1`, titled *"chore: add missing .meta files for
+scripts/tests added this session"*. The project had deliberately committed them before. The rule was
+one session's observation of drift, written down as policy and then inherited by every session
+after. **A standing rule that no commit ever enforced is a description of an accident.** Verify the
+rule against the tree before obeying it, and especially before writing it down again.
+
+**2026-08-29 — Clone into a SHORT path or the checkout lies to you.** Cloning this repo into the
+session scratchpad silently failed to check out **804 of 794 files** - Windows `MAX_PATH`, with a
+~140-character prefix and deep `Assets/` paths. `git clone` exited **0** and printed only a soft
+hint; `git status` in the clone showed hundreds of `D` entries. Re-cloning to
+`C:\Users\sawye\AppData\Local\Temp\mc` checked out cleanly. **A clone that exits zero is not a clone
+that checked out.** Run `git status --porcelain | wc -l` on any fresh clone before trusting a
+verification run against it.
+
+**2026-08-29 — Verify on a cold clone, not the working copy.** The working copy has a warm
+`Library/`, so Unity never re-imports and a missing `.meta` cannot show itself. Every claim about
+what a *fresh* checkout does - GUIDs, import settings, materials - has to be measured on a clone
+that has never been opened. The `.meta` fix was proved this way: `models=126 capsules=0` and
+correctly-coloured animals in the PNG, on a project Unity had never seen.

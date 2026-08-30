@@ -677,6 +677,36 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
 **Blocked by a standing decision — do not fold in silently:** the playtest scenarios (`Y`, `N`) still
 predate the ecology work, and `gradedFertilityEnabled` is off for `Y` by the user's explicit choice.
 
+### 2026-08-29 (8) — the `.meta` rule was wrong; verified against a fresh clone
+
+**The standing rule in section 8 said never to stage `.meta` files. It was drift written down as
+policy, and it is now reversed.** 65 `.meta` paired with already-tracked assets were committed by
+name in `7e7a7d9`; `Assets/Models.meta` described an empty folder and both were deleted. The
+evidence and reasoning are in the resolved block in section 5.
+
+**Verified on a fresh clone, not on the working copy** — the working copy has a warm `Library/` and
+would have proved nothing about first import.
+
+- `dotnet test tools/HeadlessTests`: **639 passed, 0 failed, 0 skipped**, 1 m 6 s.
+- Unity batch compile against the clone: **0 `error CS`**, `Exiting batchmode successfully`.
+- `CreatureArenaCapture.CaptureArena` against the clone: `ARENA views models=126 capsules=0`,
+  `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6 % terrainDriven=True` —
+  **identical to the recorded numbers**, so this is the same world, not a plausible-looking
+  different one.
+- The three PNGs were **read, not just produced**. Models render with their correct distinct
+  materials — brown deer, black bull, white horse, tan alpaca. That is the point of the exercise:
+  `materialImportMode` lives in the `.meta`, and a clone without it re-imports with defaults, which
+  is the "draws nothing, no error, no warning" failure this session already hit once.
+- `CreatureModelImportReport.Validate` on the clone: **CATALOG VALID**.
+
+**One claim in the original diagnosis was overstated and is corrected here.** The `.meta` gap was
+described as breaking "every Unity reference." The four `.asmdef` files use **name** references,
+not `GUID:` references, so assembly wiring was never at risk. The real exposure was narrower: FBX
+`ModelImporter` settings, and any scene or prefab committed from here on.
+
+**Still open, deliberately not folded in:** no `.unity` scene is committed outside
+`Assets/_Recovery/`, and `EditorBuildSettings` has `m_Scenes: []`. Tracking GUIDs does not fix that.
+
 ### 2026-08-29 (7) — Play mode watched for the first time: two bugs, both fixed
 
 **Every prior visual claim this session came from offline capture.** This is the first time a human
