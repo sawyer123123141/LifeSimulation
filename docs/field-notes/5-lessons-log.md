@@ -677,3 +677,30 @@ verification run against it.
 what a *fresh* checkout does - GUIDs, import settings, materials - has to be measured on a clone
 that has never been opened. The `.meta` fix was proved this way: `models=126 capsules=0` and
 correctly-coloured animals in the PNG, on a project Unity had never seen.
+
+**2026-08-29 — Measure the design before writing the spec, not after.** A wander-home redesign was
+reasoned entirely from call paths: memory decay already existed, remembered-resource scoring already
+existed, therefore the movement-side home ring was redundant and could be deleted. The spec said so
+as a recommendation, with a risk section naming dispersal as the danger. The measurement took eight
+minutes and **refuted it**: removing the ring left **1 of 8 seeds alive** against 7 of 8. The ring is
+an accidental tether and the tether is load-bearing. **"Redundant with an existing mechanism" is a
+hypothesis, and reading both call paths does not test it** - homing on need is not the same as
+staying in range, and only a run can tell you which one the ecology depends on.
+
+**2026-08-29 — Three theories lost to one small fix that was already written.** The spinning bug
+produced, in order: a hypothesis refuted by its own probe (churn would cluster where creatures stop -
+it clustered in Wander instead), a redesign refuted by re-reading (it was HomeRangeAffinity, closed
+in section 4, in new clothes), and a spec refuted by measurement (deleting the ring kills the world).
+The change that shipped was the four-line hysteresis fix written before any of the theorising.
+**When a cheap fix already passes its test, the bar for replacing it with a redesign is a
+measurement, not an argument.**
+
+**2026-08-29 — A "look at it" constant nobody looked at, at the setting everybody uses.**
+`TurnDegreesPerSecond = 540` is documented as picked by eye. It is multiplied by `_speedMultiplier`,
+which **defaults to 4**, so the drawn turn rate at the default speed is **2,160 deg/s - six
+revolutions a second**. The smoothing this constant exists to provide does not function at the speed
+the game actually opens at. It was judged at 1x and never re-judged. **A constant tuned by eye is
+only tuned for the configuration it was looked at in.** Not changed: at 2,160 deg/s it exaggerates
+reversals but does not cause them, and slowing it would draw a real 180-degree reversal as a graceful
+turn - hiding a simulation defect behind the renderer, which is the trap the interpenetration note
+already warns about.
