@@ -166,7 +166,8 @@ namespace LifeSimulation.Simulation.Core
             bool evasiveFleeingEnabled = false,
             float evasiveFleeingStrength = DefaultEvasiveFleeingStrength,
             bool wanderHomeHysteresisEnabled = false,
-            bool feedInPlaceEnabled = false)
+            bool feedInPlaceEnabled = false,
+            float arenaHalfWidth = DefaultArenaHalfWidth)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -219,6 +220,12 @@ namespace LifeSimulation.Simulation.Core
             EvasiveFleeingStrength = evasiveFleeingStrength;
             WanderHomeHysteresisEnabled = wanderHomeHysteresisEnabled;
             FeedInPlaceEnabled = feedInPlaceEnabled;
+            if (arenaHalfWidth <= 0f || float.IsNaN(arenaHalfWidth) || float.IsInfinity(arenaHalfWidth))
+            {
+                throw new ArgumentOutOfRangeException(nameof(arenaHalfWidth));
+            }
+
+            ArenaHalfWidth = arenaHalfWidth;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -591,6 +598,28 @@ namespace LifeSimulation.Simulation.Core
         public bool FeedInPlaceEnabled { get; }
 
         /// <summary>
+        /// The 25 the world has always been. Every recorded result was produced on a 50-unit square,
+        /// and the presentation layer's <c>TerrainMeshBuilder.ArenaHalfWidth</c> is the same number.
+        /// </summary>
+        public const float DefaultArenaHalfWidth = 25f;
+
+        /// <summary>
+        /// Half the width of the square the simulation runs on, in world units.
+        ///
+        /// <para>Was a literal in <c>SimulationWorld</c>'s constructor. It is configuration because
+        /// how much room the world has is a property of the world, and because the question it
+        /// answers - whether a herd crowding six feeding sites is a behaviour or just a shortage of
+        /// space - cannot be asked while it is a constant.</para>
+        ///
+        /// <para><b>Changing this changes everything.</b> Density, travel time between resources,
+        /// encounter and mating rates, and the meaning of every recorded distance all move with it.
+        /// A resource layout calibrated for 50 units is not calibrated for 400: the sites stay where
+        /// they were and the extra area is empty. Widening the arena without also placing resources
+        /// into the new space is a measurement of starvation, not of space.</para>
+        /// </summary>
+        public float ArenaHalfWidth { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -716,6 +745,7 @@ namespace LifeSimulation.Simulation.Core
             hash = HashFloat(hash, EvasiveFleeingStrength);
             hash = Hash(hash, WanderHomeHysteresisEnabled ? 1UL : 0UL);
             hash = Hash(hash, FeedInPlaceEnabled ? 1UL : 0UL);
+            hash = HashFloat(hash, ArenaHalfWidth);
 
             return hash;
         }

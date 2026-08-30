@@ -105,6 +105,13 @@ namespace LifeSimulation.Simulation.Experiments
         public int ResourceCount => _resources.Length;
 
         /// <summary>
+        /// Where founders are dropped, when the scenario says. Exposed because it is a point ON a
+        /// resource site, so any transform that moves the sites has to move this with them - and a
+        /// test that cannot see it cannot catch the case where it was left behind.
+        /// </summary>
+        public SimVector2? FounderPlacement => _founderPlacement;
+
+        /// <summary>
         /// The same layout with less in it: every amount, capacity and regeneration rate multiplied.
         ///
         /// <para><b>Why derive rather than write a second scenario.</b> Scarcity has to differ from
@@ -157,6 +164,97 @@ namespace LifeSimulation.Simulation.Experiments
             }
 
             return new SimulationScenario(id, scaled, _founderPlacement);
+        }
+
+        /// <summary>
+        /// Repeats the whole habitat in a <paramref name="tiles"/> x <paramref name="tiles"/> block,
+        /// each copy <paramref name="spacing"/> apart, centred on the origin.
+        ///
+        /// <para><b>What this is for.</b> Widening the arena without putting resources into the new
+        /// space measures starvation, not space. Tiling adds more of the same habitat at the same
+        /// spatial density, so travel distance between neighbouring sites stays what the ecology was
+        /// calibrated against and the only thing that changed is how much room there is.</para>
+        ///
+        /// <para><b>Why this is a method here rather than a list built by the caller.</b> A scenario
+        /// is not its visible resources. This layout carries twenty dormant sites that plant
+        /// dispersal re-establishes into, and a founder placement. A hand-written copy of the six
+        /// active food and water sites was tried first and killed every world it ran in, including
+        /// the arm that was supposed to reproduce the baseline. Copying every definition, whatever it
+        /// is, is the whole point.</para>
+        ///
+        /// <para><b>Founder placement moves with the habitat.</b> Carrying it through unchanged was
+        /// the first version and it was wrong: the placement is a point on a resource site, and
+        /// tiling moves every site. With two tiles at spacing 50 the founders' site went to
+        /// (-37,-33), (-37,17), (13,-33) and (13,17) while the founders stayed at (-12,-8), which is
+        /// empty ground between habitats. Measured cost: 2 of 4 worlds extinct at the same population
+        /// cap and 3 of 4 with it scaled, the lone survivor starving at mean energy 0.009. The
+        /// placement is offset into the tile nearest the origin, so founders start on the site they
+        /// were always meant to start on.</para>
+        /// </summary>
+        public SimulationScenario Tiled(string id, int tiles, float spacing)
+        {
+            if (tiles <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tiles));
+            }
+
+            if (spacing <= 0f || float.IsNaN(spacing) || float.IsInfinity(spacing))
+            {
+                throw new ArgumentOutOfRangeException(nameof(spacing));
+            }
+
+            var tiled = new ResourceDefinition[_resources.Length * tiles * tiles];
+            int next = 0;
+            for (int tileX = 0; tileX < tiles; tileX++)
+            {
+                for (int tileY = 0; tileY < tiles; tileY++)
+                {
+                    float offsetX = (tileX - ((tiles - 1) * 0.5f)) * spacing;
+                    float offsetY = (tileY - ((tiles - 1) * 0.5f)) * spacing;
+
+                    for (int index = 0; index < _resources.Length; index++)
+                    {
+                        ResourceDefinition source = _resources[index];
+                        tiled[next++] = new ResourceDefinition(
+                            source.Kind,
+                            new SimVector2(source.Position.X + offsetX, source.Position.Y + offsetY),
+                            source.InteractionRadius,
+                            source.InitialAmount,
+                            source.Capacity,
+                            source.RegenerationPerSecond,
+                            source.IsActive,
+                            source.NutritionMultiplier,
+                            source.PlantGenome);
+                    }
+                }
+            }
+
+            SimVector2? placement = _founderPlacement;
+            if (placement.HasValue)
+            {
+                // The tile nearest the origin: for an odd count that is the middle one and the offset
+                // is zero, for an even count it is one of the four innermost.
+                float nearest = float.MaxValue;
+                float chosenX = 0f;
+                float chosenY = 0f;
+                for (int tileX = 0; tileX < tiles; tileX++)
+                {
+                    for (int tileY = 0; tileY < tiles; tileY++)
+                    {
+                        float offsetX = (tileX - ((tiles - 1) * 0.5f)) * spacing;
+                        float offsetY = (tileY - ((tiles - 1) * 0.5f)) * spacing;
+                        float distance = (offsetX * offsetX) + (offsetY * offsetY);
+                        if (distance >= nearest) continue;
+                        nearest = distance;
+                        chosenX = offsetX;
+                        chosenY = offsetY;
+                    }
+                }
+
+                placement = new SimVector2(placement.Value.X + chosenX, placement.Value.Y + chosenY);
+            }
+
+            return new SimulationScenario(id, tiled, placement);
         }
 
         public SimulationScenario Scaled(string id, float factor)
