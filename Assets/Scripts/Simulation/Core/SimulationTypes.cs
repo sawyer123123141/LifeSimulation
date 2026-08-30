@@ -385,7 +385,8 @@ namespace LifeSimulation.Simulation.Core
         PlantDispersal = 10,
         PlantEstablishment = 11,
         TerrainField = 12,
-        PlantEstablishmentContest = 13
+        PlantEstablishmentContest = 13,
+        PlantSiteGeneration = 14
     }
 
     public enum DeathCause : byte

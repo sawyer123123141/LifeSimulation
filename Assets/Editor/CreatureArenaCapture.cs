@@ -101,20 +101,66 @@ namespace LifeSimulation.EditorTools
             Capture("genes-early", 6000);
         }
 
+        /// <summary>
+        /// The `Y` playtest world with its food split into more, smaller sites, beside the same
+        /// world unsplit.
+        ///
+        /// <para><b>Why a picture and not only the table.</b> The clumping this addresses is a thing
+        /// on screen, and <c>tools/SitePilot</c> reports mean nearest-neighbour, which is a
+        /// population statistic that a herd can improve without looking any different. The pair of
+        /// renders is the check that the number and the picture agree - the project has already shot
+        /// itself with a plausible number and a picture nobody took.</para>
+        ///
+        /// <para>Both arms are `Y`'s own configuration, cap 96, 12,000 ticks, seed 42, so this is
+        /// the world the user presses `Y` to watch and not a neighbouring one.</para>
+        /// </summary>
+        [MenuItem("LifeSimulation/Capture the site-count pilot")]
+        public static void CaptureSitePilot()
+        {
+            _geneVision = false;
+            _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
+            Capture("sitepilot-control", Ticks);
+            _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate
+                .SplitSites("pilot-split-4-spread-6", parts: 4, spread: 6f);
+            Capture("sitepilot-split4", Ticks);
+            _playtestGeneratedSites = true;
+            _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
+            Capture("sitepilot-generated", Ticks);
+            _playtestGeneratedSites = false;
+            _playtestScenario = null;
+        }
+
+        /// <summary>
+        /// When set, <see cref="Capture"/> runs `Y`'s playtest configuration and this scenario
+        /// instead of the pressured cell. Null for every pre-existing capture, so those are
+        /// unchanged.
+        /// </summary>
+        private static SimulationScenario _playtestScenario;
+
+        /// <summary>Generated plant placement, for the third picture in the pilot.</summary>
+        private static bool _playtestGeneratedSites;
+
         private static void Capture(string prefix, int ticks)
         {
             Directory.CreateDirectory(OutputFolder);
 
             _spawnedViews.Clear();
-            SimulationConfig config = BuildPressuredCellConfig();
+            SimulationConfig config = _playtestScenario == null ? BuildPressuredCellConfig() : BuildPlaytestConfig();
             var world = new SimulationWorld(config);
 
-            // WithRegeneration(2.0) is what `--regen=2.0` does in CreatureSweep, and it is not
-            // cosmetic: the base scenario settles this cell at about fifteen creatures, which is a
-            // picture of a different world than the one every recent measurement describes.
-            Prototype4Scenarios.ConsumerDefenseCalibrationModerate
-                .WithRegeneration("p6-defense-calibration-regen2.00", 2f)
-                .ApplyTo(world);
+            if (_playtestScenario != null)
+            {
+                _playtestScenario.ApplyTo(world);
+            }
+            else
+            {
+                // WithRegeneration(2.0) is what `--regen=2.0` does in CreatureSweep, and it is not
+                // cosmetic: the base scenario settles this cell at about fifteen creatures, which is
+                // a picture of a different world than the one every recent measurement describes.
+                Prototype4Scenarios.ConsumerDefenseCalibrationModerate
+                    .WithRegeneration("p6-defense-calibration-regen2.00", 2f)
+                    .ApplyTo(world);
+            }
 
             var simulationClock = Stopwatch.StartNew();
             for (int tick = 0; tick < ticks; tick++)
@@ -211,6 +257,49 @@ namespace LifeSimulation.EditorTools
                 reproductionNeedFraction: 0.45f,
                 gradedFertilityEnabled: true,
                 gradedFertilityStrength: 1.5f);
+        }
+
+        /// <summary>
+        /// `Y`'s configuration, as <c>Prototype1Presenter.ResetTerrainPlaytest</c> builds it and as
+        /// <c>tools/SitePilot</c> copies it. Kept in step with both by hand; the population the log
+        /// line reports is the check, because that cell settles near 96.
+        /// </summary>
+        private static SimulationConfig BuildPlaytestConfig()
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 4);
+            return new SimulationConfig(
+                defaults.WorldSeed,
+                defaults.InitialPopulation,
+                defaults.Schedule,
+                maximumPopulation: 96,
+                defaults.FounderProfile,
+                defaults.CognitionEnabled,
+                defaults.PhysiologyEnabled,
+                DecisionPolicyVersion.IntentUtilityV1,
+                defaults.PlantCohortsEnabled,
+                predationEconomicsEnabled: true,
+                decisionStaggerEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                restBehaviorEnabled: true,
+                juvenileCapabilityEnabled: true,
+                parentalFollowingEnabled: true,
+                kinRecognitionEnabled: true,
+                learnedResourceQualityEnabled: true,
+                mateSelectionEnabled: true,
+                plantSiteCompetitionEnabled: true,
+                plantMortalityEnabled: true,
+                plantTemperatureAdaptationEnabled: true,
+                proceduralEnvironmentFieldsEnabled: true,
+                plantFertilityAdaptationEnabled: true,
+                elevationFieldEnabled: true,
+                terrainDrivenEnvironmentEnabled: true,
+                slopeMovementCostEnabled: true,
+                terrainDrivenTemperatureEnabled: true,
+                healthRecoveryEnabled: true,
+                wanderHomeHysteresisEnabled: true,
+                feedInPlaceEnabled: true,
+                arenaHalfWidth: SimulationConfig.DefaultArenaHalfWidth,
+                generatedPlantSitesEnabled: _playtestGeneratedSites);
         }
 
         private static bool SpawnCreature(SimulationWorld world, int index, Transform parent)

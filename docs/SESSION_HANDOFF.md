@@ -686,7 +686,35 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
   terrain. Skinned meshes are not a problem at this density, and the terrain optimisation queue
   stays unnecessary.
 
-#### Where to pick up — GENERATED PLANT PLACEMENT is the next piece of work
+#### DONE 2026-08-30 — generated plant placement is built, measured, and left switched OFF
+
+**Read `docs/experiments/p6-generated-plant-placement-2026-08-30.md`.** The spec is
+`docs/superpowers/specs/2026-08-30-generated-plant-placement-design.md`, with two REFUTED banners
+inside it. The harness is `tools/SitePilot`, committed, and its first arm is fingerprint-identical to
+`Y` and reproduced 0.824 / 95.833 / 0.806 exactly.
+
+**The premise below was wrong.** `Y` at tick 12,000 has **23.2 of 24 food sites active**, not six -
+plants colonise nearly every dormant coordinate. Six is the tick-0 count. Everything under "Where to
+pick up" is kept as written because it is what the session was handed, not because it is true.
+
+**What is on `main`:** `PlantSiteGenerator` (pure, 12 tests), `SimulationScenario.SplitSites`,
+`SimulationConfig.GeneratedPlantSitesEnabled` and three parameters, and
+`CreatureArenaCapture.CaptureSitePilot`. **672 tests green. The flag is default false and `Y` is
+unchanged**, so every recorded number still stands.
+
+**The recommendation, and it is a decision the user has not taken yet.** Do NOT switch generated
+placement on for `Y`: at 20 seeds it gives spacing 1.173 at 16 of 20 surviving, while simply
+splitting `Y`'s six food sites into rings of four at radius 6 gives **1.280 at 18 of 20**, against a
+control of 0.903 at 19 of 20. The visible pile improves in both, confirmed by render. The cheap,
+survival-neutral fix for what is on screen is the **site split**, and taking it means editing `Y`'s
+authored layout.
+
+**The blocker generated placement runs into, measured:** water sits at six hand-typed coordinates and
+a plant feature cannot move it. Splitting water too makes clumping **worse** (0.768). The arms that
+won put food in rings **around the existing water**. If generated placement is to pay off, the water
+map is the next thing to look at - and it is not a plant question.
+
+#### The task as it was handed over on 2026-08-29 — kept for context
 
 **The short version.** Creatures clump into a pile. It is not a movement bug, not a shortage of space,
 and not feeding-disc geometry — all three were measured and all three failed. What they held constant

@@ -1,0 +1,341 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Environment;
+using LifeSimulation.Simulation.Experiments;
+using LifeSimulation.Simulation.Resources;
+using LifeSimulation.Simulation.Behavior;
+
+namespace LifeSimulation.Tools.SitePilot
+{
+    /// <summary>
+    /// The site-count pilot for generated plant placement.
+    ///
+    /// <para><b>Arm 1 is the control and it is fingerprint-identical to `Y`.</b> It must reproduce
+    /// the recorded numbers - population near 96, mean nearest-neighbour 0.824, mean energy 0.806 -
+    /// or the harness is broken and nothing else printed here is evidence. That check is not
+    /// optional: two probes on 2026-08-29 produced numbers that read exactly like ecology findings
+    /// and were harness bugs, and the only thing that caught either was an arm whose answer was
+    /// already known.</para>
+    ///
+    /// <para>The manipulation is <see cref="SimulationScenario.SplitSites"/>: each active site
+    /// becomes N sites sharing the original's amount, capacity and regeneration, so total
+    /// productivity is unchanged and the only variable is how many places food is.</para>
+    /// </summary>
+    internal static class Program
+    {
+        private const int Ticks = 12000;
+        private const int FirstSeed = 42;
+
+        private static int _seedCount = 6;
+
+        /// <summary>Arm indices to run, so a survival question can be asked at many seeds without paying for every arm. Index 0, the control, is always kept.</summary>
+        private static int[] _armFilter;
+
+        private readonly struct Arm
+        {
+            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f)
+            {
+                Name = name;
+                Parts = parts;
+                Spread = spread;
+                SplitWater = splitWater;
+                GeneratedSpacing = generatedSpacing;
+                GeneratedThreshold = generatedThreshold;
+                GeneratedFixedCapacity = generatedFixedCapacity;
+            }
+
+            public string Name { get; }
+            public int Parts { get; }
+            public float Spread { get; }
+            public bool SplitWater { get; }
+
+            /// <summary>Zero leaves generated placement off, which is what every split arm wants.</summary>
+            public float GeneratedSpacing { get; }
+
+            public float GeneratedThreshold { get; }
+
+            public float GeneratedFixedCapacity { get; }
+        }
+
+        private sealed class RunResult
+        {
+            public string Arm;
+            public int Seed;
+            public int Population;
+            public bool Extinct;
+            public double MeanNearest;
+            public double ShareUnderHalf;
+            public double ShareUnderOne;
+            public double MeanEnergy;
+            public int ActiveFoodSites;
+            public int LivePlants;
+            public int FoodSiteCount;
+            public long ExtinctionTick = -1;
+            public double MeanSiteSpacing;
+            public ulong LayoutFingerprint;
+        }
+
+        private static int Main(string[] arguments)
+        {
+            foreach (string argument in arguments)
+            {
+                if (argument.StartsWith("--seeds=", StringComparison.Ordinal))
+                {
+                    _seedCount = int.Parse(argument.Substring(8), CultureInfo.InvariantCulture);
+                }
+                else if (argument.StartsWith("--arms=", StringComparison.Ordinal))
+                {
+                    _armFilter = argument.Substring(7).Split(',').Select(part => int.Parse(part, CultureInfo.InvariantCulture)).ToArray();
+                }
+            }
+
+            var arms = new List<Arm>
+            {
+                new Arm("control (Y, 6 food sites)", 1, 0f, false),
+                // Spread 0 puts all four copies at the SAME coordinate, so the capacity split
+                // happens and the geometry does not. It separates "food is in more places" from
+                // "each resource entry holds less", which every other arm changes together.
+                new Arm("food x4, spread 0 (capacity split only)", 4, 0f, false),
+                new Arm("food x2, spread 3", 2, 3f, false),
+                new Arm("food x4, spread 3", 4, 3f, false),
+                new Arm("food x8, spread 3", 8, 3f, false),
+                new Arm("food x4, spread 6", 4, 6f, false),
+                new Arm("food+water x4, spread 3", 4, 3f, true),
+                new Arm("generated, spacing 4, fertility .45", 1, 0f, false, 4f, .45f),
+                new Arm("generated, spacing 5, fertility .45", 1, 0f, false, 5f, .45f),
+                new Arm("generated, spacing 6, fertility .45", 1, 0f, false, 6f, .45f),
+                new Arm("generated, spacing 5, fertility .60", 1, 0f, false, 5f, .60f),
+                new Arm("generated, spacing 5, capacity 24 each", 1, 0f, false, 5f, .45f, 24f),
+                new Arm("generated, spacing 6, capacity 24 each", 1, 0f, false, 6f, .45f, 24f),
+            };
+
+            if (_armFilter != null)
+            {
+                arms = arms.Where((arm, index) => index == 0 || _armFilter.Contains(index)).ToList();
+            }
+
+            ulong controlFingerprint = Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ComputeLayoutFingerprint();
+            Console.WriteLine($"Y layout fingerprint: {controlFingerprint:x16}");
+            Console.WriteLine($"seeds {FirstSeed}..{FirstSeed + _seedCount - 1}, {Ticks} ticks, {arms.Count} arms");
+            Console.WriteLine();
+
+            var specs = new List<(Arm Arm, int Seed)>();
+            foreach (Arm arm in arms)
+            {
+                for (int offset = 0; offset < _seedCount; offset++)
+                {
+                    specs.Add((arm, FirstSeed + offset));
+                }
+            }
+
+            var results = new RunResult[specs.Count];
+            Parallel.For(0, specs.Count, index =>
+            {
+                results[index] = Execute(specs[index].Arm, specs[index].Seed);
+            });
+
+            Console.WriteLine("| arm | sites | alive | population | mean nearest | <0.5 | <1.0 | energy | active food | site spacing |");
+            Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|");
+            foreach (Arm arm in arms)
+            {
+                RunResult[] armResults = results.Where(result => result.Arm == arm.Name).ToArray();
+                RunResult[] survivors = armResults.Where(result => !result.Extinct).ToArray();
+                string cell(Func<RunResult, double> selector) =>
+                    survivors.Length == 0 ? "-" : survivors.Average(selector).ToString("0.000", CultureInfo.InvariantCulture);
+
+                Console.WriteLine(string.Join(" | ",
+                    "| " + arm.Name,
+                    armResults[0].FoodSiteCount.ToString(CultureInfo.InvariantCulture),
+                    $"{survivors.Length} of {armResults.Length}",
+                    cell(result => result.Population),
+                    cell(result => result.MeanNearest),
+                    cell(result => result.ShareUnderHalf),
+                    cell(result => result.ShareUnderOne),
+                    cell(result => result.MeanEnergy),
+                    cell(result => result.ActiveFoodSites),
+                    cell(result => result.MeanSiteSpacing) + " |"));
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("per-seed mean nearest-neighbour");
+            foreach (Arm arm in arms)
+            {
+                RunResult[] armResults = results.Where(result => result.Arm == arm.Name).OrderBy(result => result.Seed).ToArray();
+                Console.WriteLine($"  {arm.Name}: " + string.Join(", ", armResults.Select(result =>
+                    result.Extinct ? $"{result.Seed}:extinct@{result.ExtinctionTick}" : $"{result.Seed}:{result.MeanNearest.ToString("0.000", CultureInfo.InvariantCulture)}")));
+            }
+
+            RunResult controlSample = results.First(result => result.Arm == arms[0].Name);
+            Console.WriteLine();
+            Console.WriteLine(controlSample.LayoutFingerprint == controlFingerprint
+                ? "CONTROL LAYOUT IDENTICAL to Y."
+                : $"CONTROL LAYOUT DIFFERS from Y ({controlSample.LayoutFingerprint:x16}) - the harness is wrong, stop.");
+            return 0;
+        }
+
+        /// <summary>
+        /// `Y`'s configuration exactly, as <c>Prototype1Presenter.ResetTerrainPlaytest</c> builds
+        /// it. Copied rather than shared because Simulation must not reference Presentation; if that
+        /// method changes, this drifts, which is what the fingerprint line exists to notice.
+        /// </summary>
+        private static SimulationConfig CreateConfig(int seed, Arm arm = default)
+        {
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: seed, initialPopulation: 4);
+            return new SimulationConfig(
+                defaults.WorldSeed,
+                defaults.InitialPopulation,
+                defaults.Schedule,
+                maximumPopulation: 96,
+                defaults.FounderProfile,
+                defaults.CognitionEnabled,
+                defaults.PhysiologyEnabled,
+                DecisionPolicyVersion.IntentUtilityV1,
+                defaults.PlantCohortsEnabled,
+                predationEconomicsEnabled: true,
+                decisionStaggerEnabled: true,
+                multiThreatPerceptionEnabled: true,
+                restBehaviorEnabled: true,
+                juvenileCapabilityEnabled: true,
+                parentalFollowingEnabled: true,
+                kinRecognitionEnabled: true,
+                learnedResourceQualityEnabled: true,
+                mateSelectionEnabled: true,
+                plantSiteCompetitionEnabled: true,
+                plantMortalityEnabled: true,
+                plantTemperatureAdaptationEnabled: true,
+                proceduralEnvironmentFieldsEnabled: true,
+                plantFertilityAdaptationEnabled: true,
+                elevationFieldEnabled: true,
+                terrainDrivenEnvironmentEnabled: true,
+                slopeMovementCostEnabled: true,
+                terrainDrivenTemperatureEnabled: true,
+                healthRecoveryEnabled: true,
+                wanderHomeHysteresisEnabled: true,
+                feedInPlaceEnabled: true,
+                arenaHalfWidth: SimulationConfig.DefaultArenaHalfWidth,
+                generatedPlantSitesEnabled: arm.GeneratedSpacing > 0f,
+                generatedPlantSiteSpacing: arm.GeneratedSpacing > 0f ? arm.GeneratedSpacing : SimulationConfig.DefaultGeneratedPlantSiteSpacing,
+                generatedPlantSiteFertilityThreshold: arm.GeneratedThreshold,
+                generatedPlantSiteFixedCapacity: arm.GeneratedFixedCapacity);
+        }
+
+        private static RunResult Execute(Arm arm, int seed)
+        {
+            SimulationConfig config = CreateConfig(seed, arm);
+            SimulationScenario scenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
+            if (arm.Parts > 1)
+            {
+                scenario = scenario.SplitSites($"pilot-split-{arm.Parts}", arm.Parts, arm.Spread, splitFood: true, splitWater: arm.SplitWater);
+            }
+
+            var world = new SimulationWorld(config);
+            scenario.ApplyTo(world);
+
+            // WHEN a world dies decides what failed: an early death is an establishment failure and
+            // has a different fix from a grown population collapsing. The bigger-world pilot was
+            // read as a carrying-capacity result until its survivors turned out to be at full
+            // population, which made every failure an early one.
+            long extinctionTick = -1;
+            for (int tick = 0; tick < Ticks; tick++)
+            {
+                world.Step(config.FixedDeltaTime);
+                world.Events.Clear();
+                if (extinctionTick < 0 && world.CreatureCount == 0) extinctionTick = tick;
+            }
+
+            RunResult result = Measure(arm, seed, world, scenario);
+            result.ExtinctionTick = extinctionTick;
+            return result;
+        }
+
+        private static RunResult Measure(Arm arm, int seed, SimulationWorld world, SimulationScenario scenario)
+        {
+            int count = world.CreatureCount;
+            var positions = new SimVector2[count];
+            double energySum = 0d;
+            for (int index = 0; index < count; index++)
+            {
+                positions[index] = world.GetCreatureMovementAt(index).Position;
+                // As a FRACTION of capacity, which is what the 0.806 on record is - Energy itself is
+                // absolute and scales with body size, so a mean of it is not comparable to anything.
+                float capacity = world.Creatures.GetPhenotypeAt(index).EnergyCapacity;
+                energySum += capacity <= 0f ? 0d : world.GetCreatureNeedsAt(index).Energy / capacity;
+            }
+
+            double nearestSum = 0d;
+            int underHalf = 0;
+            int underOne = 0;
+            for (int index = 0; index < count; index++)
+            {
+                double nearest = double.MaxValue;
+                for (int other = 0; other < count; other++)
+                {
+                    if (other == index) continue;
+                    double distance = SimVector2.Distance(positions[index], positions[other]);
+                    if (distance < nearest) nearest = distance;
+                }
+
+                if (nearest == double.MaxValue) continue;
+                nearestSum += nearest;
+                if (nearest < 0.5d) underHalf++;
+                if (nearest < 1.0d) underOne++;
+            }
+
+            int foodSites = 0;
+            var activeFoodPositions = new List<SimVector2>();
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (resource.Kind != ResourceKind.Food) continue;
+                foodSites++;
+                if (resource.IsActive) activeFoodPositions.Add(resource.Position);
+            }
+
+            int activeFood = activeFoodPositions.Count;
+
+            // How far apart the food itself is, which is the quantity generated placement would
+            // control directly. Coincident sites count as zero distance, which is the honest reading
+            // of the spread-0 arm: four entries at one coordinate are one location.
+            double siteSpacingSum = 0d;
+            for (int index = 0; index < activeFood; index++)
+            {
+                double nearest = double.MaxValue;
+                for (int other = 0; other < activeFood; other++)
+                {
+                    if (other == index) continue;
+                    double distance = SimVector2.Distance(activeFoodPositions[index], activeFoodPositions[other]);
+                    if (distance < nearest) nearest = distance;
+                }
+
+                if (nearest != double.MaxValue) siteSpacingSum += nearest;
+            }
+
+            int livePlants = 0;
+            for (int index = 0; index < world.Plants.Count; index++)
+            {
+                if (world.Plants.GetAt(index).Biomass > 0f) livePlants++;
+            }
+
+            return new RunResult
+            {
+                Arm = arm.Name,
+                Seed = seed,
+                Population = count,
+                Extinct = count == 0,
+                MeanNearest = count < 2 ? 0d : nearestSum / count,
+                ShareUnderHalf = count < 2 ? 0d : underHalf / (double)count,
+                ShareUnderOne = count < 2 ? 0d : underOne / (double)count,
+                MeanEnergy = count == 0 ? 0d : energySum / count,
+                ActiveFoodSites = activeFood,
+                LivePlants = livePlants,
+                FoodSiteCount = foodSites,
+                MeanSiteSpacing = activeFood < 2 ? 0d : siteSpacingSum / activeFood,
+                LayoutFingerprint = scenario.ComputeLayoutFingerprint(),
+            };
+        }
+    }
+}

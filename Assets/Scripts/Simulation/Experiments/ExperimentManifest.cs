@@ -92,6 +92,11 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "EvasiveFleeingEnabled", config.EvasiveFleeingEnabled);
             Line(builder, "WanderHomeHysteresisEnabled", config.WanderHomeHysteresisEnabled);
             Line(builder, "FeedInPlaceEnabled", config.FeedInPlaceEnabled);
+            Line(builder, "GeneratedPlantSitesEnabled", config.GeneratedPlantSitesEnabled);
+            Line(builder, "GeneratedPlantSiteSpacing", config.GeneratedPlantSiteSpacing.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteJitterFraction", config.GeneratedPlantSiteJitterFraction.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteFertilityThreshold", config.GeneratedPlantSiteFertilityThreshold.ToString("0.###", CultureInfo.InvariantCulture));
+            Line(builder, "GeneratedPlantSiteFixedCapacity", config.GeneratedPlantSiteFixedCapacity.ToString("0.###", CultureInfo.InvariantCulture));
             Line(builder, "ArenaHalfWidth", config.ArenaHalfWidth.ToString("R", CultureInfo.InvariantCulture));
             Line(builder, "EvasiveFleeingStrength", config.EvasiveFleeingStrength.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
             Line(builder, "ReproductionNeedFraction", config.ReproductionNeedFraction.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));

@@ -192,6 +192,81 @@ namespace LifeSimulation.Simulation.Experiments
         /// were always meant to start on.</para>
         /// </summary>
         /// <summary>
+        /// Splits every <b>active</b> site of the chosen kinds into <paramref name="parts"/> sites
+        /// around the original position, dividing amount, capacity and regeneration between them so
+        /// <b>total productivity is unchanged</b>.
+        ///
+        /// <para><b>What this is for.</b> Three levers have been measured against clumping - feeding
+        /// in place, a four-times-larger world, a four-times-wider feeding disc - and all three held
+        /// the number of food locations at six. This moves that one variable and nothing else, which
+        /// makes it the cheapest available test of whether the number of locations is what sets
+        /// spacing at all. It is a measurement instrument, not a proposed feature: generated
+        /// placement is the feature, and this decides whether it is worth building.</para>
+        ///
+        /// <para><b>The first part stays exactly where the original was.</b> The remaining
+        /// <c>parts - 1</c> sit on a ring of radius <paramref name="spread"/>. Two reasons: the
+        /// founder placement is a point ON a site, so a split that moved every copy off it would
+        /// drop founders into empty ground - measured at 2 of 4 worlds extinct when
+        /// <see cref="Tiled"/> made that mistake - and <c>parts = 1</c> is then
+        /// fingerprint-identical to the source layout, so a control arm can prove the harness.</para>
+        ///
+        /// <para>Dormant sites are left alone. They are dispersal targets rather than places food
+        /// currently is, so splitting them would change what plants can colonise at the same time as
+        /// changing where food starts, and the two effects could not be told apart.</para>
+        /// </summary>
+        public SimulationScenario SplitSites(string id, int parts, float spread, bool splitFood = true, bool splitWater = false)
+        {
+            if (parts <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(parts));
+            }
+
+            if (spread < 0f || float.IsNaN(spread) || float.IsInfinity(spread))
+            {
+                throw new ArgumentOutOfRangeException(nameof(spread));
+            }
+
+            var split = new List<ResourceDefinition>(_resources.Length);
+            for (int index = 0; index < _resources.Length; index++)
+            {
+                ResourceDefinition source = _resources[index];
+                bool targeted = source.IsActive
+                    && ((splitFood && source.Kind == ResourceKind.Food) || (splitWater && source.Kind == ResourceKind.Water));
+                if (!targeted || parts == 1)
+                {
+                    split.Add(source);
+                    continue;
+                }
+
+                float share = 1f / parts;
+                for (int part = 0; part < parts; part++)
+                {
+                    SimVector2 position = source.Position;
+                    if (part > 0)
+                    {
+                        double angle = 2d * Math.PI * (part - 1) / (parts - 1);
+                        position = new SimVector2(
+                            source.Position.X + (float)(spread * Math.Cos(angle)),
+                            source.Position.Y + (float)(spread * Math.Sin(angle)));
+                    }
+
+                    split.Add(new ResourceDefinition(
+                        source.Kind,
+                        position,
+                        source.InteractionRadius,
+                        source.InitialAmount * share,
+                        source.Capacity * share,
+                        source.RegenerationPerSecond * share,
+                        source.IsActive,
+                        source.NutritionMultiplier,
+                        source.PlantGenome));
+                }
+            }
+
+            return new SimulationScenario(id, split.ToArray(), _founderPlacement);
+        }
+
+        /// <summary>
         /// Scales every site's <c>InteractionRadius</c>, leaving position, stock, capacity,
         /// regeneration, nutrition and plant genome alone.
         ///
@@ -411,9 +486,29 @@ namespace LifeSimulation.Simulation.Experiments
             }
 
             float populationScale = Math.Max(1f, world.Config.InitialPopulation / 4f);
+
+            // With generated placement on, the authored DORMANT food sites are the thing being
+            // replaced: they are the list of coordinates a plant is allowed to move to, and deciding
+            // that list from the fertility field is the whole change. The authored ACTIVE sites stay
+            // - they carry the founder plants, the founder placement stands on one of them, and a
+            // world that started with no plants at all would be measuring establishment from nothing
+            // rather than measuring placement.
+            bool generateSites = world.Config.GeneratedPlantSitesEnabled && world.Config.PlantCohortsEnabled;
+            float generatedCapacityBudget = 0f;
+
+            int resourceIndex = 0;
             for (int index = 0; index < _resources.Length; index++)
             {
                 ResourceDefinition definition = _resources[index];
+                if (generateSites && definition.Kind == ResourceKind.Food && !definition.IsActive)
+                {
+                    // Its capacity becomes the budget the generated sites divide between them, so
+                    // the arena holds what it held before and a placement change cannot be read as a
+                    // food change.
+                    generatedCapacityBudget += definition.Capacity * populationScale;
+                    continue;
+                }
+
                 ResourceId resourceId = definition.AddTo(world.Resources, populationScale);
                 if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food && definition.IsActive)
                 {
@@ -428,15 +523,51 @@ namespace LifeSimulation.Simulation.Experiments
                     }
                     if (world.Config.PlantSiteCompetitionEnabled)
                     {
-                        world.PlantSites.Register(index);
+                        world.PlantSites.Register(resourceIndex);
                     }
                 }
                 else if (world.Config.PlantCohortsEnabled && definition.Kind == ResourceKind.Food && !definition.IsActive)
                 {
-                    world.PlantSites.Register(index);
+                    world.PlantSites.Register(resourceIndex);
                 }
+
+                // The registry holds RESOURCE indices, and the loop above no longer adds one
+                // resource per definition once dormant food is being replaced. Counting them
+                // separately is what keeps a registered slot pointing at the site it names.
+                resourceIndex++;
+            }
+
+            if (!generateSites) return;
+
+            foreach (GeneratedPlantSite site in PlantSiteGenerator.Generate(
+                world.Config.WorldSeed,
+                world.Environment,
+                world.Config.ArenaHalfWidth,
+                world.Config.GeneratedPlantSiteSpacing,
+                world.Config.GeneratedPlantSiteJitterFraction,
+                world.Config.GeneratedPlantSiteFertilityThreshold,
+                generatedCapacityBudget,
+                world.Config.GeneratedPlantSiteFixedCapacity))
+            {
+                ResourceId generatedId = world.Resources.Add(
+                    ResourceKind.Food,
+                    site.Position,
+                    GeneratedSiteInteractionRadius,
+                    initialAmount: 0f,
+                    capacity: site.Capacity,
+                    regenerationPerSecond: 0f);
+                world.Resources.SetActive(generatedId, false);
+                world.PlantSites.Register(resourceIndex);
+                resourceIndex++;
             }
         }
+
+        /// <summary>
+        /// The feeding disc a generated site gets. Every authored site in every scenario uses 1.5,
+        /// and widening it was measured to do nothing for spacing
+        /// (<c>p6-feeding-radius-2026-08-29.md</c>), so this is deliberately not a new knob.
+        /// </summary>
+        private const float GeneratedSiteInteractionRadius = 1.5f;
     }
 
     public static class Prototype1Scenarios
