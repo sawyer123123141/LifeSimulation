@@ -763,9 +763,24 @@ panmictic** - one 50-unit arena, everyone in reach of everyone, mate selection t
 relatedness.
 
 **Do not lower the threshold to make clusters appear**, and do not read the nine passing test files as
-evidence that speciation works. The unblock is **isolation**, which is P6's world partitioning and
-already next in the dependency chain. Assortative mating is the forced alternative and should not be
-built without an explicit decision to want a designed-in preference.
+evidence that speciation works.
+
+**GEOGRAPHIC ISOLATION WAS THE OBVIOUS UNBLOCK AND IT IS REFUTED — pre-checked before building
+anything.** The premise under P6 partitioning is that space structures genes. Measured: the
+correlation between how far apart two animals live and how genetically distant they are is
+**0.015-0.133**, and pairs 20 units apart are **+0.011** more distant than neighbours against a
+within-population spread of 0.18. Running five times longer — **29-37 generations against 10-15** —
+leaves the cluster count at **1 in every seed**, with genetic distance **plateauing** and the spatial
+correlation **falling to 0.056**. It is the mechanism, not the time and not the amount of world.
+**Do not build world partitioning as a route to speciation.**
+
+What is missing is **reproductive isolation**: every creature can breed with every other and mate
+selection ignores relatedness. Adding one is a decision about whether species are designed or
+emergent, and it is the user's to take.
+
+**Defect found on the way, not fixed:** at 60,000 ticks every seed ends with "P5 analysis output
+overflowed; records were dropped" — the buffer holds 64 events and a long run produces 200
+observations. The panel reports it rather than lying, but history past the cap is lost.
 
 #### PARKED 2026-08-30 — creatures stand on the sea, and it does not matter yet
 

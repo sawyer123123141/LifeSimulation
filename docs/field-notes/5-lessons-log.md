@@ -857,3 +857,28 @@ because there is nothing there to walk into. The bug is real and it is entirely 
 between what is drawn and what is modelled. **Before treating something on screen as a behaviour, ask
 whether the simulation can even represent the thing it appears to be reacting to.**
 
+**2026-08-30 — Pre-check the premise of a phase before building the phase.** Geographic isolation was
+the obvious route to speciation and the next item in the dependency chain, which made it feel decided
+rather than testable. The premise underneath it is one sentence - *space structures genes* - and the
+existing engine could answer it in a single run: the correlation between how far apart two animals
+live and how genetically distant they are is **0.015 to 0.133**, and pairs twenty units apart are
+**+0.011** more distant than neighbours against a within-population spread of 0.18. Running five
+times longer tripled the generations and left the cluster count at one in every seed, with distance
+**plateauing** and the spatial signal **falling**. A phase-sized build would have found that out at
+phase-sized cost. **A dependency chain says what comes next, not that it will work.**
+
+**2026-08-30 — Distinguish "not yet" from "not ever" by running longer, not by arguing.** The first
+speciation numbers were consistent with two stories: too few generations, or a mechanism that cannot
+diverge. Those have opposite conclusions - one says wait, the other says redesign - and no amount of
+reading the genome code separates them. Five times the ticks did, in one command: maximum pairwise
+genetic distance went 0.21-0.35 to 0.235-0.364 while generations went 10-15 to 29-37. **A quantity
+that plateaus while its driver triples is at equilibrium, and equilibrium is a mechanism answer.**
+
+**2026-08-30 — A panel that has always looked empty is a measurement nobody took.** The P5 history
+panel occupies 520 x 340 pixels of the screen at all times and reports one cluster, forever. That
+could have meant a broken analysis, a miscalibrated threshold, or an honest answer, and for weeks
+nobody knew which. Nine test files pass, and every one of them feeds the analysis **synthetic**
+ancestry - the right way to test clustering logic and silent about whether a real population ever
+splits. **A test suite that never runs the real input can be complete and still leave the headline
+question unasked.**
+

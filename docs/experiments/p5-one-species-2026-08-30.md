@@ -62,6 +62,52 @@ the simulation has none.
 "species clusters provide useful separation with visible uncertainty". The separation cannot exist
 until something splits the population, and the uncertainty measured above is total.
 
+## Route 1 was pre-checked before building it, and it is REFUTED
+
+The obvious unblock is geographic isolation — P6 world partitioning. Before starting a phase on that
+premise, it was tested with what already exists: **does space structure genes in this ecology at
+all?** If animals living far apart are no more distant genetically than neighbours, more space will
+not help.
+
+**At 12,000 ticks (10-15 generations):** correlation between how far apart two animals are and how
+genetically distant they are is **0.015 to 0.133**, mean 0.078. Pairs more than 20 units apart are
+**+0.011** more distant than pairs within 5 units, against a within-population mean of 0.16. Real in
+sign — five of six seeds positive — and roughly 7% of the mean. An order of magnitude too small to
+cluster on.
+
+**The obvious follow-up is whether that is a time problem.** Run the same world five times longer:
+
+| | 12,000 ticks | 60,000 ticks |
+|---|---|---|
+| generations | 10-15 | **29-37** |
+| clusters at t=0.25 | 1 in every seed | **1 in every seed** |
+| mean pairwise distance | 0.11-0.20 | 0.15-0.21 |
+| **max** pairwise distance | 0.21-0.35 | **0.235-0.364** |
+| spatial correlation | 0.078 mean | **0.056 mean** |
+| far minus near | +0.011 | **+0.007** |
+
+**Triple the generations and nothing separates.** Genetic distance plateaus at a
+mutation-selection-drift equilibrium rather than accumulating — the maximum barely moves — and the
+spatial signal gets *weaker*, which is what happens when animals mix faster than drift can build
+local structure.
+
+**So it is the mechanism, not the time, and not the amount of world.** P6 partitioning would be
+amplifying a measured effect of +0.007 against a within-population spread of 0.18, and that effect
+shrinks as the run gets longer. **Do not build world partitioning as a route to speciation.** It may
+well be worth building for its own reasons — scale, biomes, simulation LOD — but not for this one.
+
+What would actually be required is a mechanism this simulation does not have: **reproductive
+isolation**. Every creature can breed with every other, mate selection ignores relatedness, and there
+is no barrier of any kind. Adding one is a design decision about whether species should be a designed
+feature or an emergent one, and it belongs to the user, not to a plan.
+
+## A defect found on the way
+
+At 60,000 ticks every seed ends with **"P5 analysis output overflowed; records were dropped."** The
+output buffer holds 64 events and a long run produces 200 observations. The panel says so rather than
+lying, which is right, but history past the cap is lost. Not fixed here: the right capacity depends on
+what the panel is for, which is a question the finding above reopens.
+
 ## What this means for the roadmap
 
 P5's storage and analysis are built — ancestry, genetic distance, clustering, split/merge relations,

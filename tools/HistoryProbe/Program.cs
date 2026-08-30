@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LifeSimulation.Simulation.Analysis;
 using LifeSimulation.Simulation.Core;
 using LifeSimulation.Simulation.Experiments;
+using LifeSimulation.Simulation.Behavior;
 
 namespace LifeSimulation.Tools.HistoryProbe
 {
@@ -22,7 +23,12 @@ namespace LifeSimulation.Tools.HistoryProbe
     /// </summary>
     internal static class Program
     {
-        private const int Ticks = 12000;
+        /// <summary>
+        /// Overridable so the same probe can ask whether divergence is limited by TIME or by the
+        /// mechanism. If maximum pairwise distance and the spatial correlation both plateau while
+        /// generations keep accumulating, more world will not help either.
+        /// </summary>
+        private static int _ticks = 12000;
         private const int FirstSeed = 42;
 
         private static int _seedCount = 6;
@@ -50,6 +56,12 @@ namespace LifeSimulation.Tools.HistoryProbe
             public float MaximumPairwiseDistance;
             public float MeanPairwiseDistance;
             public int[] ClustersByThreshold;
+            public int HighestGeneration;
+            public double SpatialGeneticCorrelation;
+            public float NearPairDistance;
+            public float FarPairDistance;
+            public int NearPairCount;
+            public int FarPairCount;
         }
 
         private static int Main(string[] arguments)
@@ -60,9 +72,13 @@ namespace LifeSimulation.Tools.HistoryProbe
                 {
                     _seedCount = int.Parse(argument.Substring(8), CultureInfo.InvariantCulture);
                 }
+                else if (argument.StartsWith("--ticks=", StringComparison.Ordinal))
+                {
+                    _ticks = int.Parse(argument.Substring(8), CultureInfo.InvariantCulture);
+                }
             }
 
-            Console.WriteLine($"P5 history in the shipped Y, seeds {FirstSeed}..{FirstSeed + _seedCount - 1}, {Ticks} ticks");
+            Console.WriteLine($"P5 history in the shipped Y, seeds {FirstSeed}..{FirstSeed + _seedCount - 1}, {_ticks} ticks");
             Console.WriteLine($"observation cadence {P5HistoryPanelSession.ObservationIntervalTicks} ticks, genetic threshold {P5HistoryPanelSession.GeneticThreshold}");
             Console.WriteLine();
 
@@ -114,6 +130,19 @@ namespace LifeSimulation.Tools.HistoryProbe
             }
 
             Console.WriteLine();
+            Console.WriteLine("does space structure genes? (the premise under P6 partitioning as a speciation route)");
+            Console.WriteLine("| seed | generations | corr(distance apart, genetic distance) | near pairs <5u | far pairs >20u | far - near |");
+            Console.WriteLine("|---|---|---|---|---|---|");
+            foreach (RunResult result in results)
+            {
+                Console.WriteLine($"| {result.Seed} | {result.HighestGeneration}"
+                    + $" | {result.SpatialGeneticCorrelation.ToString("0.000", CultureInfo.InvariantCulture)}"
+                    + $" | {result.NearPairDistance.ToString("0.000", CultureInfo.InvariantCulture)} (n={result.NearPairCount})"
+                    + $" | {result.FarPairDistance.ToString("0.000", CultureInfo.InvariantCulture)} (n={result.FarPairCount})"
+                    + $" | {(result.FarPairDistance - result.NearPairDistance).ToString("+0.000;-0.000;0.000", CultureInfo.InvariantCulture)} |");
+            }
+
+            Console.WriteLine();
             Console.WriteLine("status text the panel would show at the end of each run");
             foreach (RunResult result in results)
             {
@@ -160,6 +189,29 @@ namespace LifeSimulation.Tools.HistoryProbe
                 feedInPlaceEnabled: true);
         }
 
+        private static double Correlation(List<double> first, List<double> second)
+        {
+            int count = first.Count;
+            if (count < 2) return 0d;
+
+            double firstMean = first.Average();
+            double secondMean = second.Average();
+            double covariance = 0d;
+            double firstVariance = 0d;
+            double secondVariance = 0d;
+            for (int index = 0; index < count; index++)
+            {
+                double a = first[index] - firstMean;
+                double b = second[index] - secondMean;
+                covariance += a * b;
+                firstVariance += a * a;
+                secondVariance += b * b;
+            }
+
+            double denominator = Math.Sqrt(firstVariance * secondVariance);
+            return denominator <= 0d ? 0d : covariance / denominator;
+        }
+
         private static RunResult Execute(int seed)
         {
             SimulationConfig config = CreateConfig(seed);
@@ -171,7 +223,7 @@ namespace LifeSimulation.Tools.HistoryProbe
             P5HistoryPanelSession session = P5HistoryPanelSession.CreateForWorld(world);
             var result = new RunResult { Seed = seed };
 
-            for (int tick = 0; tick < Ticks; tick++)
+            for (int tick = 0; tick < _ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
 
@@ -210,6 +262,57 @@ namespace LifeSimulation.Tools.HistoryProbe
             result.ClustersByThreshold = SweepThresholds
                 .Select(threshold => GeneticClusters.From(snapshot, threshold).Count)
                 .ToArray();
+            result.HighestGeneration = world.CaptureStatistics().HighestGeneration;
+
+            // DOES SPACE STRUCTURE GENES HERE?
+            //
+            // This is the premise underneath P6 world partitioning as a route to speciation: that
+            // separating a population geographically makes it diverge genetically. Before building a
+            // phase on it, ask whether the effect exists at all at the scale that already exists. If
+            // animals living 20 units apart are no more distant genetically than neighbours, then
+            // space does not structure genes in this ecology and more space will not either.
+            //
+            // Pearson correlation over every pair, plus the blunter near/far means, because a
+            // correlation near zero and a correlation of 0.3 look the same in one number if the
+            // spread is wide.
+            var spatial = new List<double>();
+            var genetic = new List<double>();
+            double nearSum = 0d;
+            double farSum = 0d;
+            int nearCount = 0;
+            int farCount = 0;
+            for (int first = 0; first < snapshot.Count; first++)
+            {
+                if (!world.TryGetCreatureIndex(snapshot.GetIdAt(first), out int firstIndex)) continue;
+                SimVector2 firstPosition = world.GetCreatureMovementAt(firstIndex).Position;
+                for (int second = first + 1; second < snapshot.Count; second++)
+                {
+                    if (!world.TryGetCreatureIndex(snapshot.GetIdAt(second), out int secondIndex)) continue;
+                    SimVector2 secondPosition = world.GetCreatureMovementAt(secondIndex).Position;
+
+                    double apart = SimVector2.Distance(firstPosition, secondPosition);
+                    double unlike = GeneticDistance.Between(snapshot.GetGenomeAt(first), snapshot.GetGenomeAt(second));
+                    spatial.Add(apart);
+                    genetic.Add(unlike);
+
+                    if (apart < 5d)
+                    {
+                        nearSum += unlike;
+                        nearCount++;
+                    }
+                    else if (apart > 20d)
+                    {
+                        farSum += unlike;
+                        farCount++;
+                    }
+                }
+            }
+
+            result.SpatialGeneticCorrelation = Correlation(spatial, genetic);
+            result.NearPairCount = nearCount;
+            result.FarPairCount = farCount;
+            result.NearPairDistance = nearCount == 0 ? 0f : (float)(nearSum / nearCount);
+            result.FarPairDistance = farCount == 0 ? 0f : (float)(farSum / farCount);
 
             for (int index = 0; index < session.DisplayEventCount; index++)
             {

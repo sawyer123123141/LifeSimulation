@@ -114,10 +114,18 @@ signature of one interbreeding population. **The separation P5's exit gate asks 
 until something splits gene flow, and nothing in the simulation does.** One 50-unit arena, everyone
 in reach of everyone, and mate selection that ignores relatedness.
 
-So P5 is blocked on biology, not on analysis, and the unblock is **isolation** - which is P6's world
-partitioning, already next in the dependency chain. Assortative mating would produce clusters faster
-and they would be an artefact of the rule that made them; do not build it without an explicit
-decision to want a designed-in preference. See `experiments/p5-one-species-2026-08-30.md`.
+So P5 is blocked on biology, not on analysis. **Geographic isolation was the obvious unblock and it
+was pre-checked and refuted**: the correlation between how far apart two animals live and how
+genetically distant they are is 0.056-0.078, and pairs 20 units apart are only +0.007 to +0.011 more
+distant than neighbours against a within-population spread of 0.18. Running five times longer -
+29-37 generations instead of 10-15 - leaves the cluster count at 1 in every seed, with genetic
+distance *plateauing* and the spatial signal getting **weaker**. **Do not build P6 world partitioning
+as a route to speciation**; build it for scale, biomes and LOD if it is wanted, but it will not make
+species.
+
+What is missing is **reproductive isolation** - every creature can breed with every other and mate
+selection ignores relatedness. Whether species should be a designed feature or an emergent one is a
+decision for the user. See `experiments/p5-one-species-2026-08-30.md`.
 
 ## P6 - World scale
 
