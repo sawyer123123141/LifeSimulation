@@ -56,6 +56,17 @@ Predator/prey roles should emerge from biology rather than hardcoded labels such
 - phenotype mapping from genes
 - optional disease/immunity only if it creates useful evolutionary pressure
 
+**The P3 exit gate is NOT met, measured 2026-08-30.** The gate is *"at least two distinct trait
+strategies persist because they exploit different conditions"*, and the required digestion experiment
+now has a recorded negative: `diet_specialization` drift is t +0.59 / -0.21 / +0.52 across the
+resource axis and **t +1.56 against a control of +1.62** in the highest-combat cell, while `defense`
+in the same runs reaches t +12.71. Diet is pure cost below `MinimumHuntingDiet = 0.58`, both yield
+curves are linear so the plan's **"generalist cost" was never built**, and meat is 1.1-8.4% of deaths
+- too little for a carnivore strategy to pay. `experiments/p3-digestion-strategies-2026-08-30.md`.
+
+**This gate was declared a blocker for P4** in `experiments/p3-physiology-checkpoint-2026-08-13.md`
+- *"P4 remains blocked until this evidence is recorded"* - and P4 through P7 proceeded without it.
+
 ## P4 - Evolving ecosystem
 
 - plant genetics
