@@ -161,16 +161,22 @@ That last point is the one thing generated placement does that splitting authore
 **the food map stops being a list of coordinates that may or may not be on ground the world
 supports.** On this evidence it is not worth the population cost.
 
-## Recommendation
+## Outcome — the split SHIPPED, the feature stays off
 
-**Ship the split, keep the feature switched off.**
+**Done on the user's decision, 2026-08-30.**
 
-1. Apply `SplitSites(parts: 4, spread: 6)` to `Y`'s layout. Measured at 20 seeds: clumping index
-   **0.324 → 0.501**, population **92.2 → 95.7**, survival 19 of 20 → 18 of 20, energy 0.800 → 0.792.
-   The only change measured that improves the picture without degrading the worlds. **It edits a
-   playtest scenario, which is the user's call.**
-2. Leave `generatedPlantSitesEnabled` false. All three variants are committed, tested and documented
-   so that none of them is re-tried from scratch.
+1. **`Y` now applies `SplitSites(parts: 4, spread: 6)`** — `Prototype1Presenter.ResetTerrainPlaytest`,
+   scenario id `p6-terrain-playtest-split4`. Measured at 20 seeds: clumping index **0.324 → 0.501**,
+   population **92.2 → 95.7**, survival 19 of 20 → 18 of 20, energy 0.800 → 0.792. The only change
+   measured that improves the picture without degrading the worlds. Unity compile clean, re-rendered
+   at seed 42 and looked at.
+
+   **What the render actually shows, stated plainly:** the herd is looser, not gone. Animals are
+   individually readable and occupy a visibly wider band instead of interpenetrating, and one group
+   remains. An index of 0.501 is exactly that — half the dispersion of animals scattered at random,
+   which is a real change and not a solved problem.
+2. `generatedPlantSitesEnabled` stays **false**. All three variants are committed, tested and
+   documented so that none of them is re-tried from scratch.
 3. **If generated placement is picked up again, the thing to change is which sites are ACTIVE and how
    much each holds** — the feature currently governs neither. That means generating the founder
    patches as well as the dispersal targets, and deciding what the founder placement stands on, which
@@ -189,8 +195,9 @@ supports.** On this evidence it is not worth the population cost.
   not reward an arm for killing animals.
 - `CreatureArenaCapture.CaptureSitePilot` — three renders at `Y`'s own configuration.
 
-**676 headless tests green.** Nothing recorded moved: every flag is off by default and `Y` is
-unchanged.
+**676 headless tests green**, Unity batch compile clean. Every configuration flag is off by default
+and every recorded number stands: the only behavioural change is `Y`'s own layout, which is a
+scenario choice rather than a default.
 
 ## What not to do next
 

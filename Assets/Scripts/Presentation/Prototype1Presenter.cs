@@ -971,12 +971,40 @@ namespace LifeSimulation.Presentation
                 // neighbour inside half a unit falls from 61.7% to 55.0%.
                 //
                 // It does NOT stop the herd looking like a pile, and is not expected to: this
-                // scenario has six food sites of InteractionRadius 1.5 for 96 creatures, so sixteen
-                // animals share a disc three units across and overlap by construction. That is a
-                // question about how much space the world has, not about where creatures walk.
+                // scenario had six food patches of capacity 24 for 96 creatures, so sixteen animals
+                // shared a disc three units across and overlapped by construction. The pile is a
+                // question about the patches, not about where creatures walk - and the layout below
+                // is what answers it.
                 feedInPlaceEnabled: true);
-            ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
-            _scenarioId = "p6-terrain-playtest";
+
+            // Each of the six food patches becomes four of a quarter the capacity, one on the
+            // original coordinate and three on a radius-6 ring around it. Total productivity is
+            // unchanged; the only thing that moves is how many places food is and how rich each one
+            // is.
+            //
+            // MEASURED at 20 seeds against a control fingerprint-identical to the old layout
+            // (docs/experiments/p6-generated-plant-placement-2026-08-30.md): clumping index - mean
+            // nearest-neighbour over the Poisson expectation for the same population, so it cannot
+            // be won by killing animals - goes 0.324 to 0.501, population 92.2 to 95.7, mean energy
+            // 0.800 to 0.792, survival 19 of 20 to 18 of 20.
+            //
+            // Four and six are both load-bearing. Eight parts scores 0.480 at 14 of 20 alive, and
+            // packing the parts onto a radius-3 ring kills grown populations late, at ticks 4,579
+            // to 8,359 of 12,000. This is the widest split that is survival-neutral.
+            //
+            // The generated-placement feature is NOT what does this and is left switched off: it
+            // governs only the dormant dispersal targets, and three variants of it - a fertility
+            // lattice, that lattice filtered by distance to water, and sites on a ring anchored to
+            // each water point - all landed at or near the control while costing population.
+            // Creatures stand on rich patches, and dividing those is the thing that moves them.
+            ResetSimulation(
+                Prototype4Scenarios.ConsumerDefenseCalibrationModerate
+                    .SplitSites("p6-defense-calibration-split4", parts: 4, spread: 6f),
+                config);
+
+            // Renamed with the layout, so a HUD screenshot or a Logs/performance.txt line from
+            // before this change cannot be read as describing the world after it.
+            _scenarioId = "p6-terrain-playtest-split4";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";
             _overlay = TerrainOverlay.Elevation;
             _showTemperatureHeatmap = true;

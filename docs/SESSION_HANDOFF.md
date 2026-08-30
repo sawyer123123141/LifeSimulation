@@ -704,11 +704,17 @@ banners. Harness: `tools/SitePilot`, committed, control arm fingerprint-identica
 3. **Splitting water as well makes clumping worse** (0.301 against 0.323). The commute between food
    and water is part of what produces the spacing there is.
 
-**THE RECOMMENDATION, AND IT NEEDS THE USER'S DECISION.** Apply
-`SplitSites(parts: 4, spread: 6)` to `Y`'s layout: clumping index **0.324 → 0.501**, population
-**92.2 → 95.7**, survival 19 of 20 → 18 of 20, energy 0.800 → 0.792, at 20 seeds. It is the only
-change measured that improves the picture without degrading worlds, and it **edits a playtest
-scenario**, which is why it was not done.
+**SHIPPED on the user's decision.** `Y` applies `SplitSites(parts: 4, spread: 6)` —
+`Prototype1Presenter.ResetTerrainPlaytest`, scenario id now `p6-terrain-playtest-split4`. Each of the
+six food patches is four of a quarter the capacity, one on the original coordinate and three on a
+radius-6 ring. At 20 seeds: clumping index **0.324 → 0.501**, population **92.2 → 95.7**, survival 19
+of 20 → 18 of 20, energy 0.800 → 0.792. Unity compile clean, re-rendered and looked at.
+
+**What the picture shows, so nobody re-opens this expecting more:** the herd is looser, not gone.
+Animals are individually readable and spread over a wider band instead of interpenetrating, and they
+are still one group. 0.501 is half the dispersion of a random scatter. **Four parts and radius 6 are
+both load-bearing** — eight parts scores 0.480 at 14 of 20 alive, and a radius-3 ring kills grown
+populations late.
 
 **Generated placement stays OFF.** Three variants were built and measured — a fertility lattice, the
 lattice filtered by distance to water, and sites generated on a ring around each water point. All
