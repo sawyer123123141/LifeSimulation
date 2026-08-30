@@ -35,6 +35,7 @@
     <Compile Include="../../Assets/Scripts/Presentation/CreatureModelCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/CreaturePicking.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/ResourceMarkerAppearance.cs" />
+    <Compile Include="../../Assets/Scripts/Presentation/HudLayout.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />
   </ItemGroup>

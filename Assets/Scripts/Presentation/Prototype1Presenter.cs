@@ -132,6 +132,12 @@ namespace LifeSimulation.Presentation
 
         /// <summary>Set while a terrain preview is open, so the fixed-pixel HUD does not cover it.</summary>
         private bool _hudHidden;
+
+        /// <summary>
+        /// How much HUD is drawn, cycled with Tab. Separate from <see cref="_hudHidden"/>, which the
+        /// terrain viewer and planet view set for themselves and which is not a user preference.
+        /// </summary>
+        private HudDetail _hudDetail = HudDetail.Full;
         private bool _pausedBeforePlanetView;
         private float _planetRebuildDue;
 
@@ -389,6 +395,10 @@ namespace LifeSimulation.Presentation
             if (Input.GetKeyDown(KeyCode.V)) ResetObservationScenario(Prototype4Scenarios.ObservationShiftingPatches, foundersAreMature: false, mateSelectionEnabled: false, plantMortalityEnabled: true, worldSeed: 45);
             // Y is the terrain scenario: procedural environment fields with the elevation channel and
             // its lapse rate on. Press H until the overlay reaches Elevation to see the relief.
+            // Tab cycles full -> compact -> hidden. At full detail the HUD spans 1,276 x 808
+            // pixels, which is the whole of a 720p play window, and until 2026-08-30 there was no
+            // way to turn any of it off while watching the arena.
+            if (Input.GetKeyDown(KeyCode.Tab)) _hudDetail = HudLayout.Next(_hudDetail);
             if (Input.GetKeyDown(KeyCode.Y)) ResetTerrainPlaytest();
             if (Input.GetKeyDown(KeyCode.N)) ResetAllFlagsPlaytestSimulation();
             if (Input.GetKeyDown(KeyCode.H)) ToggleTemperatureHeatmap();

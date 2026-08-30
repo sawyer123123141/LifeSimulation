@@ -35,11 +35,30 @@ namespace LifeSimulation.Presentation
                 return;
             }
 
+            if (_hudDetail == HudDetail.Hidden)
+            {
+                // Same shape as the terrain viewer's line: never nothing, or the HUD looks broken
+                // rather than suppressed.
+                GUI.Label(new Rect(12f, 12f, 760f, 22f),
+                    $"HUD hidden (Tab)   |   Population {_world.CreatureCount}   |   {_scenarioId}");
+                return;
+            }
+
             GUI.Box(new Rect(12f, 12f, 440f, 284f), "LifeSimulation — Prototype 1");
             GUI.Label(new Rect(24f, 40f, 300f, 22f), $"Population: {_world.CreatureCount}    Tick: {_world.CurrentTick}");
             GUI.Label(new Rect(24f, 62f, 400f, 22f), $"Scenario: {_scenarioId}    Speed: {_speedMultiplier:0}x    {(_isPaused ? "Paused" : "Running")}");
             GUI.Label(new Rect(300f, 40f, 300f, 22f),
                 $"O: {(_sphericalArena ? "on the planet" : "flat patch")}");
+            SimulationStatistics stats0 = _world.Statistics;
+            if (_hudDetail == HudDetail.Compact)
+            {
+                GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats0.HighestGeneration}    Births: {stats0.BirthCount}    Deaths: {stats0.DeathCount}");
+                GUI.Label(new Rect(24f, 106f, 400f, 22f), $"Food: {stats0.AvailableFood:0.0}    Water: {stats0.AvailableWater:0.0}");
+                GUI.Label(new Rect(24f, 128f, 420f, 22f), "Tab: more HUD");
+                if (_hasSelectedCreature) DrawSelectedCreatureInspector();
+                return;
+            }
+
             if (_world != null && _world.Config.ElevationFieldEnabled)
             {
                 // Below the Creature Inspector. These used to sit at 84/106/128, drawn on top of
@@ -55,7 +74,7 @@ namespace LifeSimulation.Presentation
             }
             DrawSelectedCreatureInspector();
             DrawSelectedCreatureHistory();
-            var stats = _world.Statistics;
+            SimulationStatistics stats = stats0;
             DrawPopulationCondition(stats);
             DrawP5HistoryPanel();
             GUI.Label(new Rect(24f, 84f, 400f, 22f), $"Generation: {stats.HighestGeneration}    Births: {stats.BirthCount}    Deaths: {stats.DeathCount}");
@@ -74,7 +93,7 @@ namespace LifeSimulation.Presentation
             }
             GUI.Label(new Rect(24f, 128f, 420f, 22f), $"Mean genes: size {stats.MeanBodySizeGene:0.00} · speed {stats.MeanMovementSpeedGene:0.00} · metabolism {stats.MeanMetabolicPaceGene:0.00}");
             GUI.Label(new Rect(24f, 150f, 420f, 22f), $"Mean genes: vision {stats.MeanVisionRangeGene:0.00} · water {stats.MeanWaterEfficiencyGene:0.00} · food {stats.MeanFoodEfficiencyGene:0.00}");
-            GUI.Label(new Rect(24f, 698f, 1240f, 22f), "Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · H overlay");
+            GUI.Label(new Rect(24f, 698f, 1240f, 22f), "Tab HUD detail · Space pause · 1/2/4/8 speed · B/D/F resources · P predators · C cognition · T temperature · G foraging memory · H overlay");
             GUI.Label(new Rect(24f, 786f, 1240f, 22f),
                 _geneVision
                     ? "GENE VISION on (U): colour is temperature tolerance, cold blue to hot red; size is body size. Press U to go back to the animals."
