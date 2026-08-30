@@ -50,23 +50,25 @@ namespace LifeSimulation.Presentation
                 }
 
                 Transform view = _resourceViews[index];
-                float fraction = resource.Capacity <= 0f ? 0f : resource.Amount / resource.Capacity;
-                float height = Mathf.Lerp(0.08f, 0.5f, fraction);
+
+                // Height and colour come from ResourceMarkerAppearance, which the arena capture also
+                // calls. This is the P4a "resource recovery is visible without reading logs" rule,
+                // and it was four lines here that no test could reach and no picture ever showed.
+                ResourceMarkerAppearance marker =
+                    ResourceMarkerAppearance.For(resource.Kind, resource.Amount, resource.Capacity);
                 view.position = ArenaProjection.ToWorld(
                     resource.Position.X, resource.Position.Y,
-                    GroundHeightAt(resource.Position.X, resource.Position.Y) + (height * 0.5f));
+                    GroundHeightAt(resource.Position.X, resource.Position.Y) + (marker.Height * 0.5f));
                 view.rotation = ArenaProjection.Upright(resource.Position.X, resource.Position.Y);
-                view.localScale = new Vector3(2f, height, 2f);
-                Color baseColor = GetResourceColor(resource.Kind);
-                _resourceRenderers[index].material.color = Color.Lerp(baseColor * 0.2f, baseColor, fraction);
+                view.localScale = new Vector3(2f, marker.Height, 2f);
+                _resourceRenderers[index].material.color = new Color(marker.Red, marker.Green, marker.Blue);
             }
         }
 
         private static Color GetResourceColor(ResourceKind kind)
         {
-            if (kind == ResourceKind.Food) return new Color(0.95f, 0.72f, 0.15f);
-            if (kind == ResourceKind.Water) return new Color(0.15f, 0.65f, 1f);
-            return new Color(0.55f, 0.12f, 0.08f);
+            ResourceMarkerAppearance.BaseColor(kind, out float red, out float green, out float blue);
+            return new Color(red, green, blue);
         }
 
         private void SynchronizePresentation()

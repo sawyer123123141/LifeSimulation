@@ -404,7 +404,13 @@ not exist.
   belongs. The recorded 0.074 does not match 0.0332 and the quantity behind it is not stated; what is
   measured now is area share of the sphere at the resolution the planet is drawn at. **Nothing is
   wrong with the ice, and no coefficient was touched.**
-- **Terrain is cosmetic.** Creatures are drawn on relief; a hill costs them nothing.
+- ~~**Terrain is cosmetic.** Creatures are drawn on relief; a hill costs them nothing.~~ **Stale as
+  of 2026-08-24, corrected 2026-08-30.** `slopeMovementCostEnabled` charges a creature for climbing
+  (`SimulationWorld.Ticking.ChargeForClimbing`) and is **on for `Y`**, as are
+  `terrainDrivenTemperatureEnabled` and the terrain join. Both configuration defaults stay false, so
+  the sentence is still true of a default world and false of the one the playtest runs. Note it
+  charges energy only and does not steer: turning it off moved neither creature elevation nor the
+  clumping index (2026-08-30 drift measurement).
 
 ### Terrain — hypotheses tried and REFUTED, do not retry
 

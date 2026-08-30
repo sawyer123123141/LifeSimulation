@@ -5,6 +5,7 @@ using System.Linq;
 using LifeSimulation.Presentation;
 using LifeSimulation.Simulation.Behavior;
 using LifeSimulation.Simulation.Core;
+using LifeSimulation.Simulation.Resources;
 using LifeSimulation.Simulation.Environment;
 using LifeSimulation.Simulation.Experiments;
 using LifeSimulation.Simulation.World;
@@ -186,6 +187,7 @@ namespace LifeSimulation.EditorTools
             {
                 BuildLighting(root);
                 BuildGround(world, root.transform);
+                BuildResourceMarkers(world, root.transform);
 
                 int models = 0;
                 int capsules = 0;
@@ -305,6 +307,54 @@ namespace LifeSimulation.EditorTools
                 feedInPlaceEnabled: true,
                 arenaHalfWidth: SimulationConfig.DefaultArenaHalfWidth,
                 generatedPlantSitesEnabled: _playtestGeneratedSites);
+        }
+
+        /// <summary>
+        /// The resource sites, drawn the way the presenter draws them - height and colour from
+        /// <see cref="ResourceMarkerAppearance"/>, so a picture of a stripped patch is a picture of
+        /// what the player sees rather than of the capture's own idea of one.
+        ///
+        /// <para>They were missing entirely until 2026-08-30, which meant every arena PNG showed
+        /// animals standing on nothing and the P4a item about resource recovery being visible could
+        /// not be checked by looking.</para>
+        /// </summary>
+        private static void BuildResourceMarkers(SimulationWorld world, Transform parent)
+        {
+            var foodFill = new List<float>();
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (!resource.IsActive) continue;
+
+                ResourceMarkerAppearance appearance =
+                    ResourceMarkerAppearance.For(resource.Kind, resource.Amount, resource.Capacity);
+                PrimitiveType primitive = resource.Kind == ResourceKind.Food
+                    ? PrimitiveType.Cylinder
+                    : resource.Kind == ResourceKind.Water ? PrimitiveType.Cube : PrimitiveType.Sphere;
+
+                var view = GameObject.CreatePrimitive(primitive);
+                view.name = $"{resource.Kind} {appearance.FillFraction:0.00}";
+                view.transform.SetParent(parent, worldPositionStays: false);
+                view.transform.position = GroundRelative(
+                    resource.Position.X,
+                    appearance.Height * .5f,
+                    resource.Position.Y);
+                view.transform.localScale = new Vector3(2f, appearance.Height, 2f);
+                view.GetComponent<Renderer>().material.color =
+                    new Color(appearance.Red, appearance.Green, appearance.Blue);
+                if (resource.Kind == ResourceKind.Food) foodFill.Add(appearance.FillFraction);
+            }
+
+            // Numbers beside the picture. A marker that is short in the render should be a site that
+            // is empty in the data, and this is what says whether it is.
+            foodFill.Sort();
+            if (foodFill.Count > 0)
+            {
+                Debug.Log(
+                    $"ARENA food fill sites={foodFill.Count} min={foodFill[0]:0.00}"
+                    + $" median={foodFill[foodFill.Count / 2]:0.00} max={foodFill[foodFill.Count - 1]:0.00}"
+                    + $" below25%={foodFill.Count(fill => fill < .25f)} above75%={foodFill.Count(fill => fill > .75f)}");
+            }
         }
 
         private static bool SpawnCreature(SimulationWorld world, int index, Transform parent)
