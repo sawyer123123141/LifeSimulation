@@ -704,3 +704,19 @@ only tuned for the configuration it was looked at in.** Not changed: at 2,160 de
 reversals but does not cause them, and slowing it would draw a real 180-degree reversal as a graceful
 turn - hiding a simulation defect behind the renderer, which is the trap the interpenetration note
 already warns about.
+
+**2026-08-29 — A Play-mode report describes whatever Unity last compiled, which may not be your
+change.** Two reports in one session were made against stale code: creatures "still spinning" after
+the wander fix, and "clicking still doesn't work" after the selection fix. Both were correct
+observations of a build that did not contain the fix - Unity compiles when the editor regains focus
+and never while Play mode is running, so an editor left open and playing runs the code from before
+the edit. Neither was a failed fix, but the first cost a redesign, a spec and a measurement before
+the second made the pattern obvious. **When a fix is reported as not working in Play mode, confirm
+the editor recompiled before diagnosing anything.** Asking costs one message; assuming cost hours.
+
+**2026-08-29 — Verifying a change in a harness you built proves the harness, not the change.** The
+selection fix was "proven" by a batch-mode check that projected creatures and ran the picker - all
+126 resolving correctly - while the actual click path in Play mode had never executed the new code
+at all. The check was sound and its result was true; it simply did not answer the question asked of
+it. **A verification that cannot fail the way the real path fails is not verification of the real
+path.**

@@ -379,12 +379,28 @@ namespace LifeSimulation.EditorTools
                 TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Arena Terrain");
             ground.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
 
+            // The wider landscape the arena sits in, matching the presenter's backdrop so the capture
+            // is a picture of what Play mode draws rather than of a 50-unit field in a void.
+            const float surroundHalfWidth = TerrainPreview.WidePatchHalfWidth;
+            TerrainMeshBuilder.BuildPatch(
+                world.Config.WorldSeed, plates, centreLatitude, centreLongitude,
+                surroundHalfWidth, TerrainMeshBuilder.PatchHeightScale(surroundHalfWidth),
+                out Vector3[] surroundVertices, out Color[] surroundColors, out int[] surroundTriangles,
+                settings);
+
+            var surround = new GameObject("Arena Terrain Surround");
+            surround.transform.SetParent(parent);
+            surround.transform.localPosition = new Vector3(0f, -0.35f, 0f);
+            surround.AddComponent<MeshFilter>().sharedMesh =
+                TerrainMeshBuilder.FlatShaded(surroundVertices, surroundColors, surroundTriangles, "Arena Surround");
+            surround.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+
             // Sea, at exactly zero because elevation is signed displacement from sea level. Without
             // it the coastal window renders its sea bed as bumpy blue ground, which reads as land.
             var water = new GameObject("Water");
             water.transform.SetParent(parent);
             TerrainMeshBuilder.BuildWaterSurface(
-                halfWidth, 0f, out Vector3[] waterVertices, out int[] waterTriangles);
+                surroundHalfWidth, 0f, out Vector3[] waterVertices, out int[] waterTriangles);
             water.AddComponent<MeshFilter>().sharedMesh =
                 TerrainMeshBuilder.SmoothShaded(waterVertices, waterTriangles, "Water");
             water.AddComponent<MeshRenderer>().sharedMaterial = TerrainMeshBuilder.CreateWaterMaterial();

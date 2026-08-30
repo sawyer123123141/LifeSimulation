@@ -171,6 +171,7 @@ namespace LifeSimulation.Presentation
             // A preview REPLACES the scene rather than being added to it. Hiding only the ground left
             // creatures, resources and the sea floating in the middle of a planet.
             _terrainRenderer.enabled = arenaVisible;
+            if (_surroundRenderer != null) _surroundRenderer.enabled = arenaVisible;
             if (_waterSurface != null)
             {
                 _waterSurface.SetActive(arenaVisible && _world != null && _world.Config.ElevationFieldEnabled);
@@ -358,6 +359,7 @@ namespace LifeSimulation.Presentation
 
             ArenaProjection.Spherical = _sphericalArena;
             ArenaProjection.ProjectVertices(vertices);
+            BuildTerrainSurround();
             UpdatePlanetBackdrop();
 
             Mesh built = TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Arena Terrain");
@@ -369,6 +371,40 @@ namespace LifeSimulation.Presentation
             _terrainMesh.RecalculateBounds();
             if (_arenaTerrainMaterial == null) _arenaTerrainMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
             _terrainRenderer.sharedMaterial = _arenaTerrainMaterial;
+            Destroy(built);
+        }
+
+        /// <summary>
+        /// The wider landscape the arena sits in - the same patch the <c>K</c> viewer's first mode
+        /// draws, at the same seed, centre and settings, so the two show one world rather than two.
+        ///
+        /// <para>Purely a backdrop. Nothing samples it, creatures do not stand on it, and
+        /// <see cref="GroundHeightAt"/> still reads the detailed arena patch. It is sunk by
+        /// <c>SurroundSink</c> so the detailed patch wins wherever they overlap.</para>
+        /// </summary>
+        private void BuildTerrainSurround()
+        {
+            if (_surroundMesh == null) return;
+
+            EnsureArenaPlates();
+            float heightScale = TerrainMeshBuilder.PatchHeightScale(SurroundHalfWidth) * (_terrainHeightScale / 14f);
+            TerrainMeshBuilder.BuildPatch(
+                _world.Config.WorldSeed, _arenaPlates, _arenaCentreLatitude, _arenaCentreLongitude,
+                SurroundHalfWidth, heightScale,
+                out Vector3[] vertices, out Color[] colors, out int[] triangles,
+                ArenaTerrainSettings());
+
+            ArenaProjection.ProjectVertices(vertices);
+
+            Mesh built = TerrainMeshBuilder.FlatShaded(vertices, colors, triangles, "Arena Surround");
+            _surroundMesh.Clear();
+            _surroundMesh.vertices = built.vertices;
+            _surroundMesh.colors = built.colors;
+            _surroundMesh.triangles = built.triangles;
+            _surroundMesh.RecalculateNormals();
+            _surroundMesh.RecalculateBounds();
+            if (_arenaTerrainMaterial == null) _arenaTerrainMaterial = TerrainMeshBuilder.CreateTerrainMaterial();
+            _surroundRenderer.sharedMaterial = _arenaTerrainMaterial;
             Destroy(built);
         }
 
