@@ -741,6 +741,32 @@ founder placement stands on, which is what killed the tiled-habitat probe.
 six default-inert `SimulationConfig` parameters, `CreatureArenaCapture.CaptureSitePilot`.
 **676 tests green, every flag off, `Y` unchanged**, so every recorded number still stands.
 
+#### MEASURED 2026-08-30 — P5 reports one species because there is one, and P6 is what would change that
+
+**Read `docs/experiments/p5-one-species-2026-08-30.md`. Probe: `tools/HistoryProbe`, committed.**
+
+A previous claim in this session that P5 was "barely started" was **wrong**. It is substantially
+built: `AncestryHistory`, `GeneticDistance`, `GeneticClusters`, `GeneticClusterRelation`,
+`GeneticClusterHistory` (four files), `ClusterHistoryPolicy`, `GeneticClusterSensitivity`,
+`LifecycleTimeline`, `PopulationGenomeSnapshot`, `P5HistoryPanelSession`, and nine test files.
+
+**What was never asked is what it produces in a real world.** Every P5 test feeds it synthetic
+ancestry. Run against the shipped `Y` at 12,000 ticks over seeds 42-47, the panel reports **one
+cluster in every observation of every seed**, 234 of 242 events routine `Continuity`, and **zero
+splits ever**.
+
+**The threshold is not the problem.** Clustering the final population at 0.05 / 0.10 / 0.15 / 0.25 /
+0.40 gives 96 / 27 / 3 / 1 / 1 clusters against a population of 96. Mean pairwise genetic distance is
+0.11-0.20 with a maximum of 0.21-0.35 and no gap between them. A count that slides from one-per-animal
+to one with no plateau is a continuum, not species. **The analysis is honest; the world is
+panmictic** - one 50-unit arena, everyone in reach of everyone, mate selection that ignores
+relatedness.
+
+**Do not lower the threshold to make clusters appear**, and do not read the nine passing test files as
+evidence that speciation works. The unblock is **isolation**, which is P6's world partitioning and
+already next in the dependency chain. Assortative mating is the forced alternative and should not be
+built without an explicit decision to want a designed-in preference.
+
 #### PARKED 2026-08-30 — creatures stand on the sea, and it does not matter yet
 
 **Measured, so it is not re-diagnosed.** The user asked why creatures "drift into the water". **They

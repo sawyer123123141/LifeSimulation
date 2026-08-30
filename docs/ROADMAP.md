@@ -102,6 +102,23 @@ Acceptance: across fixed seeds, the same world yields repeatable routes, resourc
 - historical timeline
 - major ecology events
 
+**Measured 2026-08-30: the analysis is built and the world is panmictic.** Ancestry, genetic
+distance, clustering, split/merge relations, sensitivity, event policy and the on-screen panel all
+exist, with nine test files - and every one of those tests feeds the analysis **synthetic** ancestry.
+Run against the world the user actually watches, the panel reports **one cluster in every observation
+of every seed**, 234 of 242 events being routine `Continuity`, and **zero splits ever**.
+
+It is not the threshold. Clustering the final population at 0.05 / 0.10 / 0.15 / 0.25 / 0.40 gives
+96 / 27 / 3 / 1 / 1 clusters against a population of 96 - a continuum with no plateau, which is the
+signature of one interbreeding population. **The separation P5's exit gate asks for cannot exist
+until something splits gene flow, and nothing in the simulation does.** One 50-unit arena, everyone
+in reach of everyone, and mate selection that ignores relatedness.
+
+So P5 is blocked on biology, not on analysis, and the unblock is **isolation** - which is P6's world
+partitioning, already next in the dependency chain. Assortative mating would produce clusters faster
+and they would be an artefact of the rule that made them; do not build it without an explicit
+decision to want a designed-in preference. See `experiments/p5-one-species-2026-08-30.md`.
+
 ## P6 - World scale
 
 - multiple biomes
