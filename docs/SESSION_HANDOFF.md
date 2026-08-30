@@ -577,9 +577,9 @@ population as an upper bound — sound for that decision, but it is a bound, not
 The dated blocks below are the detail behind this summary, newest first. You do not need them all.**
 
 **Repo:** `C:\Users\sawye\OneDrive\Documents\ChatGPT\life sim` — NOT the shell's default cwd.
-**Branch `claude/session-handoff-docs-ytjvrc`, pushed, 6 commits ahead of `main`, `8e1a543` to
-`5e26bdf`.** Not yet merged to `main`.
-**639 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
+**Branch `main` at `d8b5f89`, pushed. Everything below is merged** — the
+`claude/session-handoff-docs-ytjvrc` branch this block used to name is merged and deleted.
+**655 tests green:** `dotnet test tools/HeadlessTests` — dotnet 9.0.300 IS installed on this
 machine, so the suite runs locally. Unity 6000.2.14f1 at
 `C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe`.
 
@@ -677,14 +677,22 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
 
 #### Where to pick up — all visible-side
 
-1. **Creatures interpenetrate** inside clusters, so dense knots read as a pile. Note this is
-   *honest* — the simulation has no collision — so separating them in the view alone would
-   misrepresent the world. Decide deliberately which of the two you are fixing.
-2. **Play mode: watched by a human for the first time, 2026-08-29 late.** Two real bugs fell out in
-   the first minute, both fixed and pushed (`28963c3`) - see the dated entry below for the full
-   diagnosis. **Not yet re-watched after the fix** - the user confirmed "looking better" mid-session
-   then had to step away. Re-open Play mode, press `Y`, and confirm the herd turns and moves
-   smoothly before treating this as closed.
+1. **Creatures clump, and it is NOT a movement bug — it is arithmetic.** `Y` has six food sites of
+   `InteractionRadius` **1.5** for **96** creatures, so sixteen animals share a disc three units
+   across while a creature model is about one unit wide. They overlap by construction and the
+   measured spacing is near the geometric best case. **Two things were tried and neither is the
+   answer**: feeding in place (shipped, survival-neutral, spacing 0.705 to 0.824, does not stop the
+   pile) and a four-times-larger world (piloted, spacing only 0.726 to 0.945, see
+   `docs/experiments/p6-bigger-world-pilot-2026-08-29.md`). **The remaining levers are feeding-site
+   geometry and the population cap.** Physics collision is the wrong tool and was rejected: the
+   simulation has no collision, so separating them in the view alone would misrepresent the world.
+2. **In-place twitching, OPEN and PAUSED by the user.** The full spinning is fixed; a creature still
+   "moves weird in one spot". Leads are in the paused block above. Do not reopen unasked.
+3. **A bigger world is viable but conditional.** Founders must scale with the area (16 rather than 4
+   at four times the area) or establishment fails - 2 of 4 worlds extinct. The population cap must
+   **not** scale: at 384 it collapses, which is Phase I's recorded "the cap is the stabiliser, not
+   the ceiling" meeting a scenario whose `gradedFertilityEnabled` is off by the user's explicit
+   choice. `SimulationConfig.ArenaHalfWidth` and `SimulationScenario.Tiled` exist for this now.
 3. **Terrain in the arena capture: built AND VERIFIED, 2026-08-29 late.** Rendered on the user's
    machine, compile clean (0 `error CS`), capture ran with no exceptions.
    `ARENA terrain centre=(-0.2692, 2.4794) height=-7.35..11.42 water=47.6% terrainDriven=True`,
@@ -702,6 +710,47 @@ labels on top of itself. **Compiling and passing tests does not mean it works. R
 
 **Blocked by a standing decision — do not fold in silently:** the playtest scenarios (`Y`, `N`) still
 predate the ecology work, and `gradedFertilityEnabled` is off for `Y` by the user's explicit choice.
+
+### 2026-08-29 (9) — the session after the handoff: four fixes, two dead ends, all merged
+
+**Merged to `main`.** The `.meta` work, the spinning fix, the click fix, the wider map, feeding in
+place, and the arena/tiling groundwork are all on `main` and pushed.
+
+**Fixed and verified**
+
+- **Creatures spinning on the spot** (`d38f5e4`). `GetMovementTarget`'s wander branch sent a creature
+  holding a learned home to a point **on** a ring of radius 3 while inside that radius and to the
+  centre once outside, so arriving at the ring is what reversed the target. 13.1% of wander heading
+  updates reversed >150 deg in one tick; 28,752 of 28,753 belonged to creatures with a memory home,
+  85.6% within 0.25 of the radius. Hysteresis at 4/3 of the radius, survival-neutral across 8 seeds,
+  reversals down ninefold. On for `Y`.
+- **Clicking a creature** (`8981849`). Dead since creatures became models: selection raycast against
+  colliders and an instantiated FBX has none. Replaced with screen-space picking - `CreaturePicking`,
+  pure and tested, projection in the presenter. **Confirmed working by the user.** No colliders were
+  added: 126 creatures moved every frame would force a physics rebuild to answer one screen-space
+  comparison, and terrain has no collider either so there was no occlusion to respect.
+- **The map `Y` draws** (`2a69124`). The arena drew its 50-unit square alone while `K` drew 400 units
+  of the same world. The wider patch is now drawn around it as a backdrop, sunk 0.35 so the detailed
+  patch wins the overlap. Rendering it caught the water plane still being arena-sized - a hard-edged
+  rectangle of sea over the wider coast - which compiled and passed every test.
+- **Feeding creatures stand still** (`df0a80a`). They were walking to a patch centre they had already
+  reached. Survival-neutral, spacing 0.705 to 0.824.
+
+**Two dead ends, both recorded rather than retried**
+
+- **Removing the wander home ring.** Specified in full, then measured: **1 of 8 worlds survived**
+  against 7 of 8. The ring is an accidental tether and the tether is load-bearing. Spec kept with a
+  REFUTED banner at `docs/superpowers/specs/2026-08-29-wander-home-range-design.md`.
+- **A bigger world as the fix for clumping.** Piloted: viable with founders scaled, fatal with the cap
+  scaled, and it buys far less spacing than expected. `docs/experiments/p6-bigger-world-pilot-2026-08-29.md`.
+
+**The thing worth carrying forward.** Four confident diagnoses in this session were wrong, and every
+one was caught by a measurement or a control rather than by more careful reading: the churn hypothesis
+(refuted by its own probe), the home redesign (refuted by re-reading the closed decisions), a batch
+"proof" of the click fix that ran code the game never executes, and two harness bugs whose results
+read exactly like ecology findings. **On this codebase, reading produces plausible mechanisms faster
+than it produces correct ones. The eight-minute measurement is nearly always cheaper than the
+redesign it prevents, and a control arm is cheaper still.**
 
 ### 2026-08-29 (8) — the `.meta` rule was wrong; verified against a fresh clone
 
