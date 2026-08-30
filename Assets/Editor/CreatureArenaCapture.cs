@@ -118,10 +118,15 @@ namespace LifeSimulation.EditorTools
         public static void CaptureSitePilot()
         {
             _geneVision = false;
+            // The layout Y drew until 2026-08-30, kept as the before picture.
             _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
             Capture("sitepilot-control", Ticks);
+
+            // What Y draws NOW - the same expression Prototype1Presenter.ResetTerrainPlaytest uses.
+            // If that call changes, this one has to change with it or the picture stops being of the
+            // world the user is looking at.
             _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate
-                .SplitSites("pilot-split-4-spread-6", parts: 4, spread: 6f);
+                .SplitSites("p6-defense-calibration-split4", parts: 4, spread: 6f);
             Capture("sitepilot-split4", Ticks);
             _playtestGeneratedSites = true;
             _playtestScenario = Prototype4Scenarios.ConsumerDefenseCalibrationModerate;
