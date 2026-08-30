@@ -167,7 +167,12 @@ namespace LifeSimulation.Simulation.Core
             float evasiveFleeingStrength = DefaultEvasiveFleeingStrength,
             bool wanderHomeHysteresisEnabled = false,
             bool feedInPlaceEnabled = false,
-            float arenaHalfWidth = DefaultArenaHalfWidth)
+            float arenaHalfWidth = DefaultArenaHalfWidth,
+            bool generatedPlantSitesEnabled = false,
+            float generatedPlantSiteSpacing = DefaultGeneratedPlantSiteSpacing,
+            float generatedPlantSiteJitterFraction = DefaultGeneratedPlantSiteJitterFraction,
+            float generatedPlantSiteFertilityThreshold = DefaultGeneratedPlantSiteFertilityThreshold,
+            float generatedPlantSiteFixedCapacity = 0f)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -226,6 +231,21 @@ namespace LifeSimulation.Simulation.Core
             }
 
             ArenaHalfWidth = arenaHalfWidth;
+            if (generatedPlantSiteSpacing <= 0f || float.IsNaN(generatedPlantSiteSpacing) || float.IsInfinity(generatedPlantSiteSpacing))
+            {
+                throw new ArgumentOutOfRangeException(nameof(generatedPlantSiteSpacing));
+            }
+
+            if (generatedPlantSiteJitterFraction < 0f || generatedPlantSiteJitterFraction > .5f || float.IsNaN(generatedPlantSiteJitterFraction))
+            {
+                throw new ArgumentOutOfRangeException(nameof(generatedPlantSiteJitterFraction));
+            }
+
+            GeneratedPlantSitesEnabled = generatedPlantSitesEnabled;
+            GeneratedPlantSiteSpacing = generatedPlantSiteSpacing;
+            GeneratedPlantSiteJitterFraction = generatedPlantSiteJitterFraction;
+            GeneratedPlantSiteFertilityThreshold = generatedPlantSiteFertilityThreshold;
+            GeneratedPlantSiteFixedCapacity = generatedPlantSiteFixedCapacity;
             PlantEstablishmentContestEnabled = plantEstablishmentContestEnabled;
             PlantInvaderEstablishmentContestEnabled = plantInvaderEstablishmentContestEnabled;
             PlantSeedProductionRateDispersalCharge = plantSeedProductionRateDispersalCharge;
@@ -620,6 +640,61 @@ namespace LifeSimulation.Simulation.Core
         public float ArenaHalfWidth { get; }
 
         /// <summary>
+        /// Lattice spacing for generated plant sites, in world units. 5 gives roughly a hundred
+        /// candidates on the 50-unit arena before the fertility filter.
+        ///
+        /// <para><b>This is the safety parameter, not the strength parameter.</b> The site-count
+        /// pilot split `Y`'s food into rings of radius 3 and killed 1 of 6 worlds at four sites and
+        /// 2 of 6 at eight, all of them late - ticks 4,579, 7,089 and 8,359 of 12,000, so grown
+        /// populations collapsing rather than founders failing. The same four-way split at radius 6
+        /// left 6 of 6 alive. Occupancy has a matching cliff in the other direction, measured at
+        /// 0.833 for spacing 4 and total collapse at 13.3. Sites too close and the world dies; too
+        /// far and plants cannot reach the next one.</para>
+        /// </summary>
+        public const float DefaultGeneratedPlantSiteSpacing = 5f;
+
+        /// <summary>How far a site may slide off its lattice point, as a fraction of the spacing. Enough that the result does not read as a grid, not enough to reopen the spacing cliff.</summary>
+        public const float DefaultGeneratedPlantSiteJitterFraction = .35f;
+
+        /// <summary>
+        /// Fertility a candidate needs to become a site. The field is bounded .20 to 1, so .45 is a
+        /// real filter rather than a formality - it is what makes placement follow the rain shadows
+        /// the terrain actually has instead of covering the arena evenly.
+        /// </summary>
+        public const float DefaultGeneratedPlantSiteFertilityThreshold = .45f;
+
+        /// <summary>
+        /// Plants may establish where the fertility field allows, instead of only at coordinates a
+        /// human typed into the scenario.
+        ///
+        /// <para><b>What it replaces.</b> The authored DORMANT food sites, and only those: the
+        /// active ones stay, carrying the founder plants and the founder placement. Their capacity
+        /// becomes the budget the generated sites divide between them in proportion to local
+        /// fertility, so the arena holds what it held before.</para>
+        ///
+        /// <para>Default false. It moves where every creature spends its time, so every recorded
+        /// ecology result is measured against a different world.</para>
+        /// </summary>
+        public bool GeneratedPlantSitesEnabled { get; }
+
+        public float GeneratedPlantSiteSpacing { get; }
+
+        public float GeneratedPlantSiteJitterFraction { get; }
+
+        public float GeneratedPlantSiteFertilityThreshold { get; }
+
+        /// <summary>
+        /// Capacity every generated site gets, or zero to divide the replaced dormant sites' budget
+        /// between them by fertility.
+        ///
+        /// <para>Zero is the conservative reading and the default: placement changes and the amount
+        /// of food does not, so a measured difference cannot be a food difference in disguise. A
+        /// positive value says a site's productivity is a property of the ground rather than a share
+        /// of a fixed landscape, and makes the world richer as sites multiply.</para>
+        /// </summary>
+        public float GeneratedPlantSiteFixedCapacity { get; }
+
+        /// <summary>
         /// Metres of level walking that one metre of climb costs, on top of the climb's own distance.
         ///
         /// <para>Four is the human figure to the nearest whole number - climbing is roughly five
@@ -746,6 +821,11 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, WanderHomeHysteresisEnabled ? 1UL : 0UL);
             hash = Hash(hash, FeedInPlaceEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, ArenaHalfWidth);
+            hash = Hash(hash, GeneratedPlantSitesEnabled ? 1UL : 0UL);
+            hash = HashFloat(hash, GeneratedPlantSiteSpacing);
+            hash = HashFloat(hash, GeneratedPlantSiteJitterFraction);
+            hash = HashFloat(hash, GeneratedPlantSiteFertilityThreshold);
+            hash = HashFloat(hash, GeneratedPlantSiteFixedCapacity);
 
             return hash;
         }

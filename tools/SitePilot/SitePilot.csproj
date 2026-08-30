@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Does the NUMBER of food locations set how tightly creatures pack?
+
+    Three levers were measured against clumping and all three failed - feeding in place, a
+    four-times-larger world, a four-times-wider feeding disc - and all three held the number of
+    food locations at six. This is the measurement of that variable, and it exists as a committed
+    tool rather than a throwaway probe because the last two throwaway probes on this question both
+    had bugs whose output read exactly like ecology findings.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
+  </ItemGroup>
+
+</Project>
