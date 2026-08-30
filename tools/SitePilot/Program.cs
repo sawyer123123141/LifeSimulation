@@ -40,7 +40,7 @@ namespace LifeSimulation.Tools.SitePilot
 
         private readonly struct Arm
         {
-            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f, float generatedWaterDistance = 0f, float anchorRadius = 0f, int anchorCount = 4)
+            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f, float generatedWaterDistance = 0f, float anchorRadius = 0f, int anchorCount = 4, bool slopeCost = true, bool terrainTemperature = true)
             {
                 Name = name;
                 Parts = parts;
@@ -52,6 +52,8 @@ namespace LifeSimulation.Tools.SitePilot
                 GeneratedWaterDistance = generatedWaterDistance;
                 AnchorRadius = anchorRadius;
                 AnchorCount = anchorCount;
+                SlopeCost = slopeCost;
+                TerrainTemperature = terrainTemperature;
             }
 
             public string Name { get; }
@@ -72,6 +74,11 @@ namespace LifeSimulation.Tools.SitePilot
             public float AnchorRadius { get; }
 
             public int AnchorCount { get; }
+
+            /// <summary>Both default to Y's own setting, so an arm that does not name them is Y.</summary>
+            public bool SlopeCost { get; }
+
+            public bool TerrainTemperature { get; }
         }
 
         private sealed class RunResult
@@ -90,6 +97,12 @@ namespace LifeSimulation.Tools.SitePilot
             public long ExtinctionTick = -1;
             public double MeanSiteSpacing;
             public double ClumpIndex;
+            public double CreaturesBelowWaterline;
+            public double MeanCreatureElevation;
+            public double ArenaBelowWaterline;
+            public double MeanArenaElevation;
+            public double ActiveFoodBelowWaterline;
+            public double WaterSitesBelowWaterline;
             public ulong LayoutFingerprint;
         }
 
@@ -135,6 +148,11 @@ namespace LifeSimulation.Tools.SitePilot
                 new Arm("anchored, ring 8, 4 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 8f, 4),
                 new Arm("anchored, ring 6, 8 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 6f, 8),
                 new Arm("anchored, ring 4, 4 per water", 1, 0f, false, 5f, .45f, 0f, 0f, 4f, 4),
+                // The drift arms. All three are the SHIPPED Y layout - the four-way split at radius
+                // 6 - so the only thing that differs is the flag named.
+                new Arm("shipped Y (split 4, spread 6)", 4, 6f, false),
+                new Arm("shipped Y, slope cost OFF", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, false, true),
+                new Arm("shipped Y, terrain temperature OFF", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, false),
             };
 
             if (_armFilter != null)
@@ -193,6 +211,27 @@ namespace LifeSimulation.Tools.SitePilot
                     result.Extinct ? $"{result.Seed}:extinct@{result.ExtinctionTick}" : $"{result.Seed}:{result.ClumpIndex.ToString("0.000", CultureInfo.InvariantCulture)}({result.Population})")));
             }
 
+            Console.WriteLine();
+            Console.WriteLine("where they stand: share at or below the waterline (arena share is the baseline)");
+            Console.WriteLine("| arm | creatures below | ARENA below | mean creature elevation | mean arena elevation | active food below | water sites below |");
+            Console.WriteLine("|---|---|---|---|---|---|---|");
+            foreach (Arm arm in arms)
+            {
+                RunResult[] survivors = results.Where(result => result.Arm == arm.Name && !result.Extinct).ToArray();
+                if (survivors.Length == 0) continue;
+                string share(Func<RunResult, double> selector) =>
+                    survivors.Average(selector).ToString("0.000", CultureInfo.InvariantCulture);
+
+                Console.WriteLine(string.Join(" | ",
+                    "| " + arm.Name,
+                    share(result => result.CreaturesBelowWaterline),
+                    share(result => result.ArenaBelowWaterline),
+                    share(result => result.MeanCreatureElevation),
+                    share(result => result.MeanArenaElevation),
+                    share(result => result.ActiveFoodBelowWaterline),
+                    share(result => result.WaterSitesBelowWaterline) + " |"));
+            }
+
             RunResult controlSample = results.First(result => result.Arm == arms[0].Name);
             Console.WriteLine();
             Console.WriteLine(controlSample.LayoutFingerprint == controlFingerprint
@@ -206,7 +245,7 @@ namespace LifeSimulation.Tools.SitePilot
         /// it. Copied rather than shared because Simulation must not reference Presentation; if that
         /// method changes, this drifts, which is what the fingerprint line exists to notice.
         /// </summary>
-        private static SimulationConfig CreateConfig(int seed, Arm arm = default)
+        private static SimulationConfig CreateConfig(int seed, Arm arm)
         {
             SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: seed, initialPopulation: 4);
             return new SimulationConfig(
@@ -235,8 +274,8 @@ namespace LifeSimulation.Tools.SitePilot
                 plantFertilityAdaptationEnabled: true,
                 elevationFieldEnabled: true,
                 terrainDrivenEnvironmentEnabled: true,
-                slopeMovementCostEnabled: true,
-                terrainDrivenTemperatureEnabled: true,
+                slopeMovementCostEnabled: arm.SlopeCost,
+                terrainDrivenTemperatureEnabled: arm.TerrainTemperature,
                 healthRecoveryEnabled: true,
                 wanderHomeHysteresisEnabled: true,
                 feedInPlaceEnabled: true,
@@ -312,6 +351,41 @@ namespace LifeSimulation.Tools.SitePilot
                 if (nearest < 1.0d) underOne++;
             }
 
+            // WHERE THE GROUND IS, for the drift question. EnvironmentField.Elevation is
+            // clamp01(elevation / HighGround) and elevation is signed displacement from sea level,
+            // so exactly zero means at or below the waterline - which is the ground the renderer
+            // paints as sea. Nothing in the simulation treats it as different, so this is a
+            // description of where creatures ARE, not of a rule they are following.
+            int creaturesBelow = 0;
+            double creatureElevationSum = 0d;
+            for (int index = 0; index < count; index++)
+            {
+                float elevation = world.Environment.Sample(positions[index]).Elevation;
+                creatureElevationSum += elevation;
+                if (elevation <= 0f) creaturesBelow++;
+            }
+
+            // The arena's own share of sea, which is the number the creature share has to be read
+            // against. Half a world of ocean and a uniformly spread herd would put half the animals
+            // in the water with no drift at all.
+            const int ArenaSamples = 129;
+            int arenaBelow = 0;
+            double arenaElevationSum = 0d;
+            for (int row = 0; row < ArenaSamples; row++)
+            {
+                for (int column = 0; column < ArenaSamples; column++)
+                {
+                    var probe = new SimVector2(
+                        (float)(-ArenaHalfWidth + (2d * ArenaHalfWidth * column / (ArenaSamples - 1))),
+                        (float)(-ArenaHalfWidth + (2d * ArenaHalfWidth * row / (ArenaSamples - 1))));
+                    float elevation = world.Environment.Sample(probe).Elevation;
+                    arenaElevationSum += elevation;
+                    if (elevation <= 0f) arenaBelow++;
+                }
+            }
+
+            int arenaProbes = ArenaSamples * ArenaSamples;
+
             int foodSites = 0;
             var activeFoodPositions = new List<SimVector2>();
             for (int index = 0; index < world.Resources.Count; index++)
@@ -339,6 +413,22 @@ namespace LifeSimulation.Tools.SitePilot
                 }
 
                 if (nearest != double.MaxValue) siteSpacingSum += nearest;
+            }
+
+            int activeFoodBelow = 0;
+            foreach (SimVector2 site in activeFoodPositions)
+            {
+                if (world.Environment.Sample(site).Elevation <= 0f) activeFoodBelow++;
+            }
+
+            int waterSites = 0;
+            int waterBelow = 0;
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (resource.Kind != ResourceKind.Water || !resource.IsActive) continue;
+                waterSites++;
+                if (world.Environment.Sample(resource.Position).Elevation <= 0f) waterBelow++;
             }
 
             int livePlants = 0;
@@ -375,6 +465,12 @@ namespace LifeSimulation.Tools.SitePilot
                 LivePlants = livePlants,
                 FoodSiteCount = foodSites,
                 MeanSiteSpacing = activeFood < 2 ? 0d : siteSpacingSum / activeFood,
+                CreaturesBelowWaterline = count == 0 ? 0d : creaturesBelow / (double)count,
+                MeanCreatureElevation = count == 0 ? 0d : creatureElevationSum / count,
+                ArenaBelowWaterline = arenaBelow / (double)arenaProbes,
+                MeanArenaElevation = arenaElevationSum / arenaProbes,
+                ActiveFoodBelowWaterline = activeFood == 0 ? 0d : activeFoodBelow / (double)activeFood,
+                WaterSitesBelowWaterline = waterSites == 0 ? 0d : waterBelow / (double)waterSites,
                 LayoutFingerprint = scenario.ComputeLayoutFingerprint(),
             };
         }
