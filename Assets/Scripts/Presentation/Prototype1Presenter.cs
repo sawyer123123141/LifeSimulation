@@ -963,7 +963,18 @@ namespace LifeSimulation.Presentation
                 // fall from about 15% to about 1.6%. See
                 // docs/superpowers/specs/2026-08-29-wander-home-range-design.md. Configuration
                 // default stays false; every recorded result predates it.
-                wanderHomeHysteresisEnabled: true);
+                wanderHomeHysteresisEnabled: true,
+                // And a feeding creature stands still rather than continuing to walk into the middle
+                // of the patch it is already eating from. Measured survival-neutral across 6 seeds:
+                // population 95.8 in both arms, no extinctions either way, mean energy 0.812 against
+                // 0.806. Mean nearest-neighbour spacing goes 0.705 to 0.824 and the share with a
+                // neighbour inside half a unit falls from 61.7% to 55.0%.
+                //
+                // It does NOT stop the herd looking like a pile, and is not expected to: this
+                // scenario has six food sites of InteractionRadius 1.5 for 96 creatures, so sixteen
+                // animals share a disc three units across and overlap by construction. That is a
+                // question about how much space the world has, not about where creatures walk.
+                feedInPlaceEnabled: true);
             ResetSimulation(Prototype4Scenarios.ConsumerDefenseCalibrationModerate, config);
             _scenarioId = "p6-terrain-playtest";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";
