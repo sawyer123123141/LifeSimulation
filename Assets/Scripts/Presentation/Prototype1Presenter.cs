@@ -117,6 +117,11 @@ namespace LifeSimulation.Presentation
         private Texture2D _temperatureHeatmap;
         private MeshFilter _terrainMeshFilter;
         private Mesh _terrainMesh;
+
+        /// <summary>The wider landscape drawn around the arena. Backdrop only - see <see cref="SurroundHalfWidth"/>.</summary>
+        private MeshFilter _surroundMeshFilter;
+        private MeshRenderer _surroundRenderer;
+        private Mesh _surroundMesh;
         private GameObject _waterSurface;
         private PlateStructure _arenaPlates;
         private int _arenaPlateSeed = int.MinValue;
@@ -425,6 +430,14 @@ namespace LifeSimulation.Presentation
             _terrainMesh = new Mesh { name = "Prototype Terrain Mesh" };
             _terrainMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             _terrainMeshFilter.sharedMesh = _terrainMesh;
+
+            var surround = new GameObject("Prototype Terrain Surround");
+            surround.transform.position = new Vector3(0f, -SurroundSink, 0f);
+            _surroundMeshFilter = surround.AddComponent<MeshFilter>();
+            _surroundRenderer = surround.AddComponent<MeshRenderer>();
+            _surroundMesh = new Mesh { name = "Prototype Terrain Surround Mesh" };
+            _surroundMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            _surroundMeshFilter.sharedMesh = _surroundMesh;
             BuildTerrainMesh();
             CreateWaterSurface();
             _terrainPreview = new TerrainPreview();
@@ -575,6 +588,29 @@ namespace LifeSimulation.Presentation
         private const float TerrainHalfWidth = TerrainMeshBuilder.ArenaHalfWidth;
 
         /// <summary>
+        /// How far the drawn ground extends beyond the arena, in world units.
+        ///
+        /// <para>The arena is 50 units across and reads on screen as a small field floating in
+        /// nothing. This is the same half-width the <c>K</c> viewer's first mode uses, so pressing
+        /// <c>Y</c> shows the landscape <c>K</c> shows - same seed, same coastal centre, same
+        /// generator, just drawn out to where the coastline actually is.</para>
+        ///
+        /// <para><b>Backdrop only.</b> The simulation is unchanged and still runs on the 50-unit
+        /// square; creatures still stand on the detailed arena patch. At this width the shared
+        /// 193-sample resolution gives facets about 2 units across - fine at the distance this is
+        /// looked at, and far too coarse to stand a one-unit animal on, which is exactly why the
+        /// detailed patch stays.</para>
+        /// </summary>
+        private const float SurroundHalfWidth = TerrainPreview.WidePatchHalfWidth;
+
+        /// <summary>
+        /// Sunk slightly so the detailed arena patch always wins where the two overlap. Without it
+        /// the two meshes are the same surface sampled at different densities and z-fight across the
+        /// whole arena.
+        /// </summary>
+        private const float SurroundSink = 0.35f;
+
+        /// <summary>
         /// World units of relief between sea level and the highest ground. <b>Tunable at runtime</b>
         /// with <c>[</c> and <c>]</c>, because the right value cannot be reasoned out - it depends on
         /// how the relief reads next to a 1-unit creature, which only looking at it can settle.
@@ -691,7 +727,12 @@ namespace LifeSimulation.Presentation
             _waterSurface = GameObject.CreatePrimitive(PrimitiveType.Plane);
             _waterSurface.name = "Water Surface";
             Destroy(_waterSurface.GetComponent<Collider>());
-            _waterSurface.transform.localScale = new Vector3(5f, 1f, 5f);
+            // A Unity plane is 10 units across, so this spans the drawn ground rather than only the
+            // arena. Sized to the surround: a sea that stops at the arena edge draws a hard-edged
+            // rectangle of water sitting on top of the wider coastline, with the sea bed beyond it
+            // rendering as dark bumpy ground.
+            const float waterScale = SurroundHalfWidth * 2f / 10f;
+            _waterSurface.transform.localScale = new Vector3(waterScale, 1f, waterScale);
 
             var material = _waterSurface.GetComponent<Renderer>().material;
             material.color = new Color(0.157f, 0.408f, 0.616f, 0.78f);
