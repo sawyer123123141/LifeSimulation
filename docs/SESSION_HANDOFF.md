@@ -19,8 +19,9 @@
 > `docs/AGENT_FIELD_NOTES.md` is an index: grep it, do not read it.
 
 **Head: `0893fa2`**, plus the commit carrying this handoff, pushed to `origin/main`. Branch `main`.
-Working tree clean apart from the untracked Unity `.meta` files, `Assets/_Recovery/` and
-`ProjectSettings/PackageManagerSettings.asset` that are **never to be staged**.
+Working tree clean apart from `ProjectSettings/PackageManagerSettings.asset` and the OneDrive
+conflict duplicate `Assets/_Recovery/0 (2).unity`. **The `.meta` files are now tracked** — see
+section 8, whose former "never stage them" rule was wrong.
 **639 headless tests green** (`dotnet test tools/HeadlessTests`), Unity compile clean.
 
 > Archival sections live in `docs/handoff/`, lifted whole by `tools/split_doc.py`: **nothing was
@@ -582,23 +583,30 @@ The dated blocks below are the detail behind this summary, newest first. You do 
 machine, so the suite runs locally. Unity 6000.2.14f1 at
 `C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Unity.exe`.
 
-#### ONE OPEN DECISION, needs the user — the `.meta` files are not actually gitignored
+#### RESOLVED 2026-08-29 — the `.meta` files are now tracked
 
-`git status` shows ~66 untracked `.meta` files and this file has long called them "intentionally
-untracked." **`.gitignore` does not exclude them** — only `*.pidb.meta`, `*.pdb.meta` and similar.
-They are untracked because nobody staged them, and that drift got written down as policy.
+This block previously carried an open decision: ~66 `.meta` files were untracked, `.gitignore` did
+not exclude them, and section 8 called them "intentionally untracked."
 
-Why it matters: a `.meta` file carries its asset's **GUID**, and every Unity reference — scene to
-script, prefab to material — is stored as a GUID, not a path. On a fresh clone Unity regenerates
-them, so those references resolve to nothing. This is the most likely reason **no `.unity` scene is
-committed anywhere in the repo** (`m_Scenes: []`, zero tracked scene files) and a plausible origin
-for `Assets/_Recovery/` holding three salvaged scenes. Right now the entire visual layer exists only
-in one machine's local Unity state.
+**Investigated and closed by user instruction.** The rule was drift written down as policy. Evidence
+that overturned it: **138 `.meta` files were already tracked**, and commit `0a02eb1` is titled
+`chore: add missing .meta files for scripts/tests added this session` — the project had deliberately
+committed them before. **65 of the 66** untracked ones paired with an asset that was already tracked,
+which is the worst of the three possible states: the asset ships, its GUID does not. For the twelve
+FBX models the `.meta` also carries 125 lines of `ModelImporter` settings, including the
+`materialImportMode` that this session's "materials suppressed on import" bug lived in.
 
-**Not acted on.** Section 8 says never to stage them, and an agent must not overturn a standing rule
-on its own reading. The rule looks inverted for a Unity repo, but there may be a reason (OneDrive
-sync conflicts are the usual one). **Ask the user; do not stage `.meta` files without an explicit
-instruction.**
+The OneDrive-conflict theory does not survive: OneDrive produces `file (2).ext` duplicates — one is
+sitting in `Assets/_Recovery/` right now — and untracking a file does not protect it from that.
+
+**Done:** the 65 paired `.meta` staged and committed by name, section 8 rewritten. The 66th,
+`Assets/Models.meta`, described an empty folder; folder and `.meta` both deleted. Verified by
+cloning the repo to a temp directory and running the Unity batch compile and the arena capture
+against the clone — see the dated block below.
+
+**Still open, deliberately not folded in:** no `.unity` scene is committed outside `Assets/_Recovery/`
+and `EditorBuildSettings` has `m_Scenes: []`. Tracking GUIDs does not fix that. Raised with the user
+and left for a separate decision.
 
 #### The user's standing direction, which changed what this session did
 
@@ -1155,9 +1163,21 @@ verbatim. Status, so you do not have to open it to find out:
 
 ## 8. Working-tree rules
 
-Intentionally untracked: Unity `.meta` files, `Assets/_Recovery/`, and
-`ProjectSettings/PackageManagerSettings.asset`. **Never stage or delete them. Never `git add -A`** —
-add named files only. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before committing; none exist at
-handoff.
+**`.meta` files ARE tracked, and must be committed alongside the asset they describe.** The
+former rule here said never to stage them. That rule was wrong — it recorded drift, not policy.
+138 `.meta` files were already tracked when it was written, and commit `0a02eb1` is titled
+`chore: add missing .meta files for scripts/tests added this session`. 65 paired `.meta` were
+committed on 2026-08-29 to close the gap. A `.meta` carries its asset's **GUID**, and for an FBX it
+also carries the `ModelImporter` settings — `materialImportMode`, rig, animation — so an asset
+committed without its `.meta` re-imports on a clone with a fresh GUID and default settings. Every
+reference to it resolves to nothing. **Add the asset and its `.meta` in the same commit.**
+
+Genuinely untracked, leave alone: `ProjectSettings/PackageManagerSettings.asset`, and the OneDrive
+conflict duplicates `Assets/_Recovery/0 (2).unity` and its `.meta`. Note `Assets/_Recovery/` itself
+is **tracked** — `0.unity` and `0 (1).unity` are both in the index; the old rule was wrong about
+that too.
+
+**Never `git add -A`** — add named files only. Delete `Assets/Tests/EditMode/ZZZ*.cs` probes before
+committing; none exist at handoff.
 
 ---
