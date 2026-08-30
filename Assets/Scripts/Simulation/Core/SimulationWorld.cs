@@ -90,7 +90,8 @@ namespace LifeSimulation.Simulation.Core
             Climate = Config.TerrainDrivenTemperatureEnabled
                 ? ClimateField.FromTerrain(Environment)
                 : default;
-            Arena = new ArenaBounds(-25f, 25f, -25f, 25f);
+            float half = Config.ArenaHalfWidth;
+            Arena = new ArenaBounds(-half, half, -half, half);
             ResourceGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: 8);
             CombatGrid = new UniformGrid(Arena, cellSize: 5f, initialOccupantCapacity: Config.InitialPopulation);
             _pendingDeaths = new CreatureId[Math.Max(Config.InitialPopulation, 1)];

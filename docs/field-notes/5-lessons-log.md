@@ -720,3 +720,41 @@ selection fix was "proven" by a batch-mode check that projected creatures and ra
 at all. The check was sound and its result was true; it simply did not answer the question asked of
 it. **A verification that cannot fail the way the real path fails is not verification of the real
 path.**
+
+**2026-08-29 — A scenario is not its visible resources.** A probe needed the `Y` habitat at four
+times the area, so it listed the six active food and water sites and tiled those. Every world died,
+**including the control arm that should have reproduced a population of 96**. The layout also carries
+**twenty dormant sites** that plant dispersal re-establishes into - with `plantMortalityEnabled` on,
+plants die and never come back without them - and a **founder placement**. Neither is visible when
+you read the scenario looking for "where the food is". **Derive a scenario with a transform that
+copies every definition, never by retyping the interesting ones.** `SimulationScenario.Tiled` exists
+for this now, next to `Scaled` and `WithRegeneration`.
+
+**2026-08-29 — Put a control arm in every probe, and believe it over the result.** The tiled-habitat
+probe reported all twelve worlds extinct. The tempting reading was "the ecology cannot survive a
+bigger world"; the true reading was "this probe is broken", and the only thing that distinguished
+them was a baseline arm whose answer was already known. **A probe without an arm you can check
+against a known number cannot tell you which of those two it found.** Cost of including it: one
+extra run. Cost of omitting it: a wrong finding published about the simulation.
+
+**2026-08-29 — A transform that moves the world must move what is pinned to the world.**
+`Tiled` carried `founderPlacement` through unchanged, which looked conservative and was wrong: the
+placement is a point ON a resource site, and tiling moved every site. Four founders spawned in empty
+ground between habitats. Measured cost: **2 of 4 worlds extinct at the same population cap, 3 of 4
+with it scaled**, the lone survivor starving at mean energy **0.009** - a result that reads exactly
+like an ecology finding and was an artefact of the harness. **When a transform moves geometry, list
+everything else that holds a coordinate and move it too.**
+
+**2026-08-29 — When an experiment fails, check whether the failure mode is the one you assumed.**
+A bigger arena killed half its worlds, which reads as "the ecology does not scale". The survivors
+reached a **full 96, indistinguishable from baseline** - so every failure was an early extinction and
+none was a collapse of a grown population. That is an **establishment** failure, not a carrying-capacity
+one, and it has a different fix: seeding founders with the area took extinctions from 2 of 4 to 1 of 4.
+**Read which arm of a failure you are looking at before concluding what failed.**
+
+**2026-08-29 — Check a surprising result against what the project already recorded before calling it
+new.** Raising the population cap with the arena collapsed the worlds, and the explanation was already
+on file: Phase I found **the cap is the stabiliser, not the ceiling**, with survival at high caps
+depending on `gradedFertilityEnabled` - which is off for `Y` by the user's explicit choice. Raising the
+cap removed a stabiliser the scenario had no replacement for. **A result that looks novel is often a
+recorded one meeting a scenario that was configured to lack its remedy.**
