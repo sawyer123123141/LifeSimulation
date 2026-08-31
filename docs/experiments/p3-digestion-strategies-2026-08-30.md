@@ -228,3 +228,27 @@ lifespan variance in a world where 92.7% of deaths are old age.
   material for *diet*. It selects on surviving attacks; meat is still under a tenth of energy intake.
 - Do not re-run this comparison at cap 48. The cap-500 proximity-pairing cell is the strongest
   available and it is the one that gives the control column something to say.
+
+## The drift is visible on screen
+
+`CreatureArenaCapture.CaptureFaunaAcrossSeeds` renders the pressured cell at four seeds and logs the
+role mix. `CreatureModelRules.SelectRole` draws a predator when diet is at least 0.55 **and**
+aggression at least 0.5, so a gene that fixes per world should change what the world looks like:
+
+| seed | population | predators | large herbivores | small herbivores | predator share |
+|---|---|---|---|---|---|
+| 42 | 126 | 0 | 28 | 98 | **0.0%** |
+| 43 | 72 | 0 | 43 | 29 | **0.0%** |
+| 44 | 14 | 9 | 4 | 1 | **64.3%** |
+| 45 | 0 | - | - | - | extinct |
+
+**Same configuration, four worlds, and one of them is a predator world.** Seed 42 is a crowd of 126
+herbivores; seed 44 is nine predators and five herbivores, nearly collapsed. This is what neutral
+drift to fixation looks like from the outside, and it is the strongest visible consequence of the
+finding above.
+
+**Caveats, because the pictures overstate it.** Changing the seed changes the terrain as well as the
+ecology, so the renders differ for two reasons at once; the role counts are the evidence, not the
+images. Four seeds is not a distribution. And seed 44 is a world of fourteen animals, so "64.3%
+predators" is nine of them.
+
