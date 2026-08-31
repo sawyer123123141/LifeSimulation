@@ -40,7 +40,7 @@ namespace LifeSimulation.Tools.SitePilot
 
         private readonly struct Arm
         {
-            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f, float generatedWaterDistance = 0f, float anchorRadius = 0f, int anchorCount = 4, bool slopeCost = true, bool terrainTemperature = true)
+            public Arm(string name, int parts, float spread, bool splitWater, float generatedSpacing = 0f, float generatedThreshold = 0f, float generatedFixedCapacity = 0f, float generatedWaterDistance = 0f, float anchorRadius = 0f, int anchorCount = 4, bool slopeCost = true, bool terrainTemperature = true, int cap = 96, float brake = 0f)
             {
                 Name = name;
                 Parts = parts;
@@ -54,6 +54,8 @@ namespace LifeSimulation.Tools.SitePilot
                 AnchorCount = anchorCount;
                 SlopeCost = slopeCost;
                 TerrainTemperature = terrainTemperature;
+                Cap = cap;
+                Brake = brake;
             }
 
             public string Name { get; }
@@ -79,6 +81,12 @@ namespace LifeSimulation.Tools.SitePilot
             public bool SlopeCost { get; }
 
             public bool TerrainTemperature { get; }
+
+            /// <summary>Y ships at 96. The recorded dial says starvation is 0.0% below cap 250 whatever else is set.</summary>
+            public int Cap { get; }
+
+            /// <summary>gradedFertilityStrength. Zero leaves the brake off, which is Y's shipped setting by the user's explicit choice.</summary>
+            public float Brake { get; }
         }
 
         private sealed class RunResult
@@ -97,6 +105,9 @@ namespace LifeSimulation.Tools.SitePilot
             public long ExtinctionTick = -1;
             public double MeanSiteSpacing;
             public double ClumpIndex;
+            public double StarvationShare;
+            public double AgeShare;
+            public double MeanFoodFill;
             public double CreaturesBelowWaterline;
             public double MeanCreatureElevation;
             public double ArenaBelowWaterline;
@@ -153,6 +164,13 @@ namespace LifeSimulation.Tools.SitePilot
                 new Arm("shipped Y (split 4, spread 6)", 4, 6f, false),
                 new Arm("shipped Y, slope cost OFF", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, false, true),
                 new Arm("shipped Y, terrain temperature OFF", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, false),
+                // Does a hungry but survivable Y exist? The recorded dial says starvation is 0.0%
+                // below cap 250 whatever else is set, and that high caps need the density brake to
+                // survive at all. Both are swept together because neither works alone.
+                new Arm("Y, cap 250, no brake", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 250, 0f),
+                new Arm("Y, cap 250, brake 1.5", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 250, 1.5f),
+                new Arm("Y, cap 500, brake 1.5", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 1.5f),
+                new Arm("Y, cap 500, brake 1.0", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 1.0f),
             };
 
             if (_armFilter != null)
@@ -180,7 +198,7 @@ namespace LifeSimulation.Tools.SitePilot
                 results[index] = Execute(specs[index].Arm, specs[index].Seed);
             });
 
-            Console.WriteLine("| arm | sites | alive | population | clump index | mean nearest | <0.5 | energy | active food | site spacing |");
+            Console.WriteLine("| arm | sites | alive | population | clump index | energy | STARVATION | age | mean patch fill | active food |");
             Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|");
             foreach (Arm arm in arms)
             {
@@ -195,11 +213,11 @@ namespace LifeSimulation.Tools.SitePilot
                     $"{survivors.Length} of {armResults.Length}",
                     cell(result => result.Population),
                     cell(result => result.ClumpIndex),
-                    cell(result => result.MeanNearest),
-                    cell(result => result.ShareUnderHalf),
                     cell(result => result.MeanEnergy),
-                    cell(result => result.ActiveFoodSites),
-                    cell(result => result.MeanSiteSpacing) + " |"));
+                    cell(result => result.StarvationShare),
+                    cell(result => result.AgeShare),
+                    cell(result => result.MeanFoodFill),
+                    cell(result => result.ActiveFoodSites) + " |"));
             }
 
             Console.WriteLine();
@@ -252,7 +270,7 @@ namespace LifeSimulation.Tools.SitePilot
                 defaults.WorldSeed,
                 defaults.InitialPopulation,
                 defaults.Schedule,
-                maximumPopulation: 96,
+                maximumPopulation: arm.Cap,
                 defaults.FounderProfile,
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
@@ -286,7 +304,9 @@ namespace LifeSimulation.Tools.SitePilot
                 generatedPlantSiteFixedCapacity: arm.GeneratedFixedCapacity,
                 generatedPlantSiteMaximumWaterDistance: arm.GeneratedWaterDistance,
                 generatedPlantSiteAnchorRingRadius: arm.AnchorRadius,
-                generatedPlantSiteAnchorCount: arm.AnchorCount);
+                generatedPlantSiteAnchorCount: arm.AnchorCount,
+                gradedFertilityEnabled: arm.Brake > 0f,
+                gradedFertilityStrength: arm.Brake > 0f ? arm.Brake : SimulationConfig.DefaultGradedFertilityStrength);
         }
 
         private static RunResult Execute(Arm arm, int seed)
@@ -398,6 +418,20 @@ namespace LifeSimulation.Tools.SitePilot
 
             int activeFood = activeFoodPositions.Count;
 
+            // How full the food is. P4a asks that a player can see resource recovery; if every patch
+            // sits at capacity there is nothing to watch, which is what Y currently does.
+            double foodFillSum = 0d;
+            int filled = 0;
+            for (int index = 0; index < world.Resources.Count; index++)
+            {
+                ResourceState resource = world.Resources.GetAt(index);
+                if (resource.Kind != ResourceKind.Food || !resource.IsActive || resource.Capacity <= 0f) continue;
+                foodFillSum += resource.Amount / resource.Capacity;
+                filled++;
+            }
+
+            foodFillSum = filled == 0 ? 0d : foodFillSum / filled;
+
             // How far apart the food itself is, which is the quantity generated placement would
             // control directly. Coincident sites count as zero distance, which is the honest reading
             // of the spread-0 arm: four entries at one coordinate are one location.
@@ -431,6 +465,10 @@ namespace LifeSimulation.Tools.SitePilot
                 if (world.Environment.Sample(resource.Position).Elevation <= 0f) waterBelow++;
             }
 
+            SimulationStatistics deathStats = world.CaptureStatistics();
+            double deaths = deathStats.StarvationDeathCount + deathStats.DehydrationDeathCount
+                + deathStats.AgeDeathCount + deathStats.HealthDeathCount + deathStats.PredationDeathCount;
+
             int livePlants = 0;
             for (int index = 0; index < world.Plants.Count; index++)
             {
@@ -461,6 +499,9 @@ namespace LifeSimulation.Tools.SitePilot
                 ShareUnderHalf = count < 2 ? 0d : underHalf / (double)count,
                 ShareUnderOne = count < 2 ? 0d : underOne / (double)count,
                 MeanEnergy = count == 0 ? 0d : energySum / count,
+                StarvationShare = deaths <= 0d ? 0d : deathStats.StarvationDeathCount / deaths,
+                AgeShare = deaths <= 0d ? 0d : deathStats.AgeDeathCount / deaths,
+                MeanFoodFill = foodFillSum,
                 ActiveFoodSites = activeFood,
                 LivePlants = livePlants,
                 FoodSiteCount = foodSites,
