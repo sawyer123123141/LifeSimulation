@@ -143,6 +143,31 @@ namespace LifeSimulation.EditorTools
         /// </summary>
         private static SimulationScenario _playtestScenario;
 
+        /// <summary>Overrides the world seed for the fauna-divergence captures. Zero leaves each config on its own seed.</summary>
+        private static int _seedOverride;
+
+        /// <summary>
+        /// The same world at four seeds, to see whether the fauna differs.
+        ///
+        /// <para><b>Why.</b> `diet_specialization` was measured on 2026-08-30 to be neutral and to
+        /// drift to fixation independently in each world - the share of creatures able to hunt spans
+        /// 0% to 100% across seeds. <c>CreatureModelRules.SelectRole</c> draws a predator when diet
+        /// is at least 0.55 AND aggression at least 0.5, so that drift should be visible as different
+        /// animals in different worlds. This is the check.</para>
+        /// </summary>
+        [MenuItem("LifeSimulation/Capture the fauna across seeds")]
+        public static void CaptureFaunaAcrossSeeds()
+        {
+            _geneVision = false;
+            foreach (int seed in new[] { 42, 43, 44, 45 })
+            {
+                _seedOverride = seed;
+                Capture($"fauna-seed{seed}", Ticks);
+            }
+
+            _seedOverride = 0;
+        }
+
         /// <summary>Generated plant placement, for the third picture in the pilot.</summary>
         private static bool _playtestGeneratedSites;
 
@@ -205,6 +230,23 @@ namespace LifeSimulation.EditorTools
 
                 Debug.Log($"ARENA views models={models} capsules={capsules}");
 
+                // The role mix, so the picture has a number beside it. This is the visible half of
+                // the diet-drift finding: if worlds fix at different diet values, they should render
+                // different animals.
+                int predators = 0;
+                int large = 0;
+                int small = 0;
+                for (int index = 0; index < world.CreatureCount; index++)
+                {
+                    CreatureModelRole role = CreatureModelRules.SelectRole(world.Creatures.GetGenomeAt(index));
+                    if (role == CreatureModelRole.Predator) predators++;
+                    else if (role == CreatureModelRole.LargeHerbivore) large++;
+                    else small++;
+                }
+
+                Debug.Log($"ARENA roles predator={predators} largeHerbivore={large} smallHerbivore={small}"
+                    + $" predatorShare={(world.CreatureCount == 0 ? 0f : predators * 100f / world.CreatureCount):0.0}%");
+
                 Camera camera = BuildCamera(root);
                 CheckSelection(camera);
                 double wide = Render(camera, GroundRelative(0f, 34f, -46f), Quaternion.Euler(32f, 0f, 0f), $"{prefix}-wide.png");
@@ -228,9 +270,9 @@ namespace LifeSimulation.EditorTools
         /// </summary>
         private static SimulationConfig BuildPressuredCellConfig()
         {
-            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: 42, initialPopulation: 12);
+            SimulationConfig defaults = SimulationConfig.CreatePrototype4Defaults(worldSeed: _seedOverride == 0 ? 42 : _seedOverride, initialPopulation: 12);
             return new SimulationConfig(
-                42,
+                _seedOverride == 0 ? 42 : _seedOverride,
                 12,
                 defaults.Schedule,
                 500,
