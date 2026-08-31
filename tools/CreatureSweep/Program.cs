@@ -253,6 +253,15 @@ namespace LifeSimulation.Tools.CreatureSweep
                 return;
             }
 
+            if (args.Length > 0 && args[0] == "--intake")
+            {
+                _focused = true;
+                int intakeSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedIntake) ? parsedIntake : 12;
+                if (args.Length > 2 && int.TryParse(args[2], out int intakeCap)) _focusedPopulationCap = intakeCap;
+                Intake.Report(intakeSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                return;
+            }
+
             if (args.Length > 0 && args[0] == "--diet")
             {
                 // The distribution, not the mean. A mean cannot show two modes, and two modes is
