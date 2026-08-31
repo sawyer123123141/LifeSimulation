@@ -171,6 +171,13 @@ namespace LifeSimulation.Tools.SitePilot
                 new Arm("Y, cap 250, brake 1.5", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 250, 1.5f),
                 new Arm("Y, cap 500, brake 1.5", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 1.5f),
                 new Arm("Y, cap 500, brake 1.0", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 1.0f),
+                // Cap 500 is effectively uncapped once the brake binds - the recorded dial has cap
+                // 500 and cap 1000 as the same ecology - so this sweep asks which brake strength
+                // self-limits AND still lets creatures starve. That is the capless world the user
+                // wants: a population held by its food rather than by a number.
+                new Arm("Y, cap 500, NO brake", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 0f),
+                new Arm("Y, cap 500, brake 0.5", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 0.5f),
+                new Arm("Y, cap 500, brake 0.75", 4, 6f, false, 0f, 0f, 0f, 0f, 0f, 4, true, true, 500, 0.75f),
             };
 
             if (_armFilter != null)
