@@ -33,6 +33,29 @@ namespace LifeSimulation.Tools.CreatureSweep
     {
         private const int BinCount = 5;
 
+        private static double Correlation(double[] first, double[] second)
+        {
+            int count = first.Length;
+            if (count < 2) return 0d;
+
+            double firstMean = first.Average();
+            double secondMean = second.Average();
+            double covariance = 0d;
+            double firstVariance = 0d;
+            double secondVariance = 0d;
+            for (int index = 0; index < count; index++)
+            {
+                double a = first[index] - firstMean;
+                double b = second[index] - secondMean;
+                covariance += a * b;
+                firstVariance += a * a;
+                secondVariance += b * b;
+            }
+
+            double denominator = Math.Sqrt(firstVariance * secondVariance);
+            return denominator <= 0d ? 0d : covariance / denominator;
+        }
+
         private sealed class Tally
         {
             public float Diet;
@@ -43,6 +66,13 @@ namespace LifeSimulation.Tools.CreatureSweep
             public long AliveTicks;
             public float LastEnergy;
             public bool Seen;
+            public int Offspring;
+        }
+
+        private static void CreditParent(Dictionary<long, Tally> tallies, long seedKey, CreatureId parent)
+        {
+            if (parent.Value <= 0L) return;
+            if (tallies.TryGetValue(seedKey | (uint)parent.Value, out Tally tally)) tally.Offspring++;
         }
 
         public static void Report(int seedCount, int ticks, Func<int, SimulationConfig> configure, SimulationScenario scenario)
@@ -63,6 +93,19 @@ namespace LifeSimulation.Tools.CreatureSweep
                 for (int tick = 0; tick < ticks; tick++)
                 {
                     world.Step(config.FixedDeltaTime);
+
+                    // Births, before the buffer is cleared. Offspring count is the fitness measure
+                    // the intake table was missing: energy taken in only matters if it becomes
+                    // descendants.
+                    for (int eventIndex = 0; eventIndex < world.Events.Count; eventIndex++)
+                    {
+                        SimulationEvent simulationEvent = world.Events.GetAt(eventIndex);
+                        if (simulationEvent.Kind != SimulationEventKind.Birth) continue;
+
+                        CreditParent(tallies, seedKey, simulationEvent.FirstRelated);
+                        CreditParent(tallies, seedKey, simulationEvent.SecondRelated);
+                    }
+
                     world.Events.Clear();
 
                     for (int creature = 0; creature < world.CreatureCount; creature++)
@@ -114,8 +157,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             }
 
             Console.WriteLine();
-            Console.WriteLine("| diet | creatures | plant energy/1k ticks | meat energy/1k ticks | TOTAL/1k | plant ticks % | meat ticks % | plant energy per eating tick |");
-            Console.WriteLine("|---|---|---|---|---|---|---|---|");
+            Console.WriteLine("| diet | creatures | plant energy/1k ticks | meat energy/1k ticks | TOTAL/1k | plant ticks % | meat ticks % | plant energy per eating tick | lifetime intake | OFFSPRING | ticks alive |");
+            Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|---|");
             for (int bin = 0; bin < BinCount; bin++)
             {
                 double low = bin / (double)BinCount;
@@ -135,12 +178,34 @@ namespace LifeSimulation.Tools.CreatureSweep
                 double meatShare = group.Average(tally => tally.MeatTicks / (double)tally.AliveTicks) * 100d;
                 double perEatingTick = group.Where(tally => tally.PlantTicks > 0).Select(tally => tally.PlantGain / tally.PlantTicks).DefaultIfEmpty(0d).Average();
 
+                double lifetimeIntake = group.Average(tally => tally.PlantGain + tally.MeatGain);
+                double offspring = group.Average(tally => (double)tally.Offspring);
+                double aliveTicks = group.Average(tally => (double)tally.AliveTicks);
                 Console.WriteLine($"| {low:0.0}-{high:0.0} | {group.Length} | {plantRate:0.000} | {meatRate:0.000}"
-                    + $" | {plantRate + meatRate:0.000} | {plantShare:0.00} | {meatShare:0.000} | {perEatingTick:0.0000} |");
+                    + $" | {plantRate + meatRate:0.000} | {plantShare:0.00} | {meatShare:0.000} | {perEatingTick:0.0000}"
+                    + $" | {lifetimeIntake:0.0} | {offspring:0.000} | {aliveTicks:0} |");
             }
 
             Console.WriteLine();
             Console.WriteLine($"  meat is {measured.Sum(t => t.MeatGain) * 100d / Math.Max(1d, measured.Sum(t => t.PlantGain + t.MeatGain)):0.00}% of all energy ingested");
+
+            // DOES INTAKE BECOME FITNESS? The diet table shows a 12% spread in intake that selects
+            // nothing. Either intake does not predict offspring at all - in which case no energy
+            // trade-off can ever select - or it does, and something specific to diet cancels it.
+            double[] intakes = measured.Select(tally => tally.PlantGain + tally.MeatGain).ToArray();
+            double[] offspringCounts = measured.Select(tally => (double)tally.Offspring).ToArray();
+            double[] lifetimes = measured.Select(tally => (double)tally.AliveTicks).ToArray();
+            Console.WriteLine();
+            Console.WriteLine("  does intake become fitness?");
+            Console.WriteLine($"    corr(lifetime intake, offspring)   {Correlation(intakes, offspringCounts):0.000}");
+            Console.WriteLine($"    corr(ticks alive,     offspring)   {Correlation(lifetimes, offspringCounts):0.000}");
+            Console.WriteLine($"    corr(lifetime intake, ticks alive) {Correlation(intakes, lifetimes):0.000}");
+
+            // Intake per tick alive strips out "lived longer, therefore ate more", which is the
+            // obvious confound in the first correlation.
+            double[] intakeRates = measured.Select(tally => (tally.PlantGain + tally.MeatGain) / tally.AliveTicks).ToArray();
+            Console.WriteLine($"    corr(intake RATE,     offspring)   {Correlation(intakeRates, offspringCounts):0.000}");
+            Console.WriteLine($"    mean offspring {offspringCounts.Average():0.000}, of {measured.Length} creatures; {offspringCounts.Count(value => value > 0d) * 100d / measured.Length:0.0}% left any");
             Console.WriteLine($"  extinct runs: {extinct}");
         }
     }

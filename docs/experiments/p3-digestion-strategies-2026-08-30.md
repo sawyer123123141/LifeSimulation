@@ -146,12 +146,45 @@ about 12%. That is the shape "guided emergence" would have set out to build, and
 carnivore takes 16 times the meat energy of a herbivore.
 
 So the blocker is none of the things previously proposed. The trade-off exists, is correctly shaped,
-has a valley in the middle, is fully realised in intake, and is **still not selected**. What fails is
-the step after intake: **a 12% difference in energy taken in does not become a difference in
-surviving or breeding.** The likely reason is that energy is capped and topped up — intake above what
-a creature can hold is discarded, so an intake *rate* advantage need not be a fitness advantage — but
-**that is a hypothesis and nothing here measures it.** The measurement that would settle it is
-lifetime intake against offspring count.
+has a valley in the middle, is fully realised in intake, and is **still not selected**.
+
+## Intake does become fitness — it is simply swamped
+
+The same probe now counts births per parent, and the hypothesis in the previous paragraph — that a
+capped energy pool discards the surplus, so an intake advantage is not a fitness advantage — **is
+refuted**:
+
+| | correlation |
+|---|---|
+| lifetime intake vs offspring | **+0.880** |
+| intake **rate** vs offspring | **+0.807** |
+| ticks alive vs offspring | +0.786 |
+| lifetime intake vs ticks alive | **+0.932** |
+
+Energy very clearly becomes descendants. 71.9% of the 5,639 creatures left any, mean 1.99 offspring.
+
+**But offspring is flat across the diet gene**, while intake is not:
+
+| diet | intake /1k ticks | lifetime intake | **offspring** | ticks alive |
+|---|---|---|---|---|
+| 0.0-0.2 | 89.14 | 258.4 | **1.933** | 2446 |
+| 0.2-0.4 | 84.32 | 245.9 | **2.014** | 2426 |
+| 0.4-0.6 | 81.82 | 245.6 | **2.004** | 2533 |
+| 0.6-0.8 | 78.67 | 229.3 | **2.023** | 2418 |
+| 0.8-1.0 | 85.45 | 241.0 | **1.980** | 2367 |
+
+An 11% spread in intake rate produces a **4% spread in offspring, in the wrong direction** — the band
+with the *lowest* intake has the *highest* offspring.
+
+**The resolution is in the last correlation.** Lifetime intake and ticks alive correlate at **+0.932**
+— intake is very nearly a restatement of how long a creature lived. Fitness here is set by lifespan,
+and lifespan is set by ageing: the recorded death mix is **92.7% age**. An 11% difference in feeding
+efficiency is noise against that.
+
+**So the finding is not about digestion at all.** For any metabolic trade-off to select, energy has to
+gate survival or reproduction more tightly than age does. In this ecology it does not, which is why
+the gene is neutral, why `MetabolicPace` was recorded as an unrescuable pure cost, and why the intake
+valley in the middle of the diet range buys nothing. The lever is the death mix, not the trade-off.
 
 ## What this establishes and what it does not
 
@@ -174,15 +207,20 @@ energy flow, because no such configuration exists yet — 8.4% of deaths is the 
 the share above the hunting threshold, the per-run range, and whether the hunt-capable differ in any
 other trait. Any future attempt at this gate should be judged on that output, not on a mean.
 
-**Measured since, and the candidate was wrong:** the penalty *is* fully realised in intake and
-creatures do **not** eat more to compensate. See the intake section above. The open question moved
-one step downstream — whether an intake difference becomes a fitness difference at all — and the
-instrument for it is lifetime intake against offspring count, which does not exist yet.
+**Measured since, and both candidates were wrong:** the penalty *is* fully realised in intake,
+creatures do **not** eat more to compensate, and intake *does* become fitness (r +0.88 with
+offspring). The chain is now complete and the answer is that an 11% intake difference is swamped by
+lifespan variance in a world where 92.7% of deaths are old age.
 
 ## What not to do next
 
-- Do not implement "generalist cost". **A 12% intake valley in the middle already exists** and it
-  selects nothing; deepening a valley that does not convert to fitness will not change the outcome.
+- Do not implement "generalist cost". **A 12% intake valley in the middle already exists**, energy
+  converts to offspring at r +0.88, and the valley still buys nothing — because 11% of intake is
+  noise against a death mix that is 92.7% age. Deepening the valley does not change that.
+- Do not attack this through digestion at all. **The lever is the death mix.** A trade-off in energy
+  can only select where energy gates survival; `p6-starvation-is-a-dial-2026-08-26.md` records
+  starvation running 49.6% to 0.0% of deaths on one configuration value, and that is the axis this
+  question actually lives on.
 - Do not act on "the carnivore end has nothing to eat". That claim appeared in an earlier version of
   this document and the intake measurement retired it: meat is 9.7% of ingested energy and a
   carnivore takes 16 times what a herbivore does.
