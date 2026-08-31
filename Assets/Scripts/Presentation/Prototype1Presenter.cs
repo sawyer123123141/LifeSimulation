@@ -907,7 +907,12 @@ namespace LifeSimulation.Presentation
                 defaults.WorldSeed,
                 defaults.InitialPopulation,
                 defaults.Schedule,
-                maximumPopulation: 96,
+                // CAP 500, WHICH NEVER BINDS. With the density brake below, the population settles
+                // at about 154 and is held by its food rather than by this number - which is the
+                // point: a world does not have a population cap, and the cap was doing that job.
+                // The recorded dial has cap 500 and cap 1000 as the same ecology, so this is
+                // effectively uncapped. Measured 2026-08-30 at 24 seeds, see below.
+                maximumPopulation: 500,
                 defaults.FounderProfile,
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
@@ -985,7 +990,28 @@ namespace LifeSimulation.Presentation
                 // shared a disc three units across and overlapped by construction. The pile is a
                 // question about the patches, not about where creatures walk - and the layout below
                 // is what answers it.
-                feedInPlaceEnabled: true);
+                feedInPlaceEnabled: true,
+                // THE DENSITY BRAKE, AND IT IS WHAT REPLACES THE CAP. Fertility falls as local
+                // crowding rises, so the population limits itself instead of hitting a ceiling.
+                //
+                // Strength 0.75, measured at 24 seeds against the shipped cap-96 world
+                // (docs/experiments/p6-y-is-food-limited-2026-08-30.md): 20 of 24 worlds alive
+                // against 21 of 24, population self-limiting at 154 under a cap of 500 that never
+                // binds, and - the point of the change - **5.4% of deaths are starvation against
+                // 0.0%**, with food patches sitting at 56% full instead of 88%. Depletion and
+                // regrowth become things a player can watch, which is P4a's own acceptance
+                // criterion and was unmet because nothing was ever hungry.
+                //
+                // 0.75 rather than a rounder number because survival is NOT monotone in this knob:
+                // 16 / 17 / 20 / 20 / 16 worlds alive at none / 0.5 / 0.75 / 1.0 / 1.5. Strength
+                // 1.5 is both safer-sounding and worse, which is the recorded "brake strength does
+                // not transfer". 1.0 survives equally and starves at 0.7%, which is back to nothing
+                // to watch; 0.5 starves at 15.9% and costs three more worlds.
+                //
+                // It makes the world harder: mean energy 0.794 to 0.602. Creatures look hungrier
+                // because they are. Clumping is unaffected, 0.516 against 0.488.
+                gradedFertilityEnabled: true,
+                gradedFertilityStrength: 0.75f);
 
             // Each of the six food patches becomes four of a quarter the capacity, one on the
             // original coordinate and three on a radius-6 ring around it. Total productivity is
@@ -1014,7 +1040,7 @@ namespace LifeSimulation.Presentation
 
             // Renamed with the layout, so a HUD screenshot or a Logs/performance.txt line from
             // before this change cannot be read as describing the world after it.
-            _scenarioId = "p6-terrain-playtest-split4";
+            _scenarioId = "p6-terrain-playtest-split4-braked";
             _scenarioHint = "Watch: press H to reach the Elevation overlay";
             _overlay = TerrainOverlay.Elevation;
             _showTemperatureHeatmap = true;
