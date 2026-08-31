@@ -320,7 +320,7 @@ namespace LifeSimulation.EditorTools
                 defaults.WorldSeed,
                 defaults.InitialPopulation,
                 defaults.Schedule,
-                maximumPopulation: 96,
+                maximumPopulation: 500,
                 defaults.FounderProfile,
                 defaults.CognitionEnabled,
                 defaults.PhysiologyEnabled,
@@ -348,7 +348,9 @@ namespace LifeSimulation.EditorTools
                 wanderHomeHysteresisEnabled: true,
                 feedInPlaceEnabled: true,
                 arenaHalfWidth: SimulationConfig.DefaultArenaHalfWidth,
-                generatedPlantSitesEnabled: _playtestGeneratedSites);
+                generatedPlantSitesEnabled: _playtestGeneratedSites,
+                gradedFertilityEnabled: true,
+                gradedFertilityStrength: 0.75f);
         }
 
         /// <summary>
