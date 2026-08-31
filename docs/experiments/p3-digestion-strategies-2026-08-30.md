@@ -115,13 +115,56 @@ a scoped item that was never built — but note it would not on its own produce 
 meat worth almost nothing, penalising the middle pushes the population to the herbivore end, not to
 two ends.
 
+## Realised intake: the trade-off works perfectly and still does not select
+
+`tools/CreatureSweep --intake` follows every creature's energy tick by tick and attributes each
+positive change to what it was eating at the time. An outside observer in the manner of
+`CreatureActionHistory` — it reads the world and never writes to it. 8 seeds, cap 500, brake 1.0,
+regen 2.0, predation, proximity pairing; 5,639 creatures that lived more than 200 ticks.
+
+| diet | creatures | plant energy /1k ticks | meat energy /1k ticks | **total /1k** | **% of ticks eating plants** | plant energy per eating tick |
+|---|---|---|---|---|---|---|
+| 0.0-0.2 | 970 | 87.70 | 1.44 | **89.14** | 12.47 | 0.687 |
+| 0.2-0.4 | 1353 | 79.78 | 4.54 | **84.32** | 12.23 | 0.632 |
+| 0.4-0.6 | 1036 | 74.07 | 7.75 | **81.82** | 12.16 | 0.578 |
+| 0.6-0.8 | 975 | 63.20 | 15.47 | **78.67** | 12.40 | 0.479 |
+| 0.8-1.0 | 1305 | 63.00 | 22.44 | **85.45** | 12.38 | 0.483 |
+
+**The trade-off is realised exactly as written.** Plant energy per feeding tick falls from 0.687 to
+0.483 — a 30% drop, which is precisely `PlantFoodYieldMultiplier = 1 - 0.3 * diet`. Meat intake rises
+**15.6-fold**, 1.44 to 22.44. The mechanism is not broken and it is not inert.
+
+**The "they just eat more" hypothesis is refuted.** It was the leading explanation and it is wrong:
+time spent eating is **flat at 12.16% to 12.47%** across the entire gene range. Creatures with poor
+plant yield do not compensate by feeding longer.
+
+**And a valley already exists.** Total intake is 89.1 at the herbivore end, sags to **78.7** in the
+0.6-0.8 band, and recovers to 85.4 at the carnivore end — the generalist is the worst place to be, by
+about 12%. That is the shape "guided emergence" would have set out to build, and it is already there.
+
+**Meat is 9.69% of all energy ingested**, not the negligible flow the death mix suggested. A
+carnivore takes 16 times the meat energy of a herbivore.
+
+So the blocker is none of the things previously proposed. The trade-off exists, is correctly shaped,
+has a valley in the middle, is fully realised in intake, and is **still not selected**. What fails is
+the step after intake: **a 12% difference in energy taken in does not become a difference in
+surviving or breeding.** The likely reason is that energy is capped and topped up — intake above what
+a creature can hold is discarded, so an intake *rate* advantage need not be a fitness advantage — but
+**that is a hypothesis and nothing here measures it.** The measurement that would settle it is
+lifetime intake against offspring count.
+
 ## What this establishes and what it does not
 
 **Establishes:** the P3 exit gate is not met, and the required digestion experiment now has a
 recorded negative result instead of a gap. `diet_specialization` is **effectively neutral in every
-configuration measured** — four cells by drift t-statistic, two cells by full distribution, including
-a world where a third of all deaths are starvation. It drifts to fixation independently in each
-world.
+configuration measured** — four cells by drift t-statistic, two by full distribution, one by realised
+energy intake, including a world where a third of all deaths are starvation. It drifts to fixation
+independently in each world.
+
+**And it establishes that the usual suspects are all innocent.** The trade-off is not missing, not
+mis-shaped, not inert, and not starved of prey: it delivers a 30% plant-yield penalty, a 15.6-fold
+meat gain, a 12% intake valley in the middle, and 9.7% of all ingested energy coming from meat. The
+failure is downstream of intake.
 
 **Does not establish:** that raising the meat payoff would produce two strategies. That is a
 hypothesis and it needs its own arm. Nothing here measures a world where predation is a material
@@ -131,17 +174,19 @@ energy flow, because no such configuration exists yet — 8.4% of deaths is the 
 the share above the hunting threshold, the per-run range, and whether the hunt-capable differ in any
 other trait. Any future attempt at this gate should be judged on that output, not on a mean.
 
-**Still unmeasured:** *why* a 30% plant-yield penalty does not reach fitness. Candidates exist — the
-penalty is on yield per unit eaten while patches sit at capacity, so a creature may simply eat more —
-but nothing here measures realised energy intake against the diet gene, and that is the next thing to
-instrument if this gate is picked up again.
+**Measured since, and the candidate was wrong:** the penalty *is* fully realised in intake and
+creatures do **not** eat more to compensate. See the intake section above. The open question moved
+one step downstream — whether an intake difference becomes a fitness difference at all — and the
+instrument for it is lifetime intake against offspring count, which does not exist yet.
 
 ## What not to do next
 
-- Do not implement "generalist cost" on its own and expect species. Measured above: the middle is not
-  where the population is stuck, the carnivore end is where the food is missing.
+- Do not implement "generalist cost". **A 12% intake valley in the middle already exists** and it
+  selects nothing; deepening a valley that does not convert to fitness will not change the outcome.
+- Do not act on "the carnivore end has nothing to eat". That claim appeared in an earlier version of
+  this document and the intake measurement retired it: meat is 9.7% of ingested energy and a
+  carnivore takes 16 times what a herbivore does.
 - Do not read `defense` selecting at t +12.7 as evidence that the predator-prey loop is ecologically
-  material. It selects on **surviving attacks**, at 1.1-8.4% of deaths; that is pressure on a
-  defensive trait, not a food supply.
+  material for *diet*. It selects on surviving attacks; meat is still under a tenth of energy intake.
 - Do not re-run this comparison at cap 48. The cap-500 proximity-pairing cell is the strongest
   available and it is the one that gives the control column something to say.
