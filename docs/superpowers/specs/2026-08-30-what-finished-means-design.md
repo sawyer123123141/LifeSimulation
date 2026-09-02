@@ -1,10 +1,11 @@
 # What "finished" means, and which gates matter
 
 **Date:** 2026-08-30
-**Status:** DESIGN, revision 2, awaiting the user's review. Nothing implemented against it.
-**Revision 2** rewrites sections 1, 3, 4, 5 and 6 of revision 1 after a critical external review.
-Revision 1's two worst errors are corrected here and named as errors in section 11, because the
-mistakes are instructive and this project keeps paying for the same class of them.
+**Status:** DESIGN, revision 3, awaiting the user's review. Nothing implemented against it.
+**Revision 2** rewrote sections 1, 3, 4, 5 and 6 after a critical external review; **revision 3**
+applies eight targeted corrections from a second review pass. Errors from earlier revisions are named
+in section 11 rather than quietly fixed, because the class recurs and naming it is cheaper than
+repeating it.
 
 **Why this document exists:** the project has 624 commits in 18 days, eight roadmap phases, and **no
 definition of done anywhere**. `docs/ROADMAP.md` ends at P7 plus an art milestone;
@@ -106,13 +107,23 @@ Behaviour code should consume an `Observation`, not query ground truth.
 
 ### The modelling exception
 
-A shortcut is acceptable when **both** hold:
+A shortcut is acceptable when **all three** hold:
 
 1. it approximates information the animal could realistically obtain, **and**
-2. the omitted mechanism is not part of the question being studied.
+2. the omitted mechanism is not part of the question being studied, **and**
+3. **it does not materially distort the causal variables or outcomes relevant to that question** —
+   mating structure, reproductive success, gene flow, effective population size, survival.
+
+Condition 3 is the one that bites. A shortcut can sit entirely outside the question being asked and
+still be unacceptable, because it moves something the answer depends on.
 
 **The assumption must be written down where the shortcut lives.** An undocumented shortcut is
 indistinguishable from a bug.
+
+**Load-bearing approximations** — those that fail or strain condition 3 — should eventually be
+**sensitivity-tested against a noisier or more biologically plausible alternative** before being
+trusted in any experiment whose result they could move. That is a standing obligation, not an
+immediate task.
 
 ### Audit status
 
@@ -120,13 +131,25 @@ indistinguishable from a bug.
 recognition is perfect, error-free and impossible to deceive. Real kin recognition is cue-based —
 scent, familiarity from co-rearing — which is why brood parasitism works.
 
-**Revision 1 called this a flat constitutional violation. Under the modelling exception it is
-narrower than that:** pedigree lookup is a defensible *approximation* of a cue an animal could
-plausibly obtain, and it is only a violation if kin recognition is inside the question being studied
-or if its perfection matters. What it is not, currently, is **written down as an assumption**. It is
-also load-bearing — kin recognition off costs 29% of the population — so it cannot be casually
-deleted. The correct next action is to document the assumption, and to replace it with a foolable cue
-only if kin dynamics become part of a question.
+**Revision 1 called this a flat constitutional violation; revision 2 softened it to a documented
+assumption. Both were wrong in different directions.** Pedigree lookup is a defensible
+*approximation* of a cue an animal could plausibly obtain, so it passes conditions 1 and 2 — but it
+**fails condition 3**. Kin recognition off costs 29% of the population, which means it materially
+moves mating structure, reproductive success and effective population size: exactly the variables
+that every selection result in this project depends on.
+
+**Classification: a load-bearing approximation.** Not a violation to be fixed immediately, and not a
+harmless assumption to be waved through. The obligations that follow:
+
+1. Document the assumption where it lives.
+2. **Sensitivity-test it** against a noisier, foolable alternative — a heritable cue plus proximity —
+   before trusting any result it could have moved.
+3. Replace it only if that test says the perfection matters, or if kin dynamics enter a question.
+
+**A precision note on the 29%.** That figure is the cost of turning kin recognition **off entirely**,
+which removes the behaviour. It is *not* a measurement of what a degraded or noisy version would
+cost, and it should not be read as one. The sensitivity test in obligation 2 is what would produce
+that number.
 
 **Not yet audited:** mate selection, multi-threat perception, learned resource quality, carcass
 detection, and the perception system's own range rules.
@@ -181,8 +204,8 @@ Judged against biology **at the timescale the simulation runs** — **29–37 ge
 |---|---|---|---|
 | **P0** evolution proof | heritable traits create measurable selection | **MET** | `urgency_exponent` to \|t\| 19.4, `defense` to t +12.7 against a flat control |
 | **P1** predator/prey | niches from biology, no hardcoded flags; population cycles | **KEEP, unmet** | Predation fires and selects `defense`, but is 1–8% of deaths and cycles were never shown |
-| **P2** cognition | learning with a biological cost | **REFRAME, unmet** | Re-gate on section 3: learning must be earned, must pay where information is predictive, and must be visible in an individual |
-| **P3** niche formation | two trait strategies persist by exploiting different conditions | **KEEP, unmet** | Ecotypes arise fast under disruptive selection — stickleback armour, finch beaks, peppered moth are tens-of-generations cases. Realistic and reachable. Measured not met on 2026-08-30 |
+| **P2** cognition | *(reframed — see below)* | **REFRAME, unmet** | Revision 2's "learning with a biological cost" contradicted section 3, which asks for costs only where biologically sensible |
+| **P3** niche formation | two or more strategies persist by exploiting different ecological conditions — **phenotypic/ecological** | **KEEP, unmet** | **Stickleback benthic–limnetic ecotype pairs** are the clean case: persistent coexisting strategies on different resources. (Peppered moth and finch beaks show that substantial adaptive evolution happens on short timescales, but they are directional frequency change and rapid adaptation respectively — **not** demonstrations of persistent niche coexistence, and should not be cited for this gate.) Realistic and reachable. Measured not met on 2026-08-30 |
 | **P4** plants | plant genetics, competition, coevolution | **MET** | Heritable genome, defence, dispersal, mortality, competition all real |
 | **P4a** watchable | distinguish foraging, drinking, mating, fleeing, resting, **and resource recovery** | **UNVERIFIED** | Resource recovery was blocked because nothing was ever hungry; the food-limited `Y` removes that block, but nobody has watched and confirmed the rest |
 | **P5** species | *(reframed — see below)* | **KEEP, reframed, unmet** | Revision 1 dropped this. That was wrong |
@@ -190,6 +213,22 @@ Judged against biology **at the timescale the simulation runs** — **29–37 ge
 | **P6** world scale | partitioning, LOD, far populations | **DEFER** | Presentation half shipped early. Simulation half is worth building for scale, biomes, or **spatial structure as a divergence mechanism** — not as a species generator on its own |
 | **P7** planet | zoom from organism to planet | **PARTIAL** | View exists; simulation stays 2D by standing decision |
 | **art** | custom body plans | **OPEN** | Twelve CC0 models are placeholders by design |
+
+### P2, reframed
+
+Revision 2 left the P2 gate as *"learning with a biological cost"* while section 3 asked for limits or
+costs only *"where biologically sensible"*. Those contradict — the first makes a cost mandatory, the
+second makes it conditional. Resolved in favour of section 3:
+
+> Experience-derived information changes an individual's future behaviour. The information must be
+> **earned** through perception or experience, must produce **measurable context-dependent
+> consequences**, must be **visible at the individual level**, and must have **biologically plausible
+> limits**.
+
+**Costs and trade-offs are required where they are needed to model the mechanism honestly, or to
+prevent implausible free generalism — not as an arbitrary tax on every learning mechanism.** Memory
+that decays is a limit; memory that costs energy is a cost; either can be right, and neither is
+automatically required.
 
 ### P5, reframed
 
@@ -244,9 +283,21 @@ genetic variation
   → visible population-level change
 ```
 
-**And then the effect must change or reverse when the ecological conditions change.** A trait that
-only ever goes one direction has not been shown to be responsive; it may just be drifting or be
-under a constant artefact.
+**And then one predeclared paired experiment must show the effect responding to ecology.** Revision 2
+said the effect must "change or reverse when ecological conditions change", which is too broad — not
+every environmental change should reverse selection, and a gate phrased that loosely can be satisfied
+or failed by accident. The gate:
+
+1. **Environment A** is constructed so the causal model predicts trait direction A has greater
+   reproductive fitness.
+2. **Environment B** changes the relevant ecological variable so the model predicts the *opposite*
+   direction is favoured.
+3. **The expected sign is declared in writing before the runs happen** — committed, not remembered.
+4. Replicated across seeds, the results show the predicted change relative to neutral controls.
+
+**This is one gate experiment, not a requirement that every trait reverse under arbitrary
+environmental change.** A trait that only ever moves one way has not been shown responsive; this is
+the specific, falsifiable way to show that it is.
 
 Digestion is the natural candidate, because most of the chain is already instrumented and the loop
 demonstrably breaks at a known link (section 6). A version of the experiment that supplies genuinely
@@ -280,13 +331,32 @@ trait / genotype
   → allele-frequency change
 ```
 
-### Rejecting the false choice
+### Three different questions, three different requirements
 
-It is not trade-offs *or* mortality. **All three are required:**
+Revision 2 said trade-offs, ecology and reproduction are "all three required". **That was itself too
+categorical** and is corrected here: a beneficial variant can be driven to fixation by directional
+selection with no trade-off and no second niche anywhere in sight. What needs what:
 
-1. **Trade-offs** create alternative viable strategies.
-2. **Ecology** makes those strategies perform differently under different conditions.
-3. **Life history and reproduction** convert performance differences into fitness.
+**Selection in general** — the minimum, and it is genuinely minimal:
+
+```
+heritable variation → phenotype / performance → differential reproductive fitness → allele-frequency change
+```
+
+Nothing else is required. No trade-off, no heterogeneity, no structure.
+
+**Stable alternative strategies (the P3 gate)** — additionally needs some mechanism that stops one
+strategy simply winning outright: a trade-off, environmental heterogeneity, frequency-dependent
+selection, spatial structure, or similar. Without one of those, the better strategy fixes and there is
+one strategy again.
+
+**Persistent genetic divergence (the P5 gate)** — additionally needs population structure, reduced
+gene flow, assortative mating or an equivalent, so that genetic differentiation can accumulate
+instead of being blended away each generation.
+
+**The current work sits in the second tier.** The digestion finding is a failure at the fitness link:
+performance differences exist and are not translating into different reproductive success. That is a
+statement about digestion, not a general law that selection needs trade-offs.
 
 ### Re-reading the two standing findings under this frame
 
@@ -361,10 +431,37 @@ this section records what is built so it is not rebuilt, and what is missing so 
 | **Headless batch** | **BUILT.** All three tools run without Unity |
 | **Determinism** | **BUILT.** Three hashes, pinned by tests |
 | **Fitness measurement** | **PARTIAL, and this is the important gap.** Lifetime offspring was measured for the first time on 2026-08-30, inside one probe. It is not a first-class tracked quantity. Missing entirely: surviving descendants, reproductive timing, mating success, survival to reproductive age |
+| **Effective population size and reproductive skew** | **MISSING, and directly diagnostic — see below** | |
 | **Trait-versus-fitness relationships** | **MISSING as a standing capability.** Done once, ad hoc |
 | **Sensitivity analysis** | **PARTIAL and inconsistent.** Some cells were checked for being knife-edges; most conclusions rest on one parameter setting |
 | **Explicit hypotheses** | **MISSING as a habit.** Features are proposed as "add memory" rather than as a falsifiable statement |
 | **Pattern validation** | **MISSING as a habit.** Several conclusions rest on one metric moving |
+
+### Effective population size is a current diagnostic, not a future concern
+
+The population settles near **150 census animals**. The **effective** breeding population may be far
+smaller, because of reproductive skew, mating structure, and fluctuation across the run — on
+2026-08-30, 71.9% of measured creatures left any offspring at all, which already implies meaningful
+skew.
+
+This matters now, not later. **Effective population size sets the strength of drift relative to
+selection.** This project has measured a gene drifting to fixation independently in each world, a
+population that shows no structure at any clustering threshold, and selection differentials that
+vanish against lifespan variance. **All three are what a small effective population looks like**, and
+none of them can be interpreted correctly without knowing whether drift should be expected to
+dominate at this scale.
+
+To be gathered alongside the first-class lifetime-reproductive-success instrumentation:
+
+- variance in reproductive success across individuals
+- the number and proportion of individuals actually contributing offspring
+- reproductive skew, and sex or mating-role skew where applicable
+- an estimate or proxy for effective population size — the variance-in-offspring proxy is the
+  feasible one here, since it needs only the reproductive-success data above
+- the relationship between census N and effective N, and how it moves with configuration
+
+**No target value is proposed.** The purpose is diagnosis: to know whether the weak selection already
+measured is a property of the ecology or of the population size it was measured in.
 
 **Explicit hypotheses** should look like:
 
@@ -389,9 +486,12 @@ Acknowledged as important and **not** demanded immediately. Listed so that propo
 rather than inventing a rationale:
 
 spatial population structure · dispersal · gene flow · habitat preference · local and assortative
-mating · effective versus census population size · developmental plasticity · costs of generalism ·
-frequency-dependent selection · sexual selection and mate choice · juvenile survival and age-specific
-selection · competition for resources and space · environmental variability across space **and** time
+mating · developmental plasticity · costs of generalism · frequency-dependent selection · sexual
+selection and mate choice · juvenile survival and age-specific selection · competition for resources
+and space · environmental variability across space **and** time
+
+(*Effective versus census population size was in this list in revision 2. It is promoted to a current
+diagnostic in section 8 — it is needed to interpret experiments already run, not only future ones.*)
 
 Several of these are exactly the ingredients the reframed P5 gate needs, which is not a coincidence:
 divergence requires structure, and this world currently has almost none.
@@ -411,18 +511,22 @@ divergence requires structure, and this world currently has almost none.
 - **Whether P1's population cycles are worth pursuing**, or P6's simulation half is worth building.
 - **Any implementation.** No plan follows until the user has reviewed this.
 
-### A contradiction this revision creates
+### P3 versus P5, settled
 
-The reframed **P5** gate — persistent ecotypes, genetic clustering, reduced gene flow — now overlaps
-heavily with the **P3** gate — two trait strategies persisting by exploiting different conditions.
-They are close to the same claim at two resolutions. A reasonable split:
+Revision 2 raised the overlap between these two gates and left the split as a proposal. **It is now
+adopted:**
 
-- **P3** — the strategies exist and persist. Phenotypic.
-- **P5** — the strategies become genetically structured, with measurably reduced gene flow between
-  them. Population-genetic.
+- **P3 — ecological / niche divergence.** Two or more phenotype or behaviour strategies persist
+  because they exploit different ecological conditions. **Primarily phenotypic and ecological.**
+- **P5 — population-genetic divergence.** Those ecological groups become genetically structured, with
+  measurably reduced gene flow or assortative structure between them. **Population-genetic.**
 
-That split is a proposal, not a decision, and the two gates should not be pursued as separate work
-streams until it is settled.
+**P3 can occur without P5.** Ecotypes can coexist while interbreeding freely — that is a
+polymorphism, and it is a legitimate end state. **P5 generally builds on mechanisms demonstrated in
+P3**, because there must be something ecologically distinct before there is anything for gene flow to
+be reduced between.
+
+**They are not to be maintained as duplicate work streams.** P3 first.
 
 ---
 
@@ -453,7 +557,10 @@ When work is proposed, ask in order:
 1. **Does it serve mechanistically plausible, observable emergence?**
 2. **Does it respect the constitution?** Does it hand a creature information it did not earn — and if
    it takes the modelling exception, is the assumption written down?
-3. **Which link in the section 6 chain does it strengthen?** Trade-off, ecology, or reproduction.
+3. **What causal mechanism and which gate does this serve?** If it concerns evolutionary selection,
+   *then* ask which link in the section 6 chain it affects. Learning, perception, scientific
+   infrastructure, visualisation, history and performance work all have legitimate causal purposes
+   that are **not** in that chain, and forcing them into it produces bad justifications.
 4. **Which gate does it serve, and is that gate kept?** If no gate covers it, say so — that is itself
    a finding.
 5. **What would falsify it?** If nothing, it is not a hypothesis.
