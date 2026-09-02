@@ -573,15 +573,18 @@ genetic divergence requires population structure, and this world currently has a
 ## 10. What this document does not decide
 
 - **The provenance audit.** One finding documented, five systems unaudited.
-- **Whether to replace pedigree kin recognition with a foolable cue**, or simply to document the
-  assumption. Load-bearing either way.
-- **Whether to reopen place memory.** Section 3 requires learning that place memory is the mechanism
-  for; a standing decision pins it inert. **These cannot both hold.** The decision was taken under
-  the old framing and is now formally reopened, but re-taking it is the user's call.
+- **Whether pedigree kin recognition ultimately needs replacement.** It is documented as a
+  load-bearing approximation and must be sensitivity-tested against a biologically plausible, noisy
+  and foolable alternative before results it could materially affect are trusted. Replacement depends
+  on that evidence; it is not an open preference decision.
+- **Whether the place-memory hypothesis succeeds.** Place memory is a promising P2 candidate, not a
+  requirement. `ObservePlace` stays inert unless and until an experiment implementing the section 3
+  hypothesis justifies activating it.
 - **Whether the shipped brake at 0.75 survives re-testing** against reproductive success rather than
   starvation share.
 - **Whether P1's population cycles are worth pursuing**, or P6's simulation half is worth building.
-- **Any implementation.** No plan follows until the user has reviewed this.
+- **Any implementation details.** Implementation belongs in separate plans and specs derived from
+  this frozen governing document.
 
 ### P3 versus P5, settled
 
