@@ -1,11 +1,15 @@
 # What "finished" means, and which gates matter
 
 **Date:** 2026-08-30
-**Status:** DESIGN, revision 3, awaiting the user's review. Nothing implemented against it.
-**Revision 2** rewrote sections 1, 3, 4, 5 and 6 after a critical external review; **revision 3**
-applies eight targeted corrections from a second review pass. Errors from earlier revisions are named
-in section 11 rather than quietly fixed, because the class recurs and naming it is cheaper than
-repeating it.
+**Status:** **FROZEN — the governing design spec.** Revision 4.
+Revision 2 rewrote sections 1, 3, 4, 5 and 6 after a critical external review; revision 3 applied
+eight targeted corrections; revision 4 applied nine more and froze the document. Errors from earlier
+revisions are named in section 11 rather than quietly fixed, because the class recurs and naming it
+is cheaper than repeating it.
+
+**Frozen means:** no new goals, systems or mechanisms are added here. Changes from now on are
+**verdict updates in the section 4 gate table** as gates are met, dropped or reframed on evidence —
+not new scope. If a change needs more than a table row, it needs its own spec.
 
 **Why this document exists:** the project has 624 commits in 18 days, eight roadmap phases, and **no
 definition of done anywhere**. `docs/ROADMAP.md` ends at P7 plus an art milestone;
@@ -142,8 +146,11 @@ that every selection result in this project depends on.
 harmless assumption to be waved through. The obligations that follow:
 
 1. Document the assumption where it lives.
-2. **Sensitivity-test it** against a noisier, foolable alternative — a heritable cue plus proximity —
-   before trusting any result it could have moved.
+2. **Sensitivity-test it** against **a biologically plausible, noisy and foolable recognition
+   mechanism**, before trusting any result it could have moved. The spec deliberately does **not**
+   name the replacement: a heritable recognition cue is only one candidate, and it would introduce
+   evolutionary dynamics of its own, so the mechanism should be chosen when the experiment is
+   designed rather than pre-selected here.
 3. Replace it only if that test says the perfection matters, or if kin dynamics enter a question.
 
 **A precision note on the 29%.** That figure is the cost of turning kin recognition **off entirely**,
@@ -189,9 +196,26 @@ population shift across generations. That is a distinct and currently absent thi
 
 **Current state, honestly.** `learnedResourceQualityEnabled` is one narrow channel. Place memory is
 built and **pinned inert by a standing decision** ("Place memory stays inert. Never wire
-`MemorySystem.ObservePlace`"). Under this section that decision is **reopened, not silently
-preserved** — it was taken under the old framing and it blocks a now-explicit requirement. Re-taking
-it is the user's call. See section 10.
+`MemorySystem.ObservePlace`").
+
+**This section does not require place memory specifically**, and revision 3 was wrong to imply it
+did. What is required is in-lifetime learning that meets the P2 gate; learned resource value,
+predator-cue learning and avoidance learning are all candidates that could satisfy it without
+touching `ObservePlace`.
+
+**Place memory is nevertheless an unusually promising candidate**, because it is biologically
+plausible, immediately understandable to someone watching, and genuinely useful whenever spatial
+information stays predictive.
+
+So it becomes a hypothesis rather than a demand:
+
+> When resource locations are spatially persistent, individuals with usable place memory should
+> improve their exploitation and reproductive fitness through experience. When locations become
+> unpredictable, that advantage should shrink or disappear.
+
+**Whether `ObservePlace` is activated should be decided by an experiment implementing that
+hypothesis** — not because the constitution demands place memory. That is a better standard than
+either the old prohibition or revision 3's claimed contradiction.
 
 ---
 
@@ -208,7 +232,7 @@ Judged against biology **at the timescale the simulation runs** — **29–37 ge
 | **P3** niche formation | two or more strategies persist by exploiting different ecological conditions — **phenotypic/ecological** | **KEEP, unmet** | **Stickleback benthic–limnetic ecotype pairs** are the clean case: persistent coexisting strategies on different resources. (Peppered moth and finch beaks show that substantial adaptive evolution happens on short timescales, but they are directional frequency change and rapid adaptation respectively — **not** demonstrations of persistent niche coexistence, and should not be cited for this gate.) Realistic and reachable. Measured not met on 2026-08-30 |
 | **P4** plants | plant genetics, competition, coevolution | **MET** | Heritable genome, defence, dispersal, mortality, competition all real |
 | **P4a** watchable | distinguish foraging, drinking, mating, fleeing, resting, **and resource recovery** | **UNVERIFIED** | Resource recovery was blocked because nothing was ever hungry; the food-limited `Y` removes that block, but nobody has watched and confirmed the rest |
-| **P5** species | *(reframed — see below)* | **KEEP, reframed, unmet** | Revision 1 dropped this. That was wrong |
+| **P5** population-genetic divergence | *(reframed — see below)* | **KEEP, reframed, unmet** | Renamed from "species": the gate does not require completed species and the label should not imply it. Revision 1 dropped this gate entirely, which was wrong |
 | **P5** history | ancestry and timelines reconcile with events | **KEEP, built** | Unaffected by the reframe |
 | **P6** world scale | partitioning, LOD, far populations | **DEFER** | Presentation half shipped early. Simulation half is worth building for scale, biomes, or **spatial structure as a divergence mechanism** — not as a species generator on its own |
 | **P7** planet | zoom from organism to planet | **PARTIAL** | View exists; simulation stays 2D by standing decision |
@@ -362,10 +386,10 @@ statement about digestion, not a general law that selection needs trade-offs.
 
 - **Digestion.** The physiological trade-off exists and is fully realised — plant yield per feeding
   tick falls 0.687 → 0.483, meat intake rises 15.6-fold, and lifetime intake predicts offspring at
-  r +0.88. What fails is link 3: the ecological advantage is **not producing sufficient differential
-  reproductive success**, because offspring is flat across the gene (1.93–2.02) while intake rate
-  spans 78.7–89.1. Ingredient 2 is also weak — one uniform arena gives the strategies nowhere to
-  perform differently.
+  r +0.88. **What fails is the performance-to-fitness step**: the ecological advantage is not
+  producing sufficient differential reproductive success, because offspring is flat across the gene
+  (1.93–2.02) while intake rate spans 78.7–89.1. **Ecological differentiation is also weak** — one
+  uniform arena gives the strategies nowhere to perform differently from each other.
 - **Temperature tolerance saturation.** Most likely means the current fitness landscape has **one
   broadly dominant solution**, because broad tolerance costs too little and the environment is
   insufficiently differentiated. That is a statement about the landscape, not about the trait.
@@ -373,10 +397,22 @@ statement about digestion, not a general law that selection needs trade-offs.
 ### Consequence for a change already shipped
 
 On 2026-08-30 `Y` was given a density brake at 0.75, taking starvation from 0.0% to 5.4% of deaths.
-**That was justified on death-mix grounds, which this section demotes.** It is not thereby wrong —
-a less forgiving world is a plausible precondition for ingredient 3 — but it is **no longer
-self-justifying**. It needs re-testing against reproductive success, not against a starvation
-percentage.
+**That was justified on death-mix grounds, which this section demotes**, so it is **PROVISIONAL**.
+Not wrong — a less forgiving ecology is a plausible way to strengthen the coupling between
+performance and reproductive fitness — but no longer self-justifying.
+
+**It stays until tested, rather than being reverted.** Reverting would be as unjustified as keeping
+it for the original reason. Once first-class reproductive-fitness instrumentation exists, matched
+brake-on / brake-off experiments decide it, on:
+
+- variance in reproductive fitness
+- trait-to-fitness relationships
+- population stability
+- **starvation and survival as explanatory variables, never as targets**
+- effective-population-size diagnostics where relevant
+
+Keep it only if its causal effects justify it. **No desired starvation percentage is proposed, then
+or now.**
 
 ---
 
@@ -445,20 +481,56 @@ smaller, because of reproductive skew, mating structure, and fluctuation across 
 skew.
 
 This matters now, not later. **Effective population size sets the strength of drift relative to
-selection.** This project has measured a gene drifting to fixation independently in each world, a
-population that shows no structure at any clustering threshold, and selection differentials that
-vanish against lifespan variance. **All three are what a small effective population looks like**, and
-none of them can be interpreted correctly without knowing whether drift should be expected to
-dominate at this scale.
+selection**, so it is needed to interpret results already recorded. What those results do and do not
+say, precisely:
+
+- **A neutral gene drifting to fixation independently per world** is consistent with substantial
+  drift, and is the observation that makes Ne worth measuring.
+- **No clustering structure at any threshold** follows from panmixia and an absence of ecological
+  structure. It is **not** evidence of small Ne by itself.
+- **A weak trait-to-fitness signal** can come from environmental and lifespan variance, or from weak
+  causal coupling. It is **not** evidence of small Ne by itself.
+
+**Together these motivate measuring Ne, because drift may be contributing to noisy evolutionary
+dynamics. They do not establish that Ne is small.** That is the diagnostic's job, and the distinction
+matters: revision 3 asserted that all three observations were what a small effective population looks
+like, which is affirming the consequent.
+
+**Nor would a low Ne make the P3 gate unreachable.** Low Ne raises stochastic loss and fixation and
+makes persistent polymorphism harder to sustain, but sufficiently strong or balancing ecological
+selection can still overcome drift. The diagnostic tells us **how strong the constraint is**, not
+whether the goal is possible.
 
 To be gathered alongside the first-class lifetime-reproductive-success instrumentation:
 
 - variance in reproductive success across individuals
 - the number and proportion of individuals actually contributing offspring
 - reproductive skew, and sex or mating-role skew where applicable
-- an estimate or proxy for effective population size — the variance-in-offspring proxy is the
-  feasible one here, since it needs only the reproductive-success data above
-- the relationship between census N and effective N, and how it moves with configuration
+- the relationship between census N and the effective-size proxy, and how it moves with configuration
+
+### Estimating it, without false precision
+
+**Effective population size has several related definitions** — inbreeding, variance, coalescent —
+and they do not coincide in a population with **overlapping generations and age structure**, which is
+what this simulation has. A single naive variance-in-offspring equation assumes discrete generations
+and would give a number that looks authoritative and is not. **The immediate goal is a useful
+diagnostic of the strength of drift relative to census size, not a definitive Ne.**
+
+Two complementary routes, neither implemented yet:
+
+**A — demographic proxy.** Lifetime reproductive success and its variance, combined with
+generation-length and life-history information appropriate to an age-structured population.
+
+**B — realised-drift check, independent of A.** The project already carries a `neutral_marker` that
+responds to nothing, and runs replicated deterministic worlds. The spread of that marker **among
+replicate populations over time** measures the strength of drift directly, without assuming a
+demographic model. Two cautions when this is built: the marker is a **continuous trait, not a
+biallelic locus**, so this is variance among replicate means rather than allele-frequency variance;
+and the mutation model adds variance each generation, so **mutational input must be accounted for
+separately from drift**.
+
+**Exploit what a simulation has that a field study does not.** Every birth, death and parent is known
+exactly. There is no reason to adopt the observational limitations of fieldwork.
 
 **No target value is proposed.** The purpose is diagnosis: to know whether the weak selection already
 measured is a property of the ecology or of the population size it was measured in.
@@ -493,8 +565,8 @@ and space · environmental variability across space **and** time
 (*Effective versus census population size was in this list in revision 2. It is promoted to a current
 diagnostic in section 8 — it is needed to interpret experiments already run, not only future ones.*)
 
-Several of these are exactly the ingredients the reframed P5 gate needs, which is not a coincidence:
-divergence requires structure, and this world currently has almost none.
+Several of these are exactly what the reframed P5 gate needs, which is not a coincidence: persistent
+genetic divergence requires population structure, and this world currently has almost none.
 
 ---
 
@@ -555,15 +627,16 @@ that could have contradicted it was run.** That sentence is already in the field
 When work is proposed, ask in order:
 
 1. **Does it serve mechanistically plausible, observable emergence?**
-2. **Does it respect the constitution?** Does it hand a creature information it did not earn — and if
-   it takes the modelling exception, is the assumption written down?
-3. **What causal mechanism and which gate does this serve?** If it concerns evolutionary selection,
-   *then* ask which link in the section 6 chain it affects. Learning, perception, scientific
-   infrastructure, visualisation, history and performance work all have legitimate causal purposes
-   that are **not** in that chain, and forcing them into it produces bad justifications.
-4. **Which gate does it serve, and is that gate kept?** If no gate covers it, say so — that is itself
-   a finding.
-5. **What would falsify it?** If nothing, it is not a hypothesis.
+2. **Does it respect information provenance?** Does it hand a creature knowledge it did not earn —
+   and if it takes the modelling exception, are all three conditions met and the assumption written
+   down?
+3. **What causal mechanism does it affect?** For evolutionary-selection work, additionally identify
+   **which link in the section 6 chain**. Learning, perception, scientific infrastructure,
+   visualisation, history and performance work have legitimate causal purposes **outside** that
+   chain, and forcing them into it produces bad justifications.
+4. **Which gate does it serve, and what evidence would move that gate?** If no gate covers it, say
+   so — that is itself a finding.
+5. **What result would falsify the hypothesis?** If nothing would, it is not a hypothesis.
 
 And when a gate is met, dropped or reframed, **write it in the table in section 4.** This document
 exists because P3's checkpoint said *"P4 remains blocked until this evidence is recorded"* on
