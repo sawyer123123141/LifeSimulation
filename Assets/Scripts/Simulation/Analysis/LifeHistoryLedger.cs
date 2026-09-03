@@ -73,6 +73,8 @@ namespace LifeSimulation.Simulation.Analysis
         private readonly AncestryHistory _ancestry = new AncestryHistory();
         private readonly Dictionary<CreatureId, Genome> _genomes = new Dictionary<CreatureId, Genome>();
         private readonly List<CreatureId> _observationOrder = new List<CreatureId>();
+        private readonly List<CreatureId> _pedigreeOrder = new List<CreatureId>();
+        private readonly HashSet<CreatureId> _pedigreeSeen = new HashSet<CreatureId>();
 
         /// <summary>Mirrors <see cref="AncestryHistory.IsComplete"/>. Analyses must refuse to report when this is false.</summary>
         public bool IsComplete => _ancestry.IsComplete;
@@ -82,15 +84,29 @@ namespace LifeSimulation.Simulation.Analysis
         /// <summary>Creatures whose genome has been captured, in first-observation order.</summary>
         public int Count => _observationOrder.Count;
 
+        /// <summary>Every creature the pedigree knows about, whether or not its genome was captured.</summary>
+        public int PedigreeCount => _pedigreeOrder.Count;
+
         /// <summary>Call once before the first drain, or founders are absent from the pedigree entirely.</summary>
         public void RecordFounders(long tick, CreatureStore creatures)
         {
             _ancestry.RecordFounders(tick, creatures);
+            if (creatures == null) return;
+            for (int index = 0; index < creatures.Count; index++)
+            {
+                AddToPedigreeOrder(creatures.GetIdAt(index));
+            }
         }
 
         public void RecordCompleteBatch(SimulationEventBuffer events, long throughTick)
         {
             _ancestry.RecordCompleteBatch(events, throughTick);
+            for (int index = 0; index < events.Count; index++)
+            {
+                SimulationEvent simulationEvent = events.GetAt(index);
+                if (simulationEvent.Kind != SimulationEventKind.Birth) continue;
+                AddToPedigreeOrder(simulationEvent.Subject);
+            }
         }
 
         /// <summary>Captures the genome of every creature not yet seen. Idempotent within a tick.</summary>
@@ -132,10 +148,23 @@ namespace LifeSimulation.Simulation.Analysis
             return true;
         }
 
+        /// <summary>Pedigree order: founders first, then births in the order they were drained.</summary>
+        public CreatureId GetPedigreeIdAt(int index)
+        {
+            if ((uint)index >= (uint)_pedigreeOrder.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            return _pedigreeOrder[index];
+        }
+
         /// <summary>Read straight from the pedigree's child index; this type keeps no birth counter of its own.</summary>
         public int OffspringCredited(CreatureId parentId)
         {
             return _ancestry.GetChildCount(parentId);
+        }
+
+        private void AddToPedigreeOrder(CreatureId creatureId)
+        {
+            if (!_pedigreeSeen.Add(creatureId)) return;
+            _pedigreeOrder.Add(creatureId);
         }
     }
 }

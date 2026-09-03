@@ -171,10 +171,13 @@ each task.**
 
 *(Update in the same commit as the work. One line per task.)*
 
+*A commit cannot contain its own hash, so each task's Commit cell is filled in by the **next** task's
+commit. A row reading `pending` means the work landed and only the hash is outstanding.*
+
 | Task | Status | Commit | Notes / decisions a later session needs |
 |---|---|---|---|
-| 1 | done | `fe0ac79` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
-| 2 | not started | — | — |
+| 1 | done | `d58dd9b` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
+| 2 | done | pending | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
 | 3 | not started | — | — |
 | 4 | not started | — | — |
 | 5 | not started | — | — |
@@ -255,21 +258,21 @@ to be present — which is exactly what makes it a non-biasing filter. A creatur
 excluded on its **birth tick alone**. Its own `LifespanTendency` is never consulted. That is the
 property that makes this defensible and it must be asserted by a test.
 
-- [ ] **Step 1: Write failing tests.** Two creatures with `LifespanTendency` 0.0 and 1.0 and the same
+- [x] **Step 1: Write failing tests.** Two creatures with `LifespanTendency` 0.0 and 1.0 and the same
       birth tick are both admitted or both excluded — never one of each. A creature born at exactly
       `endTick - 5,400` is admitted to the complete-life cohort; one tick later is not. The
       offspring-to-adulthood cohort is a strict subset. A cohort built from an incomplete ledger
       throws rather than returning a partial set.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Implement,** deriving the constants from `ReproductionSystem.AdultAgeSeconds`,
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Implement,** deriving the constants from `ReproductionSystem.AdultAgeSeconds`,
       `GenomePhenotype`'s lifespan expression and `SimulationSchedule.BaseFrequencyHz` rather than
       writing 400 and 5,400 as literals. A test must fail if any of those three change.
-- [ ] **Step 4: Add founder and expansion-phase handling.** Founders are parentless, start
+- [x] **Step 4: Add founder and expansion-phase handling.** Founders are parentless, start
       simultaneously with full needs, and carry a founder-distribution genome rather than a
       mutation-derived one. Provide `ExcludeFounders` (parentlessness is genotype-independent, so this
       is safe) and a `birthWindow` split so the analysis can report whether an effect is confined to
       the population's expansion phase. Do not filter on the expansion phase by default; report it.
-- [ ] **Step 5: Commit.** `analysis: genotype-independent fitness cohort horizons`
+- [x] **Step 5: Commit.** `analysis: genotype-independent fitness cohort horizons`
 
 **Run-length finding to carry into Task 9.** At 12,000 ticks the clean window is births in
 `[0, 6,200]` — 52% of the run, and disproportionately the expansion phase, when density, forage and
