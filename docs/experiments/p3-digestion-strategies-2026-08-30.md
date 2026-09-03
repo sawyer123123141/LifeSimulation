@@ -31,12 +31,42 @@
 >   *conclusion* it supported — that creatures do not compensate by feeding longer — is not thereby
 >   overturned, but it no longer rests on that number.
 >
-> **What is now open rather than settled.** **Why** the valley disappeared is not established. The
-> erasure rate of the old instrument was measured per diet bin precisely to test whether it was
-> diet-dependent — the one mechanism that could have manufactured a valley — and it is **flat**
-> (1.257-1.279 across the whole range). So the delta proxy did not invent it, and run length, the
-> `AliveTicks > 200` cohort rule, 8 seeds against 24, and ordinary noise all remain candidates. This
-> banner does not call the valley an artefact.
+> **The valley question, settled 2026-09-03.** Two further runs in this same cell decompose the three
+> variables that changed at once. Compare the shape, not the level — the two instruments report
+> different quantities on different cohorts:
+>
+> | measurement | instrument | seeds | ticks | intake per 1k ticks, by diet bin | valley |
+> |---|---|---|---|---|---|
+> | this document | delta proxy | 8 | 12,000 | 89.14 · 84.32 · 81.82 · **78.67** · 85.45 | **11.7%** |
+> | run 1 | delta proxy | 24 | 12,000 | 86.45 · 86.62 · 84.29 · **84.13** · 87.87 | **2.9%** |
+> | run 2 | allocation site | 24 | 12,000 | 152.82 · 151.23 · 149.79 · **140.34** · 152.28 | **8.2%** |
+> | 36,000-tick re-adjudication | allocation site | 24 | 36,000 | 103.20 · 103.75 · 104.47 · 104.44 · 105.69 | **none** |
+>
+> **The valley is present at 12,000 ticks under both instruments and absent at 36,000. Run length
+> decides it, not the instrument and not the seed count.** The dip sits in the 0.6-0.8 band with
+> recovery at the carnivore end in all three 12,000-tick measurements.
+>
+> - **The instrument attenuated the valley rather than manufacturing it** — the opposite of the
+>   suspicion. At 24 seeds and 12,000 ticks the proxy shows 2.9% where the allocation-site measurement
+>   shows 8.2%, because at that length the erasure rate falls monotonically with diet
+>   (1.257 / 1.240 / 1.238 / 1.236 / 1.219) and so loses most at the herbivore end. That
+>   diet-dependence is itself length-dependent: at 36,000 ticks the same table is flat.
+> - **Eight seeds inflated the depth**, 11.7% against a true 8.2%. **The valley in this document was a
+>   real effect measured badly, not a phantom** — which is the honest correction to make to it.
+> - **Not separated, and it cannot be at these two lengths:** run length and *which phase the cohort
+>   samples* move together. The 12,000-tick cohort admits births in `[0, 6,600]`, 55% of the run and
+>   mostly the expansion phase; the 36,000-tick cohort admits 85%, mostly after it. Offspring per
+>   creature is 3.46-3.95 in the first and 1.95-2.12 in the second. So the sharper reading is that the
+>   valley belongs to this cell's **early, expanding phase**, and that is inseparable from run length
+>   here.
+>
+> Raw output: `p3-valley-intake-24seeds-12000-2026-09-03.txt`,
+> `p3-valley-lifehistory-24seeds-12000-2026-09-03.txt`.
+>
+> **The negative below is unaffected and now holds at both lengths.** At 12,000 ticks with the
+> corrected instrument, `diet → offspring` is mean per-world r **+0.042** (15 worlds positive, 9
+> negative, interval crossing zero) while lifetime intake → offspring is **+0.772** with 24 of 24
+> worlds positive.
 >
 > **Four defects in the retired instrument, two of which no review found:** right-censoring;
 > capacity clamping (real, and negligible here); **drain-tick erasure**, which is the largest single

@@ -1,0 +1,21 @@
+
+realised intake against the diet gene, 22 surviving runs of 24
+16418 creatures that lived more than 200 ticks
+
+| diet | creatures | plant energy/1k ticks | meat energy/1k ticks | TOTAL/1k | plant ticks % | meat ticks % | plant energy per eating tick | lifetime intake | OFFSPRING | ticks alive |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.0-0.2 | 2918 | 85.055 | 1.393 | 86.449 | 12.23 | 0.268 | 0.6808 | 247.1 | 1.973 | 2429 |
+| 0.2-0.4 | 3373 | 83.047 | 3.573 | 86.619 | 12.93 | 0.518 | 0.6289 | 244.7 | 2.008 | 2379 |
+| 0.4-0.6 | 3699 | 77.261 | 7.024 | 84.285 | 12.81 | 0.816 | 0.5835 | 239.9 | 1.996 | 2422 |
+| 0.6-0.8 | 2813 | 72.107 | 12.027 | 84.134 | 13.33 | 1.128 | 0.5207 | 238.6 | 2.015 | 2391 |
+| 0.8-1.0 | 3615 | 66.830 | 21.035 | 87.865 | 12.92 | 1.632 | 0.5028 | 247.3 | 2.019 | 2381 |
+
+  meat is 8.66% of all energy ingested
+
+  does intake become fitness?
+    corr(lifetime intake, offspring)   0.887
+    corr(ticks alive,     offspring)   0.765
+    corr(lifetime intake, ticks alive) 0.917
+    corr(intake RATE,     offspring)   0.806
+    mean offspring 2.003, of 16418 creatures; 72.1% left any
+  extinct runs: 2

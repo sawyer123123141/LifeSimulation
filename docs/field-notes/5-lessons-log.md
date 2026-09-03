@@ -928,3 +928,20 @@ same worlds, the same collapsing ecology returns lifetime intake -> offspring at
 returned +0.87 on a different relationship from the identical creatures, so the 12-of-24 / 12-of-24
 diet split is centred on zero rather than floored. **Carry a known-live relationship through every
 compromised measurement; without one, "measured under bad conditions" is unanswerable.**
+
+**2026-09-03 (later the same day) — CORRECTION to the entry above on the intake valley: it was
+settled, and the answer was the variable nobody suspected.** That entry said the valley's origin was
+unexplained and left run length, cohort rule, seed count and noise open. Two runs in the same cell
+closed it: **the valley is present at 12,000 ticks under BOTH instruments (8.2% measured at the
+allocation site, 2.9% through the delta proxy) and absent at 36,000 under the same instrument and the
+same 24 seeds. Run length decides it.** Two corrections fall out. **The old instrument attenuated the
+valley rather than manufacturing it** — at 12,000 ticks its erasure rate falls monotonically with diet
+(1.257 → 1.219), so it loses most at the herbivore end, which flattens exactly the shape in question;
+the flat erasure table measured at 36,000 ticks is **not** a general property of the instrument, and
+quoting it as one was the mistake. And **8 seeds inflated the depth**, 11.7% reported against a true
+8.2% — a real effect measured badly, not a phantom. **The lesson that survives is narrower and more
+useful than "a disappearing effect needs its own explanation": when three variables changed at once,
+two runs against the two cells already measured decompose them, and that is cheaper than any amount
+of argument about which one it was.** One caveat that no pair of runs at these lengths can remove:
+run length and which phase of the cell the cohort samples move together, so "the valley belongs to
+the expansion phase" and "the valley belongs to short runs" are the same statement here.

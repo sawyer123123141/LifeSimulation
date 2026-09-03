@@ -101,12 +101,11 @@ The prediction committed to the plan before these runs, and the only one predecl
 sagging to 78.7 in the 0.6-0.8 band, recovering to 85.4" is not reproduced by a measurement taken at
 the allocation site.
 
-**Where the valley went is not established, and section 8 rules out the obvious answer.** The erasure
-rate of the retired instrument was measured **by diet bin** specifically to test whether it was
-diet-dependent — a diet-dependent erasure rate is the one mechanism by which the old instrument could
-have manufactured a valley that was never there. **It is flat.** So the valley's origin is
-**unexplained**, and this record does not call it an artefact of the delta proxy. The remaining
-candidates are named in section 8.
+**Where the valley went was settled by two follow-up runs on 2026-09-03, and the answer is run
+length.** See "The valley, decomposed" below. In short: the valley is present at 12,000 ticks under
+**both** instruments and absent at 36,000 under the same instrument and the same seeds, so the
+variable that separates them is the run — not the instrument, which turns out to *attenuate* the
+valley rather than manufacture it, and not the seed count, which only inflated its depth.
 
 **A prediction that fails is still a measurement, and this one is reported as failed.** The three
 other candidate predictions offered at the same time — offspring flat across diet, energy usually
@@ -284,6 +283,55 @@ under-counting cannot create a 12% mid-range valley in a rate.** The valley's or
 which is why `Intake.cs` was deliberately kept.** That measurement was not made; this record does not
 claim it was.
 
+### The valley, decomposed
+
+Three variables differed between the recorded table and this one — instrument, 8 seeds against 24,
+and 12,000 ticks against 36,000. Two further runs in the same cell separate them. **Compare the
+shape, not the level**: the delta proxy reports a net energy delta and the recorder reports gross
+energy at the allocation site, and the two modes use different cohorts (`AliveTicks > 200` against
+complete-life), so only the profile across bins is comparable.
+
+| measurement | instrument | seeds | ticks | intake per 1k ticks, by diet bin | valley |
+|---|---|---|---|---|---|
+| recorded 2026-08-30 | delta proxy | 8 | 12,000 | 89.14 · 84.32 · 81.82 · **78.67** · 85.45 | **11.7%** |
+| run 1, this section | delta proxy | 24 | 12,000 | 86.45 · 86.62 · 84.29 · **84.13** · 87.87 | **2.9%** |
+| run 2, this section | allocation site | 24 | 12,000 | 152.82 · 151.23 · 149.79 · **140.34** · 152.28 | **8.2%** |
+| Task 9, above | allocation site | 24 | 36,000 | 103.20 · 103.75 · 104.47 · 104.44 · 105.69 | **none** |
+
+Raw output: `p3-valley-intake-24seeds-12000-2026-09-03.txt` and
+`p3-valley-lifehistory-24seeds-12000-2026-09-03.txt`.
+
+**The valley is present in both 12,000-tick runs and absent at 36,000.** By the decomposition's own
+reading rule that makes **run length** the variable that decides it. The minimum sits in the 0.6-0.8
+band in all three 12,000-tick measurements, with recovery at the carnivore end, and the profile is
+monotone and flat at 36,000.
+
+Two things fall out that were not the point of the runs:
+
+- **The old instrument attenuates the valley; it does not create one.** At 24 seeds and the same
+  12,000 ticks the proxy shows a 2.9% dip where the allocation-site measurement shows 8.2%. The
+  erasure-by-bin table for run 2 explains why, and unlike at 36,000 ticks it is **not** flat: the
+  ratio falls monotonically with diet, 1.257 / 1.240 / 1.238 / 1.236 / **1.219**, so the proxy loses
+  most at the herbivore end — exactly the end that makes the valley deep. Diet-dependence of the
+  erasure is therefore itself length-dependent, which is worth knowing before quoting the flat
+  36,000-tick table as a general property.
+- **Eight seeds inflated the depth.** The same instrument at the same length gives 11.7% at n=8 and
+  2.9% at n=24. The recorded figure was a real effect measured badly, not a phantom.
+
+**The confound these runs cannot remove, stated plainly.** Run length and *which phase of the cell the
+cohort samples* move together by construction. At 12,000 ticks the complete-life cohort admits births
+in `[0, 6,600]` — 55% of the run, and disproportionately the expansion phase; at 36,000 it admits
+`[0, 30,600]`, 85%, mostly after expansion. The offspring column says so out loud: 3.46-3.95 per
+creature in the 12,000-tick cohort against 1.95-2.12 at 36,000. So the sharper statement is that
+**the valley is a property of the cell's early, expanding phase and does not survive into the rest of
+the run.** "Run length" and "expansion phase" are the same variable here and no pair of runs at these
+two lengths can separate them.
+
+**What this does not change.** The digestion negative holds at 12,000 ticks too: `diet → offspring` is
+mean per-world r **+0.042** with 15 worlds positive and 9 negative, interval [-0.026, +0.106], while
+lifetime intake → offspring is **+0.772** with 24 of 24 worlds positive. Same shape of answer as at
+36,000 — a real relationship detected beside a diet null centred on zero.
+
 So the four defects, measured rather than argued:
 
 1. **Right-censoring** — removed by construction, not modelled. The genotype-independent horizon
@@ -300,10 +348,12 @@ So the four defects, measured rather than argued:
   fitness. The sign of `diet → offspring` is a coin flip across worlds.
 - **`r +0.88` was right.** Lifetime energy intake predicts offspring at +0.872 / +0.876 per world,
   24 of 24 worlds positive in both arms.
-- **The 12% intake valley was not.** It does not appear in a measurement taken at the allocation
-  site, and its disappearance is the predeclared prediction that failed. **Why it disappeared is not
-  established** — the erasure rate is flat across diet bins, so the delta proxy did not manufacture
-  it, and run length, cohort rule, seed count and plain noise all remain open.
+- **The 12% intake valley was not** — at 36,000 ticks. Its disappearance is the predeclared
+  prediction that failed. **Two follow-up runs settled why:** the valley is present at 12,000 ticks
+  under both instruments (8.2% measured at the allocation site, 2.9% through the delta proxy) and
+  absent at 36,000, so **run length decides it**. The proxy attenuates the valley rather than
+  inventing it, and 8 seeds inflated its depth from a true 8.2% to a reported 11.7%. Run length and
+  expansion-phase sampling are the same variable at these two lengths and were not separated.
 - **The old instrument under-counts ingestion by 21-27% in this cell** and cannot see 12.7% of it at
   all, for a reason that is structural rather than incidental.
 - **The capacity clamp is not the blocker.** It discards under a third of one percent.

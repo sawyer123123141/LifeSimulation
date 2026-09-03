@@ -1,0 +1,96 @@
+
+life history, 24 worlds of 12000 ticks
+
+censoring horizons, derived from the phenotype map: adult age 400 ticks, longest reachable life 5400 ticks
+  complete-life cohort admits births in [0, 6600] - 55.0% of the run
+  offspring-to-adulthood cohort admits births in [0, 6200]
+
+| seed | population | ledger complete | complete-life cohort | excluded by horizon | excluded: no genome | to-adulthood cohort |
+|---|---|---|---|---|---|---|
+| 42 | 19 | yes | 197 | 555 | 0 | 155 |
+| 43 | 339 | yes | 81 | 623 | 0 | 68 |
+| 44 | 496 | yes | 130 | 663 | 0 | 111 |
+| 45 | 135 | yes | 86 | 178 | 0 | 80 |
+| 46 | 17 | yes | 149 | 525 | 0 | 119 |
+| 47 | 188 | yes | 176 | 717 | 0 | 145 |
+| 48 | 176 | yes | 193 | 734 | 0 | 163 |
+| 49 | 19 | yes | 183 | 522 | 0 | 145 |
+| 50 | 79 | yes | 45 | 117 | 0 | 41 |
+| 51 | 0 | yes | 328 | 347 | 0 | 258 |
+| 52 | 327 | yes | 141 | 683 | 0 | 120 |
+| 53 | 168 | yes | 123 | 629 | 0 | 102 |
+| 54 | 3 | yes | 297 | 426 | 0 | 240 |
+| 55 | 498 | yes | 143 | 631 | 0 | 129 |
+| 56 | 401 | yes | 108 | 503 | 0 | 96 |
+| 57 | 51 | yes | 225 | 583 | 0 | 183 |
+| 58 | 4 | yes | 253 | 456 | 0 | 198 |
+| 59 | 500 | yes | 107 | 594 | 0 | 96 |
+| 60 | 26 | yes | 185 | 577 | 0 | 146 |
+| 61 | 488 | yes | 138 | 776 | 0 | 124 |
+| 62 | 287 | yes | 71 | 353 | 0 | 64 |
+| 63 | 0 | yes | 459 | 194 | 0 | 349 |
+| 64 | 498 | yes | 97 | 641 | 0 | 86 |
+| 65 | 42 | yes | 184 | 601 | 0 | 144 |
+
+gross ingestion by diet bin, pooled over cohort members (per-world figures are below)
+| diet | creatures | gross/1k ticks | lifetime gross |
+|---|---|---|---|
+| 0.0-0.2 | 758 | 152.82 | 536.4 |
+| 0.2-0.4 | 769 | 151.23 | 524.3 |
+| 0.4-0.6 | 952 | 149.79 | 519.4 |
+| 0.6-0.8 | 852 | 140.34 | 478.0 |
+| 0.8-1.0 | 768 | 152.28 | 527.3 |
+
+whole-run totals: gross 5032287.6, stored (plant) 4553094.1, surplus lost to the capacity clamp 403.8 = 0.01% of gross
+
+fitness by diet bin, complete-life cohort only
+| diet | creatures | offspring | offspring surviving to adulthood |
+|---|---|---|---|
+| 0.0-0.2 | 758 | 3.769 | 3.766 |
+| 0.2-0.4 | 769 | 3.670 | 3.667 |
+| 0.4-0.6 | 952 | 3.810 | 3.807 |
+| 0.6-0.8 | 852 | 3.459 | 3.452 |
+| 0.8-1.0 | 768 | 3.945 | 3.939 |
+both parents are credited for the same birth, so replacement is about two, not one
+
+which need is binding, sampled on reproduction ticks over 1651052 adult creature-samples
+| need | lowest of the three | below the gate | lowest, among blocked |
+|---|---|---|---|
+| Energy | 73.1% | 45.7% | 73.8% |
+| Hydration | 23.6% | 18.7% | 22.5% |
+| Health | 3.3% | 9.2% | 3.7% |
+blocked at all: 82.5%; of those, a running cooldown: 55.3% (not a need)
+passed the breeding gate but not the mate-seeking gate: 8.4%
+
+population cap: saturated on 3.3% of reproduction ticks, cap-blocked on 3.3%, mate-limited below the cap on 90.3%
+reproductive-skew interpretation is safe in all 24 worlds at a threshold of 0.25
+
+diet versus gross ingestion rate: mean per-world r +0.015, 13 worlds positive / 11 negative of 24, 95% interval [-0.042, +0.066]
+  pooled r -0.042 over 4099 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.05 43:-0.01 44:-0.19 45:-0.07 46:+0.22 47:-0.01 48:-0.02 49:-0.02 50:+0.06 51:+0.05 52:+0.04 53:-0.27 54:+0.05 55:-0.02 56:+0.08 57:+0.05 58:-0.02 59:-0.12 60:-0.28 61:+0.13 62:+0.20 63:+0.04 64:+0.18 65:+0.21
+
+diet versus offspring: mean per-world r +0.042, 15 worlds positive / 9 negative of 24, 95% interval [-0.026, +0.106]
+  pooled r +0.009 over 4099 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.01 43:-0.01 44:-0.28 45:-0.10 46:+0.25 47:+0.20 48:-0.02 49:+0.04 50:+0.41 51:+0.05 52:+0.08 53:-0.22 54:+0.02 55:-0.09 56:+0.07 57:+0.00 58:-0.11 59:-0.22 60:-0.04 61:+0.25 62:+0.10 63:+0.10 64:+0.27 65:+0.23
+
+diet versus offspring surviving to adulthood: mean per-world r +0.041, 15 worlds positive / 9 negative of 24, 95% interval [-0.028, +0.106]
+  pooled r +0.008 over 4099 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.01 43:-0.01 44:-0.28 45:-0.10 46:+0.26 47:+0.20 48:-0.02 49:+0.04 50:+0.41 51:+0.06 52:+0.08 53:-0.22 54:+0.02 55:-0.09 56:+0.07 57:+0.00 58:-0.11 59:-0.25 60:-0.04 61:+0.23 62:+0.10 63:+0.10 64:+0.27 65:+0.23
+
+lifetime gross ingestion versus offspring: mean per-world r +0.772, 24 worlds positive / 0 negative of 24, 95% interval [+0.740, +0.800]
+  pooled r +0.802 over 4099 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.80 43:+0.76 44:+0.79 45:+0.74 46:+0.73 47:+0.79 48:+0.81 49:+0.74 50:+0.54 51:+0.89 52:+0.85 53:+0.73 54:+0.82 55:+0.80 56:+0.73 57:+0.80 58:+0.83 59:+0.76 60:+0.75 61:+0.83 62:+0.67 63:+0.90 64:+0.67 65:+0.80
+
+retired delta proxy: measured gross 5032287.6 against the proxy's 3999246.5, ratio 1.258
+ingestion taken under a stale Seek action: 11.45% of gross energy, invisible to the proxy by construction
+
+erasure by diet bin, cohort members only
+| diet | creatures | measured gross | proxy gross | ratio | stale share |
+|---|---|---|---|---|---|
+| 0.0-0.2 | 758 | 406611.7 | 323376.5 | 1.257 | 11.60% |
+| 0.2-0.4 | 769 | 403154.7 | 325212.5 | 1.240 | 10.31% |
+| 0.4-0.6 | 952 | 494493.6 | 399371.4 | 1.238 | 10.21% |
+| 0.6-0.8 | 852 | 407287.2 | 329403.6 | 1.236 | 10.13% |
+| 0.8-1.0 | 768 | 404979.8 | 332092.6 | 1.219 | 8.88% |
+
+instrument check: 2,000 ticks with the recorder attached and detached give an identical state hash
