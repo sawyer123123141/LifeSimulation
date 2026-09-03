@@ -181,8 +181,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 3 | done | `434c76f` | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
 | 4 | done | `7f8d1d0` | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
 | 5 | done | `12e192a` | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
-| 6 | done | pending | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
-| 7 | not started | — | — |
+| 6 | done | `cbe070d` | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
+| 7 | done | pending | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
 | 8 | not started | — | — |
 | 9 | not started | — | — |
 | 10 | not started | — | — |
@@ -405,20 +405,20 @@ says so. Deleting it would remove the ability to reproduce the number being retr
 **Files:** create `Assets/Scripts/Simulation/Analysis/PerWorldRelationship.cs`; create
 `Assets/Tests/EditMode/PerWorldRelationshipTests.cs`.
 
-- [ ] **Step 1: Write failing tests, including a Simpson's-paradox fixture:** two worlds each with a
+- [x] **Step 1: Write failing tests, including a Simpson's-paradox fixture:** two worlds each with a
       negative within-world slope, arranged so the pooled slope is positive. The type must report the
       per-world slopes as negative, the cross-seed summary as negative, and the pooled figure — if it
       reports one at all — explicitly labelled as pseudo-replicated.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Implement:** per-world correlation and per-world diet-bin means, then a cross-seed
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Implement:** per-world correlation and per-world diet-bin means, then a cross-seed
       summary of the per-world values — mean, the count of worlds by sign, and a bootstrap interval.
       **Reuse `PairedExperimentAnalysis` / `PairedBootstrapAnalysis`**, which already provide paired
       differences, bootstrap intervals and direction consistency; the world is the replicate and the
       seed is the pairing key. Add no new statistical machinery. No mixed models, no Kaplan-Meier,
       no Cox.
-- [ ] **Step 4: Require a minimum cohort size per world** and report worlds excluded for being below
+- [x] **Step 4: Require a minimum cohort size per world** and report worlds excluded for being below
       it, rather than silently dropping them.
-- [ ] **Step 5: Commit.** `analysis: per-world relationships with a cross-seed summary`
+- [x] **Step 5: Commit.** `analysis: per-world relationships with a cross-seed summary`
 
 ## Task 8: The `--life-history` sweep mode
 
