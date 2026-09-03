@@ -186,7 +186,7 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 8 | done | `eea0f3f` | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
 | 9 | done | `f572858`, `85c1ca3`, `11269fc` | Both arms complete, 24 seeds x 36,000 ticks. Record: `docs/experiments/p3-digestion-re-adjudicated-2026-09-03.md`; raw output committed beside it. **21 of 24 (health off) and 23 of 24 (health on) worlds are EXTINCT at 36,000 ticks**, against 22 surviving runs of 24 at 12,000 in the recorded brake-1.0 cell. Every number is measured across a collapse. **The predeclared sign FAILED** - no intake valley; gross ingestion is flat and slightly rising with diet. The digestion negative holds; `r +0.88` reproduces at +0.872 / +0.876 per world, 24/24 worlds positive both arms. Cap not binding (1.5%), skew-safe in all worlds. Surplus lost to the clamp 0.03-0.31%. Proxy ratio 1.271-1.273, stale share 12.7%. **The stop here was a judgement escalation, not an Execution Contract stop.** Nothing changed biologically and no state hash moved: the run was simply three times longer than any before it, and the population outcome differs for that reason alone. **A later session must not go hunting for a behaviour change — there was none.** The user ruled: Task 9 stands, the collapse is recorded separately as `docs/experiments/p6-the-recorded-cell-is-a-transient-2026-09-03.md`, and no re-run at another length was permitted because finding one means moving brake, regen or cap, which this milestone forbids. |
 | 10 | done | `4a8fc16` | User ruled option 1: Task 9 stands, nothing about the negative retracted. Banner names what survived (the conclusion, `r +0.88`, the clamp refutation) and what did not (absolute intake numbers, the 12% valley, the 12.4%-of-ticks statistic). **The valley is NOT called an artefact**: the erasure rate was measured per diet bin to test exactly that and is flat (1.257-1.279), so uniform under-counting cannot have created a mid-range valley and its origin stays open. Four lessons appended to `5-lessons-log.md`. |
-| 11 | done | `90e5682` | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
+| 11 | done | `90e5682`, amended 2026-09-03 | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. **Amended after Task 9's follow-ups: option 2 is RETIRED for this cell family on measurement** - binning 24 worlds by `NeutralMarker` failed in every world, so there is no standing variation left to track, and that independently confirms the drift-to-fixation result from a different direction. Option 4 correspondingly strengthened. |
 | 12 | done | `4e44f51` |
 | verify | done | pending | Full suite 747 passed / 0 failed, twice (after Task 5 and at the end). `LivenessTests` 34 passed. Both Task 9 arms print an identical attached/detached state hash at 2,000 ticks. No `ZZZ*` probes; no `.meta` file committed on this branch; the 11 untracked paths all pre-date the milestone. | Content moved unaltered under a one-line provenance header; the root file is now a three-step pointer at `AGENTS.md`, the frozen spec, then the current plan. Nothing deleted. |
 
@@ -570,6 +570,11 @@ Four candidate next steps, judged on merit rather than cost:
    and which fails silently if the ledger is ever incomplete. Any implementation must refuse to
    report on an incomplete ledger.
 
+   > **Strengthened 2026-09-03.** With option 2 retired on measurement (see above), option 4 gains a
+   > second and more concrete justification: a replayed synthetic locus can be given whatever standing
+   > variation the question needs, precisely because it is not subject to the drift that erased the
+   > real marker's. The thing that kills option 2 is the thing option 4 is immune to.
+
 **Recommendation to carry forward, not to act on now:** option 4 as the drift diagnostic, with option
 1 reported beside it as an independent demographic check, and both explicitly labelled as diagnostics
 of the strength of drift rather than as an authoritative Ne. The frozen spec already says the goal is
@@ -687,6 +692,18 @@ Ne system was built and no founder genetics were touched.
    than between-world means. Sees the clamp and the mutational input directly. Weak because there is
    exactly one marker: one locus is one realisation of a stochastic process, and no number of seeds
    fixes that the marker's own trajectory is a single draw per world.
+
+   > **RETIRED for this cell family, 2026-09-03, on measurement rather than argument.** Attempting to
+   > bin 24 worlds of a 36,000-tick run by `NeutralMarker` — as the null for an unrelated statistic —
+   > **failed in every single world**, because no world had both the 0.0-0.2 and 0.8-1.0 bins
+   > populated. The marker has drifted to fixation independently per world, so **there is no standing
+   > variation left for this method to track**: the quantity it proposes to measure is approximately
+   > zero by the end of a run. That is a stronger objection than the single-realisation one above, and
+   > unlike it, it is measured. It also **independently confirms the drift-to-fixation finding** of
+   > `docs/experiments/p3-digestion-strategies-2026-08-30.md` by a completely different route — that
+   > document established it from the cross-world distribution; this is the same fact arriving as a
+   > mechanical failure of a binning operation, in a different cell, at three times the run length.
+   > Recorded in `docs/experiments/p3-digestion-re-adjudicated-2026-09-03.md`.
 3. **Within-world variance trajectories** for real traits. Useful as pattern validation alongside
    anything else, useless alone — selection and drift both move variance.
 4. **Offline synthetic markers replayed over the recorded pedigree.** Because nothing in the

@@ -436,11 +436,68 @@ this reason. **The density-dependent reading of the valley is withdrawn.** What 
 narrower and still worth having: the pooled early-window bin means show a dip that the pooled
 late-window means do not, and no more than that.
 
-**The U-shape control could not be computed at all, and that is itself informative.** Not one world
-had both end bins of the marker populated, because `NeutralMarker` drifts to fixation independently
-per world - the recorded finding of `p3-digestion-strategies-2026-08-30.md`, showing up here as an
-inability to bin. So the U-shape count has **no null**, and its failure against 0.75 is being read
-without one. It is a fair statistic for the claim's shape; it is not a controlled one.
+### The missing null is a result in its own right
+
+**The U-shape control could not be computed in a single world of 24, and that is a finding rather than
+a blank cell.** Binning creatures by `NeutralMarker` needs both end bins populated; in no world were
+they. The reason is the one this project already recorded from the other direction: **the marker
+drifts to fixation independently per world**, so a world's creatures pile into one or two adjacent
+bins and the 0.0-0.2 and 0.8-1.0 bins cannot both be occupied.
+
+**That independently confirms the drift-to-fixation result of
+`p3-digestion-strategies-2026-08-30.md`.** That document established it from the distribution across
+worlds — mean 0.511-0.522 against a standard deviation of 0.274-0.303, a U-shaped histogram, and a
+per-run hunter share running the whole 0% to 100% range. This is the same fact arriving as a
+*mechanical failure of a binning operation*, in a different cell, at three times the run length, with
+a different instrument. Two independent routes to the same conclusion is worth more than either.
+
+**It is also a hard constraint on the Task 11 drift plan, and it retires one of the four options.**
+The plan's **option 2 — "neutral-marker standing variation", tracking within-world variance of the
+marker over time — has no standing variation to work with at this run length.** By 36,000 ticks each
+world holds essentially one marker value. Within-world variance is not merely noisy there; the
+quantity the method proposes to track has gone to approximately zero, and a method whose signal is
+gone cannot be rescued by more seeds. The plan already rated option 2 weak on the grounds that one
+locus is one realisation of a stochastic process. **This is a stronger and more concrete objection
+than that one**, it is measured rather than argued, and it should be read as retiring the option for
+this cell family rather than merely discounting it.
+
+It leaves option 4 — synthetic markers replayed offline over the recorded pedigree — as the
+recommendation it already was, and now for a second reason: a replayed locus can be given whatever
+standing variation the question needs, precisely because it is not subject to the drift that erased
+the real marker's.
+
+**So the U-shape count is a fair statistic for the shape of the claim and an uncontrolled one**, and
+its failure against 0.75 is being read without a null beside it. The reason no null exists is
+biological, not an oversight.
+
+### Calibration: what an interval excluding zero is worth in this design
+
+Recorded here as a property of the analysis layer rather than as a caveat on two findings, because it
+is reusable and the next person to report an interval from this harness should have it.
+
+> **`NeutralMarker` → gross intake rate, late window, 24 worlds, 36,000 ticks: mean per-world
+> r +0.020, 95% bootstrap interval [+0.008, +0.033], excluding zero.**
+
+`NeutralMarker` is read by **no** behaviour code and is pinned dead by `LivenessTests` under the widest
+available configuration. There is no causal path from it to intake. **So this is a measurement of the
+false-positive behaviour of this design at this sample size** — 24 worlds, cohorts of a few hundred to
+a few thousand creatures, 2,000 bootstrap resamples on per-world correlations — and the number it
+returns is: **an interval excluding zero is compatible with an effect size of exactly nothing.**
+
+Two things follow for anyone using this harness:
+
+- **Do not accept a result on an interval alone.** Read direction consistency against the committed
+  `PairedEvolutionCriterion.MinimumDirectionConsistency` of 0.75, with the neutral marker reported
+  beside it. The marker fails 0.75 here (0.708) even while its interval excludes zero, which is
+  exactly the discrimination the threshold exists to provide.
+- **Count the intervals.** This milestone has reported upwards of thirty window x relationship x arm
+  intervals. At these widths some will exclude zero by chance, and at least one demonstrably did.
+
+The magnitude is worth keeping too: the inert channel's r is **+0.020**, so anything in this design of
+that order should be treated as within the structural noise floor, whatever its interval says. The one
+surviving positive result of this milestone, `diet -> intake rate` in the late window at **+0.072**
+with 0.875 consistency, is three and a half times that floor and clears it — which is the comparison
+that makes it a result rather than the interval that accompanies it.
 
 So the four defects, measured rather than argued:
 
