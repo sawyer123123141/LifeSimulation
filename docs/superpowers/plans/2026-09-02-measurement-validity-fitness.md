@@ -184,10 +184,10 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 6 | done | `cbe070d` | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
 | 7 | done | `7faad56` | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
 | 8 | done | `eea0f3f` | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
-| 9 | not started | — | — |
-| 10 | not started | — | — |
+| 9 | **run, record written, adjudication STOPPED** | pending | Both arms complete, 24 seeds x 36,000 ticks. Record: `docs/experiments/p3-digestion-re-adjudicated-2026-09-03.md`; raw output committed beside it. **Stop condition hit: 21 of 24 (health off) and 23 of 24 (health on) worlds are EXTINCT at 36,000 ticks**, against 24/24 surviving at 12,000 in the recorded cell. Every number is measured across a collapse. **The predeclared sign FAILED** - no intake valley; gross ingestion is flat and slightly rising with diet. The digestion negative holds; `r +0.88` reproduces at +0.872 / +0.876 per world, 24/24 worlds positive both arms. Cap not binding (1.5%), skew-safe in all worlds. Surplus lost to the clamp 0.03-0.31%. Proxy ratio 1.271-1.273, stale share 12.7%. Awaiting the user's decision on whether this stands or the arms are re-run at a length where the population persists. |
+| 10 | **blocked on Task 9** | — | Cannot banner or retract the 2026-08-30 record while the evidence is measured across an ecosystem collapse. Needs the user's decision. |
 | 11 | done | `90e5682` | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
-| 12 | done | pending | Content moved unaltered under a one-line provenance header; the root file is now a three-step pointer at `AGENTS.md`, the frozen spec, then the current plan. Nothing deleted. |
+| 12 | done | `4e44f51` | Content moved unaltered under a one-line provenance header; the root file is now a three-step pointer at `AGENTS.md`, the frozen spec, then the current plan. Nothing deleted. |
 
 ---
 
@@ -487,20 +487,20 @@ either.
 
 The six questions, each with the number that answers it:
 
-- [ ] **1. Is there a diet-dependent difference in gross ingestion?** Gross ingestion by diet bin, per
+- [x] **1. Is there a diet-dependent difference in gross ingestion?** Gross ingestion by diet bin, per
       world, cross-seed summary. Compare against the retired delta-proxy table.
-- [ ] **2. Does it reach reproductive fitness?** Offspring and offspring-surviving-to-adulthood by
+- [x] **2. Does it reach reproductive fitness?** Offspring and offspring-surviving-to-adulthood by
       diet bin, complete-life cohort only.
-- [ ] **3. Which need is usually binding?** The Task 3 distribution, restricted to blocked creatures.
-- [ ] **4. Does health recovery change the result?** The paired arm, judged on whether the answers to
+- [x] **3. Which need is usually binding?** The Task 3 distribution, restricted to blocked creatures.
+- [x] **4. Does health recovery change the result?** The paired arm, judged on whether the answers to
       1–3 differ, not on whether the population differs.
-- [ ] **5. Is the cap binding?** The Task 4 flag. If it is set, say so before interpreting anything
+- [x] **5. Is the cap binding?** The Task 4 flag. If it is set, say so before interpreting anything
       about reproductive skew.
-- [ ] **6. Do per-world effects agree, or was the pooled correlation misleading?** Per-world
+- [x] **6. Do per-world effects agree, or was the pooled correlation misleading?** Per-world
       correlations, sign counts, and the pooled figure alongside them.
-- [ ] **7. Record the surplus-lost fraction.** How much ingested energy is discarded by the capacity
+- [x] **7. Record the surplus-lost fraction.** How much ingested energy is discarded by the capacity
       clamp, by diet bin. This is the quantity the old proxy could not see at all.
-- [ ] **8. Write the record,** including an explicit statement of what the old `r +0.88` figure is now
+- [x] **8. Write the record,** including an explicit statement of what the old `r +0.88` figure is now
       worth.
 
 **A negative result is a result.** If gross ingestion still fails to reach fitness, that is the answer
