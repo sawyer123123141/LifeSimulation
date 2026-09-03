@@ -130,10 +130,24 @@ namespace LifeSimulation.Simulation.Biology
             needs.Health = Math.Max(0f, needs.Health - (deviation * 0.35f * deltaTime));
         }
 
+        /// <summary>
+        /// What a bite was worth before the capacity clamp discarded any of it. Extracted so an
+        /// observer can record the gross flow, which is not recoverable from the stored energy: the
+        /// clamp below is silent, and it bites hardest exactly for well-fed creatures.
+        ///
+        /// <para><b>The operation order is load-bearing.</b> It is the order
+        /// <see cref="ConsumeFood"/> has always used and every recorded result depends on it; do not
+        /// re-associate it.</para>
+        /// </summary>
+        public static float GrossEnergyFrom(Phenotype phenotype, float amount)
+        {
+            return amount * FoodEnergyPerUnit * phenotype.FoodYield;
+        }
+
         public static void ConsumeFood(ref CreatureNeeds needs, Phenotype phenotype, float amount)
         {
             ValidateResourceAmount(amount);
-            needs.Energy = Math.Min(phenotype.EnergyCapacity, needs.Energy + (amount * FoodEnergyPerUnit * phenotype.FoodYield));
+            needs.Energy = Math.Min(phenotype.EnergyCapacity, needs.Energy + GrossEnergyFrom(phenotype, amount));
         }
 
         public static void DrinkWater(ref CreatureNeeds needs, Phenotype phenotype, float amount)

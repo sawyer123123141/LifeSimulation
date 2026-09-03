@@ -179,8 +179,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 1 | done | `d58dd9b` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
 | 2 | done | `0b9c941` | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
 | 3 | done | `434c76f` | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
-| 4 | done | pending | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
-| 5 | not started | — | — |
+| 4 | done | `7f8d1d0` | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
+| 5 | done | pending | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
 | 6 | not started | — | — |
 | 7 | not started | — | — |
 | 8 | not started | — | — |
@@ -356,29 +356,29 @@ Three quantities per bite, all of which the call site already has or can compute
 | energy actually stored | `needs.Energy` after `ConsumeFood` minus before |
 | surplus lost to the cap | gross minus stored, by definition non-negative |
 
-- [ ] **Step 1: Write failing tests.** (a) A creature at full energy that eats records positive gross,
+- [x] **Step 1: Write failing tests.** (a) A creature at full energy that eats records positive gross,
       zero stored, and gross-equals-surplus. (b) A hungry creature records stored equal to gross and
       zero surplus. (c) Plant and carcass are recorded separately. (d) **A 2,000-tick run produces an
       identical `ComputeStateHash` with the recorder attached and with it null** — this is the test
       that makes the instrument trustworthy, and it must exist before the recorder does.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Extract the gross-energy expression** into a `public static float` helper on
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Extract the gross-energy expression** into a `public static float` helper on
       `NeedsSystem`, and make `ConsumeFood` call it. **Preserve the operation order exactly** —
       `amount * FoodEnergyPerUnit * phenotype.FoodYield`, in that order, with no re-association. The
       existing state-hash tests are the check that this refactor was value-preserving; if any of them
       moves, stop.
-- [ ] **Step 4: Implement the recorder.** Nullable `IngestionRecorder Recorder { get; set; }` on
+- [x] **Step 4: Implement the recorder.** Nullable `IngestionRecorder Recorder { get; set; }` on
       `SimulationWorld`, null by default, following `Liveness` exactly. Accumulate per
       `CreatureId.Value` into amortised-growth arrays — **not** per creature index, which the
       swap-remove in `CreatureStore.Remove` invalidates. No allocation in the steady state, no
       dictionary, no string work, no logging on the tick path.
-- [ ] **Step 5: Add the one call site** in `ResolveResourceInteractions`, immediately around the
+- [x] **Step 5: Add the one call site** in `ResolveResourceInteractions`, immediately around the
       existing `NeedsSystem.ConsumeFood` call, guarded by `Recorder?.`. Record for both `Food` and
       `Carcass`. **Do not change feeding behaviour, do not add RNG, do not reorder any existing
       statement.**
-- [ ] **Step 6: Re-run the whole EditMode suite,** not just the filter. Any `ComputeStateHash`
+- [x] **Step 6: Re-run the whole EditMode suite,** not just the filter. Any `ComputeStateHash`
       assertion failing anywhere is a stop condition under the Execution Contract.
-- [ ] **Step 7: Commit.** `diagnostics: observational ingestion recorder`
+- [x] **Step 7: Commit.** `diagnostics: observational ingestion recorder`
 
 ## Task 6: Ingestion ledger and the retirement of the delta proxy
 

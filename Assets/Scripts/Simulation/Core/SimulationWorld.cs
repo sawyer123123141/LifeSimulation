@@ -316,6 +316,18 @@ namespace LifeSimulation.Simulation.Core
         public LivenessRecorder Liveness { get; set; }
 
         /// <summary>
+        /// Optional ingestion sink, following <see cref="Liveness"/> exactly: <b>null by default</b>,
+        /// never read by simulation logic, and absent from every hash by construction. It records what
+        /// each bite was worth before the capacity clamp, which is the one quantity no observer
+        /// outside the world can recover.
+        ///
+        /// <para>Pinned hash-inert by <c>IngestionRecorderTests</c>. If that test ever moves, the
+        /// instrument has started perturbing its own subject and nothing measured with it can be
+        /// trusted.</para>
+        /// </summary>
+        public IngestionRecorder Recorder { get; set; }
+
+        /// <summary>
         /// Overwrite one trait across every living creature. Diagnostics only — used by the gene
         /// liveness harness to inject a perturbation before stepping. Not called by simulation logic.
         /// </summary>
@@ -751,7 +763,19 @@ namespace LifeSimulation.Simulation.Core
                     float nutrition = resource.Kind == ResourceKind.Carcass
                         ? allocatedAmount * phenotype.MeatYieldMultiplier
                         : allocatedAmount * phenotype.PlantFoodYieldMultiplier * resource.NutritionMultiplier * (1f - (resource.PlantDefense * (1f - genome.FoodEfficiency)));
+                    float energyBeforeIngestion = needs.Energy;
                     NeedsSystem.ConsumeFood(ref needs, phenotype, nutrition);
+                    if (Recorder != null)
+                    {
+                        CreatureAction actionAtIngestion = Creatures.GetDecisionAt(request.CreatureIndex).Action;
+                        Recorder.Record(
+                            Creatures.GetIdAt(request.CreatureIndex),
+                            resource.Kind,
+                            actionAtIngestion == CreatureAction.SeekFood || actionAtIngestion == CreatureAction.SeekCarcass,
+                            allocatedAmount,
+                            NeedsSystem.GrossEnergyFrom(phenotype, nutrition),
+                            needs.Energy - energyBeforeIngestion);
+                    }
                     _cumulativeFoodConsumed += nutrition;
                     if (Config.ForagingEconomicsEnabled)
                     {
