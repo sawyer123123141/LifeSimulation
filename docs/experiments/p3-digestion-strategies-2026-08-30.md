@@ -53,12 +53,33 @@
 >   diet-dependence is itself length-dependent: at 36,000 ticks the same table is flat.
 > - **Eight seeds inflated the depth**, 11.7% against a true 8.2%. **The valley in this document was a
 >   real effect measured badly, not a phantom** — which is the honest correction to make to it.
-> - **Not separated, and it cannot be at these two lengths:** run length and *which phase the cohort
->   samples* move together. The 12,000-tick cohort admits births in `[0, 6,600]`, 55% of the run and
->   mostly the expansion phase; the 36,000-tick cohort admits 85%, mostly after it. Offspring per
->   creature is 3.46-3.95 in the first and 1.95-2.12 in the second. So the sharper reading is that the
->   valley belongs to this cell's **early, expanding phase**, and that is inseparable from run length
->   here.
+> - **Separated on 2026-09-03 by a reporting change: it is phase, not length.** Splitting the same
+>   36,000-tick complete-life cohort on birth tick alone — births in `[0, 6,600]` against births
+>   after, same horizon on both — puts the valley squarely in the early window and nowhere else:
+>
+>   | diet | early n | early gross/1k | early offspring | late n | late gross/1k | late offspring |
+>   |---|---|---|---|---|---|---|
+>   | 0.0-0.2 | 758 | 152.822 | 3.769 | 3534 | 92.562 | 1.580 |
+>   | 0.2-0.4 | 769 | 151.233 | 3.670 | 3507 | 93.337 | 1.606 |
+>   | 0.4-0.6 | 952 | 149.788 | 3.810 | 3535 | 92.271 | 1.465 |
+>   | 0.6-0.8 | 852 | **140.342** | 3.459 | 2925 | 93.981 | 1.538 |
+>   | 0.8-1.0 | 768 | 152.278 | 3.945 | 4996 | 98.527 | 1.843 |
+>
+>   The early window reproduces the 12,000-tick run to every printed digit, because at 12,000 ticks the
+>   complete-life cohort *is* births in `[0, 6,600]` — the same creatures. The pooled 36,000-tick table
+>   averaged this window with a late window four and a half times its size, which is how the valley
+>   became a flat line. The two windows are different ecologies: 3.46-3.95 offspring per creature
+>   early, 1.47-1.84 late.
+>
+>   **So the valley in this document is a density-dependent effect — present during population
+>   expansion, gone afterwards — which is a different claim from "no effect" and bears on the P3 gate.**
+>   **Held at arm's length until one more statistic exists:** the per-world sign counts do not
+>   corroborate it, because a correlation measures a monotone trend and a valley is not monotone. Early
+>   window `diet → intake` is r +0.015 with **13 worlds positive and 11 negative** — exactly what both
+>   a U-shape and pure noise produce. The test that would settle it is a per-world U-shape count, and it
+>   has not been run. The density-dependent reading currently rests on pooled bin means alone.
+>
+>   Raw output: `p3-birth-window-split-36000-healthoff-2026-09-03.txt`.
 >
 > Raw output: `p3-valley-intake-24seeds-12000-2026-09-03.txt`,
 > `p3-valley-lifehistory-24seeds-12000-2026-09-03.txt`.

@@ -945,3 +945,25 @@ two runs against the two cells already measured decompose them, and that is chea
 of argument about which one it was.** One caveat that no pair of runs at these lengths can remove:
 run length and which phase of the cell the cohort samples move together, so "the valley belongs to
 the expansion phase" and "the valley belongs to short runs" are the same statement here.
+
+**2026-09-03 (third pass) — The confound that "cannot be separated without more runs" often can be,
+by reporting differently over the run you already have.** The intake valley left run length and
+population phase moving together: the 12,000-tick cohort is mostly the expansion phase, the
+36,000-tick cohort mostly is not. The instinct was another pair of runs at another length. What
+actually settled it was **splitting the existing 36,000-tick cohort on birth tick alone** — the
+genotype-independent birth-window rule the cohort type already had — into births before and after
+tick 6,600. **The valley is in the early window and absent from the late one: it is phase, not
+length.** The early window reproduced the separate 12,000-tick run to every printed digit, because at
+12,000 ticks the complete-life cohort *is* births in `[0, 6,600]`; the pooled table had been averaging
+it with a late window four and a half times its size. **Before commissioning a run to break a
+confound, check whether the confounded variable is already a field you recorded per individual.**
+
+**2026-09-03 (third pass) — A correlation cannot see a valley, so a coin-flip sign count is not
+evidence against one.** The per-world sign counts for `diet → intake` in the early window are 13
+positive to 11 negative, which reads as "nothing" and was very nearly written up that way beside a
+bin table showing an 8.2% mid-range dip. Both are correct: **Pearson r measures a monotone trend and a
+U-shape has none**, so 13/11 is what a valley produces *and* what noise produces, and it discriminates
+between them not at all. The statistic that would is a per-world U-shape count — in how many worlds
+does the middle bin fall below both ends — and it was not computed, so the density-dependent reading
+was recorded as resting on pooled bin means alone. **Match the statistic to the shape of the claim; a
+null from the wrong statistic is not a null.**

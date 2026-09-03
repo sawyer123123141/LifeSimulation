@@ -35,6 +35,25 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// </summary>
         private const float UnsafeCapBlockedFraction = 0.25f;
 
+        /// <summary>
+        /// Last birth tick of the "expansion" window. It is the complete-life cohort of a
+        /// 12,000-tick run (12,000 - 5,400), chosen so the early window here is exactly the cohort
+        /// the 12,000-tick measurement reported on and the two are directly comparable.
+        /// </summary>
+        private const long ExpansionWindowEndTick = 6_600;
+
+        private sealed class CohortMeasurements
+        {
+            public int Count;
+            public double[] Diet = Array.Empty<double>();
+            public double[] GrossPerThousandTicks = Array.Empty<double>();
+            public double[] LifetimeGross = Array.Empty<double>();
+            public double[] Offspring = Array.Empty<double>();
+            public double[] OffspringToAdulthood = Array.Empty<double>();
+            public double[] LifetimeProxyGross = Array.Empty<double>();
+            public double[] LifetimeStaleGross = Array.Empty<double>();
+        }
+
         private sealed class WorldOutcome
         {
             public int Seed;
@@ -51,6 +70,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             public double[] LifetimeGross = Array.Empty<double>();
             public double[] LifetimeProxyGross = Array.Empty<double>();
             public double[] LifetimeStaleGross = Array.Empty<double>();
+            public CohortMeasurements Early = new CohortMeasurements();
+            public CohortMeasurements Late = new CohortMeasurements();
             public double PlantGross;
             public double PlantStored;
             public double PlantSurplus;
@@ -76,6 +97,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             PrintCohorts(outcomes);
             PrintIngestionByDietBin(outcomes);
             PrintFitnessByDietBin(outcomes);
+            PrintByBirthWindow(outcomes);
             PrintBottleneck(outcomes);
             PrintCap(outcomes);
             PrintRelationships(outcomes);
@@ -144,13 +166,49 @@ namespace LifeSimulation.Tools.CreatureSweep
             outcome.AdulthoodCohortSize = toAdulthood.Count;
 
             long adultAgeTicks = FitnessCohort.AdultAgeTicks(config.Schedule);
-            var diet = new double[joined.Count];
-            var grossRate = new double[joined.Count];
-            var lifetimeGross = new double[joined.Count];
-            var offspring = new double[joined.Count];
-            var offspringToAdulthood = new double[joined.Count];
-            var proxyGross = new double[joined.Count];
-            var staleGross = new double[joined.Count];
+            CohortMeasurements pooled = Measure(joined, ledger, world, proxy, ticks, adultAgeTicks);
+
+            outcome.Diet = pooled.Diet;
+            outcome.GrossPerThousandTicks = pooled.GrossPerThousandTicks;
+            outcome.LifetimeGross = pooled.LifetimeGross;
+            outcome.Offspring = pooled.Offspring;
+            outcome.OffspringToAdulthood = pooled.OffspringToAdulthood;
+            outcome.LifetimeProxyGross = pooled.LifetimeProxyGross;
+            outcome.LifetimeStaleGross = pooled.LifetimeStaleGross;
+
+            // The same genotype-independent horizon, split on birth tick alone, so the expansion
+            // phase and everything after it can be read separately instead of averaged together.
+            FitnessCohort early = FitnessCohort.Select(
+                ledger, config.Schedule, ticks, FitnessCohortKind.CompleteLife,
+                excludeFounders: false, birthWindowStartTick: 0, birthWindowEndTick: ExpansionWindowEndTick);
+            FitnessCohort late = FitnessCohort.Select(
+                ledger, config.Schedule, ticks, FitnessCohortKind.CompleteLife,
+                excludeFounders: false, birthWindowStartTick: ExpansionWindowEndTick + 1, birthWindowEndTick: long.MaxValue);
+
+            outcome.Early = Measure(IngestionLedger.Join(ledger, world.Recorder, early), ledger, world, proxy, ticks, adultAgeTicks);
+            outcome.Late = Measure(IngestionLedger.Join(ledger, world.Recorder, late), ledger, world, proxy, ticks, adultAgeTicks);
+            return outcome;
+        }
+
+        private static CohortMeasurements Measure(
+            IngestionLedger joined,
+            LifeHistoryLedger ledger,
+            SimulationWorld world,
+            EnergyDeltaProxy proxy,
+            int ticks,
+            long adultAgeTicks)
+        {
+            var measurements = new CohortMeasurements
+            {
+                Count = joined.Count,
+                Diet = new double[joined.Count],
+                GrossPerThousandTicks = new double[joined.Count],
+                LifetimeGross = new double[joined.Count],
+                Offspring = new double[joined.Count],
+                OffspringToAdulthood = new double[joined.Count],
+                LifetimeProxyGross = new double[joined.Count],
+                LifetimeStaleGross = new double[joined.Count],
+            };
 
             for (int index = 0; index < joined.Count; index++)
             {
@@ -158,25 +216,18 @@ namespace LifeSimulation.Tools.CreatureSweep
                 double lifespan = Math.Max(1d, LifespanTicksOf(life, ticks));
                 double gross = joined.GrossEnergyAt(index, ResourceKind.Food) + joined.GrossEnergyAt(index, ResourceKind.Carcass);
 
-                diet[index] = life.Genome.DietSpecialization;
-                lifetimeGross[index] = gross;
-                grossRate[index] = gross / lifespan * 1_000d;
-                offspring[index] = life.OffspringCredited;
-                offspringToAdulthood[index] = CountOffspringReachingAdulthood(ledger, life.CreatureId, ticks, adultAgeTicks);
-                proxyGross[index] = proxy.PositiveDeltaEnergy(life.CreatureId, ResourceKind.Food)
+                measurements.Diet[index] = life.Genome.DietSpecialization;
+                measurements.LifetimeGross[index] = gross;
+                measurements.GrossPerThousandTicks[index] = gross / lifespan * 1_000d;
+                measurements.Offspring[index] = life.OffspringCredited;
+                measurements.OffspringToAdulthood[index] = CountOffspringReachingAdulthood(ledger, life.CreatureId, ticks, adultAgeTicks);
+                measurements.LifetimeProxyGross[index] = proxy.PositiveDeltaEnergy(life.CreatureId, ResourceKind.Food)
                     + proxy.PositiveDeltaEnergy(life.CreatureId, ResourceKind.Carcass);
-                staleGross[index] = world.Recorder.StaleActionGrossEnergy(life.CreatureId, ResourceKind.Food)
+                measurements.LifetimeStaleGross[index] = world.Recorder.StaleActionGrossEnergy(life.CreatureId, ResourceKind.Food)
                     + world.Recorder.StaleActionGrossEnergy(life.CreatureId, ResourceKind.Carcass);
             }
 
-            outcome.Diet = diet;
-            outcome.GrossPerThousandTicks = grossRate;
-            outcome.LifetimeGross = lifetimeGross;
-            outcome.Offspring = offspring;
-            outcome.OffspringToAdulthood = offspringToAdulthood;
-            outcome.LifetimeProxyGross = proxyGross;
-            outcome.LifetimeStaleGross = staleGross;
-            return outcome;
+            return measurements;
         }
 
         private static long LifespanTicksOf(LifeHistoryRecord life, int ticks)
@@ -283,6 +334,98 @@ namespace LifeSimulation.Tools.CreatureSweep
             }
 
             Console.WriteLine("both parents are credited for the same birth, so replacement is about two, not one");
+        }
+
+        /// <summary>
+        /// The pooled tables above average the expansion phase together with everything after it.
+        /// Run length and which phase the cohort samples are otherwise confounded by construction, so
+        /// this splits the same cohort on birth tick alone - the genotype-independent rule from
+        /// <see cref="FitnessCohort"/> - and reports the two windows side by side.
+        /// </summary>
+        private static void PrintByBirthWindow(List<WorldOutcome> outcomes)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"SPLIT BY BIRTH WINDOW: births in [0, {ExpansionWindowEndTick}] against births after");
+            Console.WriteLine("the same complete-life horizon applies to both; only the birth tick differs");
+
+            int earlyTotal = outcomes.Sum(outcome => outcome.Early.Count);
+            int lateTotal = outcomes.Sum(outcome => outcome.Late.Count);
+            Console.WriteLine($"cohort sizes: early {earlyTotal}, late {lateTotal}");
+
+            Console.WriteLine();
+            Console.WriteLine("| diet | early: creatures | early: gross/1k | early: offspring | late: creatures | late: gross/1k | late: offspring |");
+            Console.WriteLine("|---|---|---|---|---|---|---|");
+            for (int bin = 0; bin < BinCount; bin++)
+            {
+                var earlyRates = new List<double>();
+                var earlyOffspring = new List<double>();
+                var lateRates = new List<double>();
+                var lateOffspring = new List<double>();
+                foreach (WorldOutcome outcome in outcomes)
+                {
+                    CollectBin(outcome.Early, bin, earlyRates, earlyOffspring);
+                    CollectBin(outcome.Late, bin, lateRates, lateOffspring);
+                }
+
+                Console.WriteLine($"| {Low(bin)}-{High(bin)} "
+                    + $"| {earlyRates.Count} | {Mean(earlyRates)} | {Mean(earlyOffspring)} "
+                    + $"| {lateRates.Count} | {Mean(lateRates)} | {Mean(lateOffspring)} |");
+            }
+
+            PrintWindowRelationship(outcomes, "early window", outcome => outcome.Early);
+            PrintWindowRelationship(outcomes, "late window", outcome => outcome.Late);
+        }
+
+        private static void CollectBin(CohortMeasurements measurements, int bin, List<double> rates, List<double> offspring)
+        {
+            for (int index = 0; index < measurements.Diet.Length; index++)
+            {
+                if (BinOf(measurements.Diet[index]) != bin) continue;
+                rates.Add(measurements.GrossPerThousandTicks[index]);
+                offspring.Add(measurements.Offspring[index]);
+            }
+        }
+
+        private static void PrintWindowRelationship(List<WorldOutcome> outcomes, string label, Func<WorldOutcome, CohortMeasurements> select)
+        {
+            var intakeWorlds = new List<PerWorldRelationship>();
+            var offspringWorlds = new List<PerWorldRelationship>();
+            foreach (WorldOutcome outcome in outcomes)
+            {
+                if (!outcome.LedgerComplete) continue;
+                CohortMeasurements measurements = select(outcome);
+                intakeWorlds.Add(PerWorldRelationship.ForWorld(outcome.Seed, measurements.Diet, measurements.GrossPerThousandTicks, BinCount));
+                offspringWorlds.Add(PerWorldRelationship.ForWorld(outcome.Seed, measurements.Diet, measurements.Offspring, BinCount));
+            }
+
+            Console.WriteLine();
+            PrintSignCounts(label + ", diet versus gross ingestion rate", intakeWorlds);
+            PrintSignCounts(label + ", diet versus offspring", offspringWorlds);
+        }
+
+        private static void PrintSignCounts(string label, List<PerWorldRelationship> worlds)
+        {
+            if (worlds.Count == 0)
+            {
+                Console.WriteLine($"{label}: no world has a usable cohort");
+                return;
+            }
+
+            PerWorldRelationshipSummary summary = PerWorldRelationshipSummary.Across(
+                worlds,
+                MinimumCohortSizePerWorld,
+                BootstrapResampleCount,
+                bootstrapSeed: Program.FirstSeed);
+
+            Console.WriteLine($"{label}: mean per-world r {summary.MeanCorrelation:+0.000;-0.000}, "
+                + $"**{summary.PositiveWorldCount} positive / {summary.NegativeWorldCount} negative** of {summary.IncludedWorldCount}, "
+                + $"95% interval [{summary.CorrelationInterval.LowerBound:+0.000;-0.000}, {summary.CorrelationInterval.UpperBound:+0.000;-0.000}]"
+                + (summary.ExcludedForSmallCohortCount > 0 ? $", {summary.ExcludedForSmallCohortCount} worlds excluded for a cohort below {MinimumCohortSizePerWorld}" : string.Empty));
+        }
+
+        private static string Mean(List<double> values)
+        {
+            return values.Count == 0 ? "-" : values.Average().ToString("0.000", CultureInfo.InvariantCulture);
         }
 
         private static void PrintBottleneck(List<WorldOutcome> outcomes)

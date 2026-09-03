@@ -318,14 +318,68 @@ Two things fall out that were not the point of the runs:
 - **Eight seeds inflated the depth.** The same instrument at the same length gives 11.7% at n=8 and
   2.9% at n=24. The recorded figure was a real effect measured badly, not a phantom.
 
-**The confound these runs cannot remove, stated plainly.** Run length and *which phase of the cell the
-cohort samples* move together by construction. At 12,000 ticks the complete-life cohort admits births
-in `[0, 6,600]` — 55% of the run, and disproportionately the expansion phase; at 36,000 it admits
-`[0, 30,600]`, 85%, mostly after expansion. The offspring column says so out loud: 3.46-3.95 per
-creature in the 12,000-tick cohort against 1.95-2.12 at 36,000. So the sharper statement is that
-**the valley is a property of the cell's early, expanding phase and does not survive into the rest of
-the run.** "Run length" and "expansion phase" are the same variable here and no pair of runs at these
-two lengths can separate them.
+### The length/phase confound, separated
+
+The two runs above left run length and *which phase of the cell the cohort samples* moving together.
+One 36,000-tick run separates them **by reporting rather than by re-running**: the same complete-life
+cohort, split on birth tick alone with `FitnessCohort`'s birth-window rule, into births in
+`[0, 6,600]` and births after. Same horizon on both halves; only the birth tick differs. Raw output:
+`p3-birth-window-split-36000-healthoff-2026-09-03.txt`.
+
+| diet | early n | early gross/1k | early offspring | late n | late gross/1k | late offspring |
+|---|---|---|---|---|---|---|
+| 0.0-0.2 | 758 | 152.822 | 3.769 | 3534 | 92.562 | 1.580 |
+| 0.2-0.4 | 769 | 151.233 | 3.670 | 3507 | 93.337 | 1.606 |
+| 0.4-0.6 | 952 | 149.788 | 3.810 | 3535 | 92.271 | 1.465 |
+| 0.6-0.8 | 852 | **140.342** | 3.459 | 2925 | 93.981 | 1.538 |
+| 0.8-1.0 | 768 | 152.278 | 3.945 | 4996 | 98.527 | 1.843 |
+
+Cohort sizes: early 4,099, late 18,497.
+
+**The valley is in the early window and absent from the late one.** So the variable is **phase, not
+length** — length was only the vehicle that decided which phase the pooled cohort was mostly made of.
+
+The early window's numbers are identical to the separate 12,000-tick run, to every printed digit, for
+both intake and offspring. That is not a coincidence and it is worth stating: at 12,000 ticks the
+complete-life cohort *is* births in `[0, 6,600]`, so the two measurements are the same creatures. The
+pooled 36,000-tick table averaged this window together with a late window four and a half times its
+size, which is how an 8.2% valley became a flat line.
+
+**The two windows are different ecologies, and the offspring column shows it.** 3.46-3.95 offspring per
+creature early against 1.47-1.84 late — expansion against whatever the cell is doing on its way down.
+
+**What this licenses saying, and what it does not.** A trait effect present during population expansion
+and absent afterwards is **density-dependent**, and that is a different claim from "no effect": it
+bears on the P3 gate, because a strategy difference that only exists away from carrying capacity is
+still a strategy difference, and the gate asks about persistence.
+
+**But the per-world sign counts do not corroborate it, and the reason is a statistical one that must
+not be glossed:**
+
+| window | relationship | mean per-world r | worlds + / - | 95% interval |
+|---|---|---|---|---|
+| early | diet → gross ingestion rate | +0.015 | **13 / 11** | [-0.042, +0.066] |
+| early | diet → offspring | +0.042 | **15 / 9** | [-0.026, +0.106] |
+| late | diet → gross ingestion rate | +0.072 | **21 / 3** | [+0.049, +0.095] |
+| late | diet → offspring | +0.034 | **16 / 8** | [+0.012, +0.055] |
+
+A correlation measures a **monotone** trend and a valley is **not monotone**, so the early window's
+13-to-11 coin flip is exactly what a U-shape produces and exactly what noise produces. **It neither
+supports the valley nor refutes it.** The statistic that would corroborate a density-dependent reading
+is a per-world U-shape test — in how many of the 24 worlds does the 0.6-0.8 bin mean fall below both
+end bins — and **that was not computed here**. Until it is, the density-dependent reading rests on
+pooled bin means, which is a weaker footing than the sign counts elsewhere in this document.
+
+Two further things the split shows that the pooled table hid:
+
+- **The late window has a small, sign-consistent, positive `diet → intake` relationship** — r +0.072
+  with 21 of 24 worlds positive and an interval excluding zero. Carnivores ingest slightly *more* at
+  the late stage. That is a real effect and it is the opposite shape from a valley.
+- **`diet → offspring` in the late window is +0.034 with 16 of 24 worlds positive and an interval
+  excluding zero.** Small, and it is the first diet-to-fitness relationship in this milestone whose
+  interval does not cross zero. It does not overturn the negative — the effect is a twentieth of the
+  intake-to-offspring relationship measured on the same creatures — but it should not be filed as
+  nothing either.
 
 **What this does not change.** The digestion negative holds at 12,000 ticks too: `diet → offspring` is
 mean per-world r **+0.042** with 15 worlds positive and 9 negative, interval [-0.026, +0.106], while
@@ -349,11 +403,15 @@ So the four defects, measured rather than argued:
 - **`r +0.88` was right.** Lifetime energy intake predicts offspring at +0.872 / +0.876 per world,
   24 of 24 worlds positive in both arms.
 - **The 12% intake valley was not** — at 36,000 ticks. Its disappearance is the predeclared
-  prediction that failed. **Two follow-up runs settled why:** the valley is present at 12,000 ticks
+  prediction that failed. **Three follow-up runs settled why.** The valley is present at 12,000 ticks
   under both instruments (8.2% measured at the allocation site, 2.9% through the delta proxy) and
-  absent at 36,000, so **run length decides it**. The proxy attenuates the valley rather than
-  inventing it, and 8 seeds inflated its depth from a true 8.2% to a reported 11.7%. Run length and
-  expansion-phase sampling are the same variable at these two lengths and were not separated.
+  absent from the pooled 36,000-tick table; splitting that same 36,000-tick cohort on birth tick then
+  showed the valley **present in births before tick 6,600 and absent after**. So the variable is
+  **the phase of the population, not the run length** — a density-dependent effect, present during
+  expansion and gone afterwards. The proxy attenuates the valley rather than inventing it, and 8 seeds
+  inflated its depth from a true 8.2% to a reported 11.7%. **The per-world sign counts do not yet
+  corroborate the density-dependent reading**, because a correlation cannot see a non-monotone shape;
+  the per-world U-shape test that would has not been run.
 - **The old instrument under-counts ingestion by 21-27% in this cell** and cannot see 12.7% of it at
   all, for a reason that is structural rather than incidental.
 - **The capacity clamp is not the blocker.** It discards under a third of one percent.
