@@ -173,7 +173,7 @@ each task.**
 
 | Task | Status | Commit | Notes / decisions a later session needs |
 |---|---|---|---|
-| 1 | not started | — | — |
+| 1 | done | `fe0ac79` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
 | 2 | not started | — | — |
 | 3 | not started | — | — |
 | 4 | not started | — | — |
@@ -213,20 +213,20 @@ each task.**
 genome, and a births-credited count — assembled from `AncestryHistory` plus a genome captured at the
 first observation of each creature.
 
-- [ ] **Step 1: Write failing tests.** Founders recorded at tick 0 have their genome captured and no
+- [x] **Step 1: Write failing tests.** Founders recorded at tick 0 have their genome captured and no
       parents. A creature born at tick `t` has its genome captured on the first drain after `t`. A
       creature that dies has `DeathTick`/`DeathCause` set and its genome retained. `IsAlive` is true
       only for `deathTick == 0 && deathCause == None`, and a creature that died at tick 0 is
       impossible by construction — assert the sentinel is documented, not that it is safe.
-- [ ] **Step 2: Run `cd tools/HeadlessTests && dotnet test --filter "FullyQualifiedName~LifeHistoryLedgerTests"`.** Expected: compilation failure.
-- [ ] **Step 3: Implement.** Wrap, do not replace, `AncestryHistory`. `Observe(world)` captures
+- [x] **Step 2: Run `cd tools/HeadlessTests && dotnet test --filter "FullyQualifiedName~LifeHistoryLedgerTests"`.** Expected: compilation failure.
+- [x] **Step 3: Implement.** Wrap, do not replace, `AncestryHistory`. `Observe(world)` captures
       genomes for ids not yet seen; `RecordCompleteBatch(events, throughTick)` forwards to the
       underlying ancestry and mirrors its `IsComplete` / `CompleteThroughTick`. Expose
       `OffspringCredited(id)` from `AncestryHistory.GetChildCount` — do **not** add a counter.
-- [ ] **Step 4: Test the incompleteness path.** An overflowed batch must make the ledger permanently
+- [x] **Step 4: Test the incompleteness path.** An overflowed batch must make the ledger permanently
       incomplete, and every downstream analysis must refuse to report on an incomplete ledger rather
       than reporting a smaller number.
-- [ ] **Step 5: Commit.** `analysis: join genomes to the recorded pedigree`
+- [x] **Step 5: Commit.** `analysis: join genomes to the recorded pedigree`
 
 **Note for the implementer:** both parents are credited for the same birth, so population-mean
 offspring is ~2 at replacement. That is correct for this monoecious model and matches the recorded
