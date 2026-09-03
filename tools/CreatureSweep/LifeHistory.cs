@@ -49,6 +49,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             public double[] Offspring = Array.Empty<double>();
             public double[] OffspringToAdulthood = Array.Empty<double>();
             public double[] LifetimeGross = Array.Empty<double>();
+            public double[] LifetimeProxyGross = Array.Empty<double>();
+            public double[] LifetimeStaleGross = Array.Empty<double>();
             public double PlantGross;
             public double PlantStored;
             public double PlantSurplus;
@@ -147,6 +149,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             var lifetimeGross = new double[joined.Count];
             var offspring = new double[joined.Count];
             var offspringToAdulthood = new double[joined.Count];
+            var proxyGross = new double[joined.Count];
+            var staleGross = new double[joined.Count];
 
             for (int index = 0; index < joined.Count; index++)
             {
@@ -159,6 +163,10 @@ namespace LifeSimulation.Tools.CreatureSweep
                 grossRate[index] = gross / lifespan * 1_000d;
                 offspring[index] = life.OffspringCredited;
                 offspringToAdulthood[index] = CountOffspringReachingAdulthood(ledger, life.CreatureId, ticks, adultAgeTicks);
+                proxyGross[index] = proxy.PositiveDeltaEnergy(life.CreatureId, ResourceKind.Food)
+                    + proxy.PositiveDeltaEnergy(life.CreatureId, ResourceKind.Carcass);
+                staleGross[index] = world.Recorder.StaleActionGrossEnergy(life.CreatureId, ResourceKind.Food)
+                    + world.Recorder.StaleActionGrossEnergy(life.CreatureId, ResourceKind.Carcass);
             }
 
             outcome.Diet = diet;
@@ -166,6 +174,8 @@ namespace LifeSimulation.Tools.CreatureSweep
             outcome.LifetimeGross = lifetimeGross;
             outcome.Offspring = offspring;
             outcome.OffspringToAdulthood = offspringToAdulthood;
+            outcome.LifetimeProxyGross = proxyGross;
+            outcome.LifetimeStaleGross = staleGross;
             return outcome;
         }
 
@@ -370,6 +380,36 @@ namespace LifeSimulation.Tools.CreatureSweep
             Console.WriteLine();
             Console.WriteLine($"retired delta proxy: measured gross {measured:0.0} against the proxy's {estimated:0.0}, ratio {(estimated <= 0d ? 0d : measured / estimated):0.000}");
             Console.WriteLine($"ingestion taken under a stale Seek action: {staleShare:0.00%} of gross energy, invisible to the proxy by construction");
+
+            // By diet bin, because a diet-DEPENDENT erasure rate is the mechanism by which the old
+            // instrument could have manufactured a valley that is not there. A flat ratio leaves the
+            // valley's origin unexplained, which the record must then say rather than assert.
+            Console.WriteLine();
+            Console.WriteLine("erasure by diet bin, cohort members only");
+            Console.WriteLine("| diet | creatures | measured gross | proxy gross | ratio | stale share |");
+            Console.WriteLine("|---|---|---|---|---|---|");
+            for (int bin = 0; bin < BinCount; bin++)
+            {
+                int members = 0;
+                double measuredBin = 0d;
+                double proxyBin = 0d;
+                double staleBin = 0d;
+                foreach (WorldOutcome outcome in outcomes)
+                {
+                    for (int index = 0; index < outcome.Diet.Length; index++)
+                    {
+                        if (BinOf(outcome.Diet[index]) != bin) continue;
+                        members++;
+                        measuredBin += outcome.LifetimeGross[index];
+                        proxyBin += outcome.LifetimeProxyGross[index];
+                        staleBin += outcome.LifetimeStaleGross[index];
+                    }
+                }
+
+                Console.WriteLine(members == 0
+                    ? $"| {Low(bin)}-{High(bin)} | 0 | - | - | - | - |"
+                    : $"| {Low(bin)}-{High(bin)} | {members} | {measuredBin:0.0} | {proxyBin:0.0} | {(proxyBin <= 0d ? 0d : measuredBin / proxyBin):0.000} | {(measuredBin <= 0d ? 0d : staleBin / measuredBin):0.00%} |");
+            }
         }
 
         private static void VerifyTheInstrumentDidNotPerturbTheSubject(Func<int, SimulationConfig> configure, SimulationScenario scenario)

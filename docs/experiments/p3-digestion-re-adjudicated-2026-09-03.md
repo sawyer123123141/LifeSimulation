@@ -101,6 +101,13 @@ The prediction committed to the plan before these runs, and the only one predecl
 sagging to 78.7 in the 0.6-0.8 band, recovering to 85.4" is not reproduced by a measurement taken at
 the allocation site.
 
+**Where the valley went is not established, and section 8 rules out the obvious answer.** The erasure
+rate of the retired instrument was measured **by diet bin** specifically to test whether it was
+diet-dependent — a diet-dependent erasure rate is the one mechanism by which the old instrument could
+have manufactured a valley that was never there. **It is flat.** So the valley's origin is
+**unexplained**, and this record does not call it an artefact of the delta proxy. The remaining
+candidates are named in section 8.
+
 **A prediction that fails is still a measurement, and this one is reported as failed.** The three
 other candidate predictions offered at the same time — offspring flat across diet, energy usually
 binding, health recovery not changing the answer — were **deliberately not predeclared**, so what
@@ -243,6 +250,40 @@ most of the gap in **drain-tick erasure** rather than in stale actions: on a nee
 half-second drain usually exceeds the bite, the delta goes negative, and the whole tick's ingestion is
 discarded rather than blurred.
 
+### The erasure rate is not diet-dependent, so it did not manufacture the valley
+
+Measured per diet bin over cohort members, in the same runs. This is the query that would have
+explained the missing valley, and it comes back negative:
+
+| diet | OFF: ratio | OFF: stale share | ON: ratio | ON: stale share |
+|---|---|---|---|---|
+| 0.0-0.2 | 1.266 | 12.25% | 1.273 | 12.74% |
+| 0.2-0.4 | 1.260 | 11.77% | 1.264 | 12.06% |
+| 0.4-0.6 | 1.262 | 12.05% | 1.257 | 11.68% |
+| 0.6-0.8 | 1.259 | 11.99% | 1.266 | 12.55% |
+| 0.8-1.0 | 1.279 | 13.47% | 1.277 | 13.57% |
+
+**Flat.** The ratio spans 1.259 to 1.279 across the whole diet range in the OFF arm and 1.257 to
+1.277 in the ON arm — a spread of 1.6%, non-monotone, and in the wrong direction to produce a valley
+in the middle (if anything the erasure is very slightly *largest* at the carnivore end, which would
+deepen a measured carnivore trough rather than a mid-range one).
+
+**So the retired instrument under-counted ingestion uniformly across the gene, and uniform
+under-counting cannot create a 12% mid-range valley in a rate.** The valley's origin is therefore
+**unexplained by this experiment**. What differs between the two measurements, beyond the instrument:
+
+- **Run length.** 12,000 against 36,000 ticks, and the cell is a transient — so the two measurements
+  cover different parts of a declining trajectory.
+- **Cohort rule.** The recorded table filtered on `AliveTicks > 200`, which admits creatures still
+  alive at run end; this one admits on birth tick alone and requires a complete life.
+- **Seeds.** 8 against 24. The field notes record an effect significant at n=5 vanishing at n=30 in
+  this project before, and 8 seeds is within that range.
+- **Ordinary sampling noise**, which remains a live candidate and cannot be excluded here.
+
+**Distinguishing these would need the retired `--intake` mode re-run at 24 seeds and 12,000 ticks —
+which is why `Intake.cs` was deliberately kept.** That measurement was not made; this record does not
+claim it was.
+
 So the four defects, measured rather than argued:
 
 1. **Right-censoring** — removed by construction, not modelled. The genotype-independent horizon
@@ -260,7 +301,9 @@ So the four defects, measured rather than argued:
 - **`r +0.88` was right.** Lifetime energy intake predicts offspring at +0.872 / +0.876 per world,
   24 of 24 worlds positive in both arms.
 - **The 12% intake valley was not.** It does not appear in a measurement taken at the allocation
-  site, and its disappearance is the predeclared prediction that failed.
+  site, and its disappearance is the predeclared prediction that failed. **Why it disappeared is not
+  established** — the erasure rate is flat across diet bins, so the delta proxy did not manufacture
+  it, and run length, cohort rule, seed count and plain noise all remain open.
 - **The old instrument under-counts ingestion by 21-27% in this cell** and cannot see 12.7% of it at
   all, for a reason that is structural rather than incidental.
 - **The capacity clamp is not the blocker.** It discards under a third of one percent.

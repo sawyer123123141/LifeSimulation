@@ -1,5 +1,61 @@
 # P3 digestion: no strategy is favoured, in any cell measured
 
+> ## SUPERSEDED ON THE INSTRUMENT, CONFIRMED ON THE CONCLUSION — 2026-09-03
+>
+> Re-measured at the allocation site in
+> [`p3-digestion-re-adjudicated-2026-09-03.md`](p3-digestion-re-adjudicated-2026-09-03.md): 24 seeds
+> an arm, 36,000 ticks, health recovery off and on, on a genotype-independent complete-life cohort.
+>
+> **What survived.**
+>
+> - **The headline conclusion.** `DietSpecialization` still does not reach reproductive fitness.
+>   `diet → offspring` is mean per-world r **+0.009** (10 worlds positive / 14 negative) and **+0.002**
+>   (12 / 12). A twelve-to-twelve sign split is what nothing looks like.
+> - **`r +0.88`.** Lifetime intake → offspring re-measures at **+0.872** and **+0.876** as a mean of
+>   per-world correlations, **24 of 24 worlds positive in both arms**. Energy does become descendants.
+> - **The refutation of the capacity-clamp hypothesis**, and now by direct measurement rather than by
+>   inference: energy discarded by the clamp is **0.03-0.31% of gross**.
+>
+> **What did not survive.**
+>
+> - **The realised-intake table below is under-counted throughout.** The instrument that produced it,
+>   `tools/CreatureSweep --intake`, infers a flow from a state variable, and it sees about **79%** of
+>   the energy actually ingested (ratio 1.271-1.273 here; 1.380 in a separate 12,000-tick measurement).
+>   Read every absolute number in "Realised intake" as a lower bound.
+> - **The 12% intake valley in the middle of the diet range.** It does not appear at all when
+>   ingestion is measured where it is allocated: gross energy per 1,000 ticks runs
+>   103.20 / 103.75 / 104.47 / 104.44 / 105.69 across the bins. **It was also the predeclared
+>   prediction of the re-measurement, and it failed.**
+> - **"12.4% of ticks eating, flat across the gene."** That statistic could not see feeding under a
+>   stale `SeekFood` / `SeekCarcass` action, which carries **12.7-13.6%** of gross energy. The
+>   *conclusion* it supported — that creatures do not compensate by feeding longer — is not thereby
+>   overturned, but it no longer rests on that number.
+>
+> **What is now open rather than settled.** **Why** the valley disappeared is not established. The
+> erasure rate of the old instrument was measured per diet bin precisely to test whether it was
+> diet-dependent — the one mechanism that could have manufactured a valley — and it is **flat**
+> (1.257-1.279 across the whole range). So the delta proxy did not invent it, and run length, the
+> `AliveTicks > 200` cohort rule, 8 seeds against 24, and ordinary noise all remain candidates. This
+> banner does not call the valley an artefact.
+>
+> **Four defects in the retired instrument, two of which no review found:** right-censoring;
+> capacity clamping (real, and negligible here); **drain-tick erasure**, which is the largest single
+> loss — drains land in a half-second lump once per ten ticks while ingestion happens every tick, so
+> on a needs tick the drain usually exceeds the bite and the whole tick's ingestion is discarded
+> rather than blurred; and **stale-action erasure**, worth 12.7-19.6% of gross energy.
+>
+> **A separate finding that conditions everything below.** This cell does not persist:
+> **21 of 24 (health off) and 23 of 24 (health on) worlds are extinct at 36,000 ticks**, in a cell
+> recorded here as 22 surviving runs of 24 at 12,000. See
+> [`p6-the-recorded-cell-is-a-transient-2026-09-03.md`](p6-the-recorded-cell-is-a-transient-2026-09-03.md).
+> The digestion conclusion is not weakened by that — the same cohort in the same dying worlds returns
+> +0.87 on intake → offspring, so the design demonstrably had the power to see a real relationship
+> under exactly these conditions — but every number in this document describes roughly the first
+> 12,000 ticks of a declining population, and should be read that way.
+>
+> **`tools/CreatureSweep --intake` is deliberately not deleted**, so the numbers below stay
+> reproducible. `--life-history` supersedes it.
+
 **Date:** 2026-08-30
 **Status:** the P3 required experiment, run. **Negative.** No production code changed.
 **Harness:** `tools/CreatureSweep`, which already reports `diet_specialization` drift with a

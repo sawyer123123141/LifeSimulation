@@ -882,3 +882,49 @@ ancestry - the right way to test clustering logic and silent about whether a rea
 splits. **A test suite that never runs the real input can be complete and still leave the headline
 question unasked.**
 
+
+**2026-09-03 — An instrument that reads a state variable to infer a flow is measuring the flow minus
+everything else that touched that variable, and the tick schedule decides how much that is.**
+`tools/CreatureSweep --intake` attributed a positive energy delta to whatever the creature's action
+said it was doing. Measured against the same runs instrumented at the allocation site, it sees about
+**79% of the energy actually ingested** (ratio 1.271-1.273 at 24 seeds x 36,000 ticks; 1.380 in a
+separate 12,000-tick cell). Two of the four losses were invisible to an adversarial review of the
+instrument, and both come from the schedule rather than from the logic: **drains land in a
+half-second lump once per ten ticks while ingestion happens every tick**, so on a needs tick the drain
+usually exceeds the bite, the delta goes negative and the whole tick's ingestion is discarded rather
+than blurred; and **ingestion fires under `SeekFood`/`SeekCarcass` as well as `Eat`/`FeedCarcass`**,
+so every tick between entering the interaction radius and the next decision tick is dropped —
+**12.7-19.6% of gross energy**. Both losses are one-directional: a delta proxy can only under-count.
+**Before trusting a rate derived from a state variable, list every other writer of that variable and
+the tick interval each of them runs at.** The fix is not a better proxy; it is one call at the
+allocation site, which is where the quantity actually exists.
+
+**2026-09-03 — Ruling out the obvious explanation is a result, and it must be recorded as one rather
+than quietly upgraded to a story.** The corrected instrument did not reproduce the recorded 12% intake
+valley. The tempting write-up was "the valley was an artefact of the old instrument". The check that
+would earn that sentence is whether the old instrument's erasure rate is **diet-dependent**, so it was
+measured per diet bin: **flat, 1.257 to 1.279 across the whole gene range, non-monotone.** Uniform
+under-counting cannot create a mid-range valley in a rate. So the proxy did not invent it and the
+valley's origin is **unexplained** — run length, the `AliveTicks > 200` cohort rule, 8 seeds against
+24, and plain noise all remain open. **A disappearing effect needs its own explanation; "the old
+instrument was wrong" explains the magnitude, not the shape.**
+
+**2026-09-03 — A brake can hide the absence of regulation for exactly as long as your run is short.**
+The cap-500 / brake-1.0 cell — the project's strongest available comparison, and the cell every
+digestion conclusion was measured in — survives 22 runs of 24 at 12,000 ticks and is **extinct in 21
+of 24 (health off) and 23 of 24 (health on) at 36,000**. Nothing biological changed; the run was three
+times longer than any before it. Graded fertility slowed the collapse enough to fit inside the
+12,000-tick window rather than converting the cell into a regulated ecology, which is the companion to
+the already-recorded finding that **the cap was supplying the regulation**. **A population that is
+alive at the end of your run is not thereby a population at equilibrium — before treating a cell as a
+standing baseline, run one seed far past the window and look.** Recorded in
+`docs/experiments/p6-the-recorded-cell-is-a-transient-2026-09-03.md`.
+
+**2026-09-03 — When a result is measured in a degraded regime, the defence is a positive control from
+the same data, not an argument.** Every Task 9 number came from worlds that were dying, which reads as
+fatal on its face. What makes the digestion null survive that is one sentence: **the same cohort, the
+same worlds, the same collapsing ecology returns lifetime intake -> offspring at +0.872 / +0.876 with
+24 of 24 worlds positive.** An instrument that could not detect a relationship there would not have
+returned +0.87 on a different relationship from the identical creatures, so the 12-of-24 / 12-of-24
+diet split is centred on zero rather than floored. **Carry a known-live relationship through every
+compromised measurement; without one, "measured under bad conditions" is unanswerable.**

@@ -84,4 +84,13 @@ lifetime gross ingestion versus offspring: mean per-world r +0.872, 24 worlds po
 retired delta proxy: measured gross 7271584.5 against the proxy's 5710475.2, ratio 1.273
 ingestion taken under a stale Seek action: 12.79% of gross energy, invisible to the proxy by construction
 
+erasure by diet bin, cohort members only
+| diet | creatures | measured gross | proxy gross | ratio | stale share |
+|---|---|---|---|---|---|
+| 0.0-0.2 | 4292 | 1372544.2 | 1083978.0 | 1.266 | 12.25% |
+| 0.2-0.4 | 4276 | 1362611.4 | 1081744.5 | 1.260 | 11.77% |
+| 0.4-0.6 | 4487 | 1415781.0 | 1121668.7 | 1.262 | 12.05% |
+| 0.6-0.8 | 3777 | 1162798.0 | 923751.6 | 1.259 | 11.99% |
+| 0.8-1.0 | 5764 | 1726389.8 | 1350232.1 | 1.279 | 13.47% |
+
 instrument check: 2,000 ticks with the recorder attached and detached give an identical state hash
