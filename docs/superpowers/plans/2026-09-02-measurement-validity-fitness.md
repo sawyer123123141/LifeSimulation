@@ -178,8 +178,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 |---|---|---|---|
 | 1 | done | `d58dd9b` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
 | 2 | done | `0b9c941` | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
-| 3 | done | pending | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
-| 4 | not started | — | — |
+| 3 | done | `434c76f` | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
+| 4 | done | pending | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
 | 5 | not started | — | — |
 | 6 | not started | — | — |
 | 7 | not started | — | — |
@@ -322,13 +322,13 @@ The decomposition, all of it observable after `Step` on a reproduction tick:
 - population `< cap` and creatures still pass `CanReproduce` → they failed to find a mate in range.
   That is ecology, not the cap.
 
-- [ ] **Step 1: Write failing tests.** A world held at its cap with ready creatures reports
+- [x] **Step 1: Write failing tests.** A world held at its cap with ready creatures reports
       cap-blocked samples and sets the unsafe flag. A world well below its cap with ready creatures
       reports zero cap-blocked samples and leaves the flag clear. The flag's threshold is an explicit
       constructor argument with no default — a silent default here would become a fact nobody chose.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Commit.** `analysis: population cap binding diagnostic`
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Commit.** `analysis: population cap binding diagnostic`
 
 **Do not change `ReproductionSystem`.** The `CreatureId`-ordered scheduler is a real source of
 artificial reproductive skew when the cap binds, and it stays exactly as it is in this milestone. The
