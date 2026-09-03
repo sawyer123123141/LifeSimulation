@@ -161,6 +161,12 @@ namespace LifeSimulation.Simulation.Analysis
             return _ancestry.GetChildCount(parentId);
         }
 
+        /// <summary>One credited child, so an analysis can ask what became of it.</summary>
+        public CreatureId OffspringAt(CreatureId parentId, int childIndex)
+        {
+            return _ancestry.GetChildAt(parentId, childIndex);
+        }
+
         private void AddToPedigreeOrder(CreatureId creatureId)
         {
             if (!_pedigreeSeen.Add(creatureId)) return;

@@ -182,8 +182,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 4 | done | `7f8d1d0` | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
 | 5 | done | `12e192a` | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
 | 6 | done | `cbe070d` | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
-| 7 | done | pending | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
-| 8 | not started | — | — |
+| 7 | done | `7faad56` | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
+| 8 | done | pending | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
 | 9 | not started | — | — |
 | 10 | not started | — | — |
 | 11 | not started | — | — |
@@ -426,22 +426,22 @@ says so. Deleting it would remove the ability to reproduce the number being retr
 `tools/CreatureSweep/CreatureSweep.csproj` (the csproj lists files explicitly — a new file must be
 added or it will not compile).
 
-- [ ] **Step 1: Add a `--ticks=` argument** defaulting to the existing 12,000, so other modes'
+- [x] **Step 1: Add a `--ticks=` argument** defaulting to the existing 12,000, so other modes'
       recorded outputs stay reproducible while Task 9 can run long.
-- [ ] **Step 2: Implement the driver.** Per seed: construct the world, `RecordFounders`, attach the
+- [x] **Step 2: Implement the driver.** Per seed: construct the world, `RecordFounders`, attach the
       ingestion recorder, then per tick `Step`, drain `Events` into the ledger with a completeness
       watermark, observe genomes, sample the bottleneck and cap diagnostics on reproduction ticks, and
       `Events.Clear()`. Follow the drain discipline in `Intake.cs`: the world never clears the buffer
       and it holds only 1,024 entries.
-- [ ] **Step 3: Print, per world and then across worlds:** cohort sizes and how many creatures each
+- [x] **Step 3: Print, per world and then across worlds:** cohort sizes and how many creatures each
       censoring rule excluded; gross/stored/surplus ingestion by diet bin; offspring and
       offspring-surviving-to-adulthood by diet bin; the binding-need distribution; the cap
       diagnostic and the safety flag; per-world correlations with the cross-seed summary; and the
       pooled correlation labelled as pseudo-replicated.
-- [ ] **Step 4: Verify against a known quantity.** Run one seed with the recorder detached and with it
+- [x] **Step 4: Verify against a known quantity.** Run one seed with the recorder detached and with it
       attached and assert the reported final state hash is identical. A sweep that perturbs its own
       subject is worse than no sweep.
-- [ ] **Step 5: Commit.** `tools: life-history sweep mode`
+- [x] **Step 5: Commit.** `tools: life-history sweep mode`
 
 ## Task 9: Re-adjudicate the digestion evidence
 

@@ -34,7 +34,14 @@ namespace LifeSimulation.Tools.CreatureSweep
     internal static class Program
     {
         /// <summary>Matches tools/PlantSweep exactly, so the two corpora are comparable.</summary>
-        private const int Ticks = 12000;
+        private const int DefaultTicks = 12000;
+
+        /// <summary>
+        /// Run length. Defaults to the 12,000 every recorded sweep output was measured at, so those
+        /// stay reproducible; <c>--ticks=</c> raises it for the life-history mode, whose censoring
+        /// horizon needs a long run rather than a survival model.
+        /// </summary>
+        private static int _ticks = DefaultTicks;
         private const int Founders = 12;
         internal const int FirstSeed = 42;
         private const int MaximumPopulation = 48;
@@ -214,6 +221,12 @@ namespace LifeSimulation.Tools.CreatureSweep
                 }
                 if (argument == "--policy=legacy") _policy = DecisionPolicyVersion.Legacy;
                 if (argument == "--policy=intent") _policy = DecisionPolicyVersion.IntentUtilityV1;
+                if (argument.StartsWith("--ticks=")
+                    && int.TryParse(argument.Substring("--ticks=".Length), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int requestedTicks)
+                    && requestedTicks > 0)
+                {
+                    _ticks = requestedTicks;
+                }
                 if (argument.StartsWith("--gate=")
                     && float.TryParse(argument.Substring("--gate=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gate))
                 {
@@ -240,7 +253,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int thermalSeeds = args.Length > 1 && int.TryParse(args[1], out int parsed) ? parsed : 20;
                 if (args.Length > 2 && int.TryParse(args[2], out int thermalCap)) _focusedPopulationCap = thermalCap;
-                Thermal.Report(thermalSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                Thermal.Report(thermalSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
                 return;
             }
 
@@ -249,7 +262,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int deathSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDeaths) ? parsedDeaths : 20;
                 if (args.Length > 2 && int.TryParse(args[2], out int deathCap)) _focusedPopulationCap = deathCap;
-                Deaths.Report(deathSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                Deaths.Report(deathSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
                 return;
             }
 
@@ -258,7 +271,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int intakeSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedIntake) ? parsedIntake : 12;
                 if (args.Length > 2 && int.TryParse(args[2], out int intakeCap)) _focusedPopulationCap = intakeCap;
-                Intake.Report(intakeSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                Intake.Report(intakeSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
                 return;
             }
 
@@ -269,7 +282,16 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int dietSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDiet) ? parsedDiet : 24;
                 if (args.Length > 2 && int.TryParse(args[2], out int dietCap)) _focusedPopulationCap = dietCap;
-                Diet.Report(dietSeeds, Ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                Diet.Report(dietSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                return;
+            }
+
+            if (args.Length > 0 && args[0] == "--life-history")
+            {
+                _focused = true;
+                int lifeHistorySeeds = args.Length > 1 && int.TryParse(args[1], out int parsedLifeHistory) ? parsedLifeHistory : 24;
+                if (args.Length > 2 && int.TryParse(args[2], out int lifeHistoryCap)) _focusedPopulationCap = lifeHistoryCap;
+                LifeHistory.Report(lifeHistorySeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
                 return;
             }
 
@@ -309,7 +331,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 foreach (int seed in chosen) runs.Add(new RunSpec(slope, seed));
             }
 
-            Console.Error.WriteLine(runs.Count + " runs of " + Ticks + " ticks");
+            Console.Error.WriteLine(runs.Count + " runs of " + _ticks + " ticks");
             var results = new ConcurrentBag<RunResult>();
             int done = 0;
             Parallel.ForEach(runs, spec =>
@@ -462,7 +484,7 @@ namespace LifeSimulation.Tools.CreatureSweep
 
             double[] founder = Genes(world.Statistics);
 
-            for (int tick = warmup; tick < Ticks; tick++)
+            for (int tick = warmup; tick < _ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
@@ -494,7 +516,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 CreateConfig(FirstSeed, slope: true),
                 FirstSeed,
                 _seedCount,
-                Ticks));
+                _ticks));
             builder.AppendLine();
 
             builder.Append("arm,seed,hash,population,extinct,energy,occupied_elevation,occupied_slope");

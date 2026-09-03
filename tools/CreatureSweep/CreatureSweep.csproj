@@ -25,6 +25,7 @@
     <Compile Include="Deaths.cs" />
     <Compile Include="Diet.cs" />
     <Compile Include="Intake.cs" />
+    <Compile Include="LifeHistory.cs" />
     <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
   </ItemGroup>
 
