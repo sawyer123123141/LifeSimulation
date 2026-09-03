@@ -46,6 +46,15 @@ namespace LifeSimulation.Tools.CreatureSweep
         {
             public int Count;
             public double[] Diet = Array.Empty<double>();
+
+            /// <summary>
+            /// The inert control channel. <c>NeutralMarker</c> is read by zero behaviour code and is
+            /// pinned dead by <c>LivenessTests</c> under the widest available configuration, so any
+            /// relationship it shows against a fitness quantity is structure rather than biology -
+            /// most plausibly family-level, since relatives share both a drifted marker value and a
+            /// foraging neighbourhood.
+            /// </summary>
+            public double[] NeutralMarker = Array.Empty<double>();
             public double[] GrossPerThousandTicks = Array.Empty<double>();
             public double[] LifetimeGross = Array.Empty<double>();
             public double[] Offspring = Array.Empty<double>();
@@ -64,6 +73,15 @@ namespace LifeSimulation.Tools.CreatureSweep
             public int ExcludedWithoutGenome;
             public int AdulthoodCohortSize;
             public double[] Diet = Array.Empty<double>();
+
+            /// <summary>
+            /// The inert control channel. <c>NeutralMarker</c> is read by zero behaviour code and is
+            /// pinned dead by <c>LivenessTests</c> under the widest available configuration, so any
+            /// relationship it shows against a fitness quantity is structure rather than biology -
+            /// most plausibly family-level, since relatives share both a drifted marker value and a
+            /// foraging neighbourhood.
+            /// </summary>
+            public double[] NeutralMarker = Array.Empty<double>();
             public double[] GrossPerThousandTicks = Array.Empty<double>();
             public double[] Offspring = Array.Empty<double>();
             public double[] OffspringToAdulthood = Array.Empty<double>();
@@ -202,6 +220,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             {
                 Count = joined.Count,
                 Diet = new double[joined.Count],
+                NeutralMarker = new double[joined.Count],
                 GrossPerThousandTicks = new double[joined.Count],
                 LifetimeGross = new double[joined.Count],
                 Offspring = new double[joined.Count],
@@ -217,6 +236,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 double gross = joined.GrossEnergyAt(index, ResourceKind.Food) + joined.GrossEnergyAt(index, ResourceKind.Carcass);
 
                 measurements.Diet[index] = life.Genome.DietSpecialization;
+                measurements.NeutralMarker[index] = life.Genome.NeutralMarker;
                 measurements.LifetimeGross[index] = gross;
                 measurements.GrossPerThousandTicks[index] = gross / lifespan * 1_000d;
                 measurements.Offspring[index] = life.OffspringCredited;
@@ -374,6 +394,70 @@ namespace LifeSimulation.Tools.CreatureSweep
 
             PrintWindowRelationship(outcomes, "early window", outcome => outcome.Early);
             PrintWindowRelationship(outcomes, "late window", outcome => outcome.Late);
+            PrintUShapeCounts(outcomes);
+        }
+
+        /// <summary>
+        /// The statistic that matches the shape of the density-dependent claim. A correlation measures
+        /// a monotone trend and a valley has none, so a coin-flip sign count discriminates a U-shape
+        /// from noise not at all. This counts worlds directly: does the 0.6-0.8 bin mean sit below
+        /// both end bins? Run for the inert marker as well, so the count has its own null.
+        /// </summary>
+        private static void PrintUShapeCounts(List<WorldOutcome> outcomes)
+        {
+            Console.WriteLine();
+            Console.WriteLine("U-SHAPE COUNT: worlds where the 0.6-0.8 bin mean falls below BOTH the 0.0-0.2 and 0.8-1.0 bin means");
+            Console.WriteLine($"judged against the repository own committed threshold, PairedEvolutionCriterion.MinimumDirectionConsistency = {PairedEvolutionCriterion.MinimumDirectionConsistency:0.00}");
+            Console.WriteLine();
+            Console.WriteLine("| window | predictor | worlds with a valley | of | fraction | verdict |");
+            Console.WriteLine("|---|---|---|---|---|---|");
+            PrintOneUShapeCount(outcomes, "early", "diet", outcome => outcome.Early.Diet, outcome => outcome.Early.GrossPerThousandTicks);
+            PrintOneUShapeCount(outcomes, "early", "neutral marker (control)", outcome => outcome.Early.NeutralMarker, outcome => outcome.Early.GrossPerThousandTicks);
+            PrintOneUShapeCount(outcomes, "late", "diet", outcome => outcome.Late.Diet, outcome => outcome.Late.GrossPerThousandTicks);
+            PrintOneUShapeCount(outcomes, "late", "neutral marker (control)", outcome => outcome.Late.NeutralMarker, outcome => outcome.Late.GrossPerThousandTicks);
+        }
+
+        private static void PrintOneUShapeCount(
+            List<WorldOutcome> outcomes,
+            string window,
+            string predictorName,
+            Func<WorldOutcome, double[]> predictor,
+            Func<WorldOutcome, double[]> response)
+        {
+            int valleyWorlds = 0;
+            int judged = 0;
+            int skippedForEmptyBins = 0;
+
+            foreach (WorldOutcome outcome in outcomes)
+            {
+                if (!outcome.LedgerComplete) continue;
+                PerWorldRelationship world = PerWorldRelationship.ForWorld(outcome.Seed, predictor(outcome), response(outcome), BinCount);
+                if (world.CohortSize < MinimumCohortSizePerWorld) continue;
+
+                double low = world.BinMean(0);
+                double middle = world.BinMean(3);
+                double high = world.BinMean(BinCount - 1);
+                if (double.IsNaN(low) || double.IsNaN(middle) || double.IsNaN(high))
+                {
+                    skippedForEmptyBins++;
+                    continue;
+                }
+
+                judged++;
+                if (middle < low && middle < high) valleyWorlds++;
+            }
+
+            if (judged == 0)
+            {
+                Console.WriteLine($"| {window} | {predictorName} | - | 0 | - | no world judgeable |");
+                return;
+            }
+
+            double fraction = valleyWorlds / (double)judged;
+            string verdict = fraction >= PairedEvolutionCriterion.MinimumDirectionConsistency ? "**PASSES**" : "fails";
+            Console.WriteLine($"| {window} | {predictorName} | {valleyWorlds} | {judged} | {fraction:0.000} | {verdict}"
+                + (skippedForEmptyBins > 0 ? $" ({skippedForEmptyBins} worlds unjudgeable, an end bin was empty)" : string.Empty)
+                + " |");
         }
 
         private static void CollectBin(CohortMeasurements measurements, int bin, List<double> rates, List<double> offspring)
@@ -398,9 +482,21 @@ namespace LifeSimulation.Tools.CreatureSweep
                 offspringWorlds.Add(PerWorldRelationship.ForWorld(outcome.Seed, measurements.Diet, measurements.Offspring, BinCount));
             }
 
+            var neutralIntakeWorlds = new List<PerWorldRelationship>();
+            var neutralOffspringWorlds = new List<PerWorldRelationship>();
+            foreach (WorldOutcome outcome in outcomes)
+            {
+                if (!outcome.LedgerComplete) continue;
+                CohortMeasurements measurements = select(outcome);
+                neutralIntakeWorlds.Add(PerWorldRelationship.ForWorld(outcome.Seed, measurements.NeutralMarker, measurements.GrossPerThousandTicks, BinCount));
+                neutralOffspringWorlds.Add(PerWorldRelationship.ForWorld(outcome.Seed, measurements.NeutralMarker, measurements.Offspring, BinCount));
+            }
+
             Console.WriteLine();
-            PrintSignCounts(label + ", diet versus gross ingestion rate", intakeWorlds);
-            PrintSignCounts(label + ", diet versus offspring", offspringWorlds);
+            PrintSignCounts(label + ", diet    versus gross ingestion rate", intakeWorlds);
+            PrintSignCounts(label + ", NEUTRAL versus gross ingestion rate", neutralIntakeWorlds);
+            PrintSignCounts(label + ", diet    versus offspring", offspringWorlds);
+            PrintSignCounts(label + ", NEUTRAL versus offspring", neutralOffspringWorlds);
         }
 
         private static void PrintSignCounts(string label, List<PerWorldRelationship> worlds)
@@ -417,8 +513,15 @@ namespace LifeSimulation.Tools.CreatureSweep
                 BootstrapResampleCount,
                 bootstrapSeed: Program.FirstSeed);
 
+            // Direction consistency is the repository committed acceptance criterion. An interval
+            // excluding zero is not one, and at these widths some will exclude it by chance.
+            int majority = Math.Max(summary.PositiveWorldCount, summary.NegativeWorldCount);
+            double consistency = summary.IncludedWorldCount == 0 ? 0d : majority / (double)summary.IncludedWorldCount;
+            string verdict = consistency >= PairedEvolutionCriterion.MinimumDirectionConsistency ? "**PASSES 0.75**" : "fails 0.75";
+
             Console.WriteLine($"{label}: mean per-world r {summary.MeanCorrelation:+0.000;-0.000}, "
                 + $"**{summary.PositiveWorldCount} positive / {summary.NegativeWorldCount} negative** of {summary.IncludedWorldCount}, "
+                + $"direction consistency {consistency:0.000} {verdict}, "
                 + $"95% interval [{summary.CorrelationInterval.LowerBound:+0.000;-0.000}, {summary.CorrelationInterval.UpperBound:+0.000;-0.000}]"
                 + (summary.ExcludedForSmallCohortCount > 0 ? $", {summary.ExcludedForSmallCohortCount} worlds excluded for a cohort below {MinimumCohortSizePerWorld}" : string.Empty));
         }

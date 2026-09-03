@@ -370,21 +370,77 @@ is a per-world U-shape test — in how many of the 24 worlds does the 0.6-0.8 bi
 end bins — and **that was not computed here**. Until it is, the density-dependent reading rests on
 pooled bin means, which is a weaker footing than the sign counts elsewhere in this document.
 
-Two further things the split shows that the pooled table hid:
+### The control column, and what it withdraws
 
-- **The late window has a small, sign-consistent, positive `diet → intake` relationship** — r +0.072
-  with 21 of 24 worlds positive and an interval excluding zero. Carnivores ingest slightly *more* at
-  the late stage. That is a real effect and it is the opposite shape from a valley.
-- **`diet → offspring` in the late window is +0.034 with 16 of 24 worlds positive and an interval
-  excluding zero.** Small, and it is the first diet-to-fitness relationship in this milestone whose
-  interval does not cross zero. It does not overturn the negative — the effect is a twentieth of the
-  intake-to-offspring relationship measured on the same creatures — but it should not be filed as
-  nothing either.
+Run on 2026-09-03, same cell, same 24 seeds, 36,000 ticks, health recovery off. Raw output:
+`p3-neutral-control-and-ushape-36000-healthoff-2026-09-03.txt`.
 
-**What this does not change.** The digestion negative holds at 12,000 ticks too: `diet → offspring` is
-mean per-world r **+0.042** with 15 worlds positive and 9 negative, interval [-0.026, +0.106], while
-lifetime intake → offspring is **+0.772** with 24 of 24 worlds positive. Same shape of answer as at
-36,000 — a real relationship detected beside a diet null centred on zero.
+Two things were missing from the window split above, and the project's own standing methodology
+required both: **`NeutralMarker` reported beside every drift column**, and results judged against
+**`PairedEvolutionCriterion.MinimumDirectionConsistency = 0.75`** rather than against whether an
+interval excludes zero. `NeutralMarker` is read by zero behaviour code and is pinned dead by
+`LivenessTests`, so anything it shows is structure, not biology - most plausibly family-level, since
+relatives share both a drifted marker value and a foraging neighbourhood.
+
+| window | relationship | mean per-world r | worlds + / - | consistency | 0.75 | 95% interval |
+|---|---|---|---|---|---|---|
+| early | diet → intake rate | +0.015 | 13 / 11 | 0.542 | fails | [-0.042, +0.066] |
+| early | **neutral** → intake rate | -0.004 | 10 / 14 | 0.583 | fails | [-0.039, +0.035] |
+| early | diet → offspring | +0.042 | 15 / 9 | 0.625 | fails | [-0.026, +0.106] |
+| early | **neutral** → offspring | -0.016 | 11 / 13 | 0.542 | fails | [-0.058, +0.026] |
+| late | diet → intake rate | **+0.072** | **21 / 3** | **0.875** | **PASSES** | [+0.049, +0.095] |
+| late | **neutral** → intake rate | +0.020 | 17 / 7 | 0.708 | fails | **[+0.008, +0.033]** |
+| late | diet → offspring | +0.034 | 16 / 8 | **0.667** | **fails** | [+0.012, +0.055] |
+| late | **neutral** → offspring | +0.010 | 17 / 7 | **0.708** | fails | [-0.007, +0.027] |
+
+**One result survives, one does not, and they are not findings of the same kind.**
+
+- **`diet → intake rate` in the late window passes the committed threshold** at 0.875 direction
+  consistency, 21 of 24 worlds positive, and it stands well clear of its control: r +0.072 against the
+  marker's +0.020, and the marker fails 0.75. This is the one positive relationship in this milestone
+  that survives both its own null and the repository's own acceptance criterion.
+- **`diet → offspring` in the late window is withdrawn.** It fails the threshold at 0.667 — and its
+  control is **more** direction-consistent than it is (0.708, 17 of 24). An effect that its own inert
+  channel outperforms on the criterion the project uses to accept effects is not an effect. The
+  previous pass called it "the first diet-to-fitness relationship whose interval does not cross zero"
+  and filed it as small but not nothing. **That was wrong, and the reason it was wrong is the next
+  paragraph.**
+
+**The interval criterion is not reliable at these widths, and the control proves it.**
+`neutral → intake rate` in the late window has a 95% interval of **[+0.008, +0.033]**, which excludes
+zero. `NeutralMarker` cannot influence anything; the simulation contains no reader for it. So an
+interval excluding zero, here, is worth exactly nothing on its own. This milestone has now reported
+somewhere upwards of thirty window x relationship x arm intervals; **at these widths some will exclude
+zero by chance, and at least one demonstrably did.** Direction consistency against the committed 0.75,
+with the marker reported beside it, is the criterion that should be read.
+
+### The U-shape count: the density-dependent reading is not corroborated, and is withdrawn
+
+The previous pass recorded the valley as a density-dependent effect resting on pooled bin means, and
+named the statistic that would corroborate it. That statistic has now been run - in how many worlds
+does the 0.6-0.8 bin mean fall below **both** end bins - and judged against the same 0.75:
+
+| window | predictor | worlds with a valley | of | fraction | verdict |
+|---|---|---|---|---|---|
+| early | diet | 10 | 22 | 0.455 | **fails** |
+| late | diet | 5 | 22 | 0.227 | fails |
+| early | neutral marker | - | 0 | - | **not computable** |
+| late | neutral marker | - | 0 | - | **not computable** |
+
+Two worlds in each window are unjudgeable because an end bin was empty.
+
+**Fewer than half the worlds show the valley.** The 8.2% dip in the early-window bin table is
+therefore a **pooled-mean feature, not a per-world one** - which is precisely the failure mode this
+document warns about everywhere else, and the pooled figure is labelled pseudo-replicated for exactly
+this reason. **The density-dependent reading of the valley is withdrawn.** What remains true is
+narrower and still worth having: the pooled early-window bin means show a dip that the pooled
+late-window means do not, and no more than that.
+
+**The U-shape control could not be computed at all, and that is itself informative.** Not one world
+had both end bins of the marker populated, because `NeutralMarker` drifts to fixation independently
+per world - the recorded finding of `p3-digestion-strategies-2026-08-30.md`, showing up here as an
+inability to bin. So the U-shape count has **no null**, and its failure against 0.75 is being read
+without one. It is a fair statistic for the claim's shape; it is not a controlled one.
 
 So the four defects, measured rather than argued:
 
@@ -403,7 +459,7 @@ So the four defects, measured rather than argued:
 - **`r +0.88` was right.** Lifetime energy intake predicts offspring at +0.872 / +0.876 per world,
   24 of 24 worlds positive in both arms.
 - **The 12% intake valley was not** — at 36,000 ticks. Its disappearance is the predeclared
-  prediction that failed. **Three follow-up runs settled why.** The valley is present at 12,000 ticks
+  prediction that failed. **Four follow-up runs settled why.** The valley is present at 12,000 ticks
   under both instruments (8.2% measured at the allocation site, 2.9% through the delta proxy) and
   absent from the pooled 36,000-tick table; splitting that same 36,000-tick cohort on birth tick then
   showed the valley **present in births before tick 6,600 and absent after**. So the variable is

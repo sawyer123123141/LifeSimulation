@@ -71,15 +71,43 @@
 >   became a flat line. The two windows are different ecologies: 3.46-3.95 offspring per creature
 >   early, 1.47-1.84 late.
 >
->   **So the valley in this document is a density-dependent effect — present during population
->   expansion, gone afterwards — which is a different claim from "no effect" and bears on the P3 gate.**
->   **Held at arm's length until one more statistic exists:** the per-world sign counts do not
->   corroborate it, because a correlation measures a monotone trend and a valley is not monotone. Early
->   window `diet → intake` is r +0.015 with **13 worlds positive and 11 negative** — exactly what both
->   a U-shape and pure noise produce. The test that would settle it is a per-world U-shape count, and it
->   has not been run. The density-dependent reading currently rests on pooled bin means alone.
->
 >   Raw output: `p3-birth-window-split-36000-healthoff-2026-09-03.txt`.
+>
+> - **A density-dependent reading of that split was proposed and then withdrawn, 2026-09-03.** The
+>   statistic matching the shape of the claim — in how many of 24 worlds does the 0.6-0.8 bin mean fall
+>   below **both** end bins — was run and **fails the repository's own committed threshold**
+>   (`PairedEvolutionCriterion.MinimumDirectionConsistency` = 0.75): the valley appears in **10 of 22
+>   judgeable worlds** in the early window (0.455) and 5 of 22 in the late one. **Fewer than half the
+>   worlds have it.** The early-window dip is a pooled-mean feature, not a per-world one — the same
+>   pseudo-replication this banner warns about elsewhere. What survives is only that the pooled
+>   early-window bin means dip where the late-window means do not.
+>
+>   The U-shape count has **no null**: not one world had both end bins of `NeutralMarker` populated,
+>   because the marker drifts to fixation independently per world — this document's own finding,
+>   reappearing as an inability to bin. The statistic is fair for the claim's shape and is uncontrolled.
+>
+> - **The neutral-marker control, which these follow-ups had been missing.** Reported beside every
+>   drift column, as the project's standing methodology requires. Late window, 24 seeds, 36,000 ticks:
+>
+>   | relationship | mean per-world r | worlds + / - | consistency | 0.75 |
+>   |---|---|---|---|---|
+>   | diet → intake rate | **+0.072** | **21 / 3** | **0.875** | **PASSES** |
+>   | neutral → intake rate | +0.020 | 17 / 7 | 0.708 | fails |
+>   | diet → offspring | +0.034 | 16 / 8 | 0.667 | **fails** |
+>   | neutral → offspring | +0.010 | 17 / 7 | **0.708** | fails |
+>
+>   **`diet → intake rate` in the late window survives** — it passes 0.75 and stands clear of its
+>   control. **`diet → offspring` in the late window is withdrawn**: it fails 0.75, and its inert
+>   control is *more* direction-consistent than it is. An effect that `NeutralMarker` outperforms on
+>   the project's own acceptance criterion is not an effect.
+>
+> - **A caution about intervals, earned the hard way.** `neutral → intake rate` has a 95% interval of
+>   **[+0.008, +0.033]**, excluding zero — for a gene the simulation contains no reader for. This
+>   milestone has reported upwards of thirty window x relationship x arm intervals and at these widths
+>   some exclude zero by chance; at least one demonstrably did. **Read direction consistency against
+>   0.75 with the marker beside it, not the interval.**
+>
+>   Raw output: `p3-neutral-control-and-ushape-36000-healthoff-2026-09-03.txt`.
 >
 > Raw output: `p3-valley-intake-24seeds-12000-2026-09-03.txt`,
 > `p3-valley-lifehistory-24seeds-12000-2026-09-03.txt`.

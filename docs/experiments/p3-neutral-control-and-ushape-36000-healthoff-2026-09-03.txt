@@ -1,0 +1,128 @@
+
+life history, 24 worlds of 36000 ticks
+
+censoring horizons, derived from the phenotype map: adult age 400 ticks, longest reachable life 5400 ticks
+  complete-life cohort admits births in [0, 30600] - 85.0% of the run
+  offspring-to-adulthood cohort admits births in [0, 30200]
+
+| seed | population | ledger complete | complete-life cohort | excluded by horizon | excluded: no genome | to-adulthood cohort |
+|---|---|---|---|---|---|---|
+| 42 | 0 | yes | 752 | 0 | 0 | 752 |
+| 43 | 0 | yes | 724 | 0 | 0 | 724 |
+| 44 | 0 | yes | 1891 | 0 | 0 | 1891 |
+| 45 | 0 | yes | 921 | 0 | 0 | 921 |
+| 46 | 0 | yes | 674 | 0 | 0 | 674 |
+| 47 | 0 | yes | 936 | 0 | 0 | 936 |
+| 48 | 173 | yes | 1616 | 749 | 0 | 1561 |
+| 49 | 0 | yes | 708 | 0 | 0 | 708 |
+| 50 | 202 | yes | 1219 | 474 | 0 | 1200 |
+| 51 | 0 | yes | 675 | 0 | 0 | 675 |
+| 52 | 410 | yes | 1183 | 896 | 0 | 1156 |
+| 53 | 0 | yes | 757 | 0 | 0 | 757 |
+| 54 | 0 | yes | 723 | 0 | 0 | 723 |
+| 55 | 0 | yes | 1157 | 0 | 0 | 1157 |
+| 56 | 0 | yes | 1175 | 0 | 0 | 1175 |
+| 57 | 0 | yes | 814 | 0 | 0 | 814 |
+| 58 | 0 | yes | 709 | 0 | 0 | 709 |
+| 59 | 0 | yes | 877 | 0 | 0 | 877 |
+| 60 | 0 | yes | 763 | 0 | 0 | 763 |
+| 61 | 0 | yes | 1133 | 0 | 0 | 1133 |
+| 62 | 0 | yes | 851 | 0 | 0 | 851 |
+| 63 | 0 | yes | 653 | 0 | 0 | 653 |
+| 64 | 0 | yes | 893 | 0 | 0 | 893 |
+| 65 | 0 | yes | 792 | 0 | 0 | 792 |
+
+gross ingestion by diet bin, pooled over cohort members (per-world figures are below)
+| diet | creatures | gross/1k ticks | lifetime gross |
+|---|---|---|---|
+| 0.0-0.2 | 4292 | 103.20 | 319.8 |
+| 0.2-0.4 | 4276 | 103.75 | 318.7 |
+| 0.4-0.6 | 4487 | 104.47 | 315.5 |
+| 0.6-0.8 | 3777 | 104.44 | 307.9 |
+| 0.8-1.0 | 5764 | 105.69 | 299.5 |
+
+whole-run totals: gross 7271584.5, stored (plant) 5757901.3, surplus lost to the capacity clamp 22697.3 = 0.31% of gross
+
+fitness by diet bin, complete-life cohort only
+| diet | creatures | offspring | offspring surviving to adulthood |
+|---|---|---|---|
+| 0.0-0.2 | 4292 | 1.966 | 1.959 |
+| 0.2-0.4 | 4276 | 1.977 | 1.972 |
+| 0.4-0.6 | 4487 | 1.962 | 1.953 |
+| 0.6-0.8 | 3777 | 1.971 | 1.947 |
+| 0.8-1.0 | 5764 | 2.124 | 2.012 |
+both parents are credited for the same birth, so replacement is about two, not one
+
+SPLIT BY BIRTH WINDOW: births in [0, 6600] against births after
+the same complete-life horizon applies to both; only the birth tick differs
+cohort sizes: early 4099, late 18497
+
+| diet | early: creatures | early: gross/1k | early: offspring | late: creatures | late: gross/1k | late: offspring |
+|---|---|---|---|---|---|---|
+| 0.0-0.2 | 758 | 152.822 | 3.769 | 3534 | 92.562 | 1.580 |
+| 0.2-0.4 | 769 | 151.233 | 3.670 | 3507 | 93.337 | 1.606 |
+| 0.4-0.6 | 952 | 149.788 | 3.810 | 3535 | 92.271 | 1.465 |
+| 0.6-0.8 | 852 | 140.342 | 3.459 | 2925 | 93.981 | 1.538 |
+| 0.8-1.0 | 768 | 152.278 | 3.945 | 4996 | 98.527 | 1.843 |
+
+early window, diet    versus gross ingestion rate: mean per-world r +0.015, **13 positive / 11 negative** of 24, direction consistency 0.542 fails 0.75, 95% interval [-0.042, +0.066]
+early window, NEUTRAL versus gross ingestion rate: mean per-world r -0.004, **10 positive / 14 negative** of 24, direction consistency 0.583 fails 0.75, 95% interval [-0.039, +0.035]
+early window, diet    versus offspring: mean per-world r +0.042, **15 positive / 9 negative** of 24, direction consistency 0.625 fails 0.75, 95% interval [-0.026, +0.106]
+early window, NEUTRAL versus offspring: mean per-world r -0.016, **11 positive / 13 negative** of 24, direction consistency 0.542 fails 0.75, 95% interval [-0.058, +0.026]
+
+late window, diet    versus gross ingestion rate: mean per-world r +0.072, **21 positive / 3 negative** of 24, direction consistency 0.875 **PASSES 0.75**, 95% interval [+0.049, +0.095]
+late window, NEUTRAL versus gross ingestion rate: mean per-world r +0.020, **17 positive / 7 negative** of 24, direction consistency 0.708 fails 0.75, 95% interval [+0.008, +0.033]
+late window, diet    versus offspring: mean per-world r +0.034, **16 positive / 8 negative** of 24, direction consistency 0.667 fails 0.75, 95% interval [+0.012, +0.055]
+late window, NEUTRAL versus offspring: mean per-world r +0.010, **17 positive / 7 negative** of 24, direction consistency 0.708 fails 0.75, 95% interval [-0.007, +0.027]
+
+U-SHAPE COUNT: worlds where the 0.6-0.8 bin mean falls below BOTH the 0.0-0.2 and 0.8-1.0 bin means
+judged against the repository own committed threshold, PairedEvolutionCriterion.MinimumDirectionConsistency = 0.75
+
+| window | predictor | worlds with a valley | of | fraction | verdict |
+|---|---|---|---|---|---|
+| early | diet | 10 | 22 | 0.455 | fails (2 worlds unjudgeable, an end bin was empty) |
+| early | neutral marker (control) | - | 0 | - | no world judgeable |
+| late | diet | 5 | 22 | 0.227 | fails (2 worlds unjudgeable, an end bin was empty) |
+| late | neutral marker (control) | - | 0 | - | no world judgeable |
+
+which need is binding, sampled on reproduction ticks over 2526659 adult creature-samples
+| need | lowest of the three | below the gate | lowest, among blocked |
+|---|---|---|---|
+| Energy | 73.8% | 50.0% | 74.6% |
+| Hydration | 21.3% | 18.8% | 20.0% |
+| Health | 4.9% | 11.9% | 5.4% |
+blocked at all: 84.5%; of those, a running cooldown: 52.3% (not a need)
+passed the breeding gate but not the mate-seeking gate: 7.5%
+
+population cap: saturated on 1.5% of reproduction ticks, cap-blocked on 1.5%, mate-limited below the cap on 44.5%
+reproductive-skew interpretation is safe in all 24 worlds at a threshold of 0.25
+
+diet versus gross ingestion rate: mean per-world r +0.028, 15 worlds positive / 9 negative of 24, 95% interval [+0.012, +0.044]
+  pooled r +0.014 over 22596 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.03 43:+0.09 44:+0.03 45:-0.01 46:+0.10 47:+0.08 48:-+0.00 49:-+0.00 50:-0.02 51:+0.00 52:+0.01 53:-0.01 54:+0.09 55:-+0.00 56:-0.01 57:+0.08 58:+0.07 59:+0.05 60:-0.03 61:+0.07 62:+0.01 63:+0.03 64:-+0.00 65:+0.02
+
+diet versus offspring: mean per-world r +0.009, 10 worlds positive / 14 negative of 24, 95% interval [-0.007, +0.026]
+  pooled r +0.023 over 22596 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.01 43:-0.01 44:-0.01 45:-0.02 46:+0.08 47:+0.02 48:+0.07 49:-0.04 50:+0.09 51:-0.01 52:+0.10 53:-0.04 54:+0.02 55:-0.04 56:-0.03 57:-0.02 58:-0.01 59:-+0.00 60:-0.01 61:-0.01 62:+0.02 63:+0.05 64:+0.00 65:-0.01
+
+diet versus offspring surviving to adulthood: mean per-world r +0.003, 9 worlds positive / 15 negative of 24, 95% interval [-0.010, +0.017]
+  pooled r +0.004 over 22596 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.01 43:-0.01 44:-0.01 45:-0.02 46:+0.08 47:+0.02 48:-+0.00 49:-0.04 50:+0.08 51:-+0.00 52:+0.06 53:-0.04 54:+0.02 55:-0.04 56:-0.04 57:-0.02 58:-0.01 59:-0.01 60:-0.01 61:-0.02 62:+0.02 63:+0.05 64:+0.00 65:-0.01
+
+lifetime gross ingestion versus offspring: mean per-world r +0.872, 24 worlds positive / 0 negative of 24, 95% interval [+0.858, +0.885]
+  pooled r +0.848 over 22596 creatures - **PSEUDO-REPLICATED**, reported only beside the per-world values
+  per-world r: 42:+0.89 43:+0.89 44:+0.84 45:+0.88 46:+0.89 47:+0.87 48:+0.80 49:+0.89 50:+0.81 51:+0.93 52:+0.80 53:+0.91 54:+0.88 55:+0.84 56:+0.85 57:+0.87 58:+0.90 59:+0.87 60:+0.88 61:+0.85 62:+0.90 63:+0.91 64:+0.87 65:+0.90
+
+retired delta proxy: measured gross 7271584.5 against the proxy's 5710475.2, ratio 1.273
+ingestion taken under a stale Seek action: 12.79% of gross energy, invisible to the proxy by construction
+
+erasure by diet bin, cohort members only
+| diet | creatures | measured gross | proxy gross | ratio | stale share |
+|---|---|---|---|---|---|
+| 0.0-0.2 | 4292 | 1372544.2 | 1083978.0 | 1.266 | 12.25% |
+| 0.2-0.4 | 4276 | 1362611.4 | 1081744.5 | 1.260 | 11.77% |
+| 0.4-0.6 | 4487 | 1415781.0 | 1121668.7 | 1.262 | 12.05% |
+| 0.6-0.8 | 3777 | 1162798.0 | 923751.6 | 1.259 | 11.99% |
+| 0.8-1.0 | 5764 | 1726389.8 | 1350232.1 | 1.279 | 13.47% |
+
+instrument check: 2,000 ticks with the recorder attached and detached give an identical state hash

@@ -967,3 +967,35 @@ between them not at all. The statistic that would is a per-world U-shape count �
 does the middle bin fall below both ends — and it was not computed, so the density-dependent reading
 was recorded as resting on pooled bin means alone. **Match the statistic to the shape of the claim; a
 null from the wrong statistic is not a null.**
+
+**2026-09-03 (fourth pass) — CORRECTION: the density-dependent reading of the intake valley is
+withdrawn, by the statistic the previous entry named.** That entry said a correlation cannot see a
+valley and named the test that could — in how many worlds does the middle bin fall below both ends.
+Run: **10 of 22 judgeable worlds in the early window (0.455) and 5 of 22 late**, against the
+repository's own committed `PairedEvolutionCriterion.MinimumDirectionConsistency` of 0.75. **Fewer
+than half the worlds have the valley.** The 8.2% early-window dip is a **pooled-mean feature, not a
+per-world one** — the same pseudo-replication the analysis layer labels everywhere else, arrived at
+from the inside. **Naming the missing statistic is not the same as having run it, and the gap between
+the two is where a plausible mechanism story gets written down as a finding.** Run it in the same pass
+that names it.
+
+**2026-09-03 (fourth pass) — The inert control excluded zero, which is the cleanest possible proof
+that "the interval excludes zero" is not an acceptance criterion here.** `NeutralMarker` is read by no
+behaviour code and pinned dead by `LivenessTests`. Its late-window relationship with gross intake came
+back r +0.020 with a 95% interval of **[+0.008, +0.033]** — excluding zero, for a gene the simulation
+contains no reader for. Two consequences. **First, a result reported on an interval alone is
+uninterpretable in this project**, and `diet -> offspring` in the late window was reported that way
+one pass earlier and is now withdrawn: it fails 0.75 at 0.667 direction consistency and its own inert
+control is *more* consistent at 0.708. **An effect the neutral marker outperforms on the project's own
+criterion is not an effect.** Second, this milestone reported upwards of thirty window x relationship
+x arm intervals; **at these widths some exclude zero by chance and at least one demonstrably did.**
+Count how many intervals a piece of work has reported before treating any one of them as a result.
+
+**2026-09-03 (fourth pass) — A control that cannot be computed is a finding about the control, and
+must be said out loud rather than left as a blank cell.** The U-shape count was run for the neutral
+marker as its null and came back **not computable in any of 24 worlds**: never once were both end bins
+populated, because the marker drifts to fixation independently per world — this project's own recorded
+result, reappearing as an inability to bin. So the U-shape statistic is fair for the shape of the
+claim and **uncontrolled**, and its failure against 0.75 is being read without a null beside it.
+**When a control returns nothing, record why; "no control column" and "control showed nothing" are
+opposite readings and look identical in a table.**
