@@ -180,8 +180,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 2 | done | `0b9c941` | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
 | 3 | done | `434c76f` | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
 | 4 | done | `7f8d1d0` | Cap-blocked requires two or more ready creatures: one ready creature at the cap has nobody to breed with, so the cap explains nothing about it. Threshold is a required constructor argument, pinned by a reflection test that no constructor parameter has a default. |
-| 5 | done | pending | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
-| 6 | not started | — | — |
+| 5 | done | `12e192a` | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
+| 6 | done | pending | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
 | 7 | not started | — | — |
 | 8 | not started | — | — |
 | 9 | not started | — | — |
@@ -385,16 +385,16 @@ Three quantities per bite, all of which the call site already has or can compute
 **Files:** create `Assets/Scripts/Simulation/Analysis/IngestionLedger.cs`; create
 `Assets/Tests/EditMode/IngestionLedgerTests.cs`.
 
-- [ ] **Step 1: Write failing tests** for the join: per-creature lifetime gross ingestion, stored
+- [x] **Step 1: Write failing tests** for the join: per-creature lifetime gross ingestion, stored
       energy, surplus lost, and feeding-tick counts, keyed to the life-history ledger and restricted
       to a cohort.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Quantify what the old proxy was missing.** Compute, over one run, the ratio of
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Quantify what the old proxy was missing.** Compute, over one run, the ratio of
       recorder-measured gross ingestion to the old positive-energy-delta estimate, and the share of
       ingestion occurring under a stale `Seek*` action. **This number is the evidence for or against
       the retraction in Task 10 and must be recorded, not estimated.**
-- [ ] **Step 5: Commit.** `analysis: gross ingestion ledger`
+- [x] **Step 5: Commit.** `analysis: gross ingestion ledger`
 
 **Do not delete `tools/CreatureSweep/Intake.cs` in this milestone.** It is the instrument that produced
 a recorded result; the correct end state is that the new mode supersedes it and the experiment record
