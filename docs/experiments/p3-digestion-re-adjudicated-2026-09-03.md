@@ -3,8 +3,10 @@
 **Date:** 2026-09-03
 **Status:** the Task 9 measurement experiment, run. **Negative, with one predeclared prediction
 failed and one large caveat that is itself the most important finding.** No biological code changed.
-**This document does not adjudicate the 2026-08-30 record.** That decision is the user's and is
-pending; see "What this does not do" below.
+**The 2026-08-30 record is superseded on the instrument and confirmed on the conclusion** — see
+`p3-digestion-strategies-2026-08-30.md`'s banner. The caveat is recorded separately as
+[`p6-the-recorded-cell-is-a-transient-2026-09-03.md`](p6-the-recorded-cell-is-a-transient-2026-09-03.md),
+because it bears on far more than digestion.
 **Harness:** `tools/CreatureSweep --life-history`, new in this milestone. Raw output is committed
 beside this file as `p3-re-adjudicated-36000-health{off,on}-2026-09-03.txt`.
 
@@ -38,18 +40,35 @@ attached and detached: identical state hash. The measurement did not perturb its
 | health recovery OFF | **21 of 24** | 3 |
 | health recovery ON | **23 of 24** | 1 (seed 50, population 202) |
 
-The 2026-08-30 record reports this cell surviving 24 of 24 — **at 12,000 ticks**. Both are true. The
+The 2026-08-30 record reports this cell — brake 1.0 — as 4,761 creatures over **22 surviving runs of
+24**, at 12,000 ticks. Both are true. The
 recorded cell is not a steady state; it is the first third of a collapse, and nothing measured at
 12,000 ticks could have shown that.
 
 So every number below is measured **across a collapse**, on cohorts that are large precisely because
 so many creatures lived and died inside it. That does not make the numbers wrong — the cohort rule is
 genotype-independent and the pedigrees are complete — but it does mean they describe a declining
-ecology rather than a persistent one. **Any conclusion drawn from them inherits that.**
+ecology rather than a persistent one.
 
-This is the third time this project has been caught by a length assumption; the standing lesson is
-"distinguish *not yet* from *not ever* by running longer". Running longer worked, and it answered a
-question nobody asked.
+### Why "measured in dying worlds" is not fatal to the digestion result
+
+**The same cohort, in the same worlds, in the same collapsing ecology, returns lifetime intake →
+offspring at +0.872 and +0.876 with 24 of 24 worlds positive in both arms.** That is the load-bearing
+sentence of this document.
+
+The design therefore demonstrably has the power to detect a real, strong relationship **under exactly
+the conditions the diet null was measured in**. The 12-of-24 / 12-of-24 sign split on
+`diet → offspring` is not a floor effect, a variance ceiling, or a measurement that the collapse
+washed out: an instrument that could not see a relationship here would not have returned +0.87 on a
+different relationship from the identical creatures. The diet null is **centred on zero**, and the
+collapse conditions how far the result generalises, not whether it was detectable.
+
+The separate finding — that this cell is a transient — is recorded in
+[`p6-the-recorded-cell-is-a-transient-2026-09-03.md`](p6-the-recorded-cell-is-a-transient-2026-09-03.md).
+
+The standing lesson from 2026-08-30 — "distinguish *not yet* from *not ever* by running longer, not by
+arguing" — was written about a trait that had not moved. Running longer worked, and it answered a
+question nobody had asked.
 
 ---
 
@@ -132,10 +151,22 @@ energy-side trait can reach fitness at all:
 | Hydration | 20.0% | 19.7% |
 | Health | 5.4% | 3.3% |
 
-Energy is the binding need three times out of four. **But the more interesting number is next to it:
-of all blocked adult samples, 52.3% (OFF) and 49.8% (ON) are blocked by a running reproduction
-cooldown, which is not a need at all.** About half of all reproductive blocking in this cell is the
-cooldown timer, and no amount of energy advantage moves it.
+Energy is the binding need three times out of four.
+
+**But the more interesting number is next to it: of all blocked adult samples, 52.3% (OFF) and 49.8%
+(ON) are blocked by a running reproduction cooldown — roughly half of all reproductive blocking in
+this cell is a refractory period rather than a need being below the gate.**
+
+**That refractory period is itself condition-dependent, which matters.** Graded fertility is on at
+brake 1.0, so `ReproductionSystem.CooldownFor` multiplies the base cooldown by
+`CooldownMultiplierFor`, and that multiplier is computed from the **minimum of the three normalised
+needs at the moment of the last birth**. A creature in poor condition when it bred waits
+proportionally longer before it can breed again. So this is not "a timer, not a need" — it is a
+refractory period whose *duration* is set by condition, which is exactly the smooth density brake
+graded fertility was added to provide.
+
+The consequence for digestion is unchanged and worth stating plainly: an energy advantage can shorten
+the next refractory period, and it still produces no measurable difference in lifetime offspring.
 
 7.5% (OFF) and 8.0% (ON) of adult samples pass the breeding gate and fail the higher mate-seeking
 gate.
@@ -233,20 +264,17 @@ So the four defects, measured rather than argued:
 - **The old instrument under-counts ingestion by 21-27% in this cell** and cannot see 12.7% of it at
   all, for a reason that is structural rather than incidental.
 - **The capacity clamp is not the blocker.** It discards under a third of one percent.
-- **About half of all reproductive blocking is a cooldown timer**, not a need.
+- **About half of all reproductive blocking is a refractory period**, whose duration is itself set by
+  the creature's condition at its last birth rather than by a fixed timer.
 - **The cap is not binding in this cell**, so skew readings from it are interpretable.
 
-## What this does not establish, and what it does not do
+## What this does not establish
 
-- **It does not adjudicate the 2026-08-30 record.** The banner and the retraction-or-confirmation
-  decision are Task 10 of the measurement-validity plan and are **pending a decision by the user**,
-  because every number here is measured across an ecosystem collapse and whether that is grounds for
-  retraction is a judgement, not a measurement.
 - **It does not establish that this cell is a valid long-run ecology.** It is not. 21-23 of 24 worlds
   are extinct at 36,000 ticks. Whatever this cell is measuring after about tick 12,000, it is not a
   persistent population.
 - **It does not say when the collapse happens.** No per-world extinction tick was recorded; that
-  needs another run.
+  needs another run. See the transient record for what would settle it.
 - **It does not say the trade-off is absent from the source.** `PlantFoodYieldMultiplier` is still
   `1 - 0.3 * diet`. The trade-off exists; it does not reach ingestion at the rate the old instrument
   reported, and it does not reach fitness at all.

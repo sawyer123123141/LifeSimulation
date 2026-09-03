@@ -14,7 +14,7 @@ Run it three times as long and almost every world is empty.
 
 | arm | 12,000 ticks (recorded 2026-08-30) | 36,000 ticks (measured here) |
 |---|---|---|
-| health recovery OFF | 22 of 24 surviving | **3 of 24 surviving** (seeds 48, 50, 52) |
+| health recovery OFF | 22 surviving runs of 24 | **3 of 24 surviving** (seeds 48, 50, 52) |
 | health recovery ON | — | **1 of 24 surviving** (seed 50) |
 
 Final populations at 36,000 ticks, health recovery OFF, 24 seeds:

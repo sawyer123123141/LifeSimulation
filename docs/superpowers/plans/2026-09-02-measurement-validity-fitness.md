@@ -184,7 +184,7 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 6 | done | `cbe070d` | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
 | 7 | done | `7faad56` | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
 | 8 | done | `eea0f3f` | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
-| 9 | **run, record written, adjudication STOPPED** | pending | Both arms complete, 24 seeds x 36,000 ticks. Record: `docs/experiments/p3-digestion-re-adjudicated-2026-09-03.md`; raw output committed beside it. **Stop condition hit: 21 of 24 (health off) and 23 of 24 (health on) worlds are EXTINCT at 36,000 ticks**, against 24/24 surviving at 12,000 in the recorded cell. Every number is measured across a collapse. **The predeclared sign FAILED** - no intake valley; gross ingestion is flat and slightly rising with diet. The digestion negative holds; `r +0.88` reproduces at +0.872 / +0.876 per world, 24/24 worlds positive both arms. Cap not binding (1.5%), skew-safe in all worlds. Surplus lost to the clamp 0.03-0.31%. Proxy ratio 1.271-1.273, stale share 12.7%. Awaiting the user's decision on whether this stands or the arms are re-run at a length where the population persists. |
+| 9 | done | pending | Both arms complete, 24 seeds x 36,000 ticks. Record: `docs/experiments/p3-digestion-re-adjudicated-2026-09-03.md`; raw output committed beside it. **21 of 24 (health off) and 23 of 24 (health on) worlds are EXTINCT at 36,000 ticks**, against 22 surviving runs of 24 at 12,000 in the recorded brake-1.0 cell. Every number is measured across a collapse. **The predeclared sign FAILED** - no intake valley; gross ingestion is flat and slightly rising with diet. The digestion negative holds; `r +0.88` reproduces at +0.872 / +0.876 per world, 24/24 worlds positive both arms. Cap not binding (1.5%), skew-safe in all worlds. Surplus lost to the clamp 0.03-0.31%. Proxy ratio 1.271-1.273, stale share 12.7%. **The stop here was a judgement escalation, not an Execution Contract stop.** Nothing changed biologically and no state hash moved: the run was simply three times longer than any before it, and the population outcome differs for that reason alone. **A later session must not go hunting for a behaviour change — there was none.** The user ruled: Task 9 stands, the collapse is recorded separately as `docs/experiments/p6-the-recorded-cell-is-a-transient-2026-09-03.md`, and no re-run at another length was permitted because finding one means moving brake, regen or cap, which this milestone forbids. |
 | 10 | **blocked on Task 9** | — | Cannot banner or retract the 2026-08-30 record while the evidence is measured across an ecosystem collapse. Needs the user's decision. |
 | 11 | done | `90e5682` | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
 | 12 | done | `4e44f51` | Content moved unaltered under a one-line provenance header; the root file is now a three-step pointer at `AGENTS.md`, the frozen spec, then the current plan. Nothing deleted. |
@@ -619,7 +619,26 @@ The milestone is complete when **all** of the following hold. Passing one task i
       predeclared signs visible in this plan file from before the runs.
 - [ ] The 2026-08-30 digestion record carries a banner naming what survived re-measurement.
 - [ ] `CODEX_TASK.md` is a pointer and the original is preserved.
-- [ ] `git status` is clean: no `ZZZ*.cs` probes, no stray `.meta` files.
+- [ ] **No new untracked paths from this session**, no `ZZZ*.cs` probes, no stray `.meta` files.
+      `git status` is *not* empty and was not empty when this milestone started. Eleven untracked
+      paths pre-date it and none were created here:
+
+      ```
+      Assets/_Recovery/0 (2).unity            Assets/_Recovery/0 (2).unity.meta
+      Assets/_Recovery/0 (3).unity            Assets/_Recovery/0 (3).unity.meta
+      ProjectSettings/PackageManagerSettings.asset
+      docs/experiments/p6-slope-cost-24seeds-predation-brake1.5-gate0.45-2026-08-30.csv
+      docs/experiments/p6-slope-cost-focused-cap500-regen2.00-24seeds-mateseloff-predation-brake1.5-gate0.45-2026-08-30.csv
+      tools/HistoryProbe/bin/    tools/HistoryProbe/obj/
+      tools/SitePilot/bin/       tools/SitePilot/obj/
+      ```
+
+      **Separate cleanup for the user, deliberately not done here.** `tools/*/bin` and `tools/*/obj`
+      are build output that `.gitignore` does not cover — it ignores `/ExperimentResults/` and the
+      Unity directories but has no `tools/**/bin` or `tools/**/obj` rule. Fixing that means editing
+      `.gitignore`, which `AGENTS.md` rule 2 forbids without the task naming the file. The two
+      `p6-slope-cost-*.csv` files and the `_Recovery` scenes are content decisions, not build output,
+      and are also the user's call.
 
 ## What this milestone deliberately does not do
 
