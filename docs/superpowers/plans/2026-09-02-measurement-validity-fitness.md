@@ -463,6 +463,28 @@ before.
 **Predeclare the expected signs in the plan file before running** — the frozen spec's section 5 makes
 predeclaration a standing requirement, and a prediction written afterwards is not one.
 
+### Predeclared before the runs (2026-09-03)
+
+Committed before a single Task 9 tick was run, because a prediction written afterwards is not one.
+The user's decisions, taken at the Task 9 boundary:
+
+- **Run length: 36,000 ticks.** The clean birth window is then 84% of the run.
+- **Cap-binding threshold: 0.25.** A quarter of reproduction ticks cap-blocked is enough that the
+  `CreatureId`-ordered scheduler is shaping who breeds, so any skew reading above it is labelled
+  unsafe. This is `LifeHistory.UnsafeCapBlockedFraction`.
+
+**The one predeclared sign:**
+
+> **Gross ingestion falls with diet and then recovers.** Total intake is highest at the herbivore
+> end, lowest in the 0.6-0.8 band, and partially recovers at the carnivore end - the recorded 12%
+> valley survives correction by the new instrument.
+
+**Deliberately not predeclared.** The user was offered predictions on offspring staying flat across
+diet, on energy being the usually-binding need, and on health recovery not changing answers 1-3, and
+**declined all three**. Those questions are therefore open: whatever Task 9 measures for them is a
+first observation, not a confirmed or failed prediction, and the record must not describe them as
+either.
+
 The six questions, each with the number that answers it:
 
 - [ ] **1. Is there a diet-dependent difference in gross ingestion?** Gross ingestion by diet bin, per
