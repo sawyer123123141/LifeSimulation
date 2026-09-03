@@ -183,10 +183,10 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 5 | done | `12e192a` | `NeedsSystem.GrossEnergyFrom` is the extracted expression, order unchanged. `SimulationWorld.Recorder` is null by default, follows `Liveness`, and the recorder also flags bites taken under a stale `Seek*` action so Task 6 can measure defect 4. **The hash-inertness test needs a world with food in it**: the bare constructor creates no resources, so it applies `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` and asserts non-zero gross ingestion so the hash comparison cannot pass vacuously. Full suite after the edit: 734 passed, 0 failed. |
 | 6 | done | `cbe070d` | **Step 4 measured** (8 seeds x 12,000 ticks, `CreateFullEcosystemDefaults` + `ConsumerDefenseCalibrationModerate`, plant only - no carcass ingestion occurred): recorder-measured gross plant energy **886,559** against the retired delta proxy's **642,506**, a ratio of **1.380**. **19.55%** of measured gross plant energy is taken under a stale `Seek*` action (defect 4). Feeding ticks 1,126,276 against 1,070,364 proxy `Eat` ticks, ratio **1.052** - so most of the 38% gap is **drain-tick erasure**, not stale actions. **Surplus lost to the capacity clamp is 0.0000** in this cell: a bite is worth about 1 energy against roughly 24 of headroom, so defect 2 is real in principle and negligible here. Task 9 re-measures in its own cell. `EnergyDeltaProxy` lives beside the ledger so the retired instrument stays reproducible under test. |
 | 7 | done | `7faad56` | Returns the existing `PairedBootstrapInterval` type, and the bootstrap mirrors `PairedBootstrapAnalysis.EstimateMeanDifferenceInterval` exactly - same resampling rule, same `RandomDomain.ExperimentSampling` draws, same percentile indices. It is written in `PerWorldRelationship` rather than called because the existing method takes `ExperimentResult` lists and a per-world correlation is not one; `Experiments/` is outside this milestone's allowed files, so it was not refactored. No new statistical method. An empty diet bin reports NaN, not zero. |
-| 8 | done | pending | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
+| 8 | done | `eea0f3f` | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
 | 9 | not started | — | — |
 | 10 | not started | — | — |
-| 11 | not started | — | — |
+| 11 | done | pending | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
 | 12 | not started | — | — |
 
 ---
@@ -575,8 +575,8 @@ of the strength of drift rather than as an authoritative Ne. The frozen spec alr
 "a useful diagnostic of the strength of drift relative to census size, not a definitive Ne"; there is
 no authoritative Ne to be had here and the plan should stop pretending otherwise.
 
-- [ ] **Step 1: Append the section above to this file, with any corrections implementation revealed.**
-- [ ] **Step 2: Commit.**
+- [x] **Step 1: Append the section above to this file, with any corrections implementation revealed.**
+- [x] **Step 2: Commit.**
 
 ## Task 12: `CODEX_TASK.md` cleanup
 
@@ -633,3 +633,76 @@ Recorded so the next session does not have to re-derive the boundary:
 - No change to feeding behaviour, digestion coefficients, or any biological constant.
 - No verdict update in the frozen spec's section 4 gate table. This milestone produces evidence; the
   gate verdict is the user's call once the evidence exists.
+
+---
+
+## Appendix (Task 11): the drift / Ne note
+
+Appended 2026-09-03, after Tasks 1-8 were implemented. **This is a note, not an implementation.** No
+Ne system was built and no founder genetics were touched.
+
+### What inspection of the current architecture establishes
+
+- The marker is a **single locus, effectively haploid** — `GenomeInheritance.InheritTrait` picks one
+  parent's value outright rather than averaging, so there is no blending collapse of variance. That
+  part of the architecture is *good* for drift work and should not be described as broken.
+- Founders are **monomorphic at exactly 0.5**. There is therefore **no standing variation at t = 0**,
+  and every unit of between-replicate variance early in a run is mutational input rather than drift
+  acting on existing variation. This, not the continuous-trait nature, is why the proposed
+  "between-replicate marker means → Ne" method is too simplistic.
+- Mutation adds `N(0, 0.03²)` at **every birth**, so mutational input scales with birth count, which
+  is itself a fitness quantity — the confound is not additive noise, it is correlated with the thing
+  being measured.
+- `Clamp01` makes the process a bounded random walk with reflecting-ish barriers; the recorded
+  U-shaped distribution is a signature of the clamp, not only of drift.
+
+### Four candidate next steps, judged on merit
+
+1. **Reproductive-skew / opportunity-for-selection summaries.** Variance in lifetime reproductive
+   success over mean squared, computed on the Task 2 cohort. Cheapest, needs nothing new after this
+   milestone, and is a real demographic quantity — but it is a *demographic proxy* in an
+   age-structured, overlapping-generations population, where the several definitions of Ne do not
+   coincide. Report it as skew, never as an Ne.
+2. **Neutral-marker standing variation.** Track within-world variance of the marker over time rather
+   than between-world means. Sees the clamp and the mutational input directly. Weak because there is
+   exactly one marker: one locus is one realisation of a stochastic process, and no number of seeds
+   fixes that the marker's own trajectory is a single draw per world.
+3. **Within-world variance trajectories** for real traits. Useful as pattern validation alongside
+   anything else, useless alone — selection and drift both move variance.
+4. **Offline synthetic markers replayed over the recorded pedigree.** Because nothing in the
+   simulation reads `NeutralMarker`, the pedigree is *causally independent* of any neutral locus. An
+   arbitrary number of independent synthetic neutral loci — biallelic, unclamped continuous, whatever
+   the question needs — can be replayed over the exact recorded pedigree offline, with the real
+   mutation model or a cleaner one, and no simulation change, no founder change, and no new RNG in
+   the tick path. **The strongest option on merit, not merely the convenient one:** it removes the
+   single-realisation problem (many loci), removes the clamp artifact (choose the architecture),
+   separates mutational input from drift (run a zero-mutation arm), and costs nothing in determinism
+   because it happens entirely outside the world.
+
+### Corrections that implementing Tasks 1-8 revealed
+
+- **"It fails silently if the ledger is ever incomplete" is no longer true, and that was the main
+  cost held against option 4.** `LifeHistoryLedger.IsComplete` mirrors the ancestry watermark and
+  permanent-overflow semantics, and **both** `FitnessCohort.Select` and `IngestionLedger.Join` throw
+  on an incomplete ledger rather than reporting a smaller number. A replay built on the same ledger
+  inherits that refusal for free. Option 4 is now cheaper than the plan assumed, not more expensive.
+- **The pedigree walk option 4 needs already exists.** `LifeHistoryLedger` exposes `PedigreeCount`,
+  `GetPedigreeIdAt`, `OffspringCredited` and `OffspringAt`, and every record carries both parents and
+  a birth tick. Replaying a synthetic locus is a walk over that, in birth order, with no new
+  traversal machinery.
+- **One new caveat, from how genomes are captured.** The ledger captures a genome by *observation*,
+  so a creature born and dead between two `Observe` calls is in the pedigree with
+  `HasGenome == false`. That does not affect a synthetic marker, which is assigned by the replay
+  rather than read from the world — but any replay that wants to *compare* a synthetic locus against
+  the real `NeutralMarker` must skip those creatures explicitly, and `FitnessCohort` already counts
+  them as `ExcludedWithoutGenome` so the number is visible rather than assumed to be zero.
+- **The founder-monomorphism point is confirmed in source, not inferred.** `Genome`'s constructor
+  defaults `neutralMarker` to `0.5f` and neither founder factory varies it.
+
+### Recommendation to carry forward, not to act on now
+
+Option 4 as the drift diagnostic, with option 1 reported beside it as an independent demographic
+check, and **both explicitly labelled as diagnostics of the strength of drift rather than as an
+authoritative Ne.** The frozen spec already says the goal is "a useful diagnostic of the strength of
+drift relative to census size, not a definitive Ne"; there is no authoritative Ne to be had in an
+age-structured overlapping-generations population of this size, and no plan should pretend otherwise.
