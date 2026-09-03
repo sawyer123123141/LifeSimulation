@@ -177,8 +177,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | Task | Status | Commit | Notes / decisions a later session needs |
 |---|---|---|---|
 | 1 | done | `d58dd9b` | `LifeHistoryLedger` wraps `AncestryHistory`; genomes captured by `Observe`, so a creature never observed alive reports `HasGenome` false rather than a fabricated genome. Enumeration is first-observation order, not dictionary order. |
-| 2 | done | pending | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
-| 3 | not started | — | — |
+| 2 | done | `0b9c941` | Horizons derived by evaluating `Phenotype.FromGenome` at the top of the `LifespanTendency` clamp, never as literals; a test pins 400 / 5,400 so a change to `AdultAgeSeconds`, the lifespan expression or `BaseFrequencyHz` fails here. `LifeHistoryLedger` gained `PedigreeCount` / `GetPedigreeIdAt` so the cohort can count pedigreed creatures whose genome was never observed. |
+| 3 | done | pending | Calls `CanReproduce` / `CanSeekMate` rather than copying them. Juveniles are counted as skipped, never as blocked, so age can never appear as a need. Several needs may block one sample and each is counted; `BlockedMinimumNeedCount` is the conditioning that answers whether an energy-side trait can reach fitness. |
 | 4 | not started | — | — |
 | 5 | not started | — | — |
 | 6 | not started | — | — |
@@ -292,20 +292,20 @@ add them.
 **Produces:** per-world counts of which normalised need is the minimum, and which need fails the gate,
 at reproduction-relevant moments.
 
-- [ ] **Step 1: Write failing tests.** A creature at energy 0.9, hydration 0.9, health 0.4 of capacity
+- [x] **Step 1: Write failing tests.** A creature at energy 0.9, hydration 0.9, health 0.4 of capacity
       reports health as both minimum and blocking at `needFraction` 0.7. A creature above the gate on
       all three reports a minimum but no blocker. Age and cooldown are reported as separate
       non-need blockers and never miscounted as a need.
-- [ ] **Step 2: Run the filter.** Expected: compilation failure.
-- [ ] **Step 3: Implement as an external observer.** Call `ReproductionSystem.CanReproduce` and
+- [x] **Step 2: Run the filter.** Expected: compilation failure.
+- [x] **Step 3: Implement as an external observer.** Call `ReproductionSystem.CanReproduce` and
       `CanSeekMate` — the production predicates, not a copy — and compute the three ratios directly
       from `GetNeedsAt` / `GetPhenotypeAt`. Sample only on reproduction ticks
       (`tick % (BaseFrequencyHz / ReproductionHz) == 0`) and only for creatures at or past adult age;
       sampling every tick would weight the answer by lifespan and by juvenile time.
-- [ ] **Step 4: Report both conditionings,** because they answer different questions: the distribution
+- [x] **Step 4: Report both conditionings,** because they answer different questions: the distribution
       over all adult creature-samples, and the distribution restricted to creatures blocked from
       reproducing. The second is the one that says whether an energy-side trait can reach fitness.
-- [ ] **Step 5: Commit.** `analysis: reproduction bottleneck diagnostic`
+- [x] **Step 5: Commit.** `analysis: reproduction bottleneck diagnostic`
 
 ## Task 4: Is the cap binding
 
