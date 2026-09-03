@@ -186,8 +186,8 @@ commit. A row reading `pending` means the work landed and only the hash is outst
 | 8 | done | `eea0f3f` | `--life-history <seeds> <cap>`; `--ticks=` is global and defaults to 12,000 so every other mode's recorded output is unchanged. The mode ends by running one seed 2,000 ticks with the recorder attached and detached and printing whether the hashes match, so a perturbing instrument announces itself in the output rather than only in the test suite. `LifeHistoryLedger` gained `OffspringAt` so offspring-surviving-to-adulthood can be counted from the pedigree. Smoke run at 3 seeds / 8,000 ticks: hashes identical, proxy ratio 1.231, stale share 10.2%, surplus 0.01% of gross. |
 | 9 | not started | — | — |
 | 10 | not started | — | — |
-| 11 | done | pending | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
-| 12 | not started | — | — |
+| 11 | done | `90e5682` | Appended as an appendix at the end of this file. The correction implementation revealed: option 4's stated main cost - silent failure on an incomplete pedigree - is closed, because `FitnessCohort.Select` and `IngestionLedger.Join` both throw on an incomplete ledger and a replay inherits that. Still a note; nothing was built. |
+| 12 | done | pending | Content moved unaltered under a one-line provenance header; the root file is now a three-step pointer at `AGENTS.md`, the frozen spec, then the current plan. Nothing deleted. |
 
 ---
 
@@ -589,13 +589,13 @@ which is now directly contrary to `AGENTS.md` and to the field notes, both of wh
 agents reading the whole tree. It sits at the repository root with a name that reads like a current
 assignment. That is the risk: not that it is wrong, but that it is wrong and prominent.
 
-- [ ] **Step 1: Move the content, unaltered, to `docs/handoff/2026-08-12-codex-bootstrap-task.md`**
+- [x] **Step 1: Move the content, unaltered, to `docs/handoff/2026-08-12-codex-bootstrap-task.md`**
       with a one-line header saying what it was and that it completed. Nothing is deleted.
-- [ ] **Step 2: Replace `CODEX_TASK.md`** with a short notice: this task completed in August 2026 and
+- [x] **Step 2: Replace `CODEX_TASK.md`** with a short notice: this task completed in August 2026 and
       is preserved at the path above; current agents should read `AGENTS.md`, then the frozen spec
       `docs/superpowers/specs/2026-08-30-what-finished-means-design.md`, then the current approved
       plan under `docs/superpowers/plans/`. No other content.
-- [ ] **Step 3: Commit.** `docs: retire the bootstrap task to a historical notice`
+- [x] **Step 3: Commit.** `docs: retire the bootstrap task to a historical notice`
 
 Deleting the file outright was considered and rejected: a root-level file that other documents or
 external notes may reference should become a pointer rather than a 404.
