@@ -191,6 +191,20 @@ rather than labelled, the re-adjudication would be milestone-shaped. It does not
 
 **Ruled by the user, 2026-09-03.** Five tasks, in this order, then stop.
 
+### Progress ledger
+
+*(Updated in the same commit as the work. A commit cannot contain its own hash, so a Commit cell is
+filled in by the next task's commit; `pending` means the work landed and only the hash is
+outstanding.)*
+
+| Task | Status | Commit | Notes a later session needs |
+|---|---|---|---|
+| 1 | done | `364d176` | `Trajectory` is shared by `CreatureSweep` and `SitePilot` through a linked compile item, so its namespace is the parent `LifeSimulation.Tools`. Nine samples, not three: the persistence criterion needs three points inside the last third. The trend verdict reads the **all-world** mean because the alive-conditioned mean rises as a cell collapses. Wired into `--deaths`, the main sweep, and SitePilot; **not** into `--intake`, `--diet`, `--life-history` or `--thermal`, which report per-creature cohorts rather than populations and are used by no task here. `SitePilot --ticks=` landed in the same commit as a dependency of Task 4, per the user's ruling; `PlantSweep`'s stays deferred. |
+| 2 | done | pending | Criterion and both expected signs predeclared above, committed **before** either run started. |
+| 3 | | | |
+| 4 | | | |
+| 5 | | | |
+
 **Non-goal, stated first because it is the tempting mistake:** *do not tune brake, cap or
 regeneration to make anything here persist.* That is a biological change; it invalidates every
 baseline measured before it, and the transient document, the measurement-validity milestone and
@@ -223,6 +237,40 @@ Proposal, to be ruled on:
 Predeclared in writing before the runs, per the frozen spec's section 5 rule. A survival count at a
 horizon is explicitly **not** the criterion: that is the statistic that produced the wrong reading in
 the first place.
+
+**PREDECLARED 2026-09-03, before either run, in commit order.** Stated against the instrument built in
+Task 1, which samples nine evenly spaced points and reports the all-world mean population (extinct
+worlds counted as zero), the alive-conditioned mean, and the death mix within each interval.
+
+Let `alive(k)` be worlds with a living population at sample `k` of 9, and `mean(k)` the all-world mean
+population there. The last third is samples 7, 8, 9.
+
+- **COLLAPSING** if `mean(7) > mean(8) > mean(9)` — a monotone decline over the last third — **or**
+  `alive(9) < 0.85 x alive(3)`.
+- **PERSISTENT** if neither of those holds **and** `alive(9) >= 0.85 x alive(3)` **and** the run
+  carried at least 20 seeds.
+- **INDETERMINATE** otherwise, which includes every verdict at fewer than 20 seeds. A low-seed run may
+  return COLLAPSING; it may never return PERSISTENT. This is the same rule the triage carries in
+  section 5 and it is stated here so the two cannot drift apart.
+
+The 0.85 is a declared threshold, not a derived one: at 24 seeds it makes a fall of four or more
+worlds a real fall. It is written down before the numbers exist so that it cannot be chosen after
+them.
+
+**The expected signs, declared before the runs, because a criterion with no prediction attached
+cannot fail.**
+
+- **C1 (Task 3): COLLAPSING, monotone.** It is already known extinct in 21 of 24 worlds at 36,000, so
+  this is a reproduction rather than a prediction; what is genuinely open is the *shape*, and the
+  declared expectation there is a **smooth decline rather than a late crash** — a population that
+  never had a regulator should lose ground from the beginning, not fall off a step.
+- **`Y` (Task 4): PERSISTENT.** Reasoning, so the prediction is falsifiable rather than a hedge: the
+  brake is weaker than C1's, but the layout is different (plant-backed four-way split, not the
+  consumer-defense calibration), the recorded starvation share is only 5.4% against C1's 33.6%, the
+  population settles at 154 under a cap of 500 that never binds, and brake strength is already
+  recorded as **not transferring between scenarios**. If `Y` returns COLLAPSING instead, that is a
+  finding about the shipped world and it is reported first, before anything else in this plan is
+  written up.
 
 ### Task 3 — the C1 collapse curve
 
