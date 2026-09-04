@@ -347,6 +347,7 @@ namespace LifeSimulation.Tools.CreatureSweep
 
             WriteCsv(ordered);
             Report(ordered);
+            Trajectory.Report(ordered.Select(result => result.Trajectory).ToArray(), _ticks);
         }
 
         private readonly struct RunSpec
@@ -373,6 +374,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             public double OccupiedSlope;
             public double[] Genes;
             public double[] Founder;
+            public Trajectory Trajectory;
         }
 
         /// <summary>
@@ -476,10 +478,12 @@ namespace LifeSimulation.Tools.CreatureSweep
             // included, which is the population mean rather than any movement. One second of warm-up
             // costs nothing against 12,000 ticks and gives a real baseline.
             int warmup = Math.Max(2, config.Schedule.BaseFrequencyHz / config.Schedule.StatisticsHz);
+            var trajectory = new Trajectory(_ticks);
             for (int tick = 0; tick < warmup; tick++)
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
+                trajectory.Observe(tick, world);
             }
 
             double[] founder = Genes(world.Statistics);
@@ -488,6 +492,7 @@ namespace LifeSimulation.Tools.CreatureSweep
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
+                trajectory.Observe(tick, world);
             }
 
             SimulationStatistics statistics = world.Statistics;
@@ -504,6 +509,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 OccupiedSlope = slope,
                 Genes = Genes(statistics),
                 Founder = founder,
+                Trajectory = trajectory,
             };
         }
 

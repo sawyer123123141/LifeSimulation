@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Relief.cs" />
+    <Compile Include="Trajectory.cs" />
     <Compile Include="Thermal.cs" />
     <Compile Include="Deaths.cs" />
     <Compile Include="Diet.cs" />

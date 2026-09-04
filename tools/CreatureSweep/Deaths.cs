@@ -60,15 +60,23 @@ namespace LifeSimulation.Tools.CreatureSweep
             var defenseDead = new List<double>();
             var defensePredated = new List<double>();
 
+            // A death mix is a composition over the WHOLE run, so a cell that lived for a third of it
+            // and then collapsed reports much the same table as one that never collapsed at all. The
+            // trajectory is what separates them, and it costs nine reads per run.
+            var trajectories = new List<Trajectory>();
+
             for (int index = 0; index < seedCount; index++)
             {
                 SimulationConfig config = configure(Program.FirstSeed + index);
                 var world = new SimulationWorld(config);
                 scenario.ApplyTo(world);
+                var trajectory = new Trajectory(ticks);
+                trajectories.Add(trajectory);
                 for (int tick = 0; tick < ticks; tick++)
                 {
                     world.Step(config.FixedDeltaTime);
                     world.Events.Clear();
+                    trajectory.Observe(tick, world);
                 }
 
                 SimulationStatistics statistics = world.Statistics;
@@ -159,6 +167,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 + "  median " + Percentile(sortedPopulations, 0.5d).ToString("0")
                 + "  max " + Percentile(sortedPopulations, 1d).ToString("0")
                 + "  sd " + StandardDeviation(populations).ToString("0.00"));
+
+            Trajectory.Report(trajectories, ticks);
         }
 
         /// <summary>

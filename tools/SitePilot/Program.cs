@@ -27,7 +27,17 @@ namespace LifeSimulation.Tools.SitePilot
     /// </summary>
     internal static class Program
     {
-        private const int Ticks = 12000;
+        /// <summary>
+        /// The default is the recorded length, so every committed SitePilot output reproduces
+        /// unchanged. <c>--ticks=</c> raises it.
+        ///
+        /// <para>It became an argument on 2026-09-03 because `Y`'s layout exists only in this tool -
+        /// <see cref="SimulationScenario.SplitSites"/> - so a question about whether the shipped
+        /// world persists past 12,000 ticks could not be asked at all while this was a
+        /// <c>const</c>.</para>
+        /// </summary>
+        private static int _ticks = 12000;
+
         private const int FirstSeed = 42;
 
         /// <summary>Matches SimulationConfig.DefaultArenaHalfWidth; the clumping index needs the area.</summary>
@@ -115,6 +125,7 @@ namespace LifeSimulation.Tools.SitePilot
             public double ActiveFoodBelowWaterline;
             public double WaterSitesBelowWaterline;
             public ulong LayoutFingerprint;
+            public Trajectory Trajectory;
         }
 
         private static int Main(string[] arguments)
@@ -124,6 +135,10 @@ namespace LifeSimulation.Tools.SitePilot
                 if (argument.StartsWith("--seeds=", StringComparison.Ordinal))
                 {
                     _seedCount = int.Parse(argument.Substring(8), CultureInfo.InvariantCulture);
+                }
+                else if (argument.StartsWith("--ticks=", StringComparison.Ordinal))
+                {
+                    _ticks = int.Parse(argument.Substring(8), CultureInfo.InvariantCulture);
                 }
                 else if (argument.StartsWith("--arms=", StringComparison.Ordinal))
                 {
@@ -187,7 +202,7 @@ namespace LifeSimulation.Tools.SitePilot
 
             ulong controlFingerprint = Prototype4Scenarios.ConsumerDefenseCalibrationModerate.ComputeLayoutFingerprint();
             Console.WriteLine($"Y layout fingerprint: {controlFingerprint:x16}");
-            Console.WriteLine($"seeds {FirstSeed}..{FirstSeed + _seedCount - 1}, {Ticks} ticks, {arms.Count} arms");
+            Console.WriteLine($"seeds {FirstSeed}..{FirstSeed + _seedCount - 1}, {_ticks} ticks, {arms.Count} arms");
             Console.WriteLine();
 
             var specs = new List<(Arm Arm, int Seed)>();
@@ -225,6 +240,18 @@ namespace LifeSimulation.Tools.SitePilot
                     cell(result => result.AgeShare),
                     cell(result => result.MeanFoodFill),
                     cell(result => result.ActiveFoodSites) + " |"));
+            }
+
+            // Per arm, because the arms are different worlds and a pooled trajectory would average a
+            // cap-96 control with an uncapped braked cell and describe neither.
+            foreach (Arm arm in arms)
+            {
+                Console.WriteLine();
+                Console.WriteLine("arm: " + arm.Name);
+                Trajectory.Report(results.Where(result => result.Arm == arm.Name)
+                    .OrderBy(result => result.Seed)
+                    .Select(result => result.Trajectory)
+                    .ToArray(), _ticks);
             }
 
             Console.WriteLine();
@@ -333,15 +360,18 @@ namespace LifeSimulation.Tools.SitePilot
             // read as a carrying-capacity result until its survivors turned out to be at full
             // population, which made every failure an early one.
             long extinctionTick = -1;
-            for (int tick = 0; tick < Ticks; tick++)
+            var trajectory = new Trajectory(_ticks);
+            for (int tick = 0; tick < _ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
                 if (extinctionTick < 0 && world.CreatureCount == 0) extinctionTick = tick;
+                trajectory.Observe(tick, world);
             }
 
             RunResult result = Measure(arm, seed, world, scenario);
             result.ExtinctionTick = extinctionTick;
+            result.Trajectory = trajectory;
             return result;
         }
 
