@@ -127,3 +127,5 @@ tools/TerrainProbe/obj/
 tools/CreatureSweep/bin/
 tools/CreatureSweep/obj/
 !tools/CreatureSweep/*.csproj
+tools/**/bin/
+tools/**/obj/
