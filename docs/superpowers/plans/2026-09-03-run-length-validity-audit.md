@@ -200,10 +200,10 @@ outstanding.)*
 | Task | Status | Commit | Notes a later session needs |
 |---|---|---|---|
 | 1 | done | `364d176` | `Trajectory` is shared by `CreatureSweep` and `SitePilot` through a linked compile item, so its namespace is the parent `LifeSimulation.Tools`. Nine samples, not three: the persistence criterion needs three points inside the last third. The trend verdict reads the **all-world** mean because the alive-conditioned mean rises as a cell collapses. Wired into `--deaths`, the main sweep, and SitePilot; **not** into `--intake`, `--diet`, `--life-history` or `--thermal`, which report per-creature cohorts rather than populations and are used by no task here. `SitePilot --ticks=` landed in the same commit as a dependency of Task 4, per the user's ruling; `PlantSweep`'s stays deferred. |
-| 2 | done | pending | Criterion and both expected signs predeclared above, committed **before** either run started. |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| 2 | done | `8c77f86` | Criterion and both expected signs predeclared above, committed **before** either run started. Both predictions about *shape* and *outcome* failed; both failures are recorded rather than dropped. |
+| 3 | done | `0ccc915` | Both arms reproduce the recorded endpoint exactly (3 of 24 at 173/202/410; 1 of 24 at 202), which is what licenses the curve. **Overshoot, not a fade**: peak ~250 at tick 8,000, crash 12,000-20,000. Predeclared "smooth decline" **failed**. Outcome is **bimodal** — survivors end larger than the recorded 12,000-tick population. The criterion fired on its **survival** clause; its trend clause read `no`, because the all-world mean rises 105% across the last third of a cell that lost 21 of 24 worlds. Record: `p6-the-c1-collapse-curve-2026-09-03.md`. |
+| 4 | done | `bdb7004` | **Shipped `Y` is 0 of 24 alive at 36,000** — worse than C1, which keeps 3. Fails both clauses. Predeclared **PERSISTENT** and that **failed**. The 12,000-tick row reproduces the recorded 20/24 and population 154.1 to the digit, so the curve after it is the same measurement continued. **Attribution**: the same split layout at cap 96 is level 12,000→36,000 in two arms (21/24 and 22/24, 99.9% age deaths), so the collapse belongs to the cap-and-brake change, not the layout or the model. The five survival counts the 0.75 brake was chosen from are all counts at the boom peak. Record: `p6-the-shipped-world-does-not-persist-2026-09-03.md`. **No brake or cap value proposed; shipped scenario untouched.** |
+| 5 | done | pending | `docs/experiments/cell-family-persistence-ledger.md`. Rows C9 and C10 are the cap-96 attribution controls and are labelled in the file as controls, **not** recommendations. Two lessons appended to `5-lessons-log.md`: the trend-clause escape, and final population versus bimodality. Derived triage length recorded in section 5 of this plan; **triage not run**. |
 
 **Non-goal, stated first because it is the tempting mistake:** *do not tune brake, cap or
 regeneration to make anything here persist.* That is a biological change; it invalidates every
@@ -324,6 +324,30 @@ again, which is exactly how 0.75 was chosen.
 the triage length must be **chosen from the collapse curve**. 36,000 is a fitness-cohort number and
 carries no information about collapse timing; fixing the triage at it would repeat this audit's own
 error one horizon further out.
+
+> **DERIVED LENGTH, recorded 2026-09-03 from Tasks 3 and 4. Not run.**
+>
+> Both measured collapses have the same clock. The population peaks at **tick 8,000**, the crash runs
+> from **12,000 to 20,000**, and the outcome is settled by **24,000** — C1 is at 5 of 24 worlds by
+> then and `Y` at 3 of 24, against 22 and 20 at one third. Nothing after 24,000 changed either
+> verdict; the last 12,000 ticks of both runs cost a third of the compute and moved C1 by two worlds
+> and `Y` by three.
+>
+> **Recommended screen length: 24,000 ticks** — twice the recorded horizon, and it contains the whole
+> of the crash window in the only two cells where that window has been measured. It is a third cheaper
+> than 36,000 per cell, which is what makes screening four cells affordable.
+>
+> **Two conditions on that number, both of which the deferred triage must carry:**
+>
+> 1. **It is derived from two cells at brake 0.75 and 1.0, both cap 500.** A stronger brake may simply
+>    postpone the overshoot rather than prevent it, and C4 sits at brake 3.0-5.0. A screen length
+>    calibrated on the weakest brakes is a floor, not a schedule.
+> 2. **24,000 can condemn a cell; it cannot clear one.** A cell still level at 24,000 has only shown
+>    that it does not crash on C1's clock. PERSISTENT still requires the full criterion — 20+ seeds,
+>    and a run long enough that the last third is genuinely past the risk window, which for a cell that
+>    survives the screen means longer than 24,000, not equal to it.
+>
+> This is a recommendation for whoever runs the triage. **No triage was run.**
 
 **`--ticks=` for `PlantSweep`.** Justified only once the triage is. (`SitePilot`'s is pulled forward
 into Task 4 — see above.)

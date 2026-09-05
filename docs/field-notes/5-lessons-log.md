@@ -999,3 +999,25 @@ result, reappearing as an inability to bin. So the U-shape statistic is fair for
 claim and **uncontrolled**, and its failure against 0.75 is being read without a null beside it.
 **When a control returns nothing, record why; "no control column" and "control showed nothing" are
 opposite readings and look identical in a table.**
+
+**2026-09-03 (fifth pass) — A trend statistic computed on a shrinking sample measures survivorship, so
+predeclare a survival clause beside any trend clause.** The persistence criterion for the run-length
+audit was first proposed as one sentence: no monotone downward trend in population over the last third
+of the run. Run against C1 — a cell that loses **21 of 24 worlds** — that clause reads **`no`**: by
+tick 28,000 four worlds remain, they grow, and the all-world mean rises **15.9 → 32.7**, an increase of
+105%. The health-on arm is worse, **+143% on one surviving world**. The alive-conditioned mean is
+worse still by construction, because extinction removes the failing worlds from the average, so a cell
+reads healthier the more of it dies. What condemned C1 was the second clause, added before the runs:
+worlds alive at the end below 0.85 of their one-third count. **A cell down to one growing world
+satisfies almost any trend criterion, and the shrinking of the sample is the very thing being
+measured.** Recorded in `p6-the-c1-collapse-curve-2026-09-03.md`.
+
+**2026-09-03 (fifth pass) — A final population cannot distinguish a general fade from a bimodal
+outcome, and the two have different causes.** C1 reports "3 of 24 surviving, mean final population
+261.7". That is equally consistent with every world shrinking until most cross zero, and with most
+worlds crashing while the rest reach a working population — and the answer here is the second: the
+three survivors end at **173, 202 and 410**, *larger* than the alive-conditioned population at the
+recorded 12,000-tick reading. One summary row describes a dying model and a bimodal one identically.
+Nine samples of the population over the same run separate them at no extra cost, which is what
+`Trajectory` now prints in both sweeps. **Before explaining why a cell died, check whether it died
+everywhere.**
