@@ -1,0 +1,72 @@
+Y layout fingerprint: 681f4fed107e83d2
+seeds 42..65, 36000 ticks, 3 arms
+
+| arm | sites | alive | population | clump index | energy | STARVATION | age | mean patch fill | active food |
+|---|---|---|---|---|---|---|---|---|---|
+| control (Y, 6 food sites) | 24 | 22 of 24 | 95.727 | 0.208 | 0.828 | 0.004 | 0.994 | 0.921 | 22.909 |
+| shipped Y (split 4, spread 6) | 42 | 21 of 24 | 95.905 | 0.330 | 0.837 | 0.000 | 0.999 | 0.896 | 40.000 |
+| Y, cap 500, brake 0.75 | 42 | 0 of 24 | - | - | - | - | - | - | - |
+
+arm: control (Y, 6 food sites)
+
+population trajectory over 36000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        4000    24/24        38.8        38.8   0.768 |   0.0%   0.9%  97.3%   1.8%   0.0%
+  2/9        8000    22/24        82.1        89.6   0.786 |   0.0%   0.1%  99.4%   0.5%   0.0%
+  1/3 3/9   12000    22/24        84.9        92.6   0.800 |   0.4%   0.0%  99.4%   0.3%   0.0%
+  4/9       16000    22/24        87.8        95.8   0.815 |   1.3%   0.1%  98.3%   0.2%   0.0%
+  5/9       20000    22/24        87.7        95.7   0.818 |   0.0%   0.0%  99.9%   0.1%   0.0%
+  2/3 6/9   24000    22/24        87.8        95.8   0.825 |   0.6%   0.0%  99.4%   0.0%   0.0%
+  7/9       28000    22/24        87.7        95.6   0.829 |   0.3%   0.0%  99.7%   0.0%   0.0%
+  8/9       32000    22/24        87.9        95.9   0.831 |   0.1%   0.1%  99.8%   0.0%   0.0%
+  3/3 9/9   36000    22/24        87.8        95.7   0.828 |   0.0%   0.1%  99.9%   0.0%   0.0%
+  last third: all-world mean population 87.7 -> 87.8 (+0.1%), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+arm: shipped Y (split 4, spread 6)
+
+population trajectory over 36000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        4000    24/24        27.6        27.6   0.777 |   0.0%   0.9%  98.1%   0.9%   0.0%
+  2/9        8000    22/24        78.8        86.0   0.776 |   0.0%   0.0%  99.7%   0.3%   0.0%
+  1/3 3/9   12000    21/24        83.7        95.7   0.794 |   0.1%   0.1%  99.7%   0.1%   0.0%
+  4/9       16000    21/24        83.9        95.9   0.806 |   0.0%   0.1%  99.9%   0.1%   0.0%
+  5/9       20000    21/24        83.7        95.6   0.821 |   0.0%   0.1%  99.9%   0.0%   0.0%
+  2/3 6/9   24000    21/24        83.9        95.9   0.822 |   0.0%   0.0%  99.9%   0.1%   0.0%
+  7/9       28000    21/24        83.7        95.7   0.828 |   0.0%   0.0% 100.0%   0.0%   0.0%
+  8/9       32000    21/24        83.9        95.9   0.835 |   0.0%   0.0% 100.0%   0.0%   0.0%
+  3/3 9/9   36000    21/24        83.9        95.9   0.837 |   0.0%   0.1%  99.9%   0.0%   0.0%
+  last third: all-world mean population 83.7 -> 83.9 (+0.2%), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+arm: Y, cap 500, brake 0.75
+
+population trajectory over 36000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        4000    24/24        13.7        13.7   0.772 |   0.0%   1.1%  97.8%   1.1%   0.0%
+  2/9        8000    21/24        48.7        55.7   0.785 |   0.0%   0.0%  99.4%   0.6%   0.0%
+  1/3 3/9   12000    20/24       128.4       154.1   0.602 |  22.9%   0.1%  76.9%   0.1%   0.0%
+  4/9       16000    12/24        65.4       130.8   0.513 |  65.6%   0.3%  34.1%   0.0%   0.0%
+  5/9       20000     6/24        16.7        66.7   0.668 |  69.0%   0.8%  29.8%   0.4%   0.0%
+  2/3 6/9   24000     3/24        29.5       235.7   0.599 |  43.0%   0.8%  55.8%   0.5%   0.0%
+  7/9       28000     2/24         5.3        63.5   0.782 |  75.1%   0.4%  24.6%   0.0%   0.0%
+  8/9       32000     1/24         0.2         4.0   0.839 |  53.7%   0.0%  46.3%   0.0%   0.0%
+  3/3 9/9   36000     0/24         0.0           -       - |   0.0%   0.0% 100.0%   0.0%   0.0%
+  last third: all-world mean population 5.3 -> 0.0 (-100.0%), monotone decline YES
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+per-seed clumping index (1.0 = randomly dispersed, lower = clumped), population in brackets
+  control (Y, 6 food sites): 42:0.161(95), 43:0.410(96), 44:0.103(96), 45:0.127(96), 46:0.163(96), 47:0.213(96), 48:extinct@5389, 49:0.219(96), 50:0.291(96), 51:0.207(96), 52:0.109(96), 53:0.135(96), 54:0.109(95), 55:0.184(95), 56:0.270(96), 57:0.339(95), 58:0.185(95), 59:0.239(96), 60:0.187(96), 61:0.293(96), 62:0.261(96), 63:0.095(95), 64:0.268(96), 65:extinct@5079
+  shipped Y (split 4, spread 6): 42:0.265(96), 43:0.284(96), 44:0.440(96), 45:0.233(96), 46:0.346(96), 47:0.389(96), 48:extinct@5389, 49:0.354(96), 50:0.237(96), 51:extinct@8579, 52:0.347(96), 53:0.335(95), 54:0.301(96), 55:0.396(96), 56:0.323(96), 57:0.364(96), 58:0.353(96), 59:0.335(96), 60:0.401(96), 61:0.368(96), 62:0.273(96), 63:0.289(96), 64:0.298(95), 65:extinct@5079
+  Y, cap 500, brake 0.75: 42:extinct@20819, 43:extinct@22889, 44:extinct@6779, 45:extinct@14329, 46:extinct@25899, 47:extinct@17059, 48:extinct@5389, 49:extinct@15379, 50:extinct@21649, 51:extinct@17019, 52:extinct@15209, 53:extinct@14709, 54:extinct@16159, 55:extinct@33079, 56:extinct@15939, 57:extinct@12819, 58:extinct@9469, 59:extinct@28919, 60:extinct@13949, 61:extinct@18889, 62:extinct@16089, 63:extinct@16189, 64:extinct@14829, 65:extinct@5079
+
+where they stand: share at or below the waterline (arena share is the baseline)
+| arm | creatures below | ARENA below | mean creature elevation | mean arena elevation | active food below | water sites below |
+|---|---|---|---|---|---|---|
+| control (Y, 6 food sites) | 0.561 | 0.592 | 0.161 | 0.153 | 0.579 | 0.576 |
+| shipped Y (split 4, spread 6) | 0.562 | 0.572 | 0.164 | 0.160 | 0.561 | 0.556 |
+
+CONTROL LAYOUT IDENTICAL to Y.
