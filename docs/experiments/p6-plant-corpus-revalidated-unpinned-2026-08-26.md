@@ -1,5 +1,17 @@
 # The contest and join nulls survive an unpinned population — re-run at cap 250, brake 1.0
 
+> **RUN-LENGTH BANNER, 2026-09-05 - the nulls hold; "unpinned, healthy, and stable" does not.** This
+> cell (cap 250, brake 1.0) was re-run at **24,000 ticks** and is **1 or 2 of 6 worlds alive in all
+> four contest x terrain arms**, from 6 of 6 at one third, with starvation reaching 56-81% of deaths
+> in the crash interval. One seed loses its plant community outright (occupancy 0.0).
+> **The contest null and the join null are unaffected**: they are paired arm differences, and a shared
+> downward trajectory is common to both arms. What is withdrawn is the description of the cell - the
+> population settling at 63-67 with 10-15% extinction is the top of a boom, not an unpinned
+> equilibrium, so the qualification this document claimed to remove has changed shape rather than
+> gone. A null measured in a collapsing cell is a weaker null than one measured in a persistent cell,
+> and this document carries no positive control through it. `p6-regime-b-triage-2026-09-05.md`,
+> ledger row C5.
+
 **2026-08-26.** `dotnet run --project tools/PlantSweep -c Release -- 60 --cap=250 --brake=1.0`,
 12,000 ticks, 240 runs (4 cells x 60 seeds). Raw: `p6-plant-cap250-brake1.0-60seeds-2026-08-26.csv`,
 console `…-2026-08-26.txt`.

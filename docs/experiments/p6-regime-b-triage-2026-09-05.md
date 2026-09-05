@@ -89,3 +89,184 @@ question as well as for its own row.
 If they move together, the deferred brake experiment is not a matter of picking a value and the p4a
 note should say so. If they separate at some strength, the p4a claim is wrong and this document says
 that plainly.
+
+---
+
+# Results
+
+**Run 2026-09-05**, appended in a later commit than the predeclaration above, which is unedited.
+Console artefact: `p6-regime-b-triage-24000-2026-09-05.txt`. Plant raw:
+`p6-plant-cap250-brake1.0-6seeds-24000ticks-2026-09-05.csv`.
+
+## Every cell collapses. Four of four.
+
+| cell | brake | `alive(3)` | `alive(9)` | `0.85 x alive(3)` | trend clause | verdict |
+|---|---:|---:|---:|---:|---|---|
+| C2, predation, gate 0.45 | 1.5 | 4 / 6 | **2 / 6** | 3.40 | no | **COLLAPSING** |
+| C3, herbivore | 1.4 | 6 / 6 | **0 / 6** | 5.10 | no | **COLLAPSING** |
+| C3, herbivore | 1.5 | 6 / 6 | **0 / 6** | 5.10 | **YES** | **COLLAPSING** |
+| C3, herbivore | 1.6 | 6 / 6 | **0 / 6** | 5.10 | no | **COLLAPSING** |
+| C4, proximity pairing | 3.0 | 6 / 6 | **0 / 6** | 5.10 | no | **COLLAPSING** |
+| C4, proximity pairing | **4.0** | 6 / 6 | **0 / 6** | 5.10 | **YES** | **COLLAPSING** |
+| C4, proximity pairing | 5.0 | 6 / 6 | **2 / 6** | 5.10 | no | **COLLAPSING** |
+| C5, cap 250, contest-off / flat | 1.0 | 6 / 6 | **1 / 6** | 5.10 | no | **COLLAPSING** |
+| C5, cap 250, contest-off / terrain | 1.0 | 6 / 6 | **2 / 6** | 5.10 | no | **COLLAPSING** |
+| C5, cap 250, contest-on / flat | 1.0 | 6 / 6 | **1 / 6** | 5.10 | **YES** | **COLLAPSING** |
+| C5, cap 250, contest-on / terrain | 1.0 | 6 / 6 | **1 / 6** | 5.10 | **YES** | **COLLAPSING** |
+
+**Two of four predicted verdicts failed, both in the same direction.** C2 and C3 were predicted
+COLLAPSING and are. **C4 and C5 were predicted "not obviously dying" and both collapse** - C4 at
+brake 3.0 loses every world, and C5 loses four or five of six in all four of its arms. The reasoning
+that produced those two predictions was that neither cell reaches its food supply at 12,000 ticks,
+and that reasoning was measuring the wrong thing: **neither cell has reached its food supply *yet* at
+12,000.** Both do by 16,000.
+
+**The trend clause fired in 4 of 11 rows; the survival clause condemned all 11.** A criterion written
+on the trend alone - which is how it was first proposed on 2026-09-03 - would have cleared seven of
+these eleven. The escape is the one already recorded: a cell whose worlds die stops averaging them, so
+the all-world mean can rise while the cell empties. C5 contest-off / flat is the clean example: its
+last third reads **3.0 to 13.5, +350%**, on one surviving world of six.
+
+## Each cell reads healthy at 12,000 and is gone by 24,000
+
+The same seven commands at `--ticks=12000`, same seeds, same build. This is the instrument check: the
+short-horizon reading has to reproduce before the long one can be called a continuation of it.
+
+| cell | brake | alive at 12,000 | starvation, whole run at 12,000 | alive at 24,000 | starvation, whole run at 24,000 |
+|---|---:|---:|---:|---:|---:|
+| C2 predation | 1.5 | 4 / 6 | 4.5% | 2 / 6 | **48.7%** |
+| C3 herbivore | 1.4 | **6 / 6** | **0.0%** | **0 / 6** | **50.5%** |
+| C3 herbivore | 1.5 | **6 / 6** | 7.6% | **0 / 6** | **52.8%** |
+| C3 herbivore | 1.6 | **6 / 6** | 9.6% | **0 / 6** | **51.5%** |
+| C4 proximity | 3.0 | **6 / 6** | 44.5% | **0 / 6** | **59.8%** |
+| C4 proximity | **4.0** | **6 / 6** | 29.4% | **0 / 6** | **58.1%** |
+| C4 proximity | 5.0 | **6 / 6** | 0.0% | 2 / 6 | **47.1%** |
+
+The C3 rows reproduce the recorded plateau: `p6-the-pressured-cell-is-a-plateau-2026-08-26.md` has
+29-30 of 30 surviving with starvation 4.2-27.2% across brake 1.4-1.6, and six seeds here give 6 of 6
+with 0.0-9.6%. **So the recorded reading is not being contradicted. It is being continued**, and the
+same worlds are all dead 12,000 ticks later.
+
+The starvation columns are shares of a whole-run death mix, but the shift is not compositional:
+C3 brake 1.4 goes from **0** starvations in 1,025 deaths at 12,000 to **2,104** in 4,168 at 24,000.
+
+One reporting limitation to note before the next table is read: at `--ticks=24000` the nine samples
+land on multiples of 2,666, so **there is no sample at tick 12,000**. Comparisons against recorded
+12,000-tick figures use the separate 12,000-tick runs above, not an interpolation of the trajectory.
+
+## The mechanism: hunger onset and collapse onset are within one sample of each other, at every brake
+
+The question this run was asked to settle, from `docs/p4a-acceptance-window-2026-09-03.md`:
+
+> hunger in this configuration arrives **with** the collapse, not before it ... the brake produced
+> hunger by letting the population outgrow its food, which is also how it produced the collapse.
+
+Per cell, from the nine-point trajectories: the last sample at which starvation is under 5% of deaths
+in the interval, the sample at which the all-world population peaks, and the first sample at which a
+world is lost after the one-third mark.
+
+| cell | brake | last sample under 5% starvation | population peak | first world lost after 1/3 | starvation in the interval after the peak |
+|---|---:|---:|---:|---:|---:|
+| C7 shipped `Y` (recorded) | 0.75 | 8,000 | 12,000 | 16,000 | 65.6% |
+| C2 | 1.5 | 13,333 | 13,333 | 21,333 | 47.7% |
+| C3 | 1.4 | 10,666 | 13,333 | 16,000 | 72.1% |
+| C3 | 1.5 | 10,666 | 13,333 | 16,000 | 71.2% |
+| C3 | 1.6 | 10,666 | 13,333 | 16,000 | 69.2% |
+| C4 | 3.0 | 8,000 | 10,666 | 13,333 | 68.7% |
+| C4 | **4.0** | 10,666 | 13,333 | 13,333 | 74.3% |
+| C4 | 5.0 | 13,333 | 16,000 | 16,000 | 75.7% |
+| C5 (contest-off / flat) | 1.0 | 13,333 | 13,333 | 18,666 | 56.3% |
+
+**They move together. There is no separation at any brake strength measured - 0.75, 1.0, 1.4, 1.5,
+1.6, 3.0, 4.0 and 5.0, across four different scenario families.** In every cell starvation is at or near
+zero right up to the sample at which the population peaks, is 47-76% of deaths in the very next
+sample, and worlds begin disappearing in that sample or the one after it. **The gap between "nothing
+is hungry" and "worlds are dying" is one to two trajectory samples - 2,666 to 5,333 ticks out of
+24,000 - everywhere.**
+
+**The predeclared falsifier was not met by any cell.** It required a cell with a materially non-zero
+starvation share in *every* interval including the last third, while `alive(9) >= 0.85 x alive(3)`.
+Every cell has intervals at exactly 0.0% starvation, and every cell fails the survival clause. The
+candidate named in advance - brake 1.5, recorded at 16.2% starvation with 30 of 30 surviving - is
+**0 of 6 alive at 24,000**, and its own hunger-free window runs to tick 10,666.
+
+**So the p4a note's mechanism claim holds, and it is broader than the note stated it.** The note
+scoped it to `Y`'s configuration. It is a property of every Regime B cell measured: the brake acts on
+fertility alone, and the only channel this model has for producing hunger is a population that has
+overshot its food. A population above its food supply has no negative feedback in this model except
+death, so hunger and collapse are not two states that a brake value chooses between. **The deferred
+brake experiment is not a matter of picking a value**, and this document says so plainly.
+
+**Two things this does not establish**, stated because the temptation to over-read is what the
+falsifier was written against:
+
+- **It does not prove no brake value can separate them.** Eight strengths were measured, at six seeds
+  each, spanning 0.75 to 5.0 - both ends, the middle, and the one value another document
+  independently identified as the optimum. A strength between two measured ones
+  behaving differently is not excluded by anything here. What has changed is where the burden sits: a
+  proposal that some strength produces chronic non-fatal hunger now has to say why it would, given
+  that the two ends and the middle behave identically.
+- **It does not identify the missing mechanism.** "There is no negative feedback except death" is a
+  reading of the death mix and the trajectory, not a code audit. It is the shape the data has.
+
+## Brake strength barely moves the clock, and within one family it does not move it at all
+
+C3 is the one clean brake axis here - 1.4, 1.5 and 1.6 differ in nothing else. All three peak at
+sample 5 of 9 (tick 13,333) at 280-326, all three lose their first worlds at tick 16,000, and all
+three are at 0 of 6 by tick 18,666. **Across a 14% change in brake strength the collapse does not move
+by a single sample.**
+
+Across families the timing does differ - C4 at brake 3.0 collapses *earlier* than C3 at brake 1.4 -
+but **C4 differs from C3 in more than the brake**: it runs `--mate-selection=off`, proximity pairing,
+which raises the birth rate. That is why its 12,000-tick starvation is 44.5% where the dial's
+recorded brake-3.0 row (mate selection on) is 0.0%. **No cross-family brake comparison is licensed
+here**, and the monotone brake ordering the 12,000-tick dial reported is not reproduced as an ordering
+of outcomes at 24,000.
+
+## What the ledger's screen rule permits us to say
+
+**Nothing here clears a cell, and nothing here was meant to.** Eleven rows, all COLLAPSING, all at six
+seeds. Under the rule a low-seed screen may condemn and may never clear, so a COLLAPSING verdict at
+six seeds is a verdict, and there are no other verdicts in this run to weigh.
+
+**Brake 4.0 is the row that matters most in that table.** `p6-the-clean-controller-comparison-2026-08-26.md`
+searched the brake axis under proximity pairing and settled on **4.0 as the optimum** - **0 of 60**
+extinct in both health arms at 12,000, population 238-257, energy 0.657. Six seeds here reproduce
+that picture at 12,000 (6 of 6) and the same six worlds are **0 of 6 at 24,000**, on both clauses.
+The best-performing brake value anybody in this project has identified by search does not survive
+twice the horizon it was searched at.
+
+**That is also this screen's weakness, and it is worth saying out loud rather than counting four
+condemnations as four findings.** A screen strict enough to condemn on the loss of one world after
+the one-third mark will condemn a great deal. What makes these eleven more than an artefact of
+strictness is that **five of them lose every world**, and three more end on a single world of six.
+
+**Cost was not the constraint the plan assumed.** The seven `CreatureSweep` cells at 24,000 ticks x 6
+seeds ran concurrently in under a minute; `PlantSweep`'s 24 runs took about two. The deferred triage
+was scoped at six seeds because the plan budgeted 36,000-tick compute. At these speeds a full 24-seed
+run of any of these cells is minutes, so **a follow-up wanting a PERSISTENT verdict on anything should
+simply run 24 seeds**; nothing about the seed count here was forced by cost.
+
+## An instrument caveat found in passing, recorded not fixed
+
+`PlantSweep`'s `frozen` column is `HighestPlantGeneration == 0`, and
+`SimulationWorld.Statistics.cs` computes that statistic by scanning the **living** patch store, not as
+a watermark (`highestPlantGeneration = Math.Max(...)` inside the loop over `Plants`). So it means "no
+living patch descends from a reproduction event", which is true both when nothing ever reproduced and
+when everything that did has since died. Seed 45 at 24,000 reports `frozen = 1` with **259 plant
+births** and occupancy 0.0 - the whole plant community is gone, which is a different and worse finding
+than "the plants never bred". The `plant_births` column disambiguates it and is already in the CSV.
+
+**Not fixed, per field notes section 2:** it is a tools-side reading, it costs nothing today because
+the disambiguating column sits beside it, and the recorded plant corpus was measured at 12,000 ticks
+where no plant community had died, so no recorded `frozen` figure is affected.
+
+## What follows for the ledger and for the recorded corpus
+
+- **Every Regime B cell in the ledger now carries a verdict, and every one of them is COLLAPSING.**
+  C1, C2, C3, C4, C5, C6 and C7. There is no cell in this project that has been shown to persist
+  without the cap holding it up.
+- **Nothing is retracted.** Every affected document's *comparison* result - paired arms, hash
+  divergences, selection statistics, nulls - is unaffected by a shared trajectory. What is affected is
+  every claim of the form *this configuration is a place a population can live*, and those get
+  banners rather than withdrawals.

@@ -1,5 +1,13 @@
 # The predator-prey cell, off its one cell - gate, cap, regeneration and brake
 
+> **RUN-LENGTH BANNER, 2026-09-05 - the robustness is robustness of the selection result, not of the
+> cell.** The brake-1.5 point on this document's brake axis (cap 500, regen 2.0, predation, gate 0.45)
+> is **2 of 6 alive at 24,000 ticks**, from 4 at one third, with starvation at 48.7% of all deaths
+> against 4.5% in the same cell at 12,000. The brake-1.0 point is C1, already recorded as collapsing.
+> **The selection results in this document hold** - they are paired comparisons and a shared
+> trajectory is common to both arms. **The survivability table is a 12,000-tick reading and no row of
+> it may be cited as a stable cell.** `p6-regime-b-triage-2026-09-05.md`, ledger row C2.
+
 2026-08-26, later. `CreatureSweep --focused 30 <cap> --predation`, 30 relief-selected seeds x two
 slope arms = 60 runs per cell, **every cell run with `healthRecoveryEnabled` off and on** per the
 standing decision. Baseline is the recorded cell: cap 500, regen 2.0, brake 1.5, gate 0.45,

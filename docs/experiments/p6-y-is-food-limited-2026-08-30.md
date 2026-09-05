@@ -1,5 +1,18 @@
 # `Y` is now limited by its food instead of by a number
 
+> **RUN-LENGTH BANNER, added 2026-09-05.** *(This banner does not come from the 2026-09-05 triage -
+> the evidence is two days older and the banner was simply missing.)*
+> **`Y` at this configuration is extinct in 24 of 24 worlds at 36,000 ticks**
+> (`p6-the-shipped-world-does-not-persist-2026-09-03.md`; ledger row C7). The 12,000-tick numbers
+> below reproduce exactly - population 154.1, 20 of 24 surviving - and the run simply continues past
+> them, peaking at tick 12,000 and crashing between 12,000 and 20,000.
+> **What does not survive:** "`Y` self-limits at 154 under a cap of 500 that never binds" is a reading
+> at the peak of a boom, and the five survival counts the 0.75 brake was chosen from
+> (16 / 17 / 20 / 20 / 16 of 24) are all counts at that peak.
+> **What does:** the starvation dial from the same table (43.1 / 15.9 / 5.4 / 0.7 / 0.3) is a
+> within-run composition and is not in question. **No brake value is proposed by this banner or
+> anywhere in the audit** - see `docs/brake-0.75-provisional-status-2026-09-03.md`.
+
 **Date:** 2026-08-30
 **Status:** applied to `Y`. `maximumPopulation` 96 → 500, `gradedFertilityEnabled` on at strength
 **0.75**. Scenario id `p6-terrain-playtest-split4-braked`.

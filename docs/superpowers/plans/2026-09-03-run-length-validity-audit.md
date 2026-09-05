@@ -42,6 +42,11 @@ collapsed.** That is the single sentence this audit exists to record.
 
 Longest verified run per distinct cell, from the recorded documents.
 
+> **SUPERSEDED as a live table, 2026-09-05.** The standing version is
+> `docs/experiments/cell-family-persistence-ledger.md`, and every Regime B row in it now carries a
+> verdict: **C1 through C7 are all COLLAPSING.** The table below is kept as the planning snapshot that
+> named the exposure, and the UNKNOWN column is what it looked like before any of them was measured.
+
 | # | cell | regime | longest run | persistence verdict |
 |---|---|---|---|---|
 | C1 | cap 500, regen 2.0, **brake 1.0**, predation, gate 0.45, proximity pairing | B | **36,000** | **COLLAPSES** — 21/24 and 23/24 extinct |
@@ -79,6 +84,13 @@ a *carrying capacity* claim do not.
 | the intake-valley thread (three corrections in `5-lessons-log.md`, 2026-09-03) | the valley is phase-dependent, then withdrawn as a pooled-mean feature failing the 0.75 direction-consistency criterion | **NO.** The withdrawal is the stronger claim and it is unaffected. Note the finding *already* turned on run length and population phase — this audit is the same variable, found again from outside. |
 
 **Nothing in C1 is retracted by this plan.**
+
+> **Still true after the triage, 2026-09-05.** Nothing anywhere was retracted. Ten recorded documents
+> gained run-length banners and every one of them keeps its comparison result; what the banners label
+> is levels, survival counts and "this is a place a population can live" claims. Two headline sentences
+> are withdrawn inside their documents - "there is a setting where starvation and survival coexist"
+> and "a carrying-capacity-limited habitat, at every cap tried" - and both are level claims of exactly
+> the class section 2.3 predicted would be the affected one.
 
 ### 2.2 Measured in Regime B cells never run past 12,000 — conclusions that HOLD
 
@@ -203,7 +215,9 @@ outstanding.)*
 | 2 | done | `8c77f86` | Criterion and both expected signs predeclared above, committed **before** either run started. Both predictions about *shape* and *outcome* failed; both failures are recorded rather than dropped. |
 | 3 | done | `0ccc915` | Both arms reproduce the recorded endpoint exactly (3 of 24 at 173/202/410; 1 of 24 at 202), which is what licenses the curve. **Overshoot, not a fade**: peak ~250 at tick 8,000, crash 12,000-20,000. Predeclared "smooth decline" **failed**. Outcome is **bimodal** — survivors end larger than the recorded 12,000-tick population. The criterion fired on its **survival** clause; its trend clause read `no`, because the all-world mean rises 105% across the last third of a cell that lost 21 of 24 worlds. Record: `p6-the-c1-collapse-curve-2026-09-03.md`. |
 | 4 | done | `bdb7004` | **Shipped `Y` is 0 of 24 alive at 36,000** — worse than C1, which keeps 3. Fails both clauses. Predeclared **PERSISTENT** and that **failed**. The 12,000-tick row reproduces the recorded 20/24 and population 154.1 to the digit, so the curve after it is the same measurement continued. **Attribution**: the same split layout at cap 96 is level 12,000→36,000 in two arms (21/24 and 22/24, 99.9% age deaths), so the collapse belongs to the cap-and-brake change, not the layout or the model. The five survival counts the 0.75 brake was chosen from are all counts at the boom peak. Record: `p6-the-shipped-world-does-not-persist-2026-09-03.md`. **No brake or cap value proposed; shipped scenario untouched.** |
-| 5 | done | pending | `docs/experiments/cell-family-persistence-ledger.md`. Rows C9 and C10 are the cap-96 attribution controls and are labelled in the file as controls, **not** recommendations. Two lessons appended to `5-lessons-log.md`: the trend-clause escape, and final population versus bimodality. Derived triage length recorded in section 5 of this plan; **triage not run**. |
+| 5 | done | `bdb7004`-> | `docs/experiments/cell-family-persistence-ledger.md`. Rows C9 and C10 are the cap-96 attribution controls and are labelled in the file as controls, **not** recommendations. Two lessons appended to `5-lessons-log.md`: the trend-clause escape, and final population versus bimodality. Derived triage length recorded in section 5 of this plan; **triage not run**. |
+
+| 6 (deferred triage) | done 2026-09-05 | pending | `PlantSweep --ticks=` landed first, verified bit-identical at the default. Eleven rows at 24,000 x 6 seeds, **all COLLAPSING**, plus a 12,000-tick control per cell that reproduces the recorded reading. **Two of four predeclared verdicts failed**, both by predicting survival. Every Regime B row in the ledger now carries a verdict and every one is COLLAPSING. The p4a mechanism claim was checked on the same data and **holds at all eight brake strengths**. Banners added to ten recorded documents; **nothing retracted**. Record: `p6-regime-b-triage-2026-09-05.md`. **No configuration value moved; no brake value proposed.** |
 
 **Non-goal, stated first because it is the tempting mistake:** *do not tune brake, cap or
 regeneration to make anything here persist.* That is a biological change; it invalidates every
@@ -347,10 +361,22 @@ error one horizon further out.
 >    and a run long enough that the last third is genuinely past the risk window, which for a cell that
 >    survives the screen means longer than 24,000, not equal to it.
 >
-> This is a recommendation for whoever runs the triage. **No triage was run.**
+> This is a recommendation for whoever runs the triage.
+>
+> **RUN 2026-09-05 at exactly this length.** `docs/experiments/p6-regime-b-triage-2026-09-05.md`.
+> Eleven rows across C2, C3, C4 and C5 at 24,000 ticks and six seeds, plus a 12,000-tick control on
+> the same seeds for every creature cell. **All eleven are COLLAPSING.** Condition 1 was the right
+> warning and it turned out not to matter: a stronger brake does not postpone the overshoot either -
+> brake 4.0, the strongest value any recorded document endorses, loses every world by 24,000. The
+> screen length held: nothing needed longer than 24,000 to be condemned. **Cost was not the binding
+> constraint** - the seven creature cells ran concurrently in under a minute - so the six-seed limit
+> was the rule's, not the budget's, and a follow-up wanting a PERSISTENT verdict should simply run 24
+> seeds.
 
-**`--ticks=` for `PlantSweep`.** Justified only once the triage is. (`SitePilot`'s is pulled forward
-into Task 4 — see above.)
+**`--ticks=` for `PlantSweep`.** **Landed 2026-09-05** with the triage that justified it, on the same
+terms `SitePilot`'s did: default 12,000, a non-default length encoded into the CSV filename so no
+recorded corpus can be overwritten, and a bit-identical before/after check on hashes, populations and
+occupancies at the default.
 
 **When the triage does happen, one rule governs how its results may be read:**
 

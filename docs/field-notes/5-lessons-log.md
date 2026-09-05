@@ -1021,3 +1021,48 @@ recorded 12,000-tick reading. One summary row describes a dying model and a bimo
 Nine samples of the population over the same run separate them at no extra cost, which is what
 `Trajectory` now prints in both sweeps. **Before explaining why a cell died, check whether it died
 everywhere.**
+
+**2026-09-05 - A grid of cells that all read healthy at one horizon can be a grid of clocks, not a
+grid of ecologies, and the way to tell is to run the horizon out on more than one of them.** Eleven
+Regime B cells - brake 1.0 through 5.0, cap 250 and 500, herbivore, predator-prey, proximity pairing,
+plant-backed - were all recorded as surviving at 12,000 ticks, with survival and starvation moving
+monotonically in brake across them. That reads as a dose-response over settled worlds and it licensed
+a "starvation and survival coexist" cell, a "plateau" with no nearby cliff, a searched-for optimum at
+brake 4.0 with 0 of 60 extinct, and a shipped configuration. **All eleven are dead or nearly dead at
+24,000, and the one clean single-variable axis in the set - brake 1.4 / 1.5 / 1.6, otherwise identical
+- puts the collapse in the same trajectory sample for all three.** The monotone ordering at 12,000 was
+an ordering of *where each cell had got to on its own boom*, not of where each cell settles. **Before
+reading a sweep as a dose-response, check that at least one of its cells has been run long enough to
+have an outcome; otherwise the axis you plotted may be time.** Recorded in
+`p6-regime-b-triage-2026-09-05.md`.
+
+**2026-09-05 - Predicting the two cells you expect to survive is what makes a screen informative, and
+here both predictions failed for the same reason.** C4 (brake 3.0-5.0, population self-limiting at 100
+under a cap of 500, 0.0% starvation) and C5 (cap 250, population 63-67, 0.0% starvation) were
+predeclared as *not obviously dying*, on the explicit reasoning that neither reaches its food supply.
+Both collapse. The reasoning was not wrong about the 12,000-tick state; it was wrong about the tense -
+**neither cell had reached its food supply *yet*.** "Nothing is hungry here" is a statement about a
+moment, and in a model whose only regulator is death it is the statement that always precedes the
+crash. **A predeclared prediction that fails teaches something; the two that held taught nothing this
+session, because they were reproductions of a known collapse.**
+
+**2026-09-05 - The trend clause escaped again, in seven rows of eleven, and the survival clause caught
+all of them.** The persistence criterion's two clauses were written on 2026-09-03 after the trend
+clause read `no` on a cell that lost 21 of 24 worlds. It has now been run against eleven more rows:
+**the trend clause fires in four, the survival clause in all eleven.** The clearest example reads
+`3.0 -> 13.5, +350%` over its last third, on one surviving world of six. A criterion written on the
+trend alone - which is how it was first proposed - would have cleared seven of these eleven cells.
+**The lesson is no longer "predeclare a survival clause beside a trend clause" but the stronger one:
+in this project the survival clause is doing essentially all of the work, and a trend statistic over
+a shrinking sample is close to uninformative.**
+
+**2026-09-05 - A statistic that scans the live population cannot be read as a watermark, and one in
+this repository is being read as one.** `PlantSweep`'s `frozen` column is `HighestPlantGeneration == 0`
+and `SimulationWorld.Statistics.cs` computes that by scanning the **living** patch store. So `frozen`
+means "no living patch descends from a reproduction event", which is true both when nothing ever bred
+and when everything that did has since died - opposite findings. At 24,000 ticks one seed reports
+`frozen = 1` alongside **259 plant births** and occupancy 0.0: the plant community is extinct, not
+sterile. **Not fixed** - the disambiguating `plant_births` column sits beside it and every recorded
+`frozen` figure was measured at 12,000 ticks where no plant community had died. **When a column's
+name is a history word and its computation is a scan of the present, they will disagree exactly when
+the run is long enough to matter.**

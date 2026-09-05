@@ -71,6 +71,28 @@ document are an attribution control: they exist to show the collapse belongs to 
 rather than to the layout. That they are also the pre-2026-08-30 setting does not make them a
 recommendation.
 
+## Amendment, 2026-09-05: the brake axis has now been measured, and point 2 above was right
+
+`docs/experiments/p6-regime-b-triage-2026-09-05.md` ran cap 500 at brake **1.4, 1.5, 1.6, 3.0, 4.0 and
+5.0** and cap 250 at brake 1.0, all at 24,000 ticks, six seeds each. **All of them collapse**, and so
+does every other Regime B cell in the ledger. The stronger-brake inference that point 2 named as the
+tempting error is now measured and is wrong on its own terms: brake 4.0, the value
+`p6-the-clean-controller-comparison-2026-08-26.md` searched the axis for and recorded at **0 of 60
+extinct** at 12,000 ticks, is **0 of 6 alive at 24,000**.
+
+Three consequences for this note.
+
+- **The population-stability criterion has evidence against the whole axis, not just against 0.75.**
+  Nothing measured in this project persists in Regime B at any brake strength.
+- **Point 2 stands and is sharpened.** It warned against extrapolating a value from two collapses.
+  The extrapolation would have landed on a stronger brake, and stronger brakes collapse too.
+- **Point 4 is now the operative one.** Whatever experiment decides the brake must judge on a
+  trajectory against the predeclared criterion; a survival count at a fixed horizon has now been shown
+  to mislead at 12,000 ticks for eight distinct strengths.
+
+**Still no value is proposed, and none was searched for.** The triage moved no configuration value:
+every strength it ran is one a recorded document had already run at 12,000 ticks.
+
 ## Status
 
 - Section 6's PROVISIONAL entry **stands as written**. It is not upgraded, downgraded or reworded by

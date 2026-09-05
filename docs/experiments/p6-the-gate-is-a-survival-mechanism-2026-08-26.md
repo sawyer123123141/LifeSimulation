@@ -1,5 +1,13 @@
 # The mating gate stops being a selection knob and becomes a survival mechanism once the population is ecology-limited
 
+> **RUN-LENGTH BANNER, added 2026-09-05.** The **selection** half of this document holds: it is a
+> paired comparison across gate values and a shared trajectory is common to every arm. The
+> **survival** half - the 4 / 11 / 24 / 38 of 40 column, and the brake-sweep row at strength 1.0 - is
+> a survival count at 12,000 ticks in Regime B cells that are now all recorded as COLLAPSING
+> (`docs/experiments/cell-family-persistence-ledger.md`). The brake-1.0 row is C1; the gate-0.45 cell
+> at brake 1.5 is C2, 2 of 6 alive at 24,000. "The gate is the model's density brake" is a claim about
+> a level and belongs to the affected class; **no cell in this document may be cited as a baseline.**
+
 **2026-08-26.** `tools/CreatureSweep --focused 40 <cap> [--regen] [--brake] [--gate] [--health-recovery]`,
 12,000 ticks. Nine cells. Console artefact: `p6-selection-in-the-pressured-cell-2026-08-26.txt`; nine
 per-configuration CSVs alongside it (the filename fix from `ed0f54c` is what keeps them distinct

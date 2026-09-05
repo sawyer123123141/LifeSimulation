@@ -1,5 +1,19 @@
 # The controller comparison, done cleanly - and what that does to this morning's version
 
+> **RUN-LENGTH BANNER, 2026-09-05 - the controller comparison holds; the brake optimum it found does
+> not survive twice its horizon.** Brake 3.0, **4.0** and 5.0 under proximity pairing were re-run at
+> **24,000 ticks**: **0 of 6 alive at 3.0 and at 4.0**, 2 of 6 at 5.0, from 6 of 6 at one third in all
+> three, with the same six seeds returning 6 of 6 at 12,000. **Brake 4.0 - the value this document
+> searched the axis for and recorded at 0 of 60 extinct in both health arms - loses every world by
+> tick 24,000**, on both clauses of the persistence criterion.
+> **What holds:** intent against Legacy on identical machinery, at every matched brake. That is a
+> paired comparison and both arms share the trajectory. **What does not:** every extinct-of-60 count
+> in these tables is a survival count at a fixed horizon, and "the optimum is broad and 4.0 sits in
+> it" is an optimum of that count. No brake value in this document may be cited as a stable setting.
+> `p6-regime-b-triage-2026-09-05.md`, ledger row C4. Note on comparability: the triage runs
+> `--deaths`, which uses sequential seeds, where this document runs `--focused`, which uses
+> relief-selected seeds. The 12,000-tick control above is on the triage's own seeds for that reason.
+
 2026-08-26, latest. `CreatureSweep`, herbivore pressured cell (cap 500, regen 2.0), 30 relief seeds x
 two slope arms = 60 runs per cell, **both health arms throughout**.
 

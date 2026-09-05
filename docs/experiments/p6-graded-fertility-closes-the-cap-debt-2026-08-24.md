@@ -1,5 +1,15 @@
 # A graded fertility brake produces a carrying-capacity-limited habitat, at every cap tried
 
+> **RUN-LENGTH BANNER, 2026-09-05 - "a carrying-capacity-limited habitat, at every cap tried" is
+> withdrawn.** Every cap in this document has now been run past its horizon and none of them holds a
+> population: cap 500 at brake 0.75 and 1.0 (`p6-the-shipped-world-does-not-persist-2026-09-03.md`,
+> `p6-the-c1-collapse-curve-2026-09-03.md`), cap 500 at brake 1.4-1.6, 3.0, 4.0 and 5.0, and **cap 250
+> at brake 1.0, which loses four or five worlds of six in all four of its arms**
+> (`p6-regime-b-triage-2026-09-05.md`). What the brake produces is a slower approach to the same
+> overshoot, not a carrying capacity. **The cap-debt framing survives** - the point that the recorded
+> corpus was measured with the population pinned is unaffected, and is if anything sharpened: the cap
+> was doing more work than anyone credited it with.
+
 > **QUALIFIED by `p6-graded-fertility-is-scenario-specific-2026-08-24.md`.** Everything below holds
 > for the resource-backed calibration scenario. **"At every cap tried" was one scenario family, and
 > the strength does not transfer.** In the plant-backed full ecosystem the same strength of 3 collapses

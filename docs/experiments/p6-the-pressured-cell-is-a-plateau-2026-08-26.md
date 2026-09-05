@@ -1,5 +1,15 @@
 # The survivable-with-starvation cell is a plateau on brake and regeneration, and a cliff on the cap
 
+> **RUN-LENGTH BANNER, 2026-09-05 - the plateau is the top of a boom, and the cells on it do not
+> persist.** Three of the nine cells (brake 1.4, 1.5 and 1.6 at regen 2.0, cap 500) were re-run at
+> **24,000 ticks** and are **0 of 6 alive** in every one, from 6 of 6 at one third. The same six seeds
+> at 12,000 return 6 of 6 with 0.0-9.6% starvation, reproducing what is recorded here - so nothing
+> below is contradicted; the run simply continues past it, and the population peaks at tick 13,333 and
+> is gone by 18,666. Across a 14% change in brake strength the collapse does not move by one
+> trajectory sample. **The smooth, monotone shape of the plateau holds. "The collapse cliff is not
+> nearby" does not: the cliff is not on the brake axis, it is 12,000 ticks further along the run.**
+> `p6-regime-b-triage-2026-09-05.md`, ledger row C3.
+
 **2026-08-26.** `tools/CreatureSweep --deaths 30 <cap> --regen=<r> --brake=<b>`, 12,000 ticks,
 consumer-defense calibration layout. Twelve cells. Console artefact:
 `p6-brake-regen-cap-grid-2026-08-26.txt`. Follows

@@ -1,6 +1,6 @@
 # P4a splits: five behaviours are judgeable before tick 8,000, resource recovery is not
 
-**Date:** 2026-09-03, **amended 2026-09-05**
+**Date:** 2026-09-03, **amended 2026-09-05**, **mechanism confirmed 2026-09-05 (second amendment)**
 **Status:** a scoping note recording the user's ruling. **No code changed, no scenario changed, and
 the gate verdict in the frozen spec is untouched** — section 4 of
 `docs/superpowers/specs/2026-08-30-what-finished-means-design.md` remains the user's to update.
@@ -29,6 +29,10 @@ That leaves the gate in an odd position: the surface it is judged on does not pe
 > **Resource recovery stays UNVERIFIED**, and it cannot be verified in this configuration at either
 > end. It is pending a configuration in which **hunger is chronic without being fatal** — which is the
 > deferred brake experiment, not a window.
+>
+> **Confirmed 2026-09-05:** that experiment is not a matter of picking a brake value. Hunger onset
+> and collapse onset are within one trajectory sample of each other at **every** strength measured,
+> 0.75 through 5.0, across four scenario families. See the section added below.
 >
 > **P4a therefore cannot close until that experiment is settled.** Five of six passing is not the gate.
 
@@ -103,6 +107,50 @@ which is the deferred brake experiment with predeclared signs
 can be verified now, and the sixth is the one the whole cap-and-brake change was made to deliver. A
 gate reported as met on five of six would record as satisfied the exact requirement that is still
 outstanding.
+
+## The mechanism claim was checked, and it holds across the whole brake axis
+
+*(Added 2026-09-05, second amendment. Evidence: `docs/experiments/p6-regime-b-triage-2026-09-05.md`.)*
+
+The ruling above rests on one mechanism sentence: hunger arrives **with** the collapse because the
+brake produces hunger by letting the population outgrow its food, which is also how it produces the
+collapse. That was measured in one configuration, `Y` at brake 0.75, so it was open whether some other
+brake strength separates the two.
+
+**It was checked at eight strengths and they do not separate.** The Regime B triage ran cap 500 at
+brake 1.4, 1.5, 1.6, 3.0, 4.0 and 5.0, and cap 250 at brake 1.0, all at 24,000 ticks with the death
+mix sampled at nine points, alongside the recorded curves at 0.75 and 1.0. In **every** cell:
+
+- starvation is at or below 5% of deaths in every interval up to and including the one in which the
+  population peaks;
+- it is **47-76% of deaths in the very next interval**;
+- worlds begin disappearing in that same interval or the one after it.
+
+The gap between "nothing is hungry" and "worlds are dying" is **one to two trajectory samples - 2,666
+to 5,333 ticks out of 24,000 - in all eight cells**. The predeclared falsifier (a cell with materially
+non-zero starvation in every interval including the last third, while keeping its worlds) was met by
+none of them. Two cells that were predicted before the run to survive the screen did not.
+
+**What this settles.** The deferred brake experiment is **not a matter of picking a value**. Hunger
+and collapse in this model are not two regimes a strength selects between; they are the same event
+seen a few thousand ticks apart, and the strength moves at most where the event falls. Within the one
+clean single-variable axis available - brake 1.4, 1.5, 1.6 under otherwise identical conditions - it
+does not move the event by even one trajectory sample.
+
+**What it does not settle**, and the note says so rather than overclaiming:
+
+- **It is not a proof that no brake value can work.** Eight strengths at six seeds each, spanning the
+  ends and the middle, is a strong prior and not a theorem. What has moved is the burden: a proposal
+  that some untested strength gives chronic non-fatal hunger now has to say why, given that the ends
+  and the middle behave identically.
+- **It does not say what would work.** "There is no negative feedback except death" is a reading of
+  the death mix and the trajectory, not a code audit. A mechanism that regulates before starvation -
+  rather than a strength that postpones it - is the shape of the open question, and identifying one is
+  separate, explicitly biological work with its own spec.
+
+**No brake value is proposed here or anywhere in the audit, and no configuration value was moved to
+obtain any of this.** The consequence for the gate is unchanged: **P4a still cannot close**, and it
+now cannot close on a brake value either.
 
 ## What this note does not do
 

@@ -59,15 +59,25 @@ collapses, because the worlds that die stop contributing to it.
 | # | cell | regime | longest verified run | verdict | evidence |
 |---|---|---|---|---|---|
 | C1 | cap 500, regen 2.0, brake 1.0, predation, gate 0.45, proximity pairing | B | 36,000 | **COLLAPSING** | 3 of 24 (health off) and 1 of 24 (health on) alive at 36,000, from 22 and 21 at one third. Overshoot: peak ~250 at tick 8,000, crash 12,000-20,000. Bimodal — survivors end at 173/202/410. `p6-the-c1-collapse-curve-2026-09-03.md` |
-| C2 | cap 500, regen 2.0, brake 1.5, predation, gate 0.45 | B | 12,000 | INDETERMINATE | never run longer |
-| C3 | cap 500, regen 2.0, brake 1.4-1.6, herbivore | B | 12,000 | INDETERMINATE | never run longer |
-| C4 | cap 500, regen 2.0, brake 3.0-5.0, proximity pairing | B | 12,000 | INDETERMINATE | never run longer |
-| C5 | cap 250, brake 1.0, `PlantSweep` | B | 12,000 | INDETERMINATE | `PlantSweep` has no `--ticks=` yet |
+| C2 | cap 500, regen 2.0, brake 1.5, predation, gate 0.45 | B | **24,000** | **COLLAPSING** | 2 of 6 alive at 24,000 from 4 at one third; 48.7% of all deaths starvation against 4.5% in the same cell at 12,000. 6-seed screen, which may condemn and may not clear. `p6-regime-b-triage-2026-09-05.md` |
+| C3 | cap 500, regen 2.0, brake 1.4-1.6, herbivore | B | **24,000** | **COLLAPSING** | **0 of 6 alive at all three brake strengths**, from 6 at one third. All three peak at tick 13,333 and are empty by 18,666: a 14% change in brake moves the collapse by not one sample. 12,000-tick control on the same seeds is 6 of 6 in all three, reproducing the recorded plateau. `p6-regime-b-triage-2026-09-05.md` |
+| C4 | cap 500, regen 2.0, brake 3.0-5.0, proximity pairing | B | **24,000** | **COLLAPSING** | 0 of 6 at brake 3.0, **0 of 6 at brake 4.0**, 2 of 6 at brake 5.0, from 6 at one third in all three. 12,000-tick control is 6 of 6 in all three. Brake 4.0 is the value `p6-the-clean-controller-comparison-2026-08-26.md` searched the axis and settled on at **0 of 60 extinct**. Predicted not obviously dying, and that **failed**. `p6-regime-b-triage-2026-09-05.md` |
+| C5 | cap 250, brake 1.0, `PlantSweep` | B | **24,000** | **COLLAPSING** | 1 or 2 of 6 alive at 24,000 in **all four** contest x terrain arms, from 6 at one third. Starvation 56-81% of deaths in the crash interval, in a cell recorded as 0.0% starvation at 12,000. One seed loses its plant community as well (occupancy 0.0). `--ticks=` landed for this row. `p6-regime-b-triage-2026-09-05.md` |
 | C6 | cap 250, brake 3.0, `PlantSweep` | B | 12,000 | COLLAPSING | 21 of 60 worlds extinct inside 12,000 (`p6-graded-fertility-is-scenario-specific-2026-08-24.md`) |
 | C7 | **shipped `Y`: cap 500, brake 0.75, four-way split** | B | 36,000 | **COLLAPSING** | **0 of 24 alive at 36,000**, from 20 at one third. Fails both clauses. The 12,000-tick row reproduces the recorded 20/24 and population 154.1 exactly. `p6-the-shipped-world-does-not-persist-2026-09-03.md` |
 | C8 | old `Y` and P4-P6 defaults: cap 48 / 96 / 100, no brake | A | 60,000 | cap-held | `p5-one-species-2026-08-30.md` |
 | C9 | the four-way split layout at **cap 96**, no brake | A | 36,000 | PERSISTENT | 21 of 24 alive, level from 12,000 to 36,000, energy drifting up, 99.9% age deaths. Run as C7's **attribution control** — it is what shows the collapse belongs to the cap-and-brake change and not to the layout. **Not a recommendation.** `p6-the-shipped-world-does-not-persist-2026-09-03.md` |
 | C10 | `Y`'s six-site control layout at cap 96, no brake | A | 36,000 | PERSISTENT | 22 of 24 alive, level over the last two thirds. Same run, same role as C9. |
+
+> **STATE OF THE LEDGER, 2026-09-05.** Every Regime B row now carries a verdict and **every one of
+> them is COLLAPSING** - C1 through C7. No cell in this project has been shown to persist without the
+> cap holding it up. The two PERSISTENT rows below are Regime A attribution controls, where the cap is
+> the regulator.
+>
+> The four verdicts added on 2026-09-05 come from **6-seed screens**, which the rule above allows to
+> condemn and never to clear. Cost was not what limited them: the six creature cells ran concurrently
+> in under a minute at 24,000 ticks, so a follow-up wanting a full-seed verdict on any of these should
+> run 24 and is not paying much for it.
 
 **A PERSISTENT verdict here means "persistent at the run length in the column", never "persistent".**
 C9 and C10 are level over their last two thirds at 36,000 ticks; that is what the criterion asks and
