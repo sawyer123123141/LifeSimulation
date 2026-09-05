@@ -129,3 +129,4 @@ tools/CreatureSweep/obj/
 !tools/CreatureSweep/*.csproj
 tools/**/bin/
 tools/**/obj/
+ProjectSettings/PackageManagerSettings.asset
