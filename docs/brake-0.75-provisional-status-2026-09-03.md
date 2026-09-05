@@ -74,11 +74,13 @@ recommendation.
 ## Amendment, 2026-09-05: the brake axis has now been measured, and point 2 above was right
 
 `docs/experiments/p6-regime-b-triage-2026-09-05.md` ran cap 500 at brake **1.4, 1.5, 1.6, 3.0, 4.0 and
-5.0** and cap 250 at brake 1.0, all at 24,000 ticks, six seeds each. **All of them collapse**, and so
-does every other Regime B cell in the ledger. The stronger-brake inference that point 2 named as the
-tempting error is now measured and is wrong on its own terms: brake 4.0, the value
-`p6-the-clean-controller-comparison-2026-08-26.md` searched the axis for and recorded at **0 of 60
-extinct** at 12,000 ticks, is **0 of 6 alive at 24,000**.
+5.0** and cap 250 at brake 1.0, all at 24,000 ticks - first as a six-seed screen and then at **24
+seeds**, the count at which the persistence criterion can return PERSISTENT. **All of them collapse at
+both seed counts**, and so does every other Regime B cell in the ledger. The stronger-brake inference
+that point 2 named as the tempting error is now measured and is wrong on its own terms: brake 4.0, the
+value `p6-the-clean-controller-comparison-2026-08-26.md` searched the axis for and recorded at **0 of
+60 extinct** at 12,000 ticks, keeps **1 world of 24 at 24,000**. The best any strength manages is
+brake 5.0 at **11 of 24**, nine worlds short of the threshold and failing the trend clause as well.
 
 Three consequences for this note.
 
@@ -88,7 +90,7 @@ Three consequences for this note.
   The extrapolation would have landed on a stronger brake, and stronger brakes collapse too.
 - **Point 4 is now the operative one.** Whatever experiment decides the brake must judge on a
   trajectory against the predeclared criterion; a survival count at a fixed horizon has now been shown
-  to mislead at 12,000 ticks for eight distinct strengths.
+  to mislead at 12,000 ticks for eight distinct strengths, at 24 seeds each.
 
 **Still no value is proposed, and none was searched for.** The triage moved no configuration value:
 every strength it ran is one a recorded document had already run at 12,000 ticks.

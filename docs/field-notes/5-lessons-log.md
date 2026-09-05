@@ -1066,3 +1066,42 @@ sterile. **Not fixed** - the disambiguating `plant_births` column sits beside it
 `frozen` figure was measured at 12,000 ticks where no plant community had died. **When a column's
 name is a history word and its computation is a scan of the present, they will disagree exactly when
 the run is long enough to matter.**
+
+**2026-09-05 (second pass) - A screen that condemns everything is worth re-running at full power
+precisely because it condemned everything, and the value is in what does not change.** All eleven
+Regime B rows were condemned at six seeds, and the six-seed rule says a screen may condemn and never
+clear. Re-run at 24 seeds - the count the criterion needs for PERSISTENT - **all eleven are condemned
+again and no row reads differently**. That is a boring result and it is the one that makes the eleven
+verdicts citable: they now rest on runs with the power to have gone the other way. **A verdict from an
+instrument that can only return one answer is not a verdict, and the cheapest way to stop it being one
+is to run the version that can return the other.** What the higher seed count *did* change was degree,
+not direction: four cells that lost every world of six keep one or two of 24, so their true survivor
+fraction is 4-8% and six seeds simply drew none.
+
+**2026-09-05 (second pass) - The trend clause got MORE informative with seed count, which is the
+opposite of the drift the earlier entries assumed.** At six seeds the trend clause fired in 4 of 11
+rows and the survival clause in all 11; at 24 seeds the trend clause fires in **7 of 11**. The cause is
+mechanical: the all-world mean over 24 worlds is not dominated by one lucky survivor the way a mean
+over 6 is, so the survivorship rise that let cells escape the trend clause is diluted. **The survival
+clause still does the decisive work, but "a trend statistic over a shrinking sample is close to
+uninformative" is a statement about small samples specifically**, and the two clauses converge as the
+sample grows. Worth knowing before anyone simplifies the criterion down to one clause on the strength
+of the six-seed run.
+
+**2026-09-05 (second pass) - Report a per-cell gap, not a range, when the claim is that two events
+coincide.** The mechanism check asks whether hunger onset separates from collapse onset. Reported as a
+range - "one to two samples everywhere" - it is true and it hides which cells sit at which end, and a
+single cell at the far end is exactly what a falsification would look like. Reported per cell at 24
+seeds: **gap 0 in four cells, 1 in six, 2 in one**, with hunger coinciding *exactly* with the
+population peak in seven of eleven and differing by one sample in **both** directions in the rest -
+which is what a 2,666-tick sampling grid produces and not what a mechanism produces. The both-
+directions detail is only visible per cell and it is the part that rules out the sampling artefact.
+
+**2026-09-05 (second pass) - Distinguish establishment failure from collapse before computing any
+onset statistic, or the statistic goes negative and looks like a refutation.** Three of the four C5
+arms lose worlds at tick 10,666 and do not go hungry until 13,333, which read naively says collapse
+precedes hunger and breaks the mechanism claim. Those are early establishment failures - the same cell
+is recorded at 10-15% extinction by 12,000 ticks in a corpus measured long before any of this, and the
+p4a note already excludes `Y`'s three early losses for the same reason. Measuring the collapse onset
+**at or after the population peak** removes them. **An onset measured from the first bad event counts
+every unrelated bad event that happens to come first.**

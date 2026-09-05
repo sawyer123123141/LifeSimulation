@@ -1,5 +1,10 @@
 # Regime B triage: do C2, C3, C4 and C5 persist past 12,000 ticks?
 
+> **READ THE LAST SECTION FIRST.** This document has three parts in run order: a six-seed screen
+> (predeclared, then run), and a **24-seed full-power re-run** at the same length that supersedes it
+> as the evidence of record. **All eleven rows are COLLAPSING at both seed counts.** The 24-seed run
+> is the one that could have returned PERSISTENT; none did.
+
 **Date:** 2026-09-05. **Status:** PREDECLARATION — written and committed **before any run started**.
 Results are appended below in a later commit; nothing in this section is edited afterwards.
 
@@ -318,3 +323,132 @@ while `alive(9) >= 0.85 x alive(3)`. Predeclared outcome: **not met at 24 seeds 
 per-cell gap between the last hunger-clean sample and the first sample losing worlds stays at one to
 two samples. It is reported **per cell** below, not only as a range, because a range can hide a single
 cell that separates.
+
+---
+
+# Full-power results — 24 seeds, 24,000 ticks
+
+**Run 2026-09-05**, after the predeclaration above, which is unedited. Console artefact:
+`p6-regime-b-triage-24seeds-24000-2026-09-05.txt`. Plant raw:
+`p6-plant-cap250-brake1.0-24seeds-24000ticks-2026-09-05.csv`.
+
+**The headline is that there is no headline: no cell reads differently at 24 seeds.** All eleven rows
+are **COLLAPSING** again, now on a run that could have returned PERSISTENT and did not for any of
+them. The predeclared verdicts held, including for the three rows named in advance as the ones the
+six-seed screen might have got wrong.
+
+## The verdicts, at the seed count the criterion requires
+
+| cell | brake | `alive(3)` | `alive(9)` | threshold `0.85 x alive(3)` | trend clause | verdict | 6-seed `alive(9)` |
+|---|---:|---:|---:|---:|---|---|---|
+| C2, predation, gate 0.45 | 1.5 | 18 / 24 | **7** | 15.30 | no | **COLLAPSING** | 2 / 6 |
+| C3, herbivore | 1.4 | 24 / 24 | **2** | 20.40 | no | **COLLAPSING** | 0 / 6 |
+| C3, herbivore | 1.5 | 24 / 24 | **0** | 20.40 | **YES** | **COLLAPSING** | 0 / 6 |
+| C3, herbivore | 1.6 | 24 / 24 | **1** | 20.40 | **YES** | **COLLAPSING** | 0 / 6 |
+| C4, proximity pairing | 3.0 | 24 / 24 | **2** | 20.40 | **YES** | **COLLAPSING** | 0 / 6 |
+| C4, proximity pairing | 4.0 | 24 / 24 | **1** | 20.40 | **YES** | **COLLAPSING** | 0 / 6 |
+| C4, proximity pairing | 5.0 | 24 / 24 | **11** | 20.40 | **YES** | **COLLAPSING** | 2 / 6 |
+| C5, cap 250, contest-off / flat | 1.0 | 22 / 24 | **3** | 18.70 | **YES** | **COLLAPSING** | 1 / 6 |
+| C5, cap 250, contest-off / terrain | 1.0 | 23 / 24 | **7** | 19.55 | **YES** | **COLLAPSING** | 2 / 6 |
+| C5, cap 250, contest-on / flat | 1.0 | 24 / 24 | **8** | 20.40 | no | **COLLAPSING** | 1 / 6 |
+| C5, cap 250, contest-on / terrain | 1.0 | 22 / 24 | **6** | 18.70 | no | **COLLAPSING** | 1 / 6 |
+
+**Every row misses its threshold by a wide margin.** The closest is C4 at brake 5.0 — 11 of 24 against
+a threshold of 20.4 — and it fails the trend clause as well, its all-world mean running
+137.3 -> 124.5 -> 83.1 over the last third.
+
+**No verdict changed, and no row was close enough that six seeds had been lucky.** What did change is
+the *degree*, and in the direction of "less total" rather than "less severe":
+
+- **Four rows that lost every world of six keep one or two of 24** — C3 at 1.4 and 1.6, C4 at 3.0 and
+  4.0. Six seeds happened to draw no survivor in cells whose true survivor fraction is 4-8%.
+- **C3 at brake 1.5 is the one genuine zero: 0 of 24.**
+- **C4 at brake 5.0 is the least-collapsing cell in the project**, at 11 of 24. That is worth saying
+  plainly rather than burying in a table of condemnations: it is nearly half its worlds, it is far
+  more than the six-seed screen suggested, and **it is still a failure on both clauses**. A cell that
+  loses thirteen of twenty-four worlds and whose mean population falls 40% across its last third is
+  not a place a population lives.
+- **C2's establishment losses are real, not a small-sample artefact**: 18 of 24 alive at one third,
+  reproducing the 4 of 6 seen at six seeds. The predation cell loses a quarter of its worlds before
+  the collapse starts, which is a separate phenomenon and is why its threshold is 15.3 rather
+  than 20.4.
+
+**The trend clause fired in 7 of 11 rows at 24 seeds, against 4 of 11 at six.** That is the opposite
+of the drift one might expect and it has a mechanical cause: the all-world mean over 24 worlds is not
+dominated by a single lucky survivor the way a mean over 6 is, so the survivorship rise that let cells
+escape the trend clause at six seeds is diluted. **The survival clause still condemns all eleven and
+is still doing the decisive work** — but the gap between the two clauses narrows with seed count, and
+that is a fact about the criterion worth recording.
+
+## Whole-run death mix at 24 seeds
+
+| cell | brake | deaths | starvation |
+|---|---:|---:|---:|
+| C2 predation | 1.5 | 8,805 | **49.3%** |
+| C3 herbivore | 1.4 | 17,011 | **45.9%** |
+| C3 herbivore | 1.5 | 16,996 | **49.8%** |
+| C3 herbivore | 1.6 | 16,446 | **52.0%** |
+| C4 proximity | 3.0 | 17,048 | **56.3%** |
+| C4 proximity | 4.0 | 17,307 | **54.7%** |
+| C4 proximity | 5.0 | 13,263 | **42.0%** |
+
+Every cell reproduces its six-seed figure to within a few points, on roughly four times the deaths.
+
+## The mechanism, per cell, at 24 seeds
+
+The falsifier, unchanged: a cell whose starvation share is materially non-zero in **every** interval
+including the last third, while `alive(9) >= 0.85 x alive(3)`. **Not met by any of the eleven.** Every
+cell has intervals at or below 0.5% starvation, and every cell fails the survival clause by a margin.
+
+Reported per cell rather than as a range, because a range can hide one cell that separates. `hunger`
+is the first sample whose interval carries **5% or more** starvation; `peak` is the sample at which
+the all-world mean population is highest; `loss` is the first sample at or after the peak at which the
+alive count falls; `gap` is `loss - hunger` in samples, one sample being 2,666 ticks.
+
+| cell | brake | last clean sample | `hunger` | `peak` | `loss` | **gap** |
+|---|---:|---:|---:|---:|---:|---:|
+| C2 predation | 1.5 | 10,666 (2.4%) | 13,333 | 13,333 | 16,000 | **1** |
+| C3 herbivore | 1.4 | 8,000 (0.0%) | 10,666 | 13,333 | 13,333 | **1** |
+| C3 herbivore | 1.5 | 10,666 (0.4%) | 13,333 | 10,666 | 13,333 | **0** |
+| C3 herbivore | 1.6 | 10,666 (0.3%) | 13,333 | 13,333 | 13,333 | **0** |
+| C4 proximity | 3.0 | 8,000 (0.0%) | 10,666 | 10,666 | 13,333 | **1** |
+| C4 proximity | 4.0 | 10,666 (1.3%) | 13,333 | 13,333 | 13,333 | **0** |
+| C4 proximity | 5.0 | 13,333 (1.4%) | 16,000 | 16,000 | 16,000 | **0** |
+| C5 off / flat | 1.0 | 10,666 (0.0%) | 13,333 | 13,333 | 16,000 | **1** |
+| C5 off / terrain | 1.0 | 10,666 (0.0%) | 13,333 | 16,000 | 18,666 | **2** |
+| C5 on / flat | 1.0 | 10,666 (0.0%) | 13,333 | 13,333 | 16,000 | **1** |
+| C5 on / terrain | 1.0 | 10,666 (0.0%) | 13,333 | 13,333 | 16,000 | **1** |
+
+**Gap 0 in four cells, 1 in six, 2 in one. Nothing above two samples — 5,333 ticks out of 24,000 —
+anywhere.** And `hunger` never precedes `peak` by more than one sample and never follows it by more
+than one: **hunger arrives at the top of the boom in every cell**, which is the claim.
+
+**`hunger` and `peak` coincide exactly in seven of eleven cells.** In the other four they differ by one
+sample in whichever direction the 2,666-tick sampling grid happens to fall, and the two orderings both
+occur (C3 at 1.4 has hunger one sample early, C3 at 1.5 one sample late), which is what a sampling
+artefact looks like rather than a mechanism.
+
+**So the mechanism claim survives at full power. Hunger onset does not separate from collapse onset at
+any brake strength measured** — 0.75, 1.0, 1.4, 1.5, 1.6, 3.0, 4.0 and 5.0, across four scenario
+families, now at 24 seeds per cell.
+
+**One honest complication, visible only at 24 seeds.** In three of the four C5 arms the world count
+starts falling at tick 10,666, *before* hunger appears at 13,333. Those are **establishment failures**,
+not the collapse: this cell is recorded at 10-15% extinction by 12,000 ticks in a corpus measured
+before any of this, and the same phenomenon is the reason `p4a-acceptance-window-2026-09-03.md`
+excludes `Y`'s three early losses from its collapse. The `loss` column above is measured **at or after
+the population peak** precisely so that an establishment failure cannot be counted as the collapse
+arriving early. Counting them would make the gaps *negative* in those arms and would be wrong.
+
+## What the full-power run licenses that the screen did not
+
+- **The eleven verdicts now rest on runs that could have cleared a cell.** Under the criterion,
+  PERSISTENT was reachable — 20 or more of 24 alive at the end, and no monotone decline over the last
+  third — and no cell came within nine worlds of it.
+- **Every Regime B cell in this project is now COLLAPSING at 20+ seeds or better**: C1 and C7 at 24
+  seeds and 36,000 ticks from the earlier tasks, C2-C5 here at 24 seeds and 24,000, C6 already
+  recorded as collapsing inside 12,000. **Nothing in Regime B persists.**
+- **The screen rule was doing its job and was not costing accuracy here.** Six seeds condemned all
+  eleven and twenty-four condemned all eleven. The rule's asymmetry remains right — a six-seed run
+  could not have told C4 at brake 5.0 (11 of 24) apart from a cell keeping 20 — but on these cells it
+  did not mislead.

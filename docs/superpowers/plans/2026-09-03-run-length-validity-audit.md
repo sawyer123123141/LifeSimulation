@@ -217,7 +217,7 @@ outstanding.)*
 | 4 | done | `bdb7004` | **Shipped `Y` is 0 of 24 alive at 36,000** — worse than C1, which keeps 3. Fails both clauses. Predeclared **PERSISTENT** and that **failed**. The 12,000-tick row reproduces the recorded 20/24 and population 154.1 to the digit, so the curve after it is the same measurement continued. **Attribution**: the same split layout at cap 96 is level 12,000→36,000 in two arms (21/24 and 22/24, 99.9% age deaths), so the collapse belongs to the cap-and-brake change, not the layout or the model. The five survival counts the 0.75 brake was chosen from are all counts at the boom peak. Record: `p6-the-shipped-world-does-not-persist-2026-09-03.md`. **No brake or cap value proposed; shipped scenario untouched.** |
 | 5 | done | `ad33419` | `docs/experiments/cell-family-persistence-ledger.md`. Rows C9 and C10 are the cap-96 attribution controls and are labelled in the file as controls, **not** recommendations. Two lessons appended to `5-lessons-log.md`: the trend-clause escape, and final population versus bimodality. Derived triage length recorded in section 5 of this plan; **triage not run**. |
 
-| 6 (deferred triage) | done 2026-09-05 | `0c3f424`, `c82fb15`, `0f9a61b` | `PlantSweep --ticks=` landed first, verified bit-identical at the default. Eleven rows at 24,000 x 6 seeds, **all COLLAPSING**, plus a 12,000-tick control per cell that reproduces the recorded reading. **Two of four predeclared verdicts failed**, both by predicting survival. Every Regime B row in the ledger now carries a verdict and every one is COLLAPSING. The p4a mechanism claim was checked on the same data and **holds at all eight brake strengths**. Banners added to ten recorded documents; **nothing retracted**. Record: `p6-regime-b-triage-2026-09-05.md`. **No configuration value moved; no brake value proposed.** |
+| 6 (deferred triage) | done 2026-09-05 | `0c3f424`, `c82fb15`, `0f9a61b`, `a19df08` | `PlantSweep --ticks=` landed first, verified bit-identical at the default. Eleven rows at 24,000 ticks, **all COLLAPSING at six seeds and again at 24**, plus a 12,000-tick control per cell that reproduces the recorded reading. The 24-seed run is the first in the triage that could have returned PERSISTENT and returned it for nothing. **Two of four predeclared verdicts failed**, both by predicting survival. Every Regime B row in the ledger now carries a verdict and every one is COLLAPSING. The p4a mechanism claim was checked on the same data and **holds at all eight brake strengths**. Banners added to ten recorded documents; **nothing retracted**. Record: `p6-regime-b-triage-2026-09-05.md`. **No configuration value moved; no brake value proposed.** |
 
 **Non-goal, stated first because it is the tempting mistake:** *do not tune brake, cap or
 regeneration to make anything here persist.* That is a biological change; it invalidates every
@@ -363,15 +363,18 @@ error one horizon further out.
 >
 > This is a recommendation for whoever runs the triage.
 >
-> **RUN 2026-09-05 at exactly this length.** `docs/experiments/p6-regime-b-triage-2026-09-05.md`.
-> Eleven rows across C2, C3, C4 and C5 at 24,000 ticks and six seeds, plus a 12,000-tick control on
-> the same seeds for every creature cell. **All eleven are COLLAPSING.** Condition 1 was the right
+> **RUN 2026-09-05 at exactly this length, twice.** `docs/experiments/p6-regime-b-triage-2026-09-05.md`.
+> Eleven rows across C2, C3, C4 and C5 at 24,000 ticks - first at six seeds, with a 12,000-tick control
+> on the same seeds for every creature cell, then **re-run at 24 seeds**, the count the criterion needs
+> for a PERSISTENT verdict. **All eleven are COLLAPSING at both seed counts, and no row read
+> differently at 24 seeds.** The full-power run could have cleared a cell; the closest, C4 at brake
+> 5.0, keeps 11 of 24 against a threshold of 20.4 and fails the trend clause too. Condition 1 was the right
 > warning and it turned out not to matter: a stronger brake does not postpone the overshoot either -
 > brake 4.0, the strongest value any recorded document endorses, loses every world by 24,000. The
 > screen length held: nothing needed longer than 24,000 to be condemned. **Cost was not the binding
-> constraint** - the seven creature cells ran concurrently in under a minute - so the six-seed limit
-> was the rule's, not the budget's, and a follow-up wanting a PERSISTENT verdict should simply run 24
-> seeds.
+> constraint** - the seven creature cells ran concurrently in under a minute at six seeds and in a few
+> minutes at 24 - so the six-seed limit was the rule's and not the budget's, and the 24-seed run that
+> settles it was done the same day.
 
 **`--ticks=` for `PlantSweep`.** **Landed 2026-09-05** with the triage that justified it, on the same
 terms `SitePilot`'s did: default 12,000, a non-default length encoded into the CSV filename so no

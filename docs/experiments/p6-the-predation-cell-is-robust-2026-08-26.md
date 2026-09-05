@@ -2,8 +2,9 @@
 
 > **RUN-LENGTH BANNER, 2026-09-05 - the robustness is robustness of the selection result, not of the
 > cell.** The brake-1.5 point on this document's brake axis (cap 500, regen 2.0, predation, gate 0.45)
-> is **2 of 6 alive at 24,000 ticks**, from 4 at one third, with starvation at 48.7% of all deaths
-> against 4.5% in the same cell at 12,000. The brake-1.0 point is C1, already recorded as collapsing.
+> is **7 of 24 alive at 24,000 ticks**, from 18 at one third against a threshold of 15.3, with
+> starvation at 49.3% of 8,805 deaths against 4.5% in the same cell at 12,000. Full power: the run
+> could have returned PERSISTENT and did not. The brake-1.0 point is C1, already recorded as collapsing.
 > **The selection results in this document hold** - they are paired comparisons and a shared
 > trajectory is common to both arms. **The survivability table is a 12,000-tick reading and no row of
 > it may be cited as a stable cell.** `p6-regime-b-triage-2026-09-05.md`, ledger row C2.

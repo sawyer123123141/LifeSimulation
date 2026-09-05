@@ -2,14 +2,14 @@
 
 > **RUN-LENGTH BANNER, 2026-09-05 - the headline claim is withdrawn; the dial is not.** "There is a
 > setting where starvation and survival coexist" was measured at 12,000 ticks. At **24,000** the
-> brake-1.5 cell is **0 of 6 alive**, and so is every other Regime B cell in this table's family that
-> has been run that long (`p6-regime-b-triage-2026-09-05.md`, ledger rows C2-C5). The coexistence was
+> brake-1.5 cell is **0 of 24 alive** - the one exact zero in the whole triage - and every other Regime
+> B cell in this table's family collapses too at 24 seeds (`p6-regime-b-triage-2026-09-05.md`, ledger rows C2-C5). The coexistence was
 > a horizon effect: 12,000 ticks lands at the peak of a boom, before the starvation that follows it.
 > **The dial itself stands** - starvation share is a within-run composition and moves monotonically
 > with brake at a fixed horizon. What does not stand is reading a row of this table as an equilibrium.
 > Two specific figures to stop quoting as ecology: **"cap 250 takes starvation to 0.0%"** (at 24,000
 > the cap-250 plant cell reaches 56-81% starvation in its crash interval and loses four or five worlds
-> of six), and the survival column, which is a count at a horizon.
+> of six at 24 seeds), and the survival column, which is a count at a horizon.
 
 > **FOLLOWED UP 2026-08-26** — `p6-the-pressured-cell-is-a-plateau-2026-08-26.md`. The brake-1.5 cell
 > was found by moving **one** axis, so it was checked for being a knife-edge: **it is not.** All nine

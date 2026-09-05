@@ -117,19 +117,24 @@ brake produces hunger by letting the population outgrow its food, which is also 
 collapse. That was measured in one configuration, `Y` at brake 0.75, so it was open whether some other
 brake strength separates the two.
 
-**It was checked at eight strengths and they do not separate.** The Regime B triage ran cap 500 at
-brake 1.4, 1.5, 1.6, 3.0, 4.0 and 5.0, and cap 250 at brake 1.0, all at 24,000 ticks with the death
-mix sampled at nine points, alongside the recorded curves at 0.75 and 1.0. In **every** cell:
+**It was checked at eight strengths, at full seed count, and they do not separate.** The Regime B
+triage ran cap 500 at brake 1.4, 1.5, 1.6, 3.0, 4.0 and 5.0, and cap 250 at brake 1.0, all at 24,000
+ticks with the death mix sampled at nine points, alongside the recorded curves at 0.75 and 1.0. It was
+run twice: a six-seed screen and then a **24-seed** re-run, the seed count at which the persistence
+criterion can return PERSISTENT. **No cell read differently at 24 seeds.** In **every** cell:
 
 - starvation is at or below 5% of deaths in every interval up to and including the one in which the
   population peaks;
 - it is **47-76% of deaths in the very next interval**;
 - worlds begin disappearing in that same interval or the one after it.
 
-The gap between "nothing is hungry" and "worlds are dying" is **one to two trajectory samples - 2,666
-to 5,333 ticks out of 24,000 - in all eight cells**. The predeclared falsifier (a cell with materially
-non-zero starvation in every interval including the last third, while keeping its worlds) was met by
-none of them. Two cells that were predicted before the run to survive the screen did not.
+At 24 seeds the gap between hunger and world loss is **0 samples in four cells, 1 in six and 2 in one**
+- never more than 5,333 ticks out of 24,000 - and **hunger arrives at the top of the boom in every
+cell**, coinciding exactly with the population peak in seven of eleven and differing by one sample in
+either direction in the rest, which is what a 2,666-tick sampling grid looks like rather than a
+mechanism. The predeclared falsifier (a cell with materially non-zero starvation in every interval
+including the last third, while keeping its worlds) was met by none of them at either seed count. Two
+cells predicted before the screen to survive it did not.
 
 **What this settles.** The deferred brake experiment is **not a matter of picking a value**. Hunger
 and collapse in this model are not two regimes a strength selects between; they are the same event
@@ -139,7 +144,7 @@ does not move the event by even one trajectory sample.
 
 **What it does not settle**, and the note says so rather than overclaiming:
 
-- **It is not a proof that no brake value can work.** Eight strengths at six seeds each, spanning the
+- **It is not a proof that no brake value can work.** Eight strengths at 24 seeds each, spanning the
   ends and the middle, is a strong prior and not a theorem. What has moved is the burden: a proposal
   that some untested strength gives chronic non-fatal hunger now has to say why, given that the ends
   and the middle behave identically.

@@ -4,8 +4,9 @@
 > withdrawn.** Every cap in this document has now been run past its horizon and none of them holds a
 > population: cap 500 at brake 0.75 and 1.0 (`p6-the-shipped-world-does-not-persist-2026-09-03.md`,
 > `p6-the-c1-collapse-curve-2026-09-03.md`), cap 500 at brake 1.4-1.6, 3.0, 4.0 and 5.0, and **cap 250
-> at brake 1.0, which loses four or five worlds of six in all four of its arms**
-> (`p6-regime-b-triage-2026-09-05.md`). What the brake produces is a slower approach to the same
+> at brake 1.0, which keeps only 3 to 8 worlds of 24 in its four arms**
+> (`p6-regime-b-triage-2026-09-05.md`, 24 seeds per cell - a run that could have cleared any of them).
+> What the brake produces is a slower approach to the same
 > overshoot, not a carrying capacity. **The cap-debt framing survives** - the point that the recorded
 > corpus was measured with the population pinned is unaffected, and is if anything sharpened: the cap
 > was doing more work than anyone credited it with.

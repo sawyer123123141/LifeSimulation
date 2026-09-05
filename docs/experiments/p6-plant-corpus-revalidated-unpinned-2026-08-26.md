@@ -1,9 +1,11 @@
 # The contest and join nulls survive an unpinned population — re-run at cap 250, brake 1.0
 
 > **RUN-LENGTH BANNER, 2026-09-05 - the nulls hold; "unpinned, healthy, and stable" does not.** This
-> cell (cap 250, brake 1.0) was re-run at **24,000 ticks** and is **1 or 2 of 6 worlds alive in all
-> four contest x terrain arms**, from 6 of 6 at one third, with starvation reaching 56-81% of deaths
-> in the crash interval. One seed loses its plant community outright (occupancy 0.0).
+> cell (cap 250, brake 1.0) was re-run at **24,000 ticks and 24 seeds** and keeps **3, 7, 8 and 6 of 24
+> worlds** across its four contest x terrain arms, from 22-24 at one third against thresholds of
+> 18.7-20.4, with starvation reaching 41-64% of deaths in the crash intervals. Some seeds lose the
+> plant community outright (occupancy 0.0). The run had the power to return PERSISTENT for any arm and
+> returned it for none.
 > **The contest null and the join null are unaffected**: they are paired arm differences, and a shared
 > downward trajectory is common to both arms. What is withdrawn is the description of the cell - the
 > population settling at 63-67 with 10-15% extinction is the top of a boom, not an unpinned

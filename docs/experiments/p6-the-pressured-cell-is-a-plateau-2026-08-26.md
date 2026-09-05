@@ -2,10 +2,12 @@
 
 > **RUN-LENGTH BANNER, 2026-09-05 - the plateau is the top of a boom, and the cells on it do not
 > persist.** Three of the nine cells (brake 1.4, 1.5 and 1.6 at regen 2.0, cap 500) were re-run at
-> **24,000 ticks** and are **0 of 6 alive** in every one, from 6 of 6 at one third. The same six seeds
-> at 12,000 return 6 of 6 with 0.0-9.6% starvation, reproducing what is recorded here - so nothing
-> below is contradicted; the run simply continues past it, and the population peaks at tick 13,333 and
-> is gone by 18,666. Across a 14% change in brake strength the collapse does not move by one
+> **24,000 ticks at 24 seeds** and are **2, 0 and 1 of 24 alive** at brake 1.4, 1.5 and 1.6, from 24 of
+> 24 at one third, against a criterion threshold of 20.4. A six-seed screen the same day returned 0 of
+> 6 in all three; the full-power run **could have cleared these cells and did not**. Six seeds at
+> 12,000 return 6 of 6 with 0.0-9.6% starvation, reproducing what is recorded here - so nothing below
+> is contradicted; the run simply continues past it, and the population peaks around tick 13,333 and
+> has lost twelve of twenty-four worlds by 16,000 and twenty-one by 18,666. Across a 14% change in brake strength the collapse does not move by one
 > trajectory sample. **The smooth, monotone shape of the plateau holds. "The collapse cliff is not
 > nearby" does not: the cliff is not on the brake axis, it is 12,000 ticks further along the run.**
 > `p6-regime-b-triage-2026-09-05.md`, ledger row C3.

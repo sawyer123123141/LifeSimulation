@@ -5,7 +5,7 @@
 > **survival** half - the 4 / 11 / 24 / 38 of 40 column, and the brake-sweep row at strength 1.0 - is
 > a survival count at 12,000 ticks in Regime B cells that are now all recorded as COLLAPSING
 > (`docs/experiments/cell-family-persistence-ledger.md`). The brake-1.0 row is C1; the gate-0.45 cell
-> at brake 1.5 is C2, 2 of 6 alive at 24,000. "The gate is the model's density brake" is a claim about
+> at brake 1.5 is C2, 7 of 24 alive at 24,000 against a threshold of 15.3. "The gate is the model's density brake" is a claim about
 > a level and belongs to the affected class; **no cell in this document may be cited as a baseline.**
 
 **2026-08-26.** `tools/CreatureSweep --focused 40 <cap> [--regen] [--brake] [--gate] [--health-recovery]`,

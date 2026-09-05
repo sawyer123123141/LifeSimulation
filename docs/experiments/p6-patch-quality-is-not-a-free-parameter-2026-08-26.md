@@ -2,8 +2,8 @@
 
 > **RUN-LENGTH BANNER, 2026-09-05 - the flag-on/flag-off result holds; the cell it was measured in
 > collapses.** This is the same cap 250 / brake 1.0 cell as
-> `p6-plant-corpus-revalidated-unpinned-2026-08-26.md`, and at **24,000 ticks** it keeps 1 or 2 worlds
-> of 6 in every arm (`p6-regime-b-triage-2026-09-05.md`, ledger row C5). **The refutation of the
+> `p6-plant-corpus-revalidated-unpinned-2026-08-26.md`, and at **24,000 ticks and 24 seeds** it keeps 3 to 8
+> worlds of 24 in its four arms (`p6-regime-b-triage-2026-09-05.md`, ledger row C5). **The refutation of the
 > "nothing to be smarter about" constraint stands** - it is a paired flag comparison over 240 runs,
 > and both arms share whatever trajectory the cell has. **Absolute levels reported here are levels
 > measured before the collapse, and the cell may not be cited as a baseline** under the ledger rule.

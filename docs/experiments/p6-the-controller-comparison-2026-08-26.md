@@ -1,7 +1,7 @@
 # The controller comparison - richer decision machinery, in a world that now has pressure
 
 > **RUN-LENGTH BANNER, 2026-09-05.** The pressured herbivore cell used here (cap 500, regen 2.0,
-> brake 1.5) is **0 of 6 alive at 24,000 ticks** from 6 of 6 at one third
+> brake 1.5) is **0 of 24 alive at 24,000 ticks** from 24 of 24 at one third
 > (`p6-regime-b-triage-2026-09-05.md`, ledger row C3), and the proximity-pairing cell of the
 > same-day follow-up is the same at brake 3.0 and 4.0 (row C4). **The controller comparison holds** -
 > it is paired and both arms share the trajectory. **The population levels, extinction counts and
