@@ -270,3 +270,51 @@ where no plant community had died, so no recorded `frozen` figure is affected.
   divergences, selection statistics, nulls - is unaffected by a shared trajectory. What is affected is
   every claim of the form *this configuration is a place a population can live*, and those get
   banners rather than withdrawals.
+
+---
+
+# Full-power re-run at 24 seeds — predeclaration
+
+**Written and committed 2026-09-05, before any 24-seed run started.** Unedited afterwards.
+
+The screen above ran at six seeds because the plan's screen rule caps a screen there, and a six-seed
+run **may condemn and may never clear**. Cost turned out not to be the constraint, so all eleven rows
+are re-run at **24 seeds, 24,000 ticks** — the seed count the persistence criterion requires for a
+**PERSISTENT** verdict. This is the first run in the triage that *could* clear a cell.
+
+Same commands, `--deaths 24 500 ...` and `PlantSweep -- 24 ...`, same brake strengths, same layouts,
+same `--ticks=24000`. **No configuration value moves.**
+
+## What changes about what may be said
+
+At 24 seeds the criterion's clauses become fully available:
+
+- **COLLAPSING** — `mean(7) > mean(8) > mean(9)`, or `alive(9) < 0.85 x alive(3)`.
+- **PERSISTENT** — neither, **and** `alive(9) >= 0.85 x alive(3)`, **and** at least 20 seeds. Now
+  reachable.
+- **INDETERMINATE** — otherwise.
+
+From `alive(3) = 24`, the survival clause condemns at `alive(9) < 20.4`, so 20 of 24 passes and 20 is
+the first passing value. That threshold is the 2026-09-03 declaration applied unchanged.
+
+## Predeclared verdicts
+
+**All eleven rows COLLAPSING again**, with none upgraded to PERSISTENT or INDETERMINATE. The reason
+this is a prediction rather than a formality: five of the eleven lost **every** world of six, which
+twenty-four seeds cannot rescue, but three rows ended on one world of six and three on two, and at six
+seeds the difference between "this cell keeps a fifth of its worlds" and "this cell keeps none" is not
+resolvable. **A cell that comes back at 20 or more of 24 alive would be a cell the six-seed screen got
+wrong, and it would be the headline.**
+
+The specific rows where that could happen, named in advance so a surprise cannot be presented as
+expected: **C4 at brake 5.0** and **C2 at brake 1.5** are the two creature cells that kept worlds
+(2 of 6 each), and **C5 contest-off / terrain** kept 2 of 6. Those three are the candidates. C3 at all
+three strengths and C4 at 3.0 and 4.0 lost everything and are predicted to stay lost.
+
+## The mechanism falsifier, unchanged
+
+A cell whose starvation share is materially non-zero in **every** interval including the last third,
+while `alive(9) >= 0.85 x alive(3)`. Predeclared outcome: **not met at 24 seeds either**, and the
+per-cell gap between the last hunger-clean sample and the first sample losing worlds stays at one to
+two samples. It is reported **per cell** below, not only as a range, because a range can hide a single
+cell that separates.
