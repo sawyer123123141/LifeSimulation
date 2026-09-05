@@ -1,6 +1,6 @@
-# P4a is to be judged inside the pre-crash window, and the boundary is tick 8,000
+# P4a splits: five behaviours are judgeable before tick 8,000, resource recovery is not
 
-**Date:** 2026-09-03
+**Date:** 2026-09-03, **amended 2026-09-05**
 **Status:** a scoping note recording the user's ruling. **No code changed, no scenario changed, and
 the gate verdict in the frozen spec is untouched** — section 4 of
 `docs/superpowers/specs/2026-08-30-what-finished-means-design.md` remains the user's to update.
@@ -16,11 +16,26 @@ that is not a choice anyone made recently: it is the scenario the presenter load
 same layout at cap 96 is level over the same span, so the collapse belongs to the cap-and-brake change
 rather than to the layout or the model.
 
-That leaves the gate in an odd position: the surface it is judged on does not persist. **The ruling is
-that P4a is judged on the interval before the crash rather than deferred until the configuration
-question is settled.** The behaviours the gate asks about are visible long before the population
-turns, and holding a watchability gate hostage to an ecology decision would stall it on something it
-does not depend on.
+That leaves the gate in an odd position: the surface it is judged on does not persist.
+
+## The ruling
+
+**The gate splits, because its six items do not share a fate.**
+
+> **Foraging, drinking, mating, fleeing and resting are judgeable inside the pre-crash window**, at or
+> before tick 8,000 of a `Y` run. They are visible long before the population turns, and holding a
+> watchability gate hostage to an ecology decision would stall it on something it does not depend on.
+>
+> **Resource recovery stays UNVERIFIED**, and it cannot be verified in this configuration at either
+> end. It is pending a configuration in which **hunger is chronic without being fatal** — which is the
+> deferred brake experiment, not a window.
+>
+> **P4a therefore cannot close until that experiment is settled.** Five of six passing is not the gate.
+
+The amendment on 2026-09-05 is this split. The first version of this note recorded the window as the
+whole ruling and put the resource-recovery problem beside it as a tension; it belongs *inside* the
+ruling, because it changes what the window can deliver. Section "The tension" below is superseded by
+this section and kept for its reasoning.
 
 ## The boundary, and where the number comes from
 
@@ -55,22 +70,39 @@ population gets, not the last moment it is healthy: starvation is already 22.9% 
 interval that ends there. A window drawn at the peak would include the onset of the thing it is
 supposed to exclude.
 
-## The tension this creates, stated rather than resolved
+## Why resource recovery is excluded, in full
+
+*(Written first as a tension beside the ruling; promoted into the ruling on 2026-09-05, because it
+decides an item rather than qualifying one.)*
 
 The gate item that motivated the whole cap-and-brake change was **resource recovery**:
 `p6-y-is-food-limited-2026-08-30.md` records that at cap 96 *"nothing was ever hungry"*, patches sat at
 88% full, and there was nothing to watch. Cap 500 with the brake was adopted to produce hunger.
 
 But hunger in this configuration arrives **with** the collapse, not before it: starvation is 0.0% of
-deaths through tick 8,000 and 22.9% by 12,000. So the window this note defines is the window in which
-the world is stable, and it may also be the window in which **resource depletion and recovery are not
-yet visible** — which is the one P4a item that cap 96 could not satisfy either.
+deaths through tick 8,000 and 22.9% by 12,000, 65.6% by 16,000. So the pre-crash window is the window
+in which the world is stable **and** the window in which nothing is hungry. The two are the same
+window, and that is not a coincidence — the brake produced hunger by letting the population outgrow
+its food, which is also how it produced the collapse.
 
-Five of the six behaviours — foraging, drinking, mating, fleeing, resting — are unaffected and can be
-verified inside the window immediately. **Resource recovery may not be verifiable in either
-configuration**, and that is a finding about the gate rather than about the window. It is recorded here
-so that a later session does not discover it as a surprise, and it is not resolved here: resolving it
-means changing an ecology value, which is a separate declared experiment.
+That closes the configuration from both ends:
+
+- **At cap 96**, nothing is ever hungry, patches sit at 88% full, and there is nothing to watch.
+- **At cap 500 with the 0.75 brake**, hunger exists but only as the leading edge of an extinction.
+  Observing depletion and recovery there means observing a world on its way out, and a resource that
+  never recovers because the population that was eating it is gone is not a demonstration of recovery.
+
+**Resource recovery is therefore not verifiable in either measured configuration**, and no window
+drawn on the existing curve fixes that. What it needs is a configuration in which **hunger is chronic
+without being fatal** — a population that stays under pressure and does not crash. Whether such a
+configuration exists in this model is an open question, and finding out means moving an ecology value,
+which is the deferred brake experiment with predeclared signs
+(`docs/brake-0.75-provisional-status-2026-09-03.md`). It is not decided here and no value is proposed.
+
+**The consequence for the gate: P4a cannot close until that experiment settles.** Five of six items
+can be verified now, and the sixth is the one the whole cap-and-brake change was made to deliver. A
+gate reported as met on five of six would record as satisfied the exact requirement that is still
+outstanding.
 
 ## What this note does not do
 
