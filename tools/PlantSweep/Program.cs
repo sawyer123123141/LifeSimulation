@@ -24,7 +24,16 @@ namespace LifeSimulation.Tools.PlantSweep
     /// </summary>
     internal static class Program
     {
-        private const int Ticks = 12000;
+        /// <summary>Matches tools/CreatureSweep exactly, so the two corpora are comparable.</summary>
+        private const int DefaultTicks = 12000;
+
+        /// <summary>
+        /// Run length. Defaults to the 12,000 every recorded output of this tool was measured at, so
+        /// those stay reproducible; <c>--ticks=</c> raises it for the run-length triage, where a cell
+        /// that survives the window and a cell that is falling through it are the same artefact
+        /// (<c>docs/experiments/cell-family-persistence-ledger.md</c>).
+        /// </summary>
+        private static int _ticks = DefaultTicks;
         private const int Founders = 12;
         private const int FirstSeed = 42;
 
@@ -86,6 +95,12 @@ namespace LifeSimulation.Tools.PlantSweep
                 {
                     _maximumPopulation = cap;
                 }
+                if (argument.StartsWith("--ticks=")
+                    && int.TryParse(argument.Substring("--ticks=".Length), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int requestedTicks)
+                    && requestedTicks > 0)
+                {
+                    _ticks = requestedTicks;
+                }
             }
 
             if (args.Length > 0 && int.TryParse(args[0], out int seeds)) _seedCount = seeds;
@@ -102,7 +117,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 }
             }
 
-            Console.Error.WriteLine(runs.Count + " runs of " + Ticks + " ticks");
+            Console.Error.WriteLine(runs.Count + " runs of " + _ticks + " ticks");
             var results = new ConcurrentBag<RunResult>();
             int done = 0;
             Parallel.ForEach(runs, spec =>
@@ -148,6 +163,13 @@ namespace LifeSimulation.Tools.PlantSweep
             public int HighestPlantGeneration;
             public double[] Founder;
             public double[] Final;
+
+            /// <summary>
+            /// The population over the run rather than only at the end of it. Shared with
+            /// CreatureSweep and SitePilot so all three sweeps answer the run-length question the
+            /// same way.
+            /// </summary>
+            public Trajectory Trajectory;
         }
 
         /// <summary>
@@ -233,10 +255,12 @@ namespace LifeSimulation.Tools.PlantSweep
                 founderCount++;
             }
 
-            for (int tick = 0; tick < Ticks; tick++)
+            var trajectory = new Trajectory(_ticks);
+            for (int tick = 0; tick < _ticks; tick++)
             {
                 world.Step(config.FixedDeltaTime);
                 world.Events.Clear();
+                trajectory.Observe(tick, world);
             }
 
             var finalSum = new double[count];
@@ -265,6 +289,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 HighestPlantGeneration = statistics.HighestPlantGeneration,
                 Founder = founderSum.Select(sum => founderCount == 0 ? 0d : sum / founderCount).ToArray(),
                 Final = finalSum.Select(sum => live == 0 ? double.NaN : sum / live).ToArray(),
+                Trajectory = trajectory,
             };
         }
 
@@ -318,7 +343,11 @@ namespace LifeSimulation.Tools.PlantSweep
             string configuration = "cap" + _maximumPopulation
                 + (_qualityPreference ? "" : "-qualityoff")
                 + (_gradedFertility ? "-brake" + _brakeStrength.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "")
-                + "-" + _seedCount + "seeds";
+                + "-" + _seedCount + "seeds"
+                // A longer run of the same cell is a different measurement and must not land on the
+                // same filename as the recorded 12,000-tick one. The default is unencoded so every
+                // recorded output keeps the name it has.
+                + (_ticks == DefaultTicks ? "" : "-" + _ticks + "ticks");
             // The date is the run's own date, not a literal: a hardcoded one silently reuses a
             // previous day's filename and overwrites that day's output.
             string today = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
@@ -352,6 +381,11 @@ namespace LifeSimulation.Tools.PlantSweep
                             .Select(result => result.Final[trait] - result.Founder[trait]).ToArray();
                         Console.WriteLine("   " + PlantGenome.TraitName(trait).PadRight(22) + Summarise(deltas));
                     }
+
+                    // Per group, because the groups are different worlds: a pooled trajectory would
+                    // average contest-on against contest-off and describe neither.
+                    Trajectory.Report(set.OrderBy(result => result.Seed)
+                        .Select(result => result.Trajectory).ToArray(), _ticks);
                 }
             }
 

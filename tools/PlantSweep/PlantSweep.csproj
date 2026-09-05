@@ -19,6 +19,9 @@
 
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <!-- Shared with CreatureSweep and SitePilot: one trajectory reporter, so all three sweeps answer
+         the run-length question the same way. Its namespace is the parent LifeSimulation.Tools. -->
+    <Compile Include="..\CreatureSweep\Trajectory.cs" Link="Trajectory.cs" />
     <Compile Include="..\..\Assets\Scripts\Simulation\**\*.cs" />
   </ItemGroup>
 
