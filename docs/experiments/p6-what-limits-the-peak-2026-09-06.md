@@ -102,3 +102,129 @@ The eleven rows of `p6-regime-b-triage-2026-09-05.md`, unchanged, at 24 seeds an
 | C3 | the same without `--predation --gate=`, at brake **1.4, 1.5, 1.6** |
 | C4 | the same without predation, plus `--mate-selection=off`, at brake **3.0, 4.0, 5.0** |
 | C5 | `PlantSweep -- 24 --cap=250 --brake=1.0 --ticks=24000` (four arms: contest on/off x flat/terrain) |
+
+---
+
+# Results
+
+**Run 2026-09-06**, after the predeclaration above, which is unedited. Console artefacts:
+`p6-what-limits-the-peak-creatures-24seeds-24000-2026-09-06.txt` and
+`p6-what-limits-the-peak-plants-24seeds-24000-2026-09-06.txt`, beside this file. Build `f048e15`.
+
+## Q3 first: the instrument check passes in all eleven cells
+
+Every population trajectory reproduces `p6-regime-b-triage-24seeds-24000-2026-09-05.txt`. The peak
+sample, `alive(3)` and `alive(9)` agree cell for cell:
+
+| cell | peak sample | `alive(9)` recorded | `alive(9)` here |
+|---|---:|---:|---:|
+| C2 predation 1.5 | 13,333 | 7 | **7** |
+| C3 herbivore 1.4 | 13,333 | 2 | **2** |
+| C3 herbivore 1.5 | 10,666 | 0 | **0** |
+| C3 herbivore 1.6 | 13,333 | 1 | **1** |
+| C4 proximity 3.0 | 10,666 | 2 | **2** |
+| C4 proximity 4.0 | 13,333 | 1 | **1** |
+| C4 proximity 5.0 | 16,000 | 11 | **11** |
+| C5 off/flat | 13,333 | 3 | **3** |
+| C5 off/terrain | 16,000 | 7 | **7** |
+| C5 on/flat | 13,333 | 8 | **8** |
+| C5 on/terrain | 13,333 | 6 | **6** |
+
+So the plant columns are a continuation of the recorded measurement, not a different one.
+
+## Q1 — the predeclared criterion was ill-posed, and it fails in all eleven cells
+
+**Say this before the answer, because it is the more important finding about the method.** The
+predeclared threshold was `offtake/growth >= ~1` at the peak. **That threshold is unreachable by any
+system with a second loss term**, and this one has a large one: patches die of age, and
+`CumulativePlantBiomassLostToMortality` runs at **0.0100-0.0126 per biomass-second in every cell at
+every sample** — a near-constant ~1%/s, which is exactly what a 34-135 second patch lifespan produces.
+A community in decline satisfies `offtake + mortality > growth`; it need not satisfy
+`offtake > growth`, and here it never does. **Measured `offtake/growth` at the peak is 0.48 to 0.88 and
+does not reach 1 in any of the eleven cells, so Q1 as literally written is falsified everywhere.**
+
+This is recorded as a criterion error rather than repaired quietly, because the repository's own rule
+is that a verdict from an instrument that can only return one answer is not a verdict. The other half
+of the predeclared criterion — *"and standing biomass falls through it"* — is the half that carries the
+claim, and it is the same statement as `drain > growth`.
+
+**On the corrected reading the answer is unambiguous, and it is PRODUCTION-LIMITED in all eleven.**
+
+| cell | peak | `offtake/growth` | `(offtake+mortality)/growth` | grazing share of loss | biomass at peak, % of its own max |
+|---|---:|---:|---:|---:|---:|
+| C2 predation 1.5 | 13,333 | 0.60 | **1.04** | 58% | 77% |
+| C3 herbivore 1.4 | 13,333 | 0.88 | **1.12** | 78% | 31% |
+| C3 herbivore 1.5 | 10,666 | 0.70 | **1.06** | 66% | 74% |
+| C3 herbivore 1.6 | 13,333 | 0.88 | **1.12** | 79% | 35% |
+| C4 proximity 3.0 | 10,666 | 0.80 | **1.12** | 72% | 49% |
+| C4 proximity 4.0 | 13,333 | 0.78 | **1.09** | 71% | 54% |
+| C4 proximity 5.0 | 16,000 | 0.66 | **1.05** | 62% | 69% |
+| C5 off/flat | 13,333 | 0.50 | **1.08** | 46% | 78% |
+| C5 off/terrain | 16,000 | 0.62 | **1.09** | 57% | 56% |
+| C5 on/flat | 13,333 | 0.48 | **1.10** | 44% | 74% |
+| C5 on/terrain | 13,333 | 0.50 | **1.09** | 46% | 78% |
+
+Total drain exceeds gross production at the population peak in every cell, standing biomass is falling
+through that sample in every cell, and grazing is **44-79% of the loss**. The access branch required
+biomass to stay high while creatures starved; instead biomass ends at **3-82 units in C3 and C4**, from
+a maximum near 1,500 — a 94-99.8% loss, with the patch count down to 0.6-2.6 of 22. Forage is not
+standing unreached in those cells. It is gone.
+
+**The gate in the plan does not fire.** Execution continues to Task 4.
+
+## The finding neither branch anticipated: most of primary production is spent on replacement
+
+The mortality column is the one nobody had looked at, and it is the largest single number in the early
+run. In the ungrazed phase — sample 2/9 of C2, offtake 0.0015 against growth 0.0124 — **age mortality
+is 0.0097, or 78% of gross growth.** Before a single meaningful bite is taken, the plant community is
+spending roughly four fifths of what it grows on replacing patches that died of age.
+
+So the production available to consumers without shrinking the standing crop is not `growth`. It is
+`growth - mortality`, which in that phase is **about 22% of gross**. At the peak the consumers are
+taking 0.0090 to 0.0435 per biomass-second against a net production of that order or less. The
+overshoot is not marginal.
+
+**This is a producer-side structural fact and no candidate in the design document addresses it.**
+Patch lifespan is `BaseLifespanSeconds * (1.5 - .75 * Growth)`, 34-135 seconds, and every patch pays
+it whether or not anything eats it.
+
+## Q2 — falsified as written, and the ordering it was testing holds
+
+**Predeclared: seed-eligible patch count reaches zero at or before the population peak in a majority of
+cells. It does not, in any cell.** The all-world mean seed-eligible count at the peak is 6.3 to 16.8,
+and it reaches within rounding of zero in exactly one cell (C4 at brake 4.0) at tick 21,333, which is
+**three samples after** that cell's peak. This is the "weakened, not falsified" branch that was named
+in advance: **the ratchet runs after the peak, not before it, so it is a consequence of the crash
+rather than its cause.**
+
+Two qualifications, in opposite directions.
+
+**Against the prediction, beyond the falsification:** the all-world mean is pooled over 24 worlds that
+die at different times, so it cannot reach zero while any world holds one patch. The literal
+zero-crossing was a badly chosen statistic as well as a wrong one. A per-world crossing count would
+have been the right form and was not computed.
+
+**For the mechanism the prediction was testing:** *sterilisation leads patch loss at every sample in
+every cell*. In C3 at brake 1.4, against that cell's own maximum, patch count runs 100% -> 92% -> 60%
+across the samples up to the peak while seed-eligible runs 100% -> 76% -> 30%. The seeding fraction
+falls roughly twice as fast as the patch count and one sample ahead of it, which is the causal order
+the ratchet claims. It is visible; it is simply not fast enough to precede the population peak.
+
+## The split the eleven cells fall into, which was not predicted at all
+
+The cap-500 herbivore and proximity families (C3, C4) and the cap-250 plant family (C5) behave
+differently at the same verdict:
+
+- **C3 and C4 strip the community.** Grazing is 66-79% of plant loss, biomass ends at 0.2-6% of its
+  maximum, patch count ends at 0.6-2.6.
+- **C5 does not.** Grazing is 44-57% of loss, age mortality is the other half, and the community ends
+  with **6.6-10.4 seed-eligible patches and 500-800 standing biomass** — and the population still dies,
+  3 to 8 worlds of 24 alive, with 41-64% starvation in the last interval.
+
+**A community that is not stripped still fails to hold the population up.** In C5 the consumers are
+taking half of production at the peak and the other half is going to age mortality, so the standing
+crop falls anyway, and what is left at the end is standing forage beside a population that starved.
+Whether that residual is genuinely unreachable — the access mechanism the predeclaration named, with
+`PerceptionSystem` making an emptied patch invisible rather than poor — is **not settled by these
+columns**, and saying so is the honest end of this document rather than a conclusion drawn past its
+evidence.

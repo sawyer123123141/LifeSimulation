@@ -1,0 +1,230 @@
+96 runs of 24000 ticks
+  20/96
+  40/96
+  60/96
+  80/96
+wrote docs\experiments\p6-plant-cap250-brake1.0-24seeds-24000ticks-2026-09-06.csv
+
+== contest-off / flat (24 seeds)
+   extinct 21/24   no living bred lineage 10/24   occupancy 0.554   population 8.4
+   Growth                  -0.0045  t   -0.12    8/14 up
+   SeedInvestment          +0.0973  t   +3.05   11/14 up
+   WaterEfficiency         +0.0631  t   +1.55   10/14 up
+   Nutrition               +0.0045  t   +0.12    9/14 up
+   Defense                 +0.0602  t   +2.13   10/14 up
+   Dispersal               +0.1811  t   +6.63   13/14 up
+   MoistureTolerance       -0.0459  t   -1.04    5/14 up
+   TemperatureTolerance    -0.0670  t   -1.16    5/14 up
+   NutrientUptake          -0.0550  t   -1.70    3/14 up
+   SeedlingResilience      +0.0211  t   +0.50    7/14 up
+   SeedProductionRate      -0.0331  t   -1.02    5/14 up
+
+population trajectory over 24000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        2666    24/24        21.0        21.0   0.644 |   0.0%   0.0%  97.1%   2.9%   0.0%
+  2/9        5333    24/24        15.4        15.4   0.748 |   0.3%   0.3%  93.8%   5.7%   0.0%
+  1/3 3/9    8000    22/24        23.3        25.5   0.752 |   0.0%   0.0%  96.9%   3.1%   0.0%
+  4/9       10666    18/24        49.0        65.3   0.742 |   0.0%   0.0%  98.6%   1.4%   0.0%
+  5/9       13333    17/24        74.5       105.1   0.717 |  24.1%   0.0%  75.0%   0.8%   0.0%
+  2/3 6/9   16000    15/24        40.7        65.1   0.498 |  60.1%   0.2%  39.7%   0.0%   0.0%
+  7/9       18666     9/24        22.8        60.8   0.588 |  56.0%   0.0%  43.6%   0.4%   0.0%
+  8/9       21333     5/24        17.0        81.6   0.569 |  51.7%   0.0%  47.8%   0.5%   0.0%
+  3/3 9/9   24000     3/24         8.4        67.0   0.654 |  56.1%   0.0%  43.9%   0.0%   0.0%
+  last third: all-world mean population 22.8 -> 8.4 (-63.3%), monotone decline YES
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 24000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/9        2666     20.0      14.6     1129.3 |   0.0134   0.0026   0.0065           0.196
+  2/9        5333     21.8      17.2     1316.8 |   0.0144   0.0028   0.0105           0.196
+  1/3 3/9    8000     22.4      18.9     1414.7 |   0.0132   0.0025   0.0102           0.190
+  4/9       10666     22.1      17.8     1331.8 |   0.0145   0.0050   0.0100           0.342
+  5/9       13333     20.5      14.2     1100.0 |   0.0181   0.0090   0.0105           0.499
+  2/3 6/9   16000     15.6      11.0      841.5 |   0.0184   0.0092   0.0112           0.503
+  7/9       18666     14.6      11.7      871.3 |   0.0162   0.0056   0.0103           0.345
+  8/9       21333     14.0      10.6      820.6 |   0.0139   0.0041   0.0102           0.295
+  3/3 9/9   24000     13.3      10.4      796.6 |   0.0130   0.0029   0.0103           0.223
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.
+
+== contest-off / terrain-driven (24 seeds)
+   extinct 17/24   no living bred lineage 14/24   occupancy 0.349   population 20.2
+   Growth                  +0.0912  t   +3.64    8/10 up
+   SeedInvestment          +0.2119  t   +5.43    9/10 up
+   WaterEfficiency         +0.0797  t   +1.80    7/10 up
+   Nutrition               -0.0311  t   -0.98    3/10 up
+   Defense                 +0.0647  t   +1.21    5/10 up
+   Dispersal               +0.1469  t   +5.53   10/10 up
+   MoistureTolerance       -0.0273  t   -0.40    3/10 up
+   TemperatureTolerance    -0.0960  t   -1.62    3/10 up
+   NutrientUptake          -0.0379  t   -0.84    5/10 up
+   SeedlingResilience      -0.0234  t   -0.46    5/10 up
+   SeedProductionRate      -0.0008  t   -0.03    6/10 up
+
+population trajectory over 24000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        2666    24/24        21.2        21.2   0.655 |   0.0%   0.0%  97.1%   2.9%   0.0%
+  2/9        5333    24/24        17.8        17.8   0.749 |   0.0%   0.5%  92.7%   6.8%   0.0%
+  1/3 3/9    8000    23/24        30.9        32.3   0.753 |   0.0%   0.0%  98.3%   1.7%   0.0%
+  4/9       10666    23/24        55.9        58.3   0.755 |   0.0%   0.3%  99.5%   0.3%   0.0%
+  5/9       13333    20/24        75.6        90.8   0.659 |  24.5%   0.1%  74.9%   0.5%   0.0%
+  2/3 6/9   16000    18/24        83.4       111.2   0.557 |  41.5%   0.2%  58.2%   0.2%   0.0%
+  7/9       18666    14/24        46.3        79.4   0.519 |  62.2%   0.1%  37.7%   0.1%   0.0%
+  8/9       21333     7/24        36.4       124.9   0.485 |  47.1%   0.4%  52.5%   0.0%   0.0%
+  3/3 9/9   24000     7/24        20.2        69.3   0.433 |  64.3%   0.4%  35.2%   0.1%   0.0%
+  last third: all-world mean population 46.3 -> 20.2 (-56.4%), monotone decline YES
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 24000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/9        2666     20.3      15.3     1160.1 |   0.0134   0.0026   0.0064           0.193
+  2/9        5333     21.9      16.9     1315.8 |   0.0144   0.0029   0.0106           0.204
+  1/3 3/9    8000     22.6      18.8     1418.6 |   0.0139   0.0032   0.0102           0.231
+  4/9       10666     22.5      18.3     1354.2 |   0.0153   0.0060   0.0097           0.388
+  5/9       13333     20.0      13.8     1048.4 |   0.0191   0.0105   0.0106           0.549
+  2/3 6/9   16000     16.4       9.9      790.7 |   0.0229   0.0141   0.0108           0.618
+  7/9       18666     11.9       7.8      593.8 |   0.0236   0.0147   0.0111           0.623
+  8/9       21333      9.9       6.6      506.4 |   0.0198   0.0103   0.0107           0.521
+  3/3 9/9   24000      8.4       6.8      501.2 |   0.0175   0.0077   0.0100           0.436
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.
+
+== contest-on / flat (24 seeds)
+   extinct 16/24   no living bred lineage 9/24   occupancy 0.488   population 28.1
+   Growth                  +0.1063  t   +3.42   12/15 up
+   SeedInvestment          +0.0969  t   +3.59   12/15 up
+   WaterEfficiency         +0.0166  t   +0.46    8/15 up
+   Nutrition               -0.0159  t   -0.44   10/15 up
+   Defense                 +0.0660  t   +2.98   11/15 up
+   Dispersal               +0.1875  t   +6.73   14/15 up
+   MoistureTolerance       -0.0300  t   -0.60    9/15 up
+   TemperatureTolerance    +0.0163  t   +0.31    8/15 up
+   NutrientUptake          -0.0287  t   -0.81    7/15 up
+   SeedlingResilience      +0.0007  t   +0.02    5/15 up
+   SeedProductionRate      -0.0570  t   -2.25    4/15 up
+
+population trajectory over 24000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        2666    24/24        20.0        20.0   0.639 |   0.0%   0.0%  97.1%   2.9%   0.0%
+  2/9        5333    24/24        15.0        15.0   0.746 |   0.0%   0.0%  93.4%   6.6%   0.0%
+  1/3 3/9    8000    24/24        23.1        23.1   0.754 |   0.0%   0.4%  97.3%   2.2%   0.0%
+  4/9       10666    20/24        53.5        64.2   0.747 |   0.0%   0.0% 100.0%   0.0%   0.0%
+  5/9       13333    19/24        55.0        69.5   0.616 |  43.8%   0.1%  55.8%   0.3%   0.0%
+  2/3 6/9   16000    14/24        46.0        78.9   0.667 |  49.4%   0.1%  50.4%   0.1%   0.0%
+  7/9       18666    13/24        38.5        71.2   0.571 |  41.0%   0.0%  58.8%   0.1%   0.0%
+  8/9       21333    10/24        40.2        96.4   0.646 |  41.7%   0.2%  56.9%   1.3%   0.0%
+  3/3 9/9   24000     8/24        28.1        84.3   0.405 |  41.3%   0.0%  58.6%   0.1%   0.0%
+  last third: all-world mean population 38.5 -> 28.1 (-27.1%), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 24000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/9        2666     19.7      14.5     1117.3 |   0.0132   0.0026   0.0065           0.194
+  2/9        5333     21.4      17.1     1293.4 |   0.0142   0.0027   0.0105           0.189
+  1/3 3/9    8000     22.3      18.8     1413.9 |   0.0132   0.0024   0.0101           0.185
+  4/9       10666     22.3      17.8     1337.0 |   0.0148   0.0051   0.0102           0.341
+  5/9       13333     19.3      13.9     1046.0 |   0.0177   0.0085   0.0110           0.483
+  2/3 6/9   16000     16.2      12.0      919.9 |   0.0186   0.0086   0.0109           0.465
+  7/9       18666     15.3      11.2      849.9 |   0.0185   0.0085   0.0106           0.461
+  8/9       21333     13.6       9.8      756.6 |   0.0188   0.0089   0.0107           0.475
+  3/3 9/9   24000     11.7       8.4      635.7 |   0.0190   0.0093   0.0111           0.489
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.
+
+== contest-on / terrain-driven (24 seeds)
+   extinct 18/24   no living bred lineage 10/24   occupancy 0.458   population 29.2
+   Growth                  +0.0629  t   +1.88    9/14 up
+   SeedInvestment          +0.0764  t   +2.75   11/14 up
+   WaterEfficiency         +0.0434  t   +0.94    9/14 up
+   Nutrition               -0.0783  t   -2.06    4/14 up
+   Defense                 +0.0219  t   +0.70   10/14 up
+   Dispersal               +0.1629  t   +3.66   13/14 up
+   MoistureTolerance       +0.0441  t   +0.74   10/14 up
+   TemperatureTolerance    -0.0110  t   -0.17    8/14 up
+   NutrientUptake          +0.0624  t   +1.05    8/14 up
+   SeedlingResilience      -0.0159  t   -0.31    5/14 up
+   SeedProductionRate      -0.0801  t   -2.03    5/14 up
+
+population trajectory over 24000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        2666    24/24        20.6        20.6   0.650 |   0.0%   0.0%  95.7%   4.3%   0.0%
+  2/9        5333    24/24        15.1        15.1   0.761 |   0.0%   0.0%  92.6%   7.4%   0.0%
+  1/3 3/9    8000    22/24        24.8        27.1   0.763 |   0.0%   0.0%  99.1%   0.9%   0.0%
+  4/9       10666    21/24        47.9        54.7   0.762 |   0.0%   0.0%  99.0%   1.0%   0.0%
+  5/9       13333    21/24        73.3        83.8   0.673 |  11.6%   0.0%  87.0%   1.4%   0.0%
+  2/3 6/9   16000    15/24        70.5       112.7   0.707 |  44.5%   0.2%  55.2%   0.1%   0.0%
+  7/9       18666    12/24        35.2        70.4   0.412 |  56.0%   0.1%  43.9%   0.1%   0.0%
+  8/9       21333     7/24        24.8        84.9   0.698 |  49.7%   0.0%  50.3%   0.0%   0.0%
+  3/3 9/9   24000     6/24        29.2       116.8   0.579 |  10.5%   0.0%  89.5%   0.0%   0.0%
+  last third: all-world mean population 35.2 -> 29.2 (-17.0%), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 24000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/9        2666     20.0      15.2     1149.9 |   0.0134   0.0026   0.0065           0.192
+  2/9        5333     21.5      17.3     1305.1 |   0.0140   0.0026   0.0105           0.188
+  1/3 3/9    8000     22.4      19.0     1415.4 |   0.0129   0.0025   0.0098           0.195
+  4/9       10666     22.2      18.1     1357.2 |   0.0146   0.0049   0.0100           0.333
+  5/9       13333     20.3      14.3     1098.1 |   0.0180   0.0090   0.0106           0.501
+  2/3 6/9   16000     16.5      11.1      850.0 |   0.0210   0.0121   0.0108           0.574
+  7/9       18666     12.5       9.4      709.6 |   0.0205   0.0116   0.0103           0.568
+  8/9       21333     11.9       9.5      719.5 |   0.0168   0.0066   0.0101           0.393
+  3/3 9/9   24000     11.0       8.2      626.7 |   0.0175   0.0077   0.0108           0.441
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.
+
+== establishment contest, paired on-off, flat
+   Growth                  +0.0561  t   +1.20    5/10 up
+   SeedInvestment          -0.0134  t   -0.28    4/10 up
+   WaterEfficiency         -0.0380  t   -0.50    3/10 up
+   Nutrition               -0.0487  t   -0.83    3/10 up
+   Defense                 -0.0470  t   -1.45    3/10 up
+   Dispersal               -0.0007  t   -0.02    6/10 up
+   MoistureTolerance       -0.0213  t   -0.19    4/10 up
+   TemperatureTolerance    +0.1721  t   +1.80    6/10 up
+   NutrientUptake          +0.0411  t   +1.08    7/10 up
+   SeedlingResilience      -0.0431  t   -0.75    3/10 up
+   SeedProductionRate      -0.0298  t   -0.71    4/10 up
+
+== establishment contest, paired on-off, terrain-driven
+   Growth                  -0.0860  t   -2.00    2/7 up
+   SeedInvestment          -0.1517  t   -4.89    1/7 up
+   WaterEfficiency         -0.0561  t   -0.87    2/7 up
+   Nutrition               -0.1156  t   -2.15    1/7 up
+   Defense                 -0.0302  t   -0.45    2/7 up
+   Dispersal               -0.0041  t   -0.05    3/7 up
+   MoistureTolerance       -0.0628  t   -0.55    3/7 up
+   TemperatureTolerance    +0.1613  t   +1.43    5/7 up
+   NutrientUptake          +0.2167  t   +1.76    4/7 up
+   SeedlingResilience      +0.0013  t   +0.01    3/7 up
+   SeedProductionRate      -0.0949  t   -1.67    2/7 up
+
+== the join, paired terrain minus flat, contest-off
+   Growth                  +0.1020  t   +1.97    5/6 up
+   SeedInvestment          +0.1351  t   +2.96    6/6 up
+   WaterEfficiency         +0.0188  t   +0.29    3/6 up
+   Nutrition               -0.0078  t   -0.13    2/6 up
+   Defense                 -0.0849  t   -1.51    1/6 up
+   Dispersal               -0.0508  t   -1.76    1/6 up
+   MoistureTolerance       -0.1024  t   -0.69    2/6 up
+   TemperatureTolerance    -0.0419  t   -0.62    2/6 up
+   NutrientUptake          -0.0030  t   -0.05    2/6 up
+   SeedlingResilience      -0.0316  t   -0.29    3/6 up
+   SeedProductionRate      -0.0311  t   -0.58    3/6 up
+
+== the join, paired terrain minus flat, contest-on
+   Growth                  +0.0232  t   +0.41    5/9 up
+   SeedInvestment          -0.0180  t   -0.54    6/9 up
+   WaterEfficiency         +0.0029  t   +0.05    6/9 up
+   Nutrition               -0.0294  t   -0.42    4/9 up
+   Defense                 -0.0800  t   -1.91    3/9 up
+   Dispersal               +0.0430  t   +0.97    5/9 up
+   MoistureTolerance       -0.0149  t   -0.12    5/9 up
+   TemperatureTolerance    -0.1191  t   -1.01    3/9 up
+   NutrientUptake          +0.1251  t   +1.18    5/9 up
+   SeedlingResilience      +0.0855  t   +1.50    6/9 up
+   SeedProductionRate      -0.0141  t   -0.26    3/9 up
