@@ -6,7 +6,15 @@ namespace LifeSimulation.Simulation.Environment
 {
     public static class PlantReproductionSystem
     {
-        private const float MaturityFraction = .75f;
+        /// <summary>
+        /// Biomass fraction a patch must reach before it produces any seed at all.
+        ///
+        /// <para><b>Public only so an instrument can read it.</b> The value is unchanged and this is
+        /// not an invitation to vary it here: <c>SimulationWorld.Statistics</c> counts patches at or
+        /// above it, and duplicating the literal in the tools would let the statistic and the gate
+        /// drift apart silently.</para>
+        /// </summary>
+        public const float MaturityFraction = .75f;
         private const float MutationStandardDeviation = .03f;
         private const int SiteAttempts = 4;
         public const float ReproductionCooldownSeconds = 20f;

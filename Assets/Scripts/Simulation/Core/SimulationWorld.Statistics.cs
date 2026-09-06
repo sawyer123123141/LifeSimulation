@@ -113,6 +113,7 @@ namespace LifeSimulation.Simulation.Core
             float water = 0f;
             float plantBiomass = 0f;
             int dormantPlantPatches = 0;
+            int seedEligiblePlantPatches = 0;
             int highestPlantGeneration = 0;
             float plantGrowthTotal = 0f;
             float plantNutritionTotal = 0f;
@@ -129,6 +130,10 @@ namespace LifeSimulation.Simulation.Core
                 PlantPatchState patch = Plants.GetAt(index);
                 plantBiomass += patch.Biomass;
                 if (patch.IsDormant) dormantPlantPatches++;
+
+                // The same comparison PlantReproductionSystem.Step makes before it will produce any
+                // seed, read from the same constant so the two cannot drift apart.
+                if (patch.Biomass >= patch.Capacity * PlantReproductionSystem.MaturityFraction) seedEligiblePlantPatches++;
                 highestPlantGeneration = Math.Max(highestPlantGeneration, patch.Lineage.Generation);
                 plantGrowthTotal += patch.Genome.Growth;
                 plantNutritionTotal += patch.Genome.Nutrition;
@@ -197,7 +202,8 @@ namespace LifeSimulation.Simulation.Core
                 meanDefenseAtDeath: _defenseAtDeathCount == 0 ? 0f : _defenseAtDeathTotal / _defenseAtDeathCount,
                 meanDefenseAtPredationDeath: _defenseAtPredationDeathCount == 0 ? 0f : _defenseAtPredationDeathTotal / _defenseAtPredationDeathCount,
                 fleeDecisionCount: _fleeDecisionCount,
-                decisionCount: _decisionCount);
+                decisionCount: _decisionCount,
+                seedEligiblePlantPatchCount: seedEligiblePlantPatches);
         }
     }
 }

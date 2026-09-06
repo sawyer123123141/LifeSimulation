@@ -28,10 +28,22 @@ namespace LifeSimulation.Tools
     {
         public const int SampleCount = 9;
 
+        // Column indices into _plant. Patches, seed-eligible patches and biomass are levels; growth,
+        // offtake, mortality loss and biomass-seconds are cumulative and are differenced per interval.
+        private const int PlantPatches = 0;
+        private const int PlantSeedEligible = 1;
+        private const int PlantBiomass = 2;
+        private const int PlantGrowth = 3;
+        private const int PlantOfftake = 4;
+        private const int PlantMortality = 5;
+        private const int PlantBiomassSeconds = 6;
+        private const int PlantColumnCount = 7;
+
         private readonly int[] _boundaries = new int[SampleCount];
         private readonly int[] _population = new int[SampleCount];
         private readonly double[] _energy = new double[SampleCount];
         private readonly long[,] _deaths = new long[SampleCount, 5];
+        private readonly double[,] _plant = new double[SampleCount, PlantColumnCount];
         private int _taken;
 
         public Trajectory(int ticks)
@@ -58,6 +70,13 @@ namespace LifeSimulation.Tools
             _deaths[_taken, 2] = statistics.AgeDeathCount;
             _deaths[_taken, 3] = statistics.HealthDeathCount;
             _deaths[_taken, 4] = statistics.PredationDeathCount;
+            _plant[_taken, PlantPatches] = statistics.ActivePlantPatchCount;
+            _plant[_taken, PlantSeedEligible] = statistics.SeedEligiblePlantPatchCount;
+            _plant[_taken, PlantBiomass] = statistics.TotalPlantBiomass;
+            _plant[_taken, PlantGrowth] = statistics.CumulativePlantGrowth;
+            _plant[_taken, PlantOfftake] = statistics.CumulativePlantBiomassConsumed;
+            _plant[_taken, PlantMortality] = statistics.CumulativePlantBiomassLostToMortality;
+            _plant[_taken, PlantBiomassSeconds] = statistics.PlantBiomassSeconds;
             _taken++;
         }
 
@@ -138,6 +157,94 @@ namespace LifeSimulation.Tools
                 + last.ToString("0.0") + " (" + change + "), monotone decline "
                 + (falling ? "YES" : "no"));
             Console.WriteLine("  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.");
+
+            ReportPlants(runs, ticks);
+        }
+
+        /// <summary>
+        /// The producer side of the same nine samples.
+        ///
+        /// <para><b>Why this is a second table.</b> Every trajectory recorded before 2026-09-06
+        /// reports the consumer alone, so a plant community being grazed to sterility and one sitting
+        /// untouched produce the same artefact - the same shape of blindness the population table was
+        /// added to close. The population table above is unchanged so that older artefacts still diff
+        /// against it; this is appended.</para>
+        ///
+        /// <para><b>`seed-elig` is the one to read.</b> Seeding is an all-or-nothing threshold, so a
+        /// community at full occupancy every patch of which is grazed below it is reproductively dead
+        /// while `patches` still reads full.</para>
+        ///
+        /// <para><b>`growth` and `offtake` are rates, not totals</b>, each normalized by the biomass
+        /// integral accumulated over the same interval, so they are per unit standing biomass per
+        /// second and are comparable to each other across intervals of different size. `offtake/growth`
+        /// is the ratio of the two: at or above 1 the consumers are taking everything the producers
+        /// make, which is production limitation. Well below 1 while creatures starve is not.</para>
+        /// </summary>
+        private static void ReportPlants(IReadOnlyList<Trajectory> runs, int ticks)
+        {
+            bool anyPlants = false;
+            foreach (Trajectory run in runs)
+            {
+                for (int point = 0; point < SampleCount && !anyPlants; point++)
+                {
+                    if (run._plant[point, PlantPatches] > 0d) anyPlants = true;
+                }
+            }
+
+            if (!anyPlants) return;
+
+            Console.WriteLine();
+            Console.WriteLine("plant trajectory over " + ticks + " ticks, " + runs.Count + " runs (all-world means)");
+            Console.WriteLine("  point     tick  patches seed-elig    biomass | within the interval, per biomass-second");
+            Console.WriteLine("                                              |   growth  offtake   mortal  offtake/growth");
+
+            for (int point = 0; point < SampleCount; point++)
+            {
+                double patches = 0d;
+                double seedEligible = 0d;
+                double biomass = 0d;
+                double growth = 0d;
+                double offtake = 0d;
+                double mortality = 0d;
+                double biomassSeconds = 0d;
+
+                foreach (Trajectory run in runs)
+                {
+                    patches += run._plant[point, PlantPatches];
+                    seedEligible += run._plant[point, PlantSeedEligible];
+                    biomass += run._plant[point, PlantBiomass];
+                    growth += Interval(run, point, PlantGrowth);
+                    offtake += Interval(run, point, PlantOfftake);
+                    mortality += Interval(run, point, PlantMortality);
+                    biomassSeconds += Interval(run, point, PlantBiomassSeconds);
+                }
+
+                string label = (point + 1) + "/" + SampleCount;
+                if ((point + 1) % 3 == 0) label = ((point + 1) / 3) + "/3 " + label;
+
+                Console.WriteLine("  " + label.PadRight(9)
+                    + ((long)ticks * (point + 1) / SampleCount).ToString().PadLeft(6)
+                    + (patches / runs.Count).ToString("0.0").PadLeft(9)
+                    + (seedEligible / runs.Count).ToString("0.0").PadLeft(10)
+                    + (biomass / runs.Count).ToString("0.0").PadLeft(11)
+                    + " |" + Rate(growth, biomassSeconds) + Rate(offtake, biomassSeconds)
+                    + Rate(mortality, biomassSeconds)
+                    + (growth <= 0d ? "-" : (offtake / growth).ToString("0.000")).PadLeft(16));
+            }
+
+            Console.WriteLine("  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.");
+        }
+
+        private static double Interval(Trajectory run, int point, int column)
+        {
+            double before = point == 0 ? 0d : run._plant[point - 1, column];
+            return run._plant[point, column] - before;
+        }
+
+        private static string Rate(double amount, double biomassSeconds)
+        {
+            string text = biomassSeconds <= 0d ? "-" : (amount / biomassSeconds).ToString("0.0000");
+            return text.PadLeft(9);
         }
 
         private static string Share(long count, long total)

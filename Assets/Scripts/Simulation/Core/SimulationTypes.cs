@@ -131,7 +131,9 @@ namespace LifeSimulation.Simulation.Core
             float meanDefenseAtDeath = 0f,
             float meanDefenseAtPredationDeath = 0f,
             int fleeDecisionCount = 0,
-            int decisionCount = 0)
+            int decisionCount = 0,
+            // Appended 2026-09-06, at the END and with a default, for the reason recorded above.
+            int seedEligiblePlantPatchCount = 0)
         {
             Tick = tick;
             Population = population;
@@ -174,6 +176,7 @@ namespace LifeSimulation.Simulation.Core
             MeanDefenseAtPredationDeath = meanDefenseAtPredationDeath;
             FleeDecisionCount = fleeDecisionCount;
             DecisionCount = decisionCount;
+            SeedEligiblePlantPatchCount = seedEligiblePlantPatchCount;
             MeanDietSpecializationGene = meanDietSpecializationGene;
             ViableHunterCount = viableHunterCount;
             MeanMemoryCapacityGene = meanMemoryCapacityGene;
@@ -282,6 +285,22 @@ namespace LifeSimulation.Simulation.Core
         public float PlantBiomassResidual { get; }
         public int PlantBirthCount { get; }
         public int ActivePlantPatchCount { get; }
+
+        /// <summary>
+        /// Live patches at or above <see cref="Environment.PlantReproductionSystem.MaturityFraction"/>
+        /// of their capacity - the ones that can produce seed at all.
+        ///
+        /// <para><b>Why this is separate from <see cref="ActivePlantPatchCount"/>.</b> Seeding is an
+        /// all-or-nothing threshold, not a graded response: a patch below the fraction produces no
+        /// seed, so a fully occupied community every one of whose patches is grazed to two thirds is
+        /// reproductively dead while reporting full occupancy. This is the count that separates those
+        /// two states, and there was no statistic for it.</para>
+        ///
+        /// <para>Read-only, absent from <c>ComputeStateHash</c>, and nothing in the simulation consumes
+        /// it.</para>
+        /// </summary>
+        public int SeedEligiblePlantPatchCount { get; }
+
         public int HighestPlantGeneration { get; }
         public float MeanPlantGrowthGene { get; }
         public float MeanPlantNutritionGene { get; }

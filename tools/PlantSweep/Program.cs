@@ -157,7 +157,15 @@ namespace LifeSimulation.Tools.PlantSweep
             public ulong Hash;
             public int Population;
             public bool Extinct;
-            public bool Frozen;
+            /// <summary>
+            /// No LIVING patch descends from a reproduction event. Renamed from `Frozen` on
+            /// 2026-09-06 because that name is a history word and this is a scan of the present:
+            /// `HighestPlantGeneration` is computed over the living patch store, so the flag reads
+            /// true both when nothing ever bred and when everything that bred has since died -
+            /// opposite findings. `PlantBirths` beside it disambiguates. No recorded figure moves:
+            /// every one was measured at 12,000 ticks where no plant community had died.
+            /// </summary>
+            public bool NoLivingBredLineage;
             public double Occupancy;
             public int PlantBirths;
             public int HighestPlantGeneration;
@@ -283,7 +291,7 @@ namespace LifeSimulation.Tools.PlantSweep
                 Hash = world.ComputeStateHash(),
                 Population = statistics.Population,
                 Extinct = statistics.Population == 0,
-                Frozen = statistics.HighestPlantGeneration == 0,
+                NoLivingBredLineage = statistics.HighestPlantGeneration == 0,
                 Occupancy = world.PlantSites.Count == 0 ? 0d : live / (double)world.PlantSites.Count,
                 PlantBirths = statistics.PlantBirthCount,
                 HighestPlantGeneration = statistics.HighestPlantGeneration,
@@ -298,7 +306,7 @@ namespace LifeSimulation.Tools.PlantSweep
         private static void WriteCsv(RunResult[] results)
         {
             var builder = new StringBuilder();
-            builder.Append("terrain,arm,seed,hash,occupancy,population,extinct,frozen,plant_births,highest_plant_generation");
+            builder.Append("terrain,arm,seed,hash,occupancy,population,extinct,no_living_bred_lineage,plant_births,highest_plant_generation");
             for (int trait = 0; trait < PlantGenome.TraitCount; trait++)
             {
                 string name = PlantGenome.TraitName(trait).ToLowerInvariant().Replace(' ', '_');
@@ -318,7 +326,7 @@ namespace LifeSimulation.Tools.PlantSweep
                     .Append(Format(result.Occupancy)).Append(",")
                     .Append(result.Population).Append(",")
                     .Append(result.Extinct ? 1 : 0).Append(",")
-                    .Append(result.Frozen ? 1 : 0).Append(",")
+                    .Append(result.NoLivingBredLineage ? 1 : 0).Append(",")
                     .Append(result.PlantBirths).Append(",")
                     .Append(result.HighestPlantGeneration);
                 for (int trait = 0; trait < PlantGenome.TraitCount; trait++)
@@ -372,7 +380,7 @@ namespace LifeSimulation.Tools.PlantSweep
                     Console.WriteLine("== " + (contest ? "contest-on" : "contest-off") + " / "
                         + (terrain ? "terrain-driven" : "flat") + " (" + set.Length + " seeds)");
                     Console.WriteLine("   extinct " + set.Count(result => result.Extinct) + "/" + set.Length
-                        + "   frozen " + set.Count(result => result.Frozen) + "/" + set.Length
+                        + "   no living bred lineage " + set.Count(result => result.NoLivingBredLineage) + "/" + set.Length
                         + "   occupancy " + set.Average(result => result.Occupancy).ToString("0.000", CultureInfo.InvariantCulture)
                         + "   population " + set.Average(result => (double)result.Population).ToString("0.0", CultureInfo.InvariantCulture));
                     for (int trait = 0; trait < PlantGenome.TraitCount; trait++)
