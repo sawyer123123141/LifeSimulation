@@ -1,0 +1,95 @@
+
+death causes over ALL 24 runs, extinct included (16996 deaths attributed)
+  starvation      8469    49.8%
+  dehydration       17     0.1%
+  age             8457    49.8%
+  health            53     0.3%
+  predation          0     0.0%
+  births per run          696.2   attack hits per run 0.0
+  combat damage per run   0.0
+  defense: living NaN   all dead 0.0455   predated NaN   (runs contributing: 24 / 0)
+
+death causes over 0 surviving runs of 24 (0 deaths attributed)
+  starvation         0      n/a
+  dehydration        0      n/a
+  age                0      n/a
+  health             0      n/a
+  predation          0      n/a
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    NaN
+  mean hydration fraction NaN
+  mean health fraction    NaN
+  below the health gate   NaN%  <- cannot seek a mate, ever
+  decisions that were flee NaN%
+  final population, ALL WORLDS (extinct counted as 0)
+    n 24  mean 0.0  min 0.0  q1 0.0  median 0.0  q3 0.0  max 0.0  sd 0.00
+  final population, SURVIVING WORLDS ONLY (conditioned on survival)
+    no runs
+  final population        mean NaN  min NaN  median NaN  max NaN  sd NaN
+
+population trajectory over 72000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/27       2666    24/24        35.8        35.8   0.726 |   0.0%   0.0% 100.0%   0.0%   0.0%
+  2/27       5333    24/24        56.6        56.6   0.773 |   0.0%   0.0%  98.3%   1.7%   0.0%
+  3/27       8000    24/24       119.9       119.9   0.776 |   0.0%   0.0%  97.8%   2.2%   0.0%
+  4/27      10666    24/24       261.6       261.6   0.762 |   0.4%   0.0%  99.0%   0.5%   0.0%
+  5/27      13333    22/24       245.8       268.2   0.420 |  48.2%   0.0%  51.6%   0.2%   0.0%
+  6/27      16000    10/24        94.3       226.3   0.401 |  69.1%   0.2%  30.6%   0.1%   0.0%
+  7/27      18666     3/24        49.3       394.0   0.557 |  66.0%   0.0%  33.9%   0.1%   0.0%
+  8/27      21333     2/24        29.6       355.0   0.341 |  52.5%   0.2%  47.3%   0.0%   0.0%
+  1/3 9/27  24000     0/24         0.0           -       - |  70.9%   0.1%  29.0%   0.0%   0.0%
+  10/27     26666     0/24         0.0           -       - |      -      -      -      -      -
+  11/27     29333     0/24         0.0           -       - |      -      -      -      -      -
+  12/27     32000     0/24         0.0           -       - |      -      -      -      -      -
+  13/27     34666     0/24         0.0           -       - |      -      -      -      -      -
+  14/27     37333     0/24         0.0           -       - |      -      -      -      -      -
+  15/27     40000     0/24         0.0           -       - |      -      -      -      -      -
+  16/27     42666     0/24         0.0           -       - |      -      -      -      -      -
+  17/27     45333     0/24         0.0           -       - |      -      -      -      -      -
+  2/3 18/27 48000     0/24         0.0           -       - |      -      -      -      -      -
+  19/27     50666     0/24         0.0           -       - |      -      -      -      -      -
+  20/27     53333     0/24         0.0           -       - |      -      -      -      -      -
+  21/27     56000     0/24         0.0           -       - |      -      -      -      -      -
+  22/27     58666     0/24         0.0           -       - |      -      -      -      -      -
+  23/27     61333     0/24         0.0           -       - |      -      -      -      -      -
+  24/27     64000     0/24         0.0           -       - |      -      -      -      -      -
+  25/27     66666     0/24         0.0           -       - |      -      -      -      -      -
+  26/27     69333     0/24         0.0           -       - |      -      -      -      -      -
+  3/3 27/27 72000     0/24         0.0           -       - |      -      -      -      -      -
+  last 3 samples (tick 66666-72000): all-world mean population 0.0 -> 0.0 (n/a), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 72000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/27       2666     20.2      17.9     1308.6 |   0.0155   0.0026   0.0079           0.170
+  2/27       5333     22.4      21.1     1520.9 |   0.0160   0.0051   0.0099           0.316
+  3/27       8000     22.2      20.6     1487.0 |   0.0184   0.0089   0.0097           0.481
+  4/27      10666     21.0      15.2     1118.6 |   0.0321   0.0224   0.0117           0.699
+  5/27      13333     12.0       5.5      418.7 |   0.0476   0.0425   0.0117           0.891
+  6/27      16000      5.4       2.8      211.8 |   0.0531   0.0474   0.0108           0.893
+  7/27      18666      3.1       2.2      163.7 |   0.0434   0.0337   0.0117           0.776
+  8/27      21333      1.8       0.9       65.9 |   0.0474   0.0410   0.0126           0.866
+  1/3 9/27  24000      1.0       1.0       70.2 |   0.0160   0.0037   0.0119           0.229
+  10/27     26666      1.0       1.0       70.1 |   0.0116   0.0000   0.0116           0.000
+  11/27     29333      1.0       0.9       64.5 |   0.0116   0.0000   0.0122           0.000
+  12/27     32000      0.9       0.9       63.3 |   0.0117   0.0000   0.0118           0.000
+  13/27     34666      1.0       1.0       68.9 |   0.0123   0.0000   0.0117           0.000
+  14/27     37333      1.0       0.8       59.0 |   0.0111   0.0000   0.0122           0.000
+  15/27     40000      1.0       1.0       69.4 |   0.0117   0.0000   0.0105           0.000
+  16/27     42666      1.0       1.0       70.0 |   0.0108   0.0000   0.0108           0.000
+  17/27     45333      1.0       0.8       64.2 |   0.0127   0.0000   0.0134           0.000
+  2/3 18/27 48000      1.0       1.0       71.8 |   0.0115   0.0000   0.0106           0.000
+  19/27     50666      0.9       0.8       59.9 |   0.0123   0.0000   0.0136           0.000
+  20/27     53333      1.0       1.0       71.8 |   0.0118   0.0000   0.0104           0.000
+  21/27     56000      1.0       0.8       61.4 |   0.0116   0.0000   0.0128           0.000
+  22/27     58666      1.0       1.0       70.9 |   0.0110   0.0000   0.0100           0.000
+  23/27     61333      1.0       1.0       71.8 |   0.0115   0.0000   0.0114           0.000
+  24/27     64000      0.9       0.9       63.6 |   0.0104   0.0000   0.0113           0.000
+  25/27     66666      1.0       0.9       66.7 |   0.0114   0.0000   0.0110           0.000
+  26/27     69333      1.0       1.0       68.4 |   0.0105   0.0000   0.0103           0.000
+  3/3 27/27 72000      0.9       0.9       63.0 |   0.0108   0.0000   0.0114           0.000
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.
+wrote docs\experiments\p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-72000ticks-27samples-2026-09-10.csv

@@ -336,3 +336,163 @@ CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=72000 --samples=27
 Both arms, same 24 seeds from 42, control and treatment. **No configuration value moves.** The sample
 at tick 24,000 - sample 9 of 27 - must reproduce the recorded 24,000-tick arm, and if it does not,
 nothing else in the run may be read.
+
+---
+
+# Results
+
+**Run 2026-09-10** at code commit `5ae5f24`, after the predeclaration and provenance above, both
+unedited. **No criterion in sections 3 or 4 was touched after results existed.**
+
+## 0. Validity checks, before any verdict
+
+| check | result |
+|---|---|
+| control reproduces at 72,000 | **0 of 24 alive**, as at 24,000. All-world mean 0.0 at every sample from tick 21,333 onward. |
+| tick-24,000 sample of the 72k arm vs the recorded 24k arm | sample 9/27 reads `20/24, pop(all) 213.0, pop(alive) 255.7, energy 0.622, starvation 49.4%` — **identical to the recorded 24,000-tick arm** |
+| behaviour hash at tick 24,000, 72k run vs 24k run, **arm** | **24 of 24 seeds identical** |
+| behaviour hash at tick 24,000, 72k run vs 24k run, **control** | **24 of 24 seeds identical** |
+
+Run length changes nothing about the first 24,000 ticks, per seed, at the bit level. The extension is
+the same measurement continued.
+
+## 1. The formal verdict
+
+| | |
+|---|---|
+| `alive` at tick 24,000 — the one-third point section 3.1 names as the denominator | **20** |
+| `alive` at the final sample, tick 72,000 | **16** |
+| threshold `ceil(0.85 x 20)` | **17** |
+| **survival clause** | **16 < 17 — FAILS** |
+| trend clause, last three samples | 290.8 -> 306.3 -> 304.9, **not** a monotone decline |
+
+**VERDICT: COLLAPSE (section 3.2, partial).**
+
+The denominator ambiguity noted last turn does not bite: taking `alive` at the literal third sample
+(tick 8,000, 24 worlds) gives a threshold of 21, and 16 fails that too. **Both readings agree.**
+
+## 2. Every prediction and falsifier
+
+| # | predeclared | outcome | result |
+|---|---|---|---|
+| 4.1 | `alive(last)` between 8 and 16, failing the threshold, without extinction | **16**, fails 17, not extinct | **PASS** (at the top edge of the interval) |
+| 4.2 | at least two cycles resolvable; successive peaks not monotonically declining — SUSTAINED | **6 cycles**; peaks 277.4, 213.0, 254.4, 247.0, 282.8, 273.3, 306.3 | **PASS** |
+| 4.3 | cap-contacting worlds stay under a quarter of survivors | **12 of 16 survivors, 75%** | **FAIL** |
+| 4.4a | starvation continues to alternate per world rather than settling | rising worlds **3.6%**, falling worlds **3.7%** — it settled | **FAIL** |
+| 4.4b | rising / falling split stays roughly even | 7 rising, 6 falling, 3 flat | **PASS** |
+
+| falsifier | outcome |
+|---|---|
+| `alive(last) >= 21` — persistence | **not met** (16) |
+| `alive(last) = 0` or below 8 — divergent | **not met** (16) |
+| DAMPED: peaks decline monotonically while troughs rise | **not met mechanically** — see section 4, the criterion tested the wrong quantity |
+| flat plateau with starvation under 5% throughout | **not met** — final intervals run 10.9%, 14.1%, 6.7% |
+| fewer than two cycles resolvable | **not met** (6 cycles) |
+
+## 3. Oscillation, and the amplitude the criterion did not look at
+
+Six complete peak-trough-peak cycles on the all-world mean. Peak-to-peak spacing pooled across worlds:
+**5,333 to 18,667 ticks, mean 9,636** (n = 88), consistent with the 8,000-10,667 estimated from the
+24,000-tick run.
+
+| peak | value | following trough | value | amplitude | drop |
+|---|---:|---|---:|---:|---:|
+| 13,333 | 277.4 | 16,000 | 121.4 | 156.0 | **56.2%** |
+| 24,000 | 213.0 | 26,666 | 169.4 | 43.7 | 20.5% |
+| 32,000 | 254.4 | 37,333 | 146.1 | 108.2 | 42.6% |
+| 42,666 | 247.0 | 45,333 | 188.4 | 58.6 | 23.7% |
+| 53,333 | 282.8 | 56,000 | 237.9 | 44.8 | 15.9% |
+| 61,333 | 273.3 | 64,000 | 267.2 | 6.1 | **2.2%** |
+
+**Peaks rise (277 -> 306) and troughs rise faster (121 -> 267), so the amplitude collapses from 156 to
+6.** That is a damped oscillation converging on a level. Section 3.3 nevertheless returns **SUSTAINED**,
+because it defined DAMPED as *successive peaks declining monotonically* — a definition that only fits a
+system damping toward a level **below** its first peak, and this one damps toward a level above it.
+
+**The criterion is mis-specified and is reported as such rather than reinterpreted.** This is the third
+predeclared criterion in this branch to be wrong in its arithmetic rather than its intent — after the
+`offtake/growth >= 1` threshold that no system with a second loss term can reach, and the `20 of 24
+passes` gloss. The lesson is consistent: **a criterion phrased on a proxy quantity fails where a
+criterion phrased on the quantity of interest would not.** Amplitude was the quantity of interest.
+
+## 4. What the level it converges to actually is
+
+**The population cap.** This is the finding.
+
+- **14 of 24 worlds touch the cap of 500** at some sample; **12 of the 16 survivors** do, at up to 11
+  samples each (seed 48).
+- **13 of the 16 survivors end at 475 or above** of a 500 cap. Survivor finals:
+  `4, 413, 415, 496, 497, 498, 498, 499, 499, 499, 499, 500, 500, 500, 500, 500`.
+- **Only 4 survivors never touch the cap** — seeds 43, 44, 46, 53 — and two of those end at 498 and 499.
+- Excluding cap-contacting worlds leaves **4 survivors of 24**, far below any threshold.
+
+**Section 3.4 verdict: CONFOUNDED.** The convergence in section 3 is convergence onto the ceiling, not
+onto a carrying capacity. The source's own test applies: *a carrying capacity produces a distribution,
+a cap produces a constant* — and the survivor interquartile range is 496.5 to 500.
+
+This also explains the two failed predictions. Starvation settled to 3.6% because a population held at
+a ceiling by a birth cap is not starving; and the plant-population phase correlation weakened from
+**r = -0.716 at 24,000 ticks to r = -0.151 at 72,000**, because worlds pinned at the same population
+have no phase spread left to correlate.
+
+## 5. Casualties: one establishment failure, seven later collapses
+
+| seed | peak | at tick | extinct from | kind |
+|---|---:|---:|---:|---|
+| 55 | 32 | 2,666 | 10,666 | **establishment failure** |
+| 42 | 355 | 13,333 | 21,333 | later collapse |
+| 50 | 425 | 13,333 | 21,333 | later collapse |
+| 63 | 293 | 13,333 | 21,333 | later collapse |
+| 52 | 500 | 24,000 | 32,000 | later collapse |
+| 51 | 500 | 34,666 | 40,000 | later collapse |
+| 57 | 467 | 24,000 | 48,000 | later collapse |
+| 59 | 399 | 32,000 | 48,000 | later collapse |
+
+**Reaching the cap does not protect a world.** Seeds 51 and 52 both hit 500 and were extinct within
+8,000 and 6,000 ticks of doing so. Four of the eight casualties died after tick 24,000 — worlds the
+24,000-tick reading counted as survivors.
+
+**No world was lost after tick 48,000.** The alive count is 16 from sample 18 through 27, ten
+consecutive samples spanning 24,000 ticks. Whether that is stability or a longer-period hazard this run
+cannot separate; the 24,000-tick run also had a quiet stretch and then lost four more worlds.
+
+## 6. Distributions, both labelled
+
+| | n | mean | min | q1 | median | q3 | max | sd |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **arm, ALL WORLDS** (extinct = 0) | 24 | 304.9 | 0 | 0.0 | 496.5 | 499.0 | 500 | 242.0 |
+| **arm, SURVIVORS ONLY** | 16 | 457.3 | 4 | 496.5 | 499.0 | 500.0 | 500 | 124.3 |
+| **control, ALL WORLDS** | 24 | 0.0 | 0 | 0.0 | 0.0 | 0.0 | 0 | 0.00 |
+
+The all-world median of 496.5 with a first quartile of 0 is the shape of this result: a third of the
+worlds are dead and most of the rest are on the ceiling.
+
+## 7. Paired per-seed outcomes
+
+Control extinct in all 24 worlds, so each paired difference is the arm's final population.
+
+| | value |
+|---|---|
+| improved | **16 of 24** |
+| unchanged (both zero) | 8 of 24 — seeds 42, 50, 51, 52, 55, 57, 59, 63 |
+| **worse** | **0 of 24** |
+| paired difference | mean **+304.9**, sd 242.0, min +0, q1 +0, median **+496**, q3 +499, max +500 |
+
+## 8. What this establishes
+
+**Established:**
+
+- Graded seeding takes this cell from **0 of 24 alive to 16 of 24** at 72,000 ticks, and harms no world.
+- The result is nevertheless **COLLAPSE** under the frozen criterion, on both candidate denominators.
+- The apparent stabilisation is **the population cap**: 12 of 16 survivors touch it, 13 of 16 end within
+  5% of it, and removing cap-contacting worlds leaves 4 survivors.
+- Determinism holds bit-exactly across run lengths, 24 of 24 seeds in both arms.
+
+**Not established:**
+
+- **Whether an ecological carrying capacity exists below 500.** Nothing here can say, because the cap
+  binds. That needs a higher cap, and it is a separate arm.
+- **Whether the 16 worlds alive at 72,000 persist further.** No world was lost after 48,000, and the
+  24,000-tick run also looked quiet before losing four more.
+- **Whether the damping is real or an artefact of the ceiling.** Amplitude collapsed to 2.2% of peak
+  while the population sat on the cap; those are not separable in this run.
