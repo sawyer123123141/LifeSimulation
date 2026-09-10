@@ -1,8 +1,13 @@
 # DRAFT — extension of the graded-seeding arm past 24,000 ticks
 
-**Status: DRAFT, NOT APPROVED, NOT RUN.** Awaiting the user's ruling. Nothing in this document has
-been executed and no code has been changed for it. On approval it is committed **unedited** before the
-first run, and results are appended in a later commit.
+**Status: FROZEN 2026-09-10, NOT RUN.** The user ruled on the two blockers and the horizon; the
+reporting work landed in `6edac7a`; the exploratory per-seed analysis that section 4 is built on is
+`p6-graded-seeding-per-seed-2026-09-10.md`. **Nothing below is edited once this is committed.**
+Results are appended in a later commit.
+
+**Ruled 2026-09-10:** per-seed reporting with plant columns (done), sampling that holds the recorded
+24,000-tick spacing rather than a fixed nine samples (done, `--samples=`), and a fixed **72,000-tick**
+horizon.
 
 **Plan:** `docs/superpowers/plans/2026-09-05-regulation-first-arms.md`, Task 4 follow-up.
 **Extends:** `docs/experiments/p6-graded-seeding-arm-2026-09-06.md`, which returned `alive(9) = 20 of
@@ -14,9 +19,19 @@ the arm's recorded values. The only thing that moves is run length. **No paramet
 
 ---
 
-## 1. Two blockers that must be cleared before this run is worth making
+## 1. Two blockers, both now cleared
 
-Both are reporting defects, not biology. Neither can be fixed inside this document; both need approval.
+> **CLEARED 2026-09-10 in `6edac7a`.** Both are recorded as they were written, because the criteria in
+> section 3 were designed around them. `Trajectory` now emits one row per arm, seed and sample tick
+> with the plant columns, the population cap flag, the run peak and a behaviour hash at every sample;
+> both final-population distributions are printed and labelled; and sample count is a constructor
+> argument defaulting to nine, so every recorded artefact still reproduces byte-identically while the
+> extension passes `--samples=27` to hold the recorded 2,666-tick spacing. Seventeen regression tests
+> cover extinction inclusion, per-seed identity, plant columns, sample spacing, final-sample inclusion
+> and hash-inertness. Full suite 769 passed, 0 failed. Both 24,000-tick arms were re-run under the new
+> build and reproduce their recorded trajectories exactly.
+
+Both were reporting defects, not biology.
 
 ### 1.1 There are no per-seed rows
 
@@ -59,7 +74,21 @@ reported against inadequate data.
 
 ---
 
-## 2. How long, and why not 48,000
+## 2. How long
+
+> **REVISED 2026-09-10 by the per-seed data, and the revision goes against the argument below.**
+> Measured peak-to-peak spacing per world is **8,000 to 10,667 ticks, mean 8,333** (n = 8), not the
+> 11,000-tick lower bound this section derives. The earlier figure came from the all-world mean, which
+> pools worlds at different phases and **biases the apparent period upward** - the same pooling error
+> that made episodic starvation look chronic. On the corrected period, **48,000 ticks would have been
+> sufficient** (roughly five cycles) and the argument below for rejecting it does not hold.
+>
+> **72,000 stands as ruled**, now on a weaker but still sufficient rationale: it buys seven to nine
+> cycles instead of five, it costs minutes, and this project has twice had an answer change at the next
+> horizon. Over-provisioning a cheap run is not a mistake; the mistake would be presenting the original
+> reasoning as if it had survived contact with the data.
+
+### The original argument, preserved
 
 **Recommended: 72,000 ticks.** 48,000 is defensible only under the most optimistic reading of the one
 cycle that has been observed, and is likely to return inconclusive.
@@ -183,6 +212,74 @@ regulator moves its plateau with the food supply; an imposed one does not.
 
 ## 4. Predeclared expectation
 
-To be filled in and committed before the run, so the extension can fail. Not stated here because the
-per-seed analysis that would inform it does not yet exist (§1.1), and a prediction made without it
-would be a guess dressed as a hypothesis.
+Built on `p6-graded-seeding-per-seed-2026-09-10.md`, which is **exploratory** and was used to design
+this confirmatory run. Everything below is committed before the run and is not edited afterwards.
+
+### What the exploratory analysis established
+
+Three readings, independent of each other, say the 24,000-tick arm is **one oscillator sampled at 24
+random phases** rather than a population approaching an equilibrium:
+
+- surviving worlds split **11 rising / 8 falling / 1 flat** at the horizon;
+- final population and final plant biomass correlate at **r = -0.716** across worlds;
+- **13 of 20 survivors** have already fallen to a quarter of their peak and recovered.
+
+It also dissolved the anomaly the arm document could not explain: starvation is not chronic, it is
+phase-locked - **3.8%** of deaths in rising worlds against **58.2%** in falling ones - and the constant
+third-to-a-half in the aggregate was pooling, not a mechanism.
+
+### The prediction
+
+**Primary: SUSTAINED OSCILLATION with a partial COLLAPSE verdict.** Specifically:
+
+1. **`alive(last)` falls between 8 and 16 of 24**, so the run **fails** the threshold of
+   `ceil(0.85 x alive(3))` and is COLLAPSE under section 3.2, without reaching extinction.
+2. **At least two complete cycles are resolvable** (section 3.3), and successive peaks do **not**
+   decline monotonically - SUSTAINED rather than DAMPED.
+3. **Cap-contacting worlds stay under a quarter of survivors**, so section 3.4 is not triggered.
+4. **The starvation share continues to alternate per world** rather than settling, and the rising /
+   falling split at the final sample stays within 8-16 of the survivors on either side.
+
+**The arithmetic behind clause 1, stated so it can be checked rather than admired.** Four worlds were
+lost in 24,000 ticks: one establishment failure that cannot recur, and three post-crash deaths across
+roughly 2.5 cycles - about 1.2 crash-deaths per cycle out of 23 eligible worlds. At 8,333 ticks per
+cycle, 72,000 ticks is about 8.6 cycles. Extrapolating the hazard flat gives roughly ten further
+losses and **about 10 of 24 alive**. The interval 8-16 is that estimate widened for two effects
+pulling opposite ways and neither measured: survivorship selection should thin the hazard over time,
+and eight of the twenty current survivors are already in steep decline at the horizon.
+
+**Why not persistence.** A2 changes nothing on the consumer side, nothing about the ~1%/s plant
+age-mortality outflow, and nothing about total drain exceeding gross production at every measured
+peak. An oscillation whose troughs pass close to zero carries an extinction hazard on every cycle, and
+72,000 ticks contains three times as many cycles as the run that already lost four worlds.
+
+**Why the last prediction failed, and what changed.** The arm's own predeclaration said `alive(9)`
+would rise off zero but stay *well below* threshold, and it reached 20 of 24. That failure was a
+magnitude error made without per-seed data, on an aggregate that hid the phase structure. This
+prediction is made with that structure in hand and is stated as an interval rather than a direction,
+so it can fail cleanly in both directions.
+
+### Falsifiers, named in advance
+
+- **`alive(last) >= 21`** - persistence at the ruled threshold. The prediction is wrong, A2 is
+  load-bearing for survival over the long run, and the food-supply control of section 3.6 runs next.
+- **`alive(last) = 0`, or below 8** - the oscillation is divergent and A2 delays collapse rather than
+  changing its outcome. The prediction is wrong in the other direction and producer-side work should
+  stop.
+- **DAMPED with successive peaks declining monotonically while troughs rise** - the system is settling
+  toward an equilibrium after all, which contradicts the phase reading above and would make the
+  24,000-tick even split a coincidence.
+- **A flat plateau with starvation under 5% throughout** - candidate B's signature, which would mean
+  something is regulating that nobody built, and must not be believed without section 3.6.
+- **Fewer than two complete cycles resolvable at 27 samples** - the period estimate of 8,000-10,667
+  ticks is wrong by more than a factor of three, and section 3.5 applies.
+
+### The command, fixed now
+
+```
+CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=72000 --samples=27 [--graded-seeding]
+```
+
+Both arms, same 24 seeds from 42, control and treatment. **No configuration value moves.** The sample
+at tick 24,000 - sample 9 of 27 - must reproduce the recorded 24,000-tick arm, and if it does not,
+nothing else in the run may be read.
