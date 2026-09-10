@@ -158,7 +158,18 @@ this **PERSISTENT**. The falsifier written into *this* document repeated the glo
 and that is met.
 
 **Read on the formal rule, which is the one applied to all eleven triage cells: COLLAPSING, by 0.4 of
-a world.** No threshold is changed here to resolve it, and none should be. **The honest reading is that
+a world.**
+
+> **RULED 2026-09-09, and this supersedes the two paragraphs around it.** The formal 85% rule controls;
+> at 24 seeds the integer threshold is `ceil(0.85 x 24) = 21`. **20 of 24 does not establish
+> persistence.** The verdict is **COLLAPSING**, not a boundary case, and the "0.4 of a world" framing
+> below is superseded - the gap is one world, and the rule is unambiguous once the ceiling is applied.
+> The falsifier written in this document as `alive(9) >= 20` repeated the triage's erroneous gloss and
+> is **not** met at 20. Erratum recorded in `p6-regime-b-triage-2026-09-05.md`; the eleven prior
+> verdicts are unaffected because none sat near the boundary.
+>
+> What is unchanged by the ruling: `alive(9)` moved from 0 to 20, no configuration in this project had
+> done that before, and the trend clause does not fire for a non-survivorship reason. No threshold is changed here to resolve it, and none should be. **The honest reading is that
 a 24-seed run cannot separate these two verdicts**, and the resolution is more seeds, not a different
 number.
 

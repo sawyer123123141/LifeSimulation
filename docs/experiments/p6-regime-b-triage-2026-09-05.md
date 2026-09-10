@@ -302,6 +302,21 @@ At 24 seeds the criterion's clauses become fully available:
 From `alive(3) = 24`, the survival clause condemns at `alive(9) < 20.4`, so 20 of 24 passes and 20 is
 the first passing value. That threshold is the 2026-09-03 declaration applied unchanged.
 
+> **ERRATUM, 2026-09-09 — the sentence above is wrong and is preserved rather than rewritten.**
+> It contradicts this document's own formal rule, stated twice (`alive(9) < 0.85 x alive(3)` condemns;
+> PERSISTENT needs `alive(9) >= 0.85 x alive(3)`), and its own six-seed worked example, which applies
+> the formal reading ("5 >= 5.1 is false - **5 fails**"). **20 of 24 does not pass. Passing at 24 seeds
+> requires `ceil(0.85 x 24) = 21`.**
+>
+> **Ruled by the user on 2026-09-09**, after the graded-seeding arm
+> (`p6-graded-seeding-arm-2026-09-06.md`) returned `alive(9) = 20` and landed exactly on the
+> contradiction: the formal 85% rule controls, and the integer threshold is the ceiling.
+>
+> **None of the eleven verdicts in this document is affected.** The closest was C4 at brake 5.0 with
+> 11 of 24 against a threshold of 20.4 - nine worlds clear of the boundary - and every other row is
+> further away still. The erratum changes no verdict here; it changes how a future run at the boundary
+> is read.
+
 ## Predeclared verdicts
 
 **All eleven rows COLLAPSING again**, with none upgraded to PERSISTENT or INDETERMINATE. The reason
