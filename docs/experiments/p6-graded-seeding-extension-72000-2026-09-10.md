@@ -276,6 +276,57 @@ so it can fail cleanly in both directions.
 - **Fewer than two complete cycles resolvable at 27 samples** - the period estimate of 8,000-10,667
   ticks is wrong by more than a factor of three, and section 3.5 applies.
 
+## 5. Provenance, recorded before the run
+
+**Written and committed in a docs-only commit before either arm started. Nothing below is edited
+afterwards, and no criterion in sections 3 or 4 is touched once results exist.**
+
+| | |
+|---|---|
+| **code commit** | `5ae5f24` — the working tree is clean at this commit and the provenance commit that carries this section changes documentation only, so the simulation and tools are identical at both |
+| **branch** | `run-length-triage`, unpushed, no pull request |
+| **build** | .NET SDK 9.0.300, `dotnet build -c Release`, `tools/CreatureSweep/bin/Release/net9.0/CreatureSweep.dll`, rebuilt from `5ae5f24` immediately before the run |
+| **test state** | full suite 769 passed / 0 failed at `6edac7a`; no simulation code has changed since |
+| **seeds** | 24 consecutive, `Program.FirstSeed` = **42** through **65**, identical in both arms |
+| **ticks** | **72,000** |
+| **samples** | **27**, giving 2,666.67 ticks per sample — the spacing of the recorded 24,000-tick corpus |
+| **population cap** | 500 |
+| **scenario** | `ConsumerDefenseCalibrationModerate.WithRegeneration(regen 2.0)` |
+| **founders** | `FounderProfile.PhysiologyVariation`, initial population 12 |
+| **brake** | graded fertility enabled, strength **1.5** |
+| **breeding gate** | default 0.70, mate-seeking 0.80 |
+| **predation** | off; mate selection on; all other flags as `CreateConfig` sets them |
+| **the one variable** | `--graded-seeding`, off in the control and on in the treatment |
+
+**Commands, exactly as run:**
+
+```
+CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=72000 --samples=27
+CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=72000 --samples=27 --graded-seeding
+```
+
+**Output paths, fixed in advance:**
+
+| what | path, under `docs/experiments/` |
+|---|---|
+| control console | `p6-graded-seeding-extension-control-24seeds-72000-2026-09-10.txt` |
+| treatment console | `p6-graded-seeding-extension-arm-24seeds-72000-2026-09-10.txt` |
+| control per-seed | `p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-72000ticks-27samples-2026-09-10.csv` |
+| treatment per-seed | `p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-gradedseeding-72000ticks-27samples-2026-09-10.csv` |
+
+**Environment check, before the run:** every other session sharing this folder is offline; no Unity,
+`dotnet` or sweep process is running; no Unity lockfile and no git index lock; `git status --short` is
+empty. The sibling worktree at `.worktrees/p0-evolution-proof` sits on a different branch and is not
+touched.
+
+**Note on one aborted process.** A `--help` probe was issued against the release binary while
+capturing this provenance; `--help` is not a recognised flag, so the tool began its default 240-run
+sweep instead of printing usage. It was killed at 40 of 240 runs and **wrote no file** — the working
+tree was verified clean afterwards. It is recorded here because an unexplained process in the log is
+worse than a recorded mistake.
+
+---
+
 ### The command, fixed now
 
 ```
