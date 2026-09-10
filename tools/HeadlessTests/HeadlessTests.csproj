@@ -36,6 +36,11 @@
     <Compile Include="../../Assets/Scripts/Presentation/CreaturePicking.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/ResourceMarkerAppearance.cs" />
     <Compile Include="../../Assets/Scripts/Presentation/HudLayout.cs" />
+    <!-- The sweep trajectory reporter. Pulled in for the same reason FreeCameraMotion.cs is: its
+         arithmetic - sample boundaries, thirds labelling, extinction-inclusive distributions and the
+         longitudinal CSV - decides what every experiment record says, and it was previously checked
+         by reading console output rather than by a test. It contains no Unity types. -->
+    <Compile Include="../CreatureSweep/Trajectory.cs" />
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="GlobalUsings.cs" />
   </ItemGroup>

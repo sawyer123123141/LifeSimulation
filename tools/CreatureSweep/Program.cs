@@ -116,6 +116,7 @@ namespace LifeSimulation.Tools.CreatureSweep
         /// <summary>The density-dependent brake, as an arm.</summary>
         private static bool _gradedFertility;
         private static bool _gradedSeeding;
+        private static int _sampleCount = Trajectory.DefaultSampleCount;
 
         private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
 
@@ -186,6 +187,12 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--health-recovery") _healthRecovery = true;
                 if (argument == "--graded-fertility") _gradedFertility = true;
                 if (argument == "--graded-seeding") _gradedSeeding = true;
+                if (argument.StartsWith("--samples=")
+                    && int.TryParse(argument.Substring("--samples=".Length), out int samples)
+                    && samples > 0)
+                {
+                    _sampleCount = samples;
+                }
                 if (argument.StartsWith("--brake=")
                     && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
                 {
@@ -264,7 +271,15 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int deathSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDeaths) ? parsedDeaths : 20;
                 if (args.Length > 2 && int.TryParse(args[2], out int deathCap)) _focusedPopulationCap = deathCap;
-                Deaths.Report(deathSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario);
+                string armName = _gradedSeeding ? "graded-seeding" : "control";
+                string csvPath = Path.Combine(
+                    "docs", "experiments",
+                    "p6-deaths-perseed-cap" + _focusedPopulationCap + "-" + _scenarioName
+                    + ConfigurationSuffix()
+                    + "-" + _ticks + "ticks-" + _sampleCount + "samples"
+                    + "-" + DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                    + ".csv");
+                Deaths.Report(deathSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario, _sampleCount, armName, csvPath);
                 return;
             }
 
@@ -779,6 +794,11 @@ namespace LifeSimulation.Tools.CreatureSweep
             {
                 suffix.Append("-brake").Append(_brakeStrength.ToString("0.0", CultureInfo.InvariantCulture));
             }
+
+            // Added 2026-09-10. Without it the graded-seeding arm and its control write to the same
+            // path and the second silently replaces the first, which is the failure this method's
+            // docstring records four deleted files for.
+            if (_gradedSeeding) suffix.Append("-gradedseeding");
 
             if (Math.Abs(_reproductionNeedFraction - SimulationConfig.DefaultReproductionNeedFraction) > 1e-6f)
             {

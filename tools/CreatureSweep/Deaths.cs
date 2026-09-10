@@ -29,7 +29,15 @@ namespace LifeSimulation.Tools.CreatureSweep
     /// </summary>
     internal static class Deaths
     {
-        public static void Report(int seedCount, int ticks, Func<int, SimulationConfig> configure, SimulationScenario scenario)
+        /// <param name="sampleCount">
+        /// Trajectory samples. Defaults to <see cref="Trajectory.DefaultSampleCount"/>, which is what
+        /// every recorded artefact used, so an omitted argument reproduces them exactly.
+        /// </param>
+        /// <param name="armName">
+        /// Label written into the per-seed longitudinal file so two arms can be joined on seed.
+        /// </param>
+        /// <param name="csvPath">Where to write that file. Nothing is written when null or empty.</param>
+        public static void Report(int seedCount, int ticks, Func<int, SimulationConfig> configure, SimulationScenario scenario, int sampleCount = Trajectory.DefaultSampleCount, string armName = "arm", string csvPath = null)
         {
             float gate = configure(Program.FirstSeed).ReproductionNeedFraction;
             var totals = new long[7];
@@ -70,7 +78,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 SimulationConfig config = configure(Program.FirstSeed + index);
                 var world = new SimulationWorld(config);
                 scenario.ApplyTo(world);
-                var trajectory = new Trajectory(ticks);
+                var trajectory = new Trajectory(ticks, sampleCount, armName, Program.FirstSeed + index);
                 trajectories.Add(trajectory);
                 for (int tick = 0; tick < ticks; tick++)
                 {
@@ -160,6 +168,15 @@ namespace LifeSimulation.Tools.CreatureSweep
             // Population SPREAD is what separates a habitat from a ceiling. A carrying capacity
             // produces a distribution; a cap produces a constant. Eleven committed corpora and 4,080
             // runs have a population column with zero variance, which is why this is printed.
+            // ALL-WORLD first, extinct runs included as zero, and labelled as such. The line below
+            // it is survivor-conditioned and is kept verbatim so every artefact recorded before
+            // 2026-09-10 still diffs against it - but read alone it says a cell gets healthier the
+            // more of it dies, which is the survivorship failure recorded twice in the field notes.
+            Console.WriteLine("  final population, ALL WORLDS (extinct counted as 0)");
+            Console.WriteLine("    " + Trajectory.FiveNumberSummary(Trajectory.FinalPopulationsAllWorlds(trajectories)));
+            Console.WriteLine("  final population, SURVIVING WORLDS ONLY (conditioned on survival)");
+            Console.WriteLine("    " + Trajectory.FiveNumberSummary(Trajectory.FinalPopulationsSurvivorsOnly(trajectories)));
+
             var sortedPopulations = new List<double>(populations);
             sortedPopulations.Sort();
             Console.WriteLine("  final population        mean " + Mean(populations).ToString("0.0")
@@ -169,6 +186,12 @@ namespace LifeSimulation.Tools.CreatureSweep
                 + "  sd " + StandardDeviation(populations).ToString("0.00"));
 
             Trajectory.Report(trajectories, ticks);
+
+            if (!string.IsNullOrEmpty(csvPath))
+            {
+                System.IO.File.WriteAllText(csvPath, Trajectory.ToCsv(trajectories));
+                Console.Error.WriteLine("wrote " + csvPath);
+            }
         }
 
         /// <summary>
