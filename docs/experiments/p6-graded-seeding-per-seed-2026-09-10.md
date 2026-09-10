@@ -73,9 +73,12 @@ confounding.
 is therefore **not** a cap artefact. Removing three worlds lowers the mean by 19%, which is worth
 carrying as a caveat on any *level*, and changes nothing about the *outcome*.
 
-## 5. The finding that reframes everything: this is one oscillator sampled at 24 random phases
+## 5. The finding that reframes everything: results consistent with similar oscillatory dynamics sampled at different phases
 
-Three independent readings, all pointing the same way.
+Three independent readings, all pointing the same way. **They are consistent with similar
+oscillatory dynamics sampled at different phases. They do not establish that every world runs the same
+oscillator**, and nothing below should be read as a claim that the worlds share a period, an amplitude
+or a mechanism - only that each of them cycles, and that at any one instant they are not in step.
 
 **Every surviving world oscillates.** Each has between two and four turning points in nine samples.
 Representative series:
@@ -91,8 +94,8 @@ seed 58   34   46  121  279  194  174  499   53   32
 crash A2 was predicted not to prevent does happen, in most worlds, and is then survived.
 
 **At the horizon the worlds split evenly by phase: 11 rising, 8 falling, 1 flat.** A population
-settling toward an equilibrium does not do that. A grid of oscillators sampled at one instant does
-exactly that.
+settling toward an equilibrium does not do that; a set of worlds each cycling on its own schedule
+does. That is evidence against a common approach to equilibrium, not evidence for a common period.
 
 **Final population and final plant biomass are inversely correlated, r = -0.716 over 20 worlds.** The
 worlds holding the most animals are the ones that have just eaten their plants — a predator-prey phase
@@ -104,10 +107,13 @@ relationship, read across worlds instead of across time.
 | middle, 100-350 | 9 | 836 | 11.3 |
 | large, over 350 | 6 | 369 | 4.5 |
 
-**These are not three regimes. They are three phases of one cycle.** Patch count is ~23 in every
-world, survivors and casualties alike; what differs is how much of it has just been eaten.
+**These are more readily explained as phases than as regimes**, though the data cannot exclude
+genuinely different regimes that happen to order the same way. Patch count is ~23 in every world,
+survivors and casualties alike; what differs is how much of it has just been eaten.
 
-**Observed peak-to-peak spacing: 8,000 to 10,667 ticks, mean 8,333** (n = 8 spacings). This is
+**Observed peak-to-peak spacing: 8,000 to 10,667 ticks, mean 8,333** (n = 8 spacings, pooled
+across worlds - a per-world period is not established and the spread here may be between-world
+variation rather than measurement noise). This is
 measured on a 2,666-tick grid over a nine-sample window, so it is biased toward the short end — long
 periods cannot appear inside the run — but it is direct evidence that the period is of order 8,000 to
 11,000 ticks rather than 20,000.
@@ -142,8 +148,8 @@ tail — largely the three cap-contacting worlds.
 ## 8. What this changes about the extension, and what it does not
 
 **Changes:** the extension's central question is no longer "does it persist" in isolation. It is
-**whether the oscillation is sustained, damped, or divergent**, because the 24,000-tick snapshot is a
-phase sample and cannot answer it. The period estimate of 8,000-11,000 ticks makes 72,000 ticks roughly
+**whether the cycling is sustained, damped, or divergent**, because a 24,000-tick snapshot catches each
+world at whatever phase it happens to be in and cannot answer it. The period estimate of 8,000-11,000 ticks makes 72,000 ticks roughly
 seven to nine cycles, which is ample — and, honestly, means the 48,000 originally proposed would also
 have sufficed. The earlier lower-bound estimate of 11,000 ticks was derived from the all-world mean,
 which smears worlds at different phases together and biases the apparent period upward.

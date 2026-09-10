@@ -217,8 +217,10 @@ this confirmatory run. Everything below is committed before the run and is not e
 
 ### What the exploratory analysis established
 
-Three readings, independent of each other, say the 24,000-tick arm is **one oscillator sampled at 24
-random phases** rather than a population approaching an equilibrium:
+Three readings, independent of each other, are **consistent with similar oscillatory dynamics
+sampled at different phases** rather than with a population approaching an equilibrium. They do not
+establish a shared period or a shared mechanism across worlds, and the prediction below is written to
+survive either reading:
 
 - surviving worlds split **11 rising / 8 falling / 1 flat** at the horizon;
 - final population and final plant biomass correlate at **r = -0.716** across worlds;
