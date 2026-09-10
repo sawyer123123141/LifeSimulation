@@ -271,6 +271,10 @@ namespace LifeSimulation.Tools.CreatureSweep
                 _focused = true;
                 int deathSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedDeaths) ? parsedDeaths : 20;
                 if (args.Length > 2 && int.TryParse(args[2], out int deathCap)) _focusedPopulationCap = deathCap;
+                // ConfigurationSuffix reads _seedCount, which --deaths never set, so the filename
+                // claimed the main mode's default of 120 on a 24-seed run. A seed count that lies in
+                // a filename is the provenance hazard that method exists to prevent.
+                _seedCount = deathSeeds;
                 string armName = _gradedSeeding ? "graded-seeding" : "control";
                 string csvPath = Path.Combine(
                     "docs", "experiments",
