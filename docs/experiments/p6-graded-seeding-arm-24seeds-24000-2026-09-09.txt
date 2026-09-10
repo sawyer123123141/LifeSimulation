@@ -1,0 +1,54 @@
+
+death causes over ALL 24 runs, extinct included (19881 deaths attributed)
+  starvation      7238    36.4%
+  dehydration       31     0.2%
+  age            12505    62.9%
+  health           107     0.5%
+  predation          0     0.0%
+  births per run          1029.4   attack hits per run 0.0
+  combat damage per run   0.0
+  defense: living 0.0694   all dead 0.0454   predated NaN   (runs contributing: 24 / 0)
+
+death causes over 20 surviving runs of 24 (17715 deaths attributed)
+  starvation      6387    36.1%
+  dehydration       28     0.2%
+  age            11217    63.3%
+  health            83     0.5%
+  predation          0     0.0%
+
+the gates sit at 0.70 (breed) and 0.80 (seek a mate) on all three needs
+  mean energy fraction    0.6216
+  mean hydration fraction 0.8533
+  mean health fraction    0.8391
+  below the health gate   22.6%  <- cannot seek a mate, ever
+  decisions that were flee 0.000%
+  final population        mean 255.7  min 32  median 236  max 500  sd 165.34
+
+population trajectory over 24000 ticks, 24 runs
+  point     tick    alive    pop(all)  pop(alive)  energy | deaths within the interval
+                                                          |  starv  dehyd    age health   pred
+  1/9        2666    24/24        36.0        36.0   0.739 |   0.0%   0.0% 100.0%   0.0%   0.0%
+  2/9        5333    24/24        57.2        57.2   0.784 |   0.0%   0.0%  99.3%   0.7%   0.0%
+  1/3 3/9    8000    24/24       118.3       118.3   0.775 |   0.0%   0.0%  98.7%   1.3%   0.0%
+  4/9       10666    23/24       260.2       271.5   0.780 |   0.1%   0.1%  98.7%   1.0%   0.0%
+  5/9       13333    23/24       277.4       289.5   0.448 |  33.4%   0.2%  66.1%   0.3%   0.0%
+  2/3 6/9   16000    23/24       121.4       126.7   0.721 |  49.3%   0.1%  49.9%   0.7%   0.0%
+  7/9       18666    23/24       127.5       133.0   0.792 |  40.3%   0.3%  58.9%   0.5%   0.0%
+  8/9       21333    20/24       198.3       238.0   0.715 |  33.9%   0.2%  65.2%   0.7%   0.0%
+  3/3 9/9   24000    20/24       213.0       255.7   0.622 |  49.4%   0.2%  50.2%   0.2%   0.0%
+  last third: all-world mean population 127.5 -> 213.0 (+67.1%), monotone decline no
+  a rising pop(alive) beside a falling pop(all) is survivorship, not recovery.
+
+plant trajectory over 24000 ticks, 24 runs (all-world means)
+  point     tick  patches seed-elig    biomass | within the interval, per biomass-second
+                                              |   growth  offtake   mortal  offtake/growth
+  1/9        2666     20.4      17.9     1332.3 |   0.0159   0.0026   0.0083           0.163
+  2/9        5333     22.9      21.6     1559.8 |   0.0158   0.0051   0.0095           0.325
+  1/3 3/9    8000     22.7      20.5     1498.4 |   0.0184   0.0089   0.0098           0.483
+  4/9       10666     21.8      15.1     1122.9 |   0.0315   0.0218   0.0117           0.693
+  5/9       13333     22.8       7.2      540.2 |   0.0521   0.0465   0.0107           0.893
+  2/3 6/9   16000     22.9      17.9     1294.1 |   0.0370   0.0239   0.0074           0.645
+  7/9       18666     23.2      19.1     1410.1 |   0.0216   0.0108   0.0102           0.498
+  8/9       21333     22.8      14.5     1079.5 |   0.0270   0.0182   0.0106           0.676
+  3/3 9/9   24000     23.0      13.3      985.4 |   0.0341   0.0252   0.0096           0.738
+  seed-elig is patches at or above the seeding threshold; at zero the community cannot recruit.

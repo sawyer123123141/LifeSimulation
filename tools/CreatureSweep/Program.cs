@@ -115,6 +115,7 @@ namespace LifeSimulation.Tools.CreatureSweep
 
         /// <summary>The density-dependent brake, as an arm.</summary>
         private static bool _gradedFertility;
+        private static bool _gradedSeeding;
 
         private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
 
@@ -184,6 +185,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (argument == "--health-recovery") _healthRecovery = true;
                 if (argument == "--graded-fertility") _gradedFertility = true;
+                if (argument == "--graded-seeding") _gradedSeeding = true;
                 if (argument.StartsWith("--brake=")
                     && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
                 {
@@ -426,7 +428,8 @@ namespace LifeSimulation.Tools.CreatureSweep
                 gradedFertilityEnabled: _gradedFertility,
                 gradedFertilityStrength: _brakeStrength,
                 evasiveFleeingEnabled: _evasiveFleeing,
-                evasiveFleeingStrength: _evasionStrength);
+                evasiveFleeingStrength: _evasionStrength,
+                plantGradedSeedingEnabled: _gradedSeeding);
         }
 
         private static readonly string[] GeneNames =

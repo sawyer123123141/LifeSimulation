@@ -28,7 +28,7 @@ namespace LifeSimulation.Simulation.Core
                 {
                     Resources.RegenerateNonFood(resourceDeltaTime);
                     _cumulativePlantGrowth += PlantGrowthSystem.Step(Plants, Environment, resourceDeltaTime, Config.PlantTemperatureAdaptationEnabled, Config.PlantFertilityAdaptationEnabled);
-                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled, Config.PlantEstablishmentContestEnabled, Config.PlantInvaderEstablishmentContestEnabled, Config.PlantSeedProductionRateDispersalCharge, Config.PlantSeedProductionRateEnabled);
+                    _plantBirthCount += PlantReproductionSystem.Step(Plants, Resources, PlantSites, Config.WorldSeed, nextTick, resourceDeltaTime, ref _plantSeedOrdinal, Config.PlantSiteCompetitionEnabled, Config.PlantEstablishmentContestEnabled, Config.PlantInvaderEstablishmentContestEnabled, Config.PlantSeedProductionRateDispersalCharge, Config.PlantSeedProductionRateEnabled, Config.PlantGradedSeedingEnabled);
                     if (Config.PlantMortalityEnabled)
                     {
                         _cumulativePlantBiomassLostToMortality += PlantMortalitySystem.Step(Plants, Resources, resourceDeltaTime);

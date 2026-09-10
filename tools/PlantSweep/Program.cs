@@ -60,6 +60,7 @@ namespace LifeSimulation.Tools.PlantSweep
         private static int _maximumPopulation = MaximumPopulation;
 
         private static bool _gradedFertility;
+        private static bool _gradedSeeding;
 
         /// <summary>
         /// The patch-quality channel, as an arm. On in every recorded run of this tool, which is the
@@ -84,6 +85,7 @@ namespace LifeSimulation.Tools.PlantSweep
             foreach (string argument in args)
             {
                 if (argument == "--graded-fertility") _gradedFertility = true;
+                if (argument == "--graded-seeding") _gradedSeeding = true;
                 if (argument == "--quality=off") _qualityPreference = false;
                 if (argument.StartsWith("--brake=")
                     && float.TryParse(argument.Substring("--brake=".Length), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float brake))
@@ -222,7 +224,8 @@ namespace LifeSimulation.Tools.PlantSweep
                 plantSeedProductionRateEnabled: true,
                 terrainDrivenEnvironmentEnabled: terrain,
                 gradedFertilityEnabled: _gradedFertility,
-                gradedFertilityStrength: _brakeStrength);
+                gradedFertilityStrength: _brakeStrength,
+                plantGradedSeedingEnabled: _gradedSeeding);
         }
 
         /// <summary>

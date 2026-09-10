@@ -269,7 +269,9 @@ namespace LifeSimulation.Tests.EditMode
             // MaximumMemorySlots are excluded because both are derived from already-hashed
             // properties (BaseFrequencyHz, and MinimumMemorySlots + AdditionalMemorySlots,
             // respectively) rather than independent configuration.
-            const int PinnedConfigurationPropertyCount = 66;
+            // 66 -> 67 on 2026-09-06: PlantGradedSeedingEnabled, wired into ComputeConfigurationHash
+            // in the same commit. The sibling test above proves the wiring rather than this count.
+            const int PinnedConfigurationPropertyCount = 67;
 
             PropertyInfo[] properties = typeof(SimulationConfig)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)

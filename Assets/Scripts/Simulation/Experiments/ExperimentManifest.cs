@@ -107,6 +107,7 @@ namespace LifeSimulation.Simulation.Experiments
             Line(builder, "PlantEstablishmentContestEnabled", config.PlantEstablishmentContestEnabled);
             Line(builder, "PlantInvaderEstablishmentContestEnabled", config.PlantInvaderEstablishmentContestEnabled);
             Line(builder, "PlantSeedProductionRateEnabled", config.PlantSeedProductionRateEnabled);
+            Line(builder, "PlantGradedSeedingEnabled", config.PlantGradedSeedingEnabled);
             Line(builder, "SafetyGatedMateRendezvousEnabled", config.SafetyGatedMateRendezvousEnabled);
             Line(builder, "HomeRangeAffinityEnabled", config.HomeRangeAffinityEnabled);
 

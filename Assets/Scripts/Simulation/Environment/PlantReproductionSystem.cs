@@ -28,7 +28,38 @@ namespace LifeSimulation.Simulation.Environment
         /// the outcome above |r| = 0.10 - the largest non-heritable term in plant fitness.
         /// docs/experiments/p4-where-plant-fitness-is-decided-2026-08-20.md
         /// </param>
-        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false, bool invaderEstablishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false)
+        /// <summary>
+        /// Seed output as a fraction of what a patch at or above <see cref="MaturityFraction"/> would
+        /// make, under graded seeding.
+        ///
+        /// <para>1 at and above the fraction, so the arm changes nothing a mature patch does; linear
+        /// from zero biomass up to it. <b>No new constant:</b> the ramp is built from the threshold it
+        /// replaces, because introducing a floor would mean choosing a number, and the plan this arm
+        /// belongs to forbids proposing values.</para>
+        /// </summary>
+        public static float SeedMaturityScale(float biomass, float capacity)
+        {
+            if (capacity <= 0f) return 0f;
+            return Math.Min(1f, Math.Max(0f, biomass / capacity) / MaturityFraction);
+        }
+
+        /// <param name="gradedSeedingEnabled">
+        /// Replaces the all-or-nothing seeding threshold with <see cref="SeedMaturityScale"/>.
+        ///
+        /// <para><b>Why.</b> A patch below <see cref="MaturityFraction"/> produces no seed at all, and
+        /// patches die of age at 34-135 seconds whether or not anything eats them. Measured on
+        /// 2026-09-06, that age mortality is <b>78% of gross plant growth in the ungrazed phase</b>, so
+        /// recruitment is the only inflow opposing a large constant outflow and this threshold is its
+        /// only valve. Grazing that holds a community below the fraction closes the valve outright.
+        /// See <c>docs/experiments/p6-what-limits-the-peak-2026-09-06.md</c>.</para>
+        ///
+        /// <para><b>Deliberately not a rescue.</b> The same measurement puts the seed-eligible count at
+        /// 6-17 patches of 21 at the population peak, so the closure follows the crash rather than
+        /// causing it. This opens recruitment for the recovery phase; it changes nothing on the
+        /// consumer side. Predeclared in
+        /// <c>docs/experiments/p6-graded-seeding-arm-2026-09-06.md</c>.</para>
+        /// </param>
+        public static int Step(PlantPatchStore patches, ResourceStore resources, PlantSiteRegistry sites, int worldSeed, long tick, float deltaTime, ref long seedOrdinal, bool competitionEnabled = false, bool establishmentContestEnabled = false, bool invaderEstablishmentContestEnabled = false, float seedProductionRateDispersalCharge = SimulationConfig.DefaultPlantSeedProductionRateDispersalCharge, bool seedProductionRateEnabled = false, bool gradedSeedingEnabled = false)
         {
             int parentCount = patches.Count;
             int births = 0;
@@ -41,9 +72,13 @@ namespace LifeSimulation.Simulation.Environment
                     patches.SetReproductionCooldown(parentIndex, remaining);
                     if (remaining > 0f) continue;
                 }
-                if (parent.Biomass < parent.Capacity * MaturityFraction) continue;
+                float maturityScale = gradedSeedingEnabled ? SeedMaturityScale(parent.Biomass, parent.Capacity) : 1f;
+                if (gradedSeedingEnabled ? maturityScale <= 0f : parent.Biomass < parent.Capacity * MaturityFraction) continue;
                 PlantPhenotype phenotype = PlantPhenotype.FromGenome(parent.Genome, fertilityAdaptationEnabled: false, establishmentContestEnabled, seedProductionRateDispersalCharge, seedProductionRateEnabled);
-                float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction;
+
+                // The multiply is unconditional so the flag-off path keeps the exact operation order
+                // it has always had: maturityScale is exactly 1f there, and x * 1f is x.
+                float seedBiomass = parent.Biomass * phenotype.SeedInvestmentFraction * maturityScale;
                 int siteIndex = FindSite(resources, sites, patches, parent, worldSeed, tick, seedOrdinal, phenotype.DispersalRange, competitionEnabled, establishmentContestEnabled, invaderEstablishmentContestEnabled);
                 if (siteIndex < 0) continue;
 
