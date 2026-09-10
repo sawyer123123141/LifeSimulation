@@ -115,7 +115,6 @@ namespace LifeSimulation.Tools.CreatureSweep
 
         /// <summary>The density-dependent brake, as an arm.</summary>
         private static bool _gradedFertility;
-        private static bool _gradedSeeding;
         private static int _sampleCount = Trajectory.DefaultSampleCount;
 
         private static float _brakeStrength = SimulationConfig.DefaultGradedFertilityStrength;
@@ -186,7 +185,6 @@ namespace LifeSimulation.Tools.CreatureSweep
                 if (argument == "--metabolic-ingestion") _metabolicIngestion = true;
                 if (argument == "--health-recovery") _healthRecovery = true;
                 if (argument == "--graded-fertility") _gradedFertility = true;
-                if (argument == "--graded-seeding") _gradedSeeding = true;
                 if (argument.StartsWith("--samples=")
                     && int.TryParse(argument.Substring("--samples=".Length), out int samples)
                     && samples > 0)
@@ -275,7 +273,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 // claimed the main mode's default of 120 on a 24-seed run. A seed count that lies in
                 // a filename is the provenance hazard that method exists to prevent.
                 _seedCount = deathSeeds;
-                string armName = _gradedSeeding ? "graded-seeding" : "control";
+                const string armName = "deaths";
                 string csvPath = Path.Combine(
                     "docs", "experiments",
                     "p6-deaths-perseed-cap" + _focusedPopulationCap + "-" + _scenarioName
@@ -447,8 +445,7 @@ namespace LifeSimulation.Tools.CreatureSweep
                 gradedFertilityEnabled: _gradedFertility,
                 gradedFertilityStrength: _brakeStrength,
                 evasiveFleeingEnabled: _evasiveFleeing,
-                evasiveFleeingStrength: _evasionStrength,
-                plantGradedSeedingEnabled: _gradedSeeding);
+                evasiveFleeingStrength: _evasionStrength);
         }
 
         private static readonly string[] GeneNames =
@@ -799,10 +796,6 @@ namespace LifeSimulation.Tools.CreatureSweep
                 suffix.Append("-brake").Append(_brakeStrength.ToString("0.0", CultureInfo.InvariantCulture));
             }
 
-            // Added 2026-09-10. Without it the graded-seeding arm and its control write to the same
-            // path and the second silently replaces the first, which is the failure this method's
-            // docstring records four deleted files for.
-            if (_gradedSeeding) suffix.Append("-gradedseeding");
 
             if (Math.Abs(_reproductionNeedFraction - SimulationConfig.DefaultReproductionNeedFraction) > 1e-6f)
             {

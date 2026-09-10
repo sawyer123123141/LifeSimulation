@@ -175,10 +175,7 @@ namespace LifeSimulation.Simulation.Core
             float generatedPlantSiteFixedCapacity = 0f,
             float generatedPlantSiteMaximumWaterDistance = 0f,
             float generatedPlantSiteAnchorRingRadius = 0f,
-            int generatedPlantSiteAnchorCount = DefaultGeneratedPlantSiteAnchorCount,
-            // Appended at the END with a default: this constructor is positional and long, and an
-            // insertion in the middle silently reassigns every argument after it.
-            bool plantGradedSeedingEnabled = false)
+            int generatedPlantSiteAnchorCount = DefaultGeneratedPlantSiteAnchorCount)
         {
             WorldSeed = worldSeed;
             InitialPopulation = initialPopulation;
@@ -261,7 +258,6 @@ namespace LifeSimulation.Simulation.Core
             PlantSeedProductionRateEnabled = plantSeedProductionRateEnabled;
             SafetyGatedMateRendezvousEnabled = safetyGatedMateRendezvousEnabled;
             HomeRangeAffinityEnabled = homeRangeAffinityEnabled;
-            PlantGradedSeedingEnabled = plantGradedSeedingEnabled;
         }
 
         public int WorldSeed { get; }
@@ -766,24 +762,6 @@ namespace LifeSimulation.Simulation.Core
         /// for configurations that predate this gene.
         /// </summary>
         public bool PlantSeedProductionRateEnabled { get; }
-
-        /// <summary>
-        /// Replaces the all-or-nothing plant seeding threshold with a ramp built from
-        /// <c>PlantReproductionSystem.MaturityFraction</c> itself.
-        ///
-        /// <para><b>Why.</b> A patch below three quarters of capacity produces no seed at all, while
-        /// every patch dies of age on a 34-135 second clock whether or not anything eats it. Measured
-        /// 2026-09-06: that age mortality is <b>78% of gross plant growth in the ungrazed phase</b>, so
-        /// recruitment is the only inflow opposing a large constant outflow, and grazing that holds a
-        /// community below the fraction closes its only valve.</para>
-        ///
-        /// <para><b>No new constant.</b> The ramp runs from zero biomass to the existing threshold, so
-        /// a mature patch behaves exactly as before and the arm introduces no tunable value. Off is
-        /// byte-identical.</para>
-        ///
-        /// <para>Predeclared in <c>docs/experiments/p6-graded-seeding-arm-2026-09-06.md</c>.</para>
-        /// </summary>
-        public bool PlantGradedSeedingEnabled { get; }
         public SimulationSchedule Schedule { get; }
         public float FixedDeltaTime => 1f / Schedule.BaseFrequencyHz;
 
@@ -802,7 +780,7 @@ namespace LifeSimulation.Simulation.Core
         }
 
         /// <summary>Field-set version for <see cref="ComputeConfigurationHash"/>. Bump on any change to the fields it covers.</summary>
-        public const int ConfigurationHashVersion = 10;
+        public const int ConfigurationHashVersion = 9;
 
         /// <summary>
         /// FNV-1a hash of every configuration value that can affect future simulation behavior:
@@ -878,7 +856,6 @@ namespace LifeSimulation.Simulation.Core
             hash = Hash(hash, PlantEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantInvaderEstablishmentContestEnabled ? 1UL : 0UL);
             hash = Hash(hash, PlantSeedProductionRateEnabled ? 1UL : 0UL);
-            hash = Hash(hash, PlantGradedSeedingEnabled ? 1UL : 0UL);
             hash = Hash(hash, EvasiveFleeingEnabled ? 1UL : 0UL);
             hash = HashFloat(hash, EvasiveFleeingStrength);
             hash = Hash(hash, WanderHomeHysteresisEnabled ? 1UL : 0UL);
