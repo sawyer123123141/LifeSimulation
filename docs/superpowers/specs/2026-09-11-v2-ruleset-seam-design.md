@@ -284,9 +284,10 @@ a new manifest schema rather than emitting extra lines under schema 1:
 
 - Legacy and V1 configurations emit `schema=1` and exactly the lines they emit today,
   byte-identically. `SchemaVersion` stays 1 and continues to mean the Legacy/V1 field set.
-- V2 configurations emit `schema=2` (a second constant, `V2SchemaVersion = 2`) and, in addition to
-  every schema-1 line, `V2RulesetSchema` (the instance's schema number) and one line per field of
-  that ruleset schema — for schema 1, `PredationMode`.
+- V2 configurations emit `schema=2` (a second constant, `V2SchemaVersion = 2`), the same field
+  set as schema 1 in the same order — where `schema` and `DecisionPolicyVersion` necessarily carry
+  their V2 values — and then `V2RulesetSchema` (the instance's schema number) and one line per
+  field of that ruleset schema — for schema 1, `PredationMode`.
 - The branch is on `config.DecisionPolicyVersion`; nothing else in `Describe` changes.
 
 Proven by a test in `DecisionV2SeamTests.cs` (§6.2, test 8), not by editing
@@ -358,7 +359,7 @@ not the 98 construction sites.** The file header must say so.
 |---|---|---|---|---|
 | A | `CreatePrototype4Defaults(42, 12)` | `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` | the baseline every one-flag P4 arm varies against (`SimulationConfig.cs:923-931`) | 2,000 ticks |
 | B | `CreateFullEcosystemDefaults(42, 12)` | same | widest surface; the scenario `LivenessTests` pins the inert-flag set on | 2,000 ticks |
-| C | hand replica of `tools/CreatureSweep/Program.cs:404` `CreateConfig(seed, slope: false)` for the recorded predation cell: `WorldSeed` 42 (`FirstSeed`), 12 founders, `PredationVariation`, cap 500, `gradedFertilityEnabled` strength 1.0, `reproductionNeedFraction` 0.45, `mateSelectionEnabled` false, kin and multi-threat on, terrain join on | `ConsumerDefenseCalibrationModerate.WithRegeneration("p6-defense-calibration-regen2.00", 2.0)` | the only V1 configuration with predation live; the Task 9 lifetime-reproductive-success family | 2,000 ticks, or the earliest horizon with a deterministic predation event (below) |
+| C | hand replica of `tools/CreatureSweep/Program.cs:404` `CreateConfig(seed, slope: false)` for the recorded predation cell: `WorldSeed` 42 (`FirstSeed`), 12 founders, `PredationVariation`, cap 500, `gradedFertilityEnabled` strength 1.0, `reproductionNeedFraction` 0.45, `mateSelectionEnabled` false, kin and multi-threat on, terrain join on | `ConsumerDefenseCalibrationModerate.WithRegeneration("p6-defense-calibration-regen2.00", 2.0)` | the representative recorded V1 predation configuration (several others exist); the Task 9 lifetime-reproductive-success family | 2,000 ticks, or the earliest horizon with a deterministic predation event (below) |
 | D | hand replica of the C3 control: `CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=24000` — `WorldSeed` 42, 12 founders, `PhysiologyVariation`, cap 500, brake 1.5, mate selection on, default gate | same scenario | **reproduces a committed artefact**: `docs/experiments/p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-24000ticks-9samples-2026-09-10.csv`, arm `control`, seed 42, sample 1, tick 2,666, hash `663693199115149672` | 2,666 ticks |
 
 Per pin, as `const ulong` literals: `ComputeStateHash`, `ComputeBehaviorHash`,
@@ -384,20 +385,31 @@ Three requirements, in order:
    row's `seed` must equal the replica's `WorldSeed`. If it does not, **stop**; do not adjust the
    replica to fit.
 2. **Behaviour.** The replica's `ComputeBehaviorHash` at the horizon equals that row's hash.
-3. **Configuration.** `ExperimentManifest.Describe` over the replica configuration and scenario,
-   with the same `firstSeed`, `seedCount` and `ticks`, equals the captured header in full —
-   every line, in order — after excluding only the two explicitly expected differences:
-   `code_revision`, and `SlopeMovementCostEnabled` (the header describes the `slope: true` arm).
-   No line count is hard-coded; the comparison is over the complete text.
+3. **Configuration.** Take the tool's emitted header (it describes the `slope: true` arm) and
+   `ExperimentManifest.Describe` over the `slope: false` replica configuration and scenario with
+   the same `firstSeed`, `seedCount` and `ticks`. Normalise **both** texts by removing exactly two
+   lines — `code_revision` and `SlopeMovementCostEnabled` — and nothing else. Everything remaining
+   must match byte-for-byte, every line in order. No line count is hard-coded.
 
-The captured manifest (with `code_revision` removed) is kept in the P0 file as an
-`internal const string`, together with the `firstSeed`, `seedCount` and `ticks` it was captured
-with as `internal const` values, and the replica configuration as an `internal static` factory, so
-P1's tests reuse all of them instead of re-replicating anything (§6.2). `--deaths` mode with `--samples=` placing a
-boundary on the horizon may be used as a second source for the hash; it prints no manifest, so
-requirements 1 and 3 still need main mode. The tool writes its CSV under `docs/experiments/`; that
-file is captured and deleted, never committed. If the tool cannot expose enough to satisfy all
-three requirements, **stop and report** rather than pin an unverified replica.
+This cross-check is temporary: it verifies the replica once, at capture time, and its artefacts are
+not what P1 compares against. `--deaths` mode with `--samples=` placing a boundary on the horizon
+may be used as a second source for the hash; it prints no manifest, so requirements 1 and 3 still
+need main mode. The tool writes its CSV under `docs/experiments/`; that file is captured and
+deleted, never committed. If the tool cannot expose enough to satisfy all three requirements,
+**stop and report** rather than pin an unverified replica.
+
+**The permanent V1 manifest pin.** After the cross-check succeeds, P0 stores a canonical manifest
+produced directly from the `slope: false` pin-C replica:
+
+```csharp
+ExperimentManifest.Describe("p0-pin-c", replicaScenario, replicaConfig, firstSeed, seedCount, ticks)
+```
+
+with the fixed revision string `p0-pin-c`, kept as an `internal const string` holding the
+**complete** text — including `code_revision=p0-pin-c` and `SlopeMovementCostEnabled=false` —
+alongside the `firstSeed`, `seedCount` and `ticks` used as `internal const` values and the replica
+configuration as an `internal static` factory. P1's tests reuse all of them (§6.2, test 8) and
+never compare a slope-on text against a slope-off one.
 
 **Cross-check for D.** The pinned value is the committed artefact's, not a fresh capture. If the
 replica does not reproduce `663693199115149672` at tick 2,666, that is a stop-and-report finding.
@@ -472,13 +484,21 @@ pin C comes from the `internal static` replica factory `PolicyVersionFreezeTests
 6. `ValidateRejectsInconsistentPolicyAndRuleset` — V2 + schema 0 throws; V2 + `Schema1(Unspecified)`
    throws; V2 + `Schema1((PredationMode)255)` throws; Legacy or V1 + `Schema1(Enabled)` throws.
 7. `RulesetExposesNoBooleans` — reflection over `SimulationV2Ruleset` and the constructor parameter:
-   no `bool` field, property or parameter; the only public constructor of the struct is the
-   parameterless default (the field-setting constructor is private).
-8. `ManifestSchemaIsVersionedByPolicy` — `ExperimentManifest.Describe` over pin C's replica (same
-   `firstSeed`, `seedCount`, `ticks` as P0's capture, `code_revision` removed) equals P0's
-   `internal const string` byte-for-byte and begins `schema=1`; `Describe` over
-   `AsV2(pinC, Schema1(Enabled))` begins `schema=2`, contains every schema-1 line, and contains
-   `V2RulesetSchema=1` and `PredationMode=Enabled`. `ExperimentManifestTests.cs` is not edited.
+   no `bool` field, property or parameter; `SimulationV2Ruleset` exposes **no public instance
+   constructor with parameters** (runtimes differ on whether the implicit parameterless struct
+   constructor is reported, so the test does not count public constructors). The private
+   field-setting constructor may additionally be located through non-public reflection to confirm
+   it is non-public.
+8. `ManifestSchemaIsVersionedByPolicy` — two assertions.
+   *V1 unchanged:* `ExperimentManifest.Describe("p0-pin-c", …)` over pin C's replica, with P0's
+   `firstSeed`, `seedCount` and `ticks`, equals P0's canonical `internal const string`
+   byte-for-byte, complete text, no normalisation.
+   *V2 versioned:* `Describe("p0-pin-c", …)` over `AsV2(pinC, Schema1(Enabled))` differs from the
+   V1 text in exactly these lines and no others — `schema=1` becomes `schema=2`;
+   `DecisionPolicyVersion=IntentUtilityV1` becomes `DecisionPolicyVersion=IntentUtilityV2`;
+   `V2RulesetSchema=1` and `PredationMode=Enabled` are added. After removing those changed and
+   added lines from both texts, every remaining line is identical in content and order.
+   `ExperimentManifestTests.cs` is not edited.
 9. `Schema1HashAndEnumValuesArePinned` — `const ulong` pins of `ComputeConfigurationHash` for
    `AsV2(pinA, Schema1(Enabled))` and `AsV2(pinA, Schema1(Disabled))`; `PredationMode` names and
    values pinned as `{Unspecified=0, Disabled=1, Enabled=2}`; `Schema1(...)` reports
