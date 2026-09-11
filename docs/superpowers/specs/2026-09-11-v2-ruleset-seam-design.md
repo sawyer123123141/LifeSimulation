@@ -191,13 +191,21 @@ public readonly struct SimulationV2Ruleset
 
     public static SimulationV2Ruleset Schema1(PredationMode predationMode);
 
+    private SimulationV2Ruleset(int schemaVersion, PredationMode predationMode);   // private
+
     public void Validate(DecisionPolicyVersion policy);   // throws ArgumentOutOfRangeException
     public ulong HashInto(ulong hash);                    // hashes only the selected schema's fields
 }
 ```
 
-One constructor parameter on `SimulationConfig`, `simulationV2Ruleset = default`, and one public
-property `SimulationV2Ruleset`. No other constructor is added.
+**Construction paths.** Exactly two: `default` (schema 0) and the named schema factories
+(`Schema1(...)`, later `Schema2(...)`). The field-setting constructor is `private`, so no caller can
+assemble a ruleset with an unnamed field set or a schema number that does not match its fields.
+
+**Placement on `SimulationConfig`.** One optional constructor parameter, `simulationV2Ruleset =
+default`, **appended at the very end** of the existing constructor's parameter list — after
+`generatedPlantSiteAnchorCount` — so every existing positional call remains valid unchanged. One
+public property `SimulationV2Ruleset`. No other constructor is added.
 
 ### 4.2 Schema versioning — the reproducibility contract
 
@@ -223,7 +231,7 @@ tuning floats. The ruleset refuses both:
 
 1. **Fields are mechanism *versions*, not knobs.** Each field is a closed enum answering "which rule
    does V2 run for mechanism X". Tuning floats stay where they are today; none enter the struct.
-2. **No booleans**, enforced by test (§6.2, test 8). Tri-state enums with `Unspecified = 0` make
+2. **No booleans**, enforced by test (§6.2, test 7). Tri-state enums with `Unspecified = 0` make
    every composition explicit; `Validate` refuses an unspecified field under V2.
 3. **Modes retire.** A provenance correction lands as a new enum value beside the exact-truth value,
    runs its sensitivity experiment, and the losing value becomes historical. Booleans accumulate;
@@ -259,14 +267,30 @@ discriminator. `ComputeStateFingerprint` needs no change: it already folds in
 
 - policy V2 and schema 0 → throw;
 - policy V2 and any field `Unspecified` for that schema → throw;
+- policy V2 and any field holding a numeric value the enum does not define — for example
+  `(PredationMode)255` — → throw, using the `Enum.IsDefined` check `Validate()` already applies to
+  `FounderProfile` (`SimulationConfig.cs:1012`); "explicit" means a named value, not merely
+  non-zero;
+- an unknown `SchemaVersion` (neither 0 nor a schema this build defines) → throw;
 - policy Legacy or V1 and schema ≠ 0 → throw.
 
 Invalid compositions fail at world construction, never silently.
 
 ### 4.6 Manifest
 
-`ExperimentManifest.Describe` prints `V2RulesetSchema` and `PredationMode` lines **only when the
-policy is V2**, so every committed manifest header for Legacy and V1 runs is unchanged.
+`ExperimentManifest` carries `SchemaVersion = 1` with the contract "bump when the field set changes,
+never redefine fields silently" (`Experiments/ExperimentManifest.cs`). V2 adds fields, so it takes
+a new manifest schema rather than emitting extra lines under schema 1:
+
+- Legacy and V1 configurations emit `schema=1` and exactly the lines they emit today,
+  byte-identically. `SchemaVersion` stays 1 and continues to mean the Legacy/V1 field set.
+- V2 configurations emit `schema=2` (a second constant, `V2SchemaVersion = 2`) and, in addition to
+  every schema-1 line, `V2RulesetSchema` (the instance's schema number) and one line per field of
+  that ruleset schema — for schema 1, `PredationMode`.
+- The branch is on `config.DecisionPolicyVersion`; nothing else in `Describe` changes.
+
+Proven by a test in `DecisionV2SeamTests.cs` (§6.2, test 8), not by editing
+`ExperimentManifestTests.cs`, which is untouched.
 
 ---
 
@@ -278,7 +302,8 @@ One edit in `Core/SimulationWorld.Ticking.cs`, at the head of the policy chain
 ```csharp
 if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV2)
 {
-    decision = DecideV2(index, tick, movement, phenotype, selfLineage, food, water, carcass, out diagnostics);
+    decision = DecideV2(index, tick, movement, phenotype, selfLineage,
+                        food, water, carcass, otherCandidates, out diagnostics);
 }
 else if (Config.DecisionPolicyVersion == DecisionPolicyVersion.IntentUtilityV1)   // existing, verbatim
 ```
@@ -299,6 +324,12 @@ hash-equivalent in P1:
 | cognition post-processing — active remembered target, `RememberThreat` (`:385-403`) | V1 branch, then `CognitionEnabled` | **replicated verbatim inside `DecideV2`** — `CreatePrototype4Defaults` has cognition on, so omitting it breaks test 1 |
 | Legacy-only overrides (`:405-517`) | Legacy | skipped |
 | arrival conversion, `SetDecisionAt`, diagnostics, trace (`:519-590`) | none | shared |
+
+**Contract for the shared inputs.** `otherCandidates` is the `PredationCandidateBuffer` built at
+`:287-297`; `DecideV2` receives it by value exactly as the V1 call does at `:372` and neither
+rebuilds it nor reorders its construction. `food`, `water` and `carcass` are
+likewise the values computed before the dispatch. Nothing shared is computed twice, so the shared
+prefix of `TickDecisions` is identical for V1 and V2 by construction.
 
 `DecideV2` computes `predationEnabled = Config.SimulationV2Ruleset.PredationMode == PredationMode.Enabled`,
 never reads `FounderProfile`, and calls `DecisionSystem.DecideIntentUtilityV2` in
@@ -327,8 +358,8 @@ not the 98 construction sites.** The file header must say so.
 |---|---|---|---|---|
 | A | `CreatePrototype4Defaults(42, 12)` | `Prototype4Scenarios.ConsumerDefenseCalibrationModerate` | the baseline every one-flag P4 arm varies against (`SimulationConfig.cs:923-931`) | 2,000 ticks |
 | B | `CreateFullEcosystemDefaults(42, 12)` | same | widest surface; the scenario `LivenessTests` pins the inert-flag set on | 2,000 ticks |
-| C | hand replica of `tools/CreatureSweep/Program.cs:404` `CreateConfig(seed, slope: false)` for the recorded predation cell: `PredationVariation`, cap 500, `gradedFertilityEnabled` strength 1.0, `reproductionNeedFraction` 0.45, `mateSelectionEnabled` false, kin and multi-threat on, terrain join on | `ConsumerDefenseCalibrationModerate.WithRegeneration("p6-defense-calibration-regen2.00", 2.0)` | the only V1 configuration with predation live; the Task 9 lifetime-reproductive-success family | 2,000 ticks, or the earliest horizon with a deterministic predation event (below) |
-| D | hand replica of the C3 control: `CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=24000` — `PhysiologyVariation`, cap 500, brake 1.5, mate selection on, default gate | same scenario | **reproduces a committed artefact**: `docs/experiments/p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-24000ticks-9samples-2026-09-10.csv`, arm `control`, seed 42, sample 1, tick 2,666, hash `663693199115149672` | 2,666 ticks |
+| C | hand replica of `tools/CreatureSweep/Program.cs:404` `CreateConfig(seed, slope: false)` for the recorded predation cell: `WorldSeed` 42 (`FirstSeed`), 12 founders, `PredationVariation`, cap 500, `gradedFertilityEnabled` strength 1.0, `reproductionNeedFraction` 0.45, `mateSelectionEnabled` false, kin and multi-threat on, terrain join on | `ConsumerDefenseCalibrationModerate.WithRegeneration("p6-defense-calibration-regen2.00", 2.0)` | the only V1 configuration with predation live; the Task 9 lifetime-reproductive-success family | 2,000 ticks, or the earliest horizon with a deterministic predation event (below) |
+| D | hand replica of the C3 control: `CreatureSweep --deaths 24 500 --regen=2.0 --brake=1.5 --ticks=24000` — `WorldSeed` 42, 12 founders, `PhysiologyVariation`, cap 500, brake 1.5, mate selection on, default gate | same scenario | **reproduces a committed artefact**: `docs/experiments/p6-deaths-perseed-cap500-regen2.00-24seeds-brake1.5-24000ticks-9samples-2026-09-10.csv`, arm `control`, seed 42, sample 1, tick 2,666, hash `663693199115149672` | 2,666 ticks |
 
 Per pin, as `const ulong` literals: `ComputeStateHash`, `ComputeBehaviorHash`,
 `ComputeStateFingerprint`, `ComputeConfigurationHash`. A and B additionally assert
@@ -344,24 +375,41 @@ trusted on its own. At untouched `65bae69` the implementer runs the real tool:
 tools/CreatureSweep --focused 1 500 --regen=2.0 --brake=1.0 --predation --gate=0.45 --mate-selection=off --ticks=<horizon>
 ```
 
-Main mode writes a CSV whose header is `ExperimentManifest.Describe(...)` (28 configuration lines
-plus `scenario_layout_fingerprint`) and whose rows carry each arm's final `ComputeBehaviorHash`. The
-test requires: the replica's `ComputeBehaviorHash` at the horizon equals the `slope-off` row's hash;
-and `ExperimentManifest.Describe` over the replica configuration and scenario equals the captured
-header line-for-line except `SlopeMovementCostEnabled` (the header describes the `slope: true`
-arm) and `code_revision`. `--deaths` mode with `--samples=` placing a boundary on the horizon may
-be used instead for the hash; it prints no manifest, so the manifest check still needs main mode.
-The tool writes its CSV under `docs/experiments/`; that file is captured and deleted, never
-committed. If the tool cannot expose enough to verify the replica, **stop and report** rather than
-pin an unverified replica.
+Main mode writes a CSV whose header is the complete emitted `ExperimentManifest.Describe(...)`
+text and whose rows carry, per arm and seed, the seed and that run's final `ComputeBehaviorHash`.
+Three requirements, in order:
+
+1. **Seed.** Focused mode selects its seeds through `Relief.WithRelief(FirstSeed, …)`
+   (`Program.cs:338`), so the emitted seed is not guaranteed to be 42. The produced `slope-off`
+   row's `seed` must equal the replica's `WorldSeed`. If it does not, **stop**; do not adjust the
+   replica to fit.
+2. **Behaviour.** The replica's `ComputeBehaviorHash` at the horizon equals that row's hash.
+3. **Configuration.** `ExperimentManifest.Describe` over the replica configuration and scenario,
+   with the same `firstSeed`, `seedCount` and `ticks`, equals the captured header in full —
+   every line, in order — after excluding only the two explicitly expected differences:
+   `code_revision`, and `SlopeMovementCostEnabled` (the header describes the `slope: true` arm).
+   No line count is hard-coded; the comparison is over the complete text.
+
+The captured manifest (with `code_revision` removed) is kept in the P0 file as an
+`internal const string`, together with the `firstSeed`, `seedCount` and `ticks` it was captured
+with as `internal const` values, and the replica configuration as an `internal static` factory, so
+P1's tests reuse all of them instead of re-replicating anything (§6.2). `--deaths` mode with `--samples=` placing a
+boundary on the horizon may be used as a second source for the hash; it prints no manifest, so
+requirements 1 and 3 still need main mode. The tool writes its CSV under `docs/experiments/`; that
+file is captured and deleted, never committed. If the tool cannot expose enough to satisfy all
+three requirements, **stop and report** rather than pin an unverified replica.
 
 **Cross-check for D.** The pinned value is the committed artefact's, not a fresh capture. If the
 replica does not reproduce `663693199115149672` at tick 2,666, that is a stop-and-report finding.
 A fresh number is not pinned over it.
 
 **Completion.** All pins green; full suite run twice; `LivenessTests` untouched and green; no
-`ZZZ*` file; no stray CSV; `git status` shows only the one new file; own commit and review;
-completion note under `.claude/completions/`.
+`ZZZ*` file; no stray CSV; `git status` shows only the one new file; **the P0 commit contains
+exactly `PolicyVersionFreezeTests.cs` and nothing else**; own commit and review. Completion is
+reported in chat — captured seed, horizons, which cross-check source was used, suite counts. No
+completion file is written: `.claude/completions/` does not exist and is not ignored, and the
+one-file commit rule takes precedence over the general CLAUDE.md completion-note habit for this
+task.
 
 ### 6.2 P1 — the V2 seam and the explicit predation switch
 
@@ -369,7 +417,7 @@ completion note under `.claude/completions/`.
 
 **Files — modify:** `Core/SimulationConfig.cs` (`IntentUtilityV2` enum value; ruleset constructor
 parameter and property; the conditional hash block; `Validate`), `Core/SimulationWorld.Ticking.cs`
-(the one dispatch edit of §5, nothing else), `Experiments/ExperimentManifest.cs` (V2-only lines,
+(the one dispatch edit of §5, nothing else), `Experiments/ExperimentManifest.cs` (manifest schema 2 for V2,
 §4.6), `Assets/Tests/EditMode/StateFingerprintTests.cs` — **only** `PinnedConfigurationPropertyCount`
 from 66 to 67, which is that test's documented maintenance rule (its own comment instructs it).
 **Files — create:** `Core/SimulationV2Ruleset.cs` (the struct **and** the `PredationMode` enum),
@@ -385,34 +433,57 @@ from 66 to 67, which is that test's documented maintenance rule (its own comment
 and behaviour hashes. `FounderProfile` still selects founder genetics under V2; it selects no
 behaviour.
 
+**How V2 configurations are built in tests.** `SimulationConfig` has no copy method, and the P1
+tests must not add hand-maintained rewrites of pins A, B or C. `DecisionV2SeamTests` carries one
+test-local helper:
+
+```csharp
+static SimulationConfig AsV2(SimulationConfig source, SimulationV2Ruleset ruleset)
+```
+
+It reflects over the single public constructor's parameters, fills every argument from the source
+configuration's property of the same PascalCase name — the convention `FlagLivenessAnalysis.BuildArguments`
+already relies on (`FlagLivenessAnalysis.cs:97-116`; that method is private, so the helper
+re-implements the convention rather than calling it) — and overrides exactly two arguments:
+`decisionPolicyVersion = IntentUtilityV2` and `simulationV2Ruleset = ruleset`. Any parameter
+without a matching property is an error, not a default. Pins A and B come from their factories;
+pin C comes from the `internal static` replica factory `PolicyVersionFreezeTests` exposes (§6.1).
+
 **`DecisionV2SeamTests`** (2,000 ticks unless stated):
 
-1. `V2Disabled_MatchesV1_WithoutPredation` — V2 schema 1 Disabled + `PhysiologyVariation` equals
-   V1 + `PhysiologyVariation` on state and behaviour hash, for pins A and B.
-2. `V2Enabled_MatchesV1_WithPredation` — V2 schema 1 Enabled + `PredationVariation` equals V1 +
-   `PredationVariation` for pin C at P0's horizon; `AttackHitCount > 0` in both.
-3. `V2Disabled_PredationFoundersCannotActivatePredation` — V2 Disabled + `PredationVariation`:
+1. `V2Disabled_MatchesV1_WithoutPredation` — `AsV2(pin, Schema1(Disabled))` equals the V1 pin on
+   state and behaviour hash, for pins A and B (`PhysiologyVariation` founders).
+2. `V2Enabled_MatchesV1_WithPredation` — `AsV2(pinC, Schema1(Enabled))` equals V1 pin C at P0's
+   horizon; `AttackHitCount > 0` in both.
+3. `V2Disabled_PredationFoundersCannotActivatePredation` — `AsV2(pinC, Schema1(Disabled))`:
    `AttackHitCount == 0`, `PredationDeathCount == 0`, `FleeDecisionCount == 0`; hash diverges
-   from V1 + `PredationVariation`.
+   from V1 pin C.
 4. `V2Enabled_PredationExecutesWithControlledCreatures` — `InitialPopulation = 0`,
    `PhysiologyVariation` profile; `Spawn(Genome)` identical genomes with nonzero attack, defense
    and aggression, `dietSpecialization ≥ 0.58` and `aggression ≥ 0.35` (so
    `PredationSystem.HasViableHuntingStrategy` holds), positions set through `GetMovementRefAt`,
    energy lowered so hunger is positive. Enabled → `AttackHitCount > 0`; Disabled, same
    creatures → 0. Founders with zero combat genes are not accepted as evidence for the switch.
-5. `LegacyAndV1LiteralPinsUnchanged` — re-asserts P0's four pins and the Legacy
-   `2166304373863204553` in V2's presence.
-6. `ConfigurationHashUnchangedForLegacyAndV1_AndDistinctForV2` — P0's configuration-hash literals
-   reproduce; V2 differs from V1 for identical other arguments; schema 1 Enabled and Disabled differ.
-7. `ValidateRejectsInconsistentPolicyAndRuleset` — V2 + schema 0 throws; V2 + schema 1 with
-   `Unspecified` throws; Legacy or V1 + schema 1 throws.
-8. `RulesetExposesNoBooleans` — reflection over `SimulationV2Ruleset` and the constructor parameter:
-   no `bool` field, property or parameter.
+5. `ConfigurationHashDistinguishesV2FromV1` — for pins A, B and C: `AsV2(pin, Schema1(Enabled))`
+   and `AsV2(pin, Schema1(Disabled))` each hash differently from the V1 pin, and differently from
+   each other; the V1 pin's hash is computed live, not restated as a literal. P0's literals and
+   `CoreSimulationTests`' Legacy pin are the single source of truth for "unchanged" and are not
+   duplicated here — they stay in the full suite.
+6. `ValidateRejectsInconsistentPolicyAndRuleset` — V2 + schema 0 throws; V2 + `Schema1(Unspecified)`
+   throws; V2 + `Schema1((PredationMode)255)` throws; Legacy or V1 + `Schema1(Enabled)` throws.
+7. `RulesetExposesNoBooleans` — reflection over `SimulationV2Ruleset` and the constructor parameter:
+   no `bool` field, property or parameter; the only public constructor of the struct is the
+   parameterless default (the field-setting constructor is private).
+8. `ManifestSchemaIsVersionedByPolicy` — `ExperimentManifest.Describe` over pin C's replica (same
+   `firstSeed`, `seedCount`, `ticks` as P0's capture, `code_revision` removed) equals P0's
+   `internal const string` byte-for-byte and begins `schema=1`; `Describe` over
+   `AsV2(pinC, Schema1(Enabled))` begins `schema=2`, contains every schema-1 line, and contains
+   `V2RulesetSchema=1` and `PredationMode=Enabled`. `ExperimentManifestTests.cs` is not edited.
 9. `Schema1HashAndEnumValuesArePinned` — `const ulong` pins of `ComputeConfigurationHash` for
-   V2 schema 1 Enabled and Disabled over the pin-A base arguments; `PredationMode` names and values
-   pinned as `{Unspecified=0, Disabled=1, Enabled=2}`; `Schema1(...)` reports `SchemaVersion == 1`
-   and validates under V2. This is the test that a future schema 2 must keep green without
-   editing: it is the executable form of §4.2.
+   `AsV2(pinA, Schema1(Enabled))` and `AsV2(pinA, Schema1(Disabled))`; `PredationMode` names and
+   values pinned as `{Unspecified=0, Disabled=1, Enabled=2}`; `Schema1(...)` reports
+   `SchemaVersion == 1` and validates under V2. This is the test a future schema 2 must keep green
+   without editing: it is the executable form of §4.2.
 
 **Determinism.** Delegation only; no new randomness; no reordered floating-point operation. The
 reviewer verifies from the diff that `RandomDomain` gained no member and none was renumbered; no
@@ -531,7 +602,7 @@ solution.
 | `Legacy` and `IntentUtilityV1` behaviour | code paths not edited; state and behaviour hashes pinned by P0 and `CoreSimulationTests` |
 | `ComputeConfigurationHash` for Legacy/V1 | old sequence executed verbatim; `ConfigurationHashVersion` stays 9; pinned by P0 |
 | `ComputeStateFingerprint` for Legacy/V1 | unchanged, via the above |
-| committed manifests | unchanged; V2 lines print only under V2 |
+| committed manifests | Legacy/V1 emit `schema=1` byte-identically; V2 emits `schema=2` with its ruleset lines |
 | `KnownInertFlags`, `FlagLivenessAnalysis`, constructor-bool hash test | unaffected: the ruleset is not a `bool` and adds no constructor |
 | `RandomDomain` | no member added or renumbered in P0 or P1 |
 | V2 schema 1 | validation and hash frozen once P1 lands; later schemas append; enum values append-only; historical modes stay runnable |
