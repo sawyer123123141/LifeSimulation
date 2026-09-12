@@ -15,11 +15,15 @@ namespace LifeSimulation.Tests.EditMode
     /// separately in <c>CoreSimulationTests</c> at 50 ticks.</para>
     ///
     /// <para>Pins C and D are hand replicas of <c>tools/CreatureSweep/Program.cs</c>
-    /// <c>CreateConfig(seed, slope: false)</c> as of 65bae69, cross-checked once at capture
-    /// time against the real tool at the same horizon: the emitted seed, the emitted behaviour
-    /// hash, and the emitted manifest normalised by removing exactly <c>code_revision</c> and
-    /// <c>SlopeMovementCostEnabled</c>. A later change to the tool silently desynchronises the
-    /// replica; this file does not track it.</para>
+    /// <c>CreateConfig(seed, slope: false)</c> as of 65bae69, verified by two different routes.
+    /// <b>Pin C</b> was cross-checked once, at capture time, against a fresh run of the real
+    /// tool at the same horizon: the emitted seed, the emitted behaviour hash, and the emitted
+    /// manifest normalised by removing exactly <c>code_revision</c> and
+    /// <c>SlopeMovementCostEnabled</c> all matched the replica. <b>Pin D</b> was not
+    /// cross-checked against a fresh run; it is independently anchored to a behaviour hash
+    /// already committed in the 2026-09-10 per-seed CSV, which the replica reproduces. A later
+    /// change to the tool silently desynchronises either replica; this file does not track
+    /// it.</para>
     ///
     /// <para>The <c>internal</c> members exist for the P1 seam tests, which must not
     /// re-replicate anything pinned here. Nothing else is shared.</para>
@@ -34,7 +38,9 @@ namespace LifeSimulation.Tests.EditMode
         private const int PinDTicks = 2666;             // sample 1 of a 24,000-tick, 9-sample trajectory
         private const int DefaultTicks = 2000;
 
-        // --- captured at 65bae69 by the transient probe (plan Task 2); A/B/C cross-checked ---
+        // --- captured at 65bae69 by the transient probe (plan Task 2). Pin C's behaviour hash was
+        // cross-checked against a fresh CreatureSweep run; pin D's behaviour hash is not captured
+        // here at all but anchored to the committed 2026-09-10 CSV (see below). ---
         private const ulong CapturedAState = 17811950795457374630UL;
         private const ulong CapturedABehavior = 4903546012323466459UL;
         private const ulong CapturedAFingerprint = 11456860755430468762UL;
