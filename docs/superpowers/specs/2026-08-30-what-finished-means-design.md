@@ -467,7 +467,7 @@ this section records what is built so it is not rebuilt, and what is missing so 
 | **Headless batch** | **BUILT.** All three tools run without Unity |
 | **Determinism** | **BUILT.** Three hashes, pinned by tests |
 | **Fitness measurement** | **PARTIAL, and this is the important gap.** Lifetime offspring was measured for the first time on 2026-08-30, inside one probe. It is not a first-class tracked quantity. Missing entirely: surviving descendants, reproductive timing, mating success, survival to reproductive age |
-| **Effective population size and reproductive skew** | **MISSING, and directly diagnostic — see below** | |
+| **Effective population size and reproductive skew** | **BUILT 2026-10-28** — `CreatureSweep --effective`, both routes. Answer: reproductive evenness 0.70-1.02, neutral between-world floor ~8-9% against a selected gene at 48%, so **drift is not the hidden reason selection looks weak at boom census** - but it dominates in the crash (structure 0.67). `experiments/p6-effective-population-size-2026-10-28.md` | |
 | **Trait-versus-fitness relationships** | **MISSING as a standing capability.** Done once, ad hoc |
 | **Sensitivity analysis** | **PARTIAL and inconsistent.** Some cells were checked for being knife-edges; most conclusions rest on one parameter setting |
 | **Explicit hypotheses** | **MISSING as a habit.** Features are proposed as "add memory" rather than as a falsifiable statement |

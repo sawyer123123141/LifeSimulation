@@ -314,6 +314,19 @@ namespace LifeSimulation.Tools.CreatureSweep
                 return;
             }
 
+            if (args.Length > 0 && args[0] == "--effective")
+            {
+                // Effective population size as a DIAGNOSTIC of drift strength, per the frozen
+                // spec's section 8. Reported as a trajectory because every cell in this project is
+                // recorded as collapsing, and a single end-of-run figure would be another reading
+                // taken at the peak of a boom.
+                _focused = true;
+                int effectiveSeeds = args.Length > 1 && int.TryParse(args[1], out int parsedEffective) ? parsedEffective : 24;
+                if (args.Length > 2 && int.TryParse(args[2], out int effectiveCap)) _focusedPopulationCap = effectiveCap;
+                Effective.Report(effectiveSeeds, _ticks, seed => CreateConfig(seed, slope: false), _scenario, _sampleCount);
+                return;
+            }
+
             if (args.Length > 0 && args[0] == "--relief")
             {
                 ReportRelief();
